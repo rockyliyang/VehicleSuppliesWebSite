@@ -1,0 +1,227 @@
+<template>
+  <div class="admin-page">
+    <el-container>
+      <el-aside width="250px">
+        <div class="admin-logo">
+          <img src="../assets/images/logo.png" alt="AUTO EASE EXPERT CO., LTD">
+          <h2>管理后台</h2>
+        </div>
+        <el-menu
+          :default-active="activeMenu"
+          class="admin-menu"
+          background-color="#304156"
+          text-color="#bfcbd9"
+          active-text-color="#409EFF"
+          router
+        >
+          <el-menu-item index="/admin/dashboard">
+            <i class="el-icon-s-home"></i>
+            <span>控制面板</span>
+          </el-menu-item>
+          <el-submenu index="products">
+            <template slot="title">
+              <i class="el-icon-s-goods"></i>
+              <span>产品管理</span>
+            </template>
+            <el-menu-item index="/admin/products">产品列表</el-menu-item>
+            <el-menu-item index="/admin/products/add">添加产品</el-menu-item>
+            <el-menu-item index="/admin/categories">分类管理</el-menu-item>
+          </el-submenu>
+          <el-menu-item index="/admin/banners">
+            <i class="el-icon-picture-outline"></i>
+            <span>Banner管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/company">
+            <i class="el-icon-office-building"></i>
+            <span>公司信息</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/users">
+            <i class="el-icon-user"></i>
+            <span>用户管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/settings">
+            <i class="el-icon-setting"></i>
+            <span>系统设置</span>
+          </el-menu-item>
+        </el-menu>
+      </el-aside>
+      
+      <el-container>
+        <el-header>
+          <div class="header-left">
+            <i class="el-icon-s-fold toggle-sidebar"></i>
+            <el-breadcrumb separator="/">
+              <el-breadcrumb-item :to="{ path: '/admin' }">首页</el-breadcrumb-item>
+              <el-breadcrumb-item>{{ currentPage }}</el-breadcrumb-item>
+            </el-breadcrumb>
+          </div>
+          <div class="header-right">
+            <el-dropdown trigger="click">
+              <span class="admin-user">
+                <img src="../assets/images/avatar.jpg" class="user-avatar">
+                <span>管理员</span>
+                <i class="el-icon-arrow-down"></i>
+              </span>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item>个人信息</el-dropdown-item>
+                <el-dropdown-item>修改密码</el-dropdown-item>
+                <el-dropdown-item divided @click.native="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </div>
+        </el-header>
+        
+        <el-main>
+          <!-- 子路由内容区域 -->
+          <router-view></router-view>
+        </el-main>
+        
+        <el-footer>
+          <div class="footer-copyright">
+            © 2023 AUTO EASE EXPERT CO., LTD. All Rights Reserved
+          </div>
+        </el-footer>
+      </el-container>
+    </el-container>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'Admin',
+  data() {
+    return {
+      activeMenu: '/admin/products',
+      currentPage: '产品管理'
+    }
+  },
+  methods: {
+    logout() {
+      this.$confirm('确定要退出登录吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        // 实际项目中会调用登出API，清除token等
+        this.$router.push('/login')
+      }).catch(() => {})
+    }
+  }
+}
+</script>
+
+<style scoped>
+.admin-page {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.el-aside {
+  background-color: #304156;
+  color: #fff;
+  height: 100vh;
+  overflow-x: hidden;
+}
+
+.admin-logo {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  background-color: #263445;
+}
+
+.admin-logo img {
+  height: 40px;
+  margin-right: 10px;
+}
+
+.admin-logo h2 {
+  font-size: 18px;
+  color: #fff;
+  margin: 0;
+}
+
+.admin-menu {
+  border-right: none;
+}
+
+.el-header {
+  background-color: #fff;
+  color: #333;
+  line-height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  position: relative;
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-sidebar {
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 15px;
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.el-main {
+  background-color: #f0f2f5;
+  padding: 20px;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.el-footer {
+  background-color: #fff;
+  color: #666;
+  text-align: center;
+  line-height: 60px;
+  font-size: 14px;
+}
+
+.admin-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-header h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.filter-container {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+
+</style>
