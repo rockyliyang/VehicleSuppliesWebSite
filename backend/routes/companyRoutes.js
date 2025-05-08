@@ -10,7 +10,8 @@ const companyInfo = {
   email: 'contact@autoease.com',
   wechat_qrcode: '/static/images/qrcode.png',
   business_hours: '周一至周五: 9:00 - 18:00',
-  description: '我们是一家专业从事汽车用品研发、生产和销售的公司，拥有多年的行业经验和专业技术。我们致力于为客户提供高品质、高性能的汽车用品，包括汽车吸尘器、车载充电器和汽车应急启动电源等产品。'
+  description: '我们是一家专业从事汽车用品研发、生产和销售的公司，拥有多年的行业经验和专业技术。我们致力于为客户提供高品质、高性能的汽车用品，包括汽车吸尘器、车载充电器和汽车应急启动电源等产品。',
+  logo_url: '/static/images/logo.png'
 };
 
 // 获取公司信息

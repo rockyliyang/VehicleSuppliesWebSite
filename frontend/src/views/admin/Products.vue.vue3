@@ -12,7 +12,7 @@
         placeholder="产品名称/编号"
         style="width: 200px;"
         class="filter-item"
-        @keyup.enter.native="handleFilter"
+        @keyup.enter="handleFilter"
       />
       <el-select
         v-model="filters.category"
@@ -38,8 +38,14 @@
         <el-option label="上架" value="1" />
         <el-option label="下架" value="0" />
       </el-select>
-      <el-button type="primary" icon="el-icon-search" @click="handleFilter">搜索</el-button>
-      <el-button type="default" icon="el-icon-refresh" @click="resetFilter">重置</el-button>
+      <el-button type="primary" @click="handleFilter">
+        <el-icon><Search /></el-icon>
+        搜索
+      </el-button>
+      <el-button @click="resetFilter">
+        <el-icon><Refresh /></el-icon>
+        重置
+      </el-button>
     </div>
     
     <!-- 产品表格 -->
@@ -52,7 +58,7 @@
     >
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
       <el-table-column label="产品图片" width="120">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <img :src="row.image" alt="产品图片" class="product-image" v-if="row.image" @error="handleImageError">
           <span v-else>无图片</span>
         </template>
@@ -61,27 +67,27 @@
       <el-table-column prop="code" label="产品编号" width="120" />
       <el-table-column prop="category_name" label="分类" width="120" />
       <el-table-column prop="price" label="价格" width="120" sortable="custom">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <span>{{ row.price ? '¥' + row.price : '面议' }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="stock" label="库存" width="100" sortable="custom" />
       <el-table-column prop="status" label="状态" width="100">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
             {{ row.status === 1 ? '上架' : '下架' }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="created_at" label="创建时间" width="160" sortable="custom">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           {{ formatDate(row.created_at) }}
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
-        <template slot-scope="{row}">
-          <el-button type="primary" size="mini" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" size="mini" @click="handleDelete(row)">删除</el-button>
+        <template #default="{row}">
+          <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+          <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -101,8 +107,12 @@
     </div>
     
     <!-- 产品表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" :visible.sync="dialogVisible" width="700px">
-      <el-form :model="productForm" :rules="rules" ref="productForm" label-width="100px">
+    <el-dialog 
+      :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" 
+      v-model="dialogVisible" 
+      width="700px"
+    >
+      <el-form :model="productForm" :rules="rules" ref="productFormRef" label-width="100px">
         <el-form-item label="产品名称" prop="name">
           <el-input v-model="productForm.name" placeholder="请输入产品名称" />
         </el-form-item>
@@ -121,7 +131,7 @@
         </el-form-item>
         <el-form-item label="产品价格" prop="price">
           <el-input v-model.number="productForm.price" placeholder="请输入产品价格">
-            <template slot="prepend">¥</template>
+            <template #prepend>¥</template>
           </el-input>
         </el-form-item>
         <el-form-item label="产品库存" prop="stock">
@@ -135,7 +145,7 @@
             :on-success="handleImageSuccess"
             :before-upload="beforeImageUpload">
             <img v-if="productForm.image" :src="productForm.image" class="avatar" @error="handleImageError">
-            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
           </el-upload>
         </el-form-item>
         <el-form-item label="产品描述" prop="description">
@@ -151,156 +161,166 @@
           </el-radio-group>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { Search, Refresh, Plus } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
+import defaultImage from '@/assets/images/default-image.svg'
 
 export default {
   name: 'AdminProducts',
-  data() {
-    return {
-      loading: false,
-      submitLoading: false,
-      dialogVisible: false,
-      dialogStatus: 'create',
-      productList: [],
-      categoryOptions: [],
-      filters: {
-        keyword: '',
-        category: '',
-        status: ''
-      },
-      pagination: {
-        current: 1,
-        size: 10,
-        total: 0
-      },
-      sort: {
-        prop: 'id',
-        order: 'descending'
-      },
-      productForm: {
-        id: undefined,
-        name: '',
-        code: '',
-        category_id: '',
-        price: '',
-        stock: 0,
-        image: '',
-        description: '',
-        content: '',
-        status: 1
-      },
-      rules: {
-        name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
-        category_id: [{ required: true, message: '请选择产品分类', trigger: 'change' }],
-        price: [
-          { required: true, message: '请输入产品价格', trigger: 'blur' },
-          { type: 'number', message: '价格必须为数字', trigger: 'blur' }
-        ]
-      }
+  components: {
+    Search,
+    Refresh,
+    Plus
+  },
+  setup() {
+    // 响应式数据
+    const loading = ref(false)
+    const submitLoading = ref(false)
+    const dialogVisible = ref(false)
+    const dialogStatus = ref('create')
+    const productList = ref([])
+    const categoryOptions = ref([])
+    const productFormRef = ref(null)
+    
+    const filters = reactive({
+      keyword: '',
+      category: '',
+      status: ''
+    })
+    
+    const pagination = reactive({
+      current: 1,
+      size: 10,
+      total: 0
+    })
+    
+    const sort = reactive({
+      prop: 'id',
+      order: 'descending'
+    })
+    
+    const productForm = reactive({
+      id: undefined,
+      name: '',
+      code: '',
+      category_id: '',
+      price: '',
+      stock: 0,
+      image: '',
+      description: '',
+      content: '',
+      status: 1
+    })
+    
+    const rules = {
+      name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
+      category_id: [{ required: true, message: '请选择产品分类', trigger: 'change' }],
+      price: [
+        { required: true, message: '请输入产品价格', trigger: 'blur' },
+        { type: 'number', message: '价格必须为数字', trigger: 'blur' }
+      ]
     }
-  },
-  created() {
-    this.fetchCategories()
-    this.fetchProducts()
-  },
-  methods: {
+    
+    // 方法
     // 获取产品分类列表
-    async fetchCategories() {
+    const fetchCategories = async () => {
       try {
         const response = await axios.get('/api/categories')
         if (response.data.success) {
-          this.categoryOptions = response.data.data
+          categoryOptions.value = response.data.data
         }
       } catch (error) {
         console.error('获取分类失败:', error)
-        this.$message.error('获取分类失败')
+        ElMessage.error('获取分类失败')
       }
-    },
+    }
     
     // 获取产品列表
-    async fetchProducts() {
-      this.loading = true
+    const fetchProducts = async () => {
+      loading.value = true
       try {
         const params = {
-          page: this.pagination.current,
-          limit: this.pagination.size,
-          sort_by: this.sort.prop,
-          sort_order: this.sort.order === 'ascending' ? 'asc' : 'desc'
+          page: pagination.current,
+          limit: pagination.size,
+          sort_by: sort.prop,
+          sort_order: sort.order === 'ascending' ? 'asc' : 'desc'
         }
         
         // 添加筛选条件
-        if (this.filters.keyword) params.keyword = this.filters.keyword
-        if (this.filters.category) params.category_id = this.filters.category
-        if (this.filters.status !== '') params.status = this.filters.status
+        if (filters.keyword) params.keyword = filters.keyword
+        if (filters.category) params.category_id = filters.category
+        if (filters.status !== '') params.status = filters.status
         
         const response = await axios.get('/api/products', { params })
         if (response.data.success) {
-          this.productList = response.data.data.items
-          this.pagination.total = response.data.data.total
+          productList.value = response.data.data.items
+          pagination.total = response.data.data.total
         }
       } catch (error) {
         console.error('获取产品列表失败:', error)
-        this.$message.error('获取产品列表失败')
+        ElMessage.error('获取产品列表失败')
       } finally {
-        this.loading = false
+        loading.value = false
       }
-    },
+    }
     
     // 处理筛选
-    handleFilter() {
-      this.pagination.current = 1
-      this.fetchProducts()
-    },
+    const handleFilter = () => {
+      pagination.current = 1
+      fetchProducts()
+    }
     
     // 重置筛选
-    resetFilter() {
-      this.filters = {
-        keyword: '',
-        category: '',
-        status: ''
-      }
-      this.pagination.current = 1
-      this.fetchProducts()
-    },
+    const resetFilter = () => {
+      filters.keyword = ''
+      filters.category = ''
+      filters.status = ''
+      pagination.current = 1
+      fetchProducts()
+    }
     
     // 处理排序变化
-    handleSortChange(val) {
+    const handleSortChange = (val) => {
       if (val.prop) {
-        this.sort.prop = val.prop
-        this.sort.order = val.order
+        sort.prop = val.prop
+        sort.order = val.order
       } else {
-        this.sort.prop = 'id'
-        this.sort.order = 'descending'
+        sort.prop = 'id'
+        sort.order = 'descending'
       }
-      this.fetchProducts()
-    },
+      fetchProducts()
+    }
     
     // 处理页码变化
-    handleCurrentChange(val) {
-      this.pagination.current = val
-      this.fetchProducts()
-    },
+    const handleCurrentChange = (val) => {
+      pagination.current = val
+      fetchProducts()
+    }
     
     // 处理每页数量变化
-    handleSizeChange(val) {
-      this.pagination.size = val
-      this.pagination.current = 1
-      this.fetchProducts()
-    },
+    const handleSizeChange = (val) => {
+      pagination.size = val
+      pagination.current = 1
+      fetchProducts()
+    }
     
     // 添加产品
-    handleAdd() {
-      this.dialogStatus = 'create'
-      this.productForm = {
+    const handleAdd = () => {
+      dialogStatus.value = 'create'
+      Object.assign(productForm, {
         id: undefined,
         name: '',
         code: '',
@@ -311,26 +331,26 @@ export default {
         description: '',
         content: '',
         status: 1
-      }
-      this.dialogVisible = true
-      this.$nextTick(() => {
-        this.$refs.productForm.clearValidate()
       })
-    },
+      dialogVisible.value = true
+      nextTick(() => {
+        productFormRef.value?.clearValidate()
+      })
+    }
     
     // 编辑产品
-    handleEdit(row) {
-      this.dialogStatus = 'update'
-      this.productForm = Object.assign({}, row)
-      this.dialogVisible = true
-      this.$nextTick(() => {
-        this.$refs.productForm.clearValidate()
+    const handleEdit = (row) => {
+      dialogStatus.value = 'update'
+      Object.assign(productForm, row)
+      dialogVisible.value = true
+      nextTick(() => {
+        productFormRef.value?.clearValidate()
       })
-    },
+    }
     
     // 删除产品
-    handleDelete(row) {
-      this.$confirm('确认删除该产品吗?', '提示', {
+    const handleDelete = (row) => {
+      ElMessageBox.confirm('确认删除该产品吗?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -338,81 +358,117 @@ export default {
         try {
           const response = await axios.delete(`/api/products/${row.id}`)
           if (response.data.success) {
-            this.$message.success('删除成功')
-            this.fetchProducts()
+            ElMessage.success('删除成功')
+            fetchProducts()
           } else {
-            this.$message.error(response.data.message || '删除失败')
+            ElMessage.error(response.data.message || '删除失败')
           }
         } catch (error) {
           console.error('删除产品失败:', error)
-          this.$message.error('删除产品失败')
+          ElMessage.error('删除产品失败')
         }
       }).catch(() => {})
-    },
+    }
     
     // 提交表单
-    submitForm() {
-      this.$refs.productForm.validate(async valid => {
+    const submitForm = () => {
+      productFormRef.value?.validate(async (valid) => {
         if (valid) {
-          this.submitLoading = true
+          submitLoading.value = true
           try {
             let response
-            if (this.dialogStatus === 'create') {
-              response = await axios.post('/api/products', this.productForm)
+            if (dialogStatus.value === 'create') {
+              response = await axios.post('/api/products', productForm)
             } else {
-              response = await axios.put(`/api/products/${this.productForm.id}`, this.productForm)
+              response = await axios.put(`/api/products/${productForm.id}`, productForm)
             }
             
             if (response.data.success) {
-              this.$message.success(this.dialogStatus === 'create' ? '添加成功' : '更新成功')
-              this.dialogVisible = false
-              this.fetchProducts()
+              ElMessage.success(dialogStatus.value === 'create' ? '添加成功' : '更新成功')
+              dialogVisible.value = false
+              fetchProducts()
             } else {
-              this.$message.error(response.data.message || (this.dialogStatus === 'create' ? '添加失败' : '更新失败'))
+              ElMessage.error(response.data.message || (dialogStatus.value === 'create' ? '添加失败' : '更新失败'))
             }
           } catch (error) {
-            console.error(this.dialogStatus === 'create' ? '添加产品失败:' : '更新产品失败:', error)
-            this.$message.error(this.dialogStatus === 'create' ? '添加产品失败' : '更新产品失败')
+            console.error(dialogStatus.value === 'create' ? '添加产品失败:' : '更新产品失败:', error)
+            ElMessage.error(dialogStatus.value === 'create' ? '添加产品失败' : '更新产品失败')
           } finally {
-            this.submitLoading = false
+            submitLoading.value = false
           }
         }
       })
-    },
+    }
     
     // 图片上传成功回调
-    handleImageSuccess(res, file) {
+    const handleImageSuccess = (res) => {
       if (res.success) {
-        this.productForm.image = res.data.url
+        productForm.image = res.data.url
       } else {
-        this.$message.error('上传失败')
+        ElMessage.error('上传失败')
       }
-    },
+    }
     
     // 图片上传前验证
-    beforeImageUpload(file) {
+    const beforeImageUpload = (file) => {
       const isJPG = file.type === 'image/jpeg'
       const isPNG = file.type === 'image/png'
       const isLt2M = file.size / 1024 / 1024 < 2
 
       if (!isJPG && !isPNG) {
-        this.$message.error('上传图片只能是 JPG 或 PNG 格式!')
+        ElMessage.error('上传图片只能是 JPG 或 PNG 格式!')
       }
       if (!isLt2M) {
-        this.$message.error('上传图片大小不能超过 2MB!')
+        ElMessage.error('上传图片大小不能超过 2MB!')
       }
       return (isJPG || isPNG) && isLt2M
-    },
+    }
     
     // 格式化日期
-    formatDate(date) {
+    const formatDate = (date) => {
       if (!date) return ''
       return new Date(date).toLocaleString()
-    },
+    }
     
     // 图片加载错误处理
-    handleImageError(e) {
-      e.target.src = require('@/assets/images/default-image.svg')
+    const handleImageError = (e) => {
+      e.target.src = defaultImage
+    }
+    
+    // 生命周期钩子
+    onMounted(() => {
+      fetchCategories()
+      fetchProducts()
+    })
+    
+    return {
+      loading,
+      submitLoading,
+      dialogVisible,
+      dialogStatus,
+      productList,
+      categoryOptions,
+      filters,
+      pagination,
+      sort,
+      productForm,
+      rules,
+      productFormRef,
+      fetchCategories,
+      fetchProducts,
+      handleFilter,
+      resetFilter,
+      handleSortChange,
+      handleCurrentChange,
+      handleSizeChange,
+      handleAdd,
+      handleEdit,
+      handleDelete,
+      submitForm,
+      handleImageSuccess,
+      beforeImageUpload,
+      formatDate,
+      handleImageError
     }
   }
 }

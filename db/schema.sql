@@ -1,7 +1,8 @@
 -- 数据库设计
 
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS vehicle_supplies_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS vehicle_supplies_db DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
+GRANT ALL PRIVILEGES ON vehicle_supplies_db.* TO 'VehicleWebUser'@'localhost';
 
 USE vehicle_supplies_db;
 

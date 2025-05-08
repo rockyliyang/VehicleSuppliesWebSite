@@ -1,8 +1,5 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-
-Vue.use(VueRouter)
 
 const routes = [
   {
@@ -50,6 +47,10 @@ const routes = [
     },
     children: [
       {
+        path: '',
+        redirect: '/admin/dashboard'
+      },
+      {
         path: 'dashboard',
         name: 'AdminDashboard',
         component: () => import('../views/admin/Dashboard.vue')
@@ -65,18 +66,19 @@ const routes = [
         component: () => import('../views/admin/Categories.vue')
       },
       {
-        path: 'banners',
-        name: 'AdminBanners',
-        component: () => import('../views/admin/Banners.vue')
+        path: 'orders',
+        name: 'AdminOrders',
+        component: () => import('../views/admin/Orders.vue')
       },
       {
-        path: 'company',
-        name: 'AdminCompany',
-        component: () => import('../views/admin/Company.vue')
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('../views/admin/Users.vue')
       },
       {
-        path: '',
-        redirect: '/admin/dashboard'
+        path: 'settings',
+        name: 'AdminSettings',
+        component: () => import('../views/admin/Settings.vue')
       }
     ]
   },
@@ -86,15 +88,14 @@ const routes = [
     component: () => import('../views/Login.vue')
   },
   {
-    path: '/register',
-    name: 'Register',
-    component: () => import('../views/Register.vue')
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../views/NotFound.vue')
   }
 ]
 
-const router = new VueRouter({
-  mode: 'history',
-  base: process.env.BASE_URL,
+const router = createRouter({
+  history: createWebHistory(process.env.BASE_URL),
   routes
 })
 

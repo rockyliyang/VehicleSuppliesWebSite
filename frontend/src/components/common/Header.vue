@@ -3,8 +3,8 @@
     <div class="top-bar">
       <div class="container">
         <div class="contact-info">
-          <span><i class="el-icon-phone-outline"></i> +86 123 4567 8910</span>
-          <span><i class="el-icon-message"></i> contact@autoease.com</span>
+          <span><i class="el-icon-phone-outline"></i> {{ companyInfo.phone || '+86 123 4567 8910' }}</span>
+          <span><i class="el-icon-message"></i> {{ companyInfo.email || 'contact@autoease.com' }}</span>
         </div>
         <div class="top-right">
           <span class="discount">10% OFF All Items</span>
@@ -25,7 +25,7 @@
       <div class="container">
         <div class="logo">
           <router-link to="/">
-            <img src="../../assets/images/logo.png" alt="AUTO EASE EXPERT CO., LTD">
+            <img :src="companyInfo.logo_url || require('../../assets/images/logo.png')" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'" @error="handleImageError">
           </router-link>
         </div>
         
@@ -72,6 +72,8 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   name: 'Header',
   data() {
@@ -88,10 +90,27 @@ export default {
         password: [
           { required: true, message: '请输入密码', trigger: 'blur' }
         ]
-      }
+      },
+      companyInfo: {}
     }
   },
+  created() {
+    this.fetchCompanyInfo()
+  },
   methods: {
+    async fetchCompanyInfo() {
+      try {
+        const response = await axios.get('/api/company')
+        if (response.data && response.data.success) {
+          this.companyInfo = response.data.data
+        }
+      } catch (error) {
+        console.error('获取公司信息失败:', error)
+      }
+    },
+    handleImageError(e) {
+      e.target.src = require('../../assets/images/default-image.svg');
+    },
     login() {
       this.loginDialogVisible = true
     },

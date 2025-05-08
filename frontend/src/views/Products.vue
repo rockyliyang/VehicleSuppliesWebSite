@@ -46,7 +46,7 @@
             <div v-for="product in sortedProducts" :key="product.id" class="product-card">
               <router-link :to="`/product/${product.id}`">
                 <div class="product-image">
-                  <img :src="product.thumbnail_url" :alt="product.name">
+                  <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError">
                 </div>
                 <div class="product-info">
                   <h3>{{ product.name }}</h3>
@@ -131,6 +131,9 @@ export default {
     }
   },
   methods: {
+    handleImageError(e) {
+      e.target.src = require('../assets/images/default-image.svg');
+    },
     async fetchCategories() {
       try {
         this.loading = true

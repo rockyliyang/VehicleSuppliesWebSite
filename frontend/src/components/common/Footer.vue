@@ -39,7 +39,7 @@
           <div class="footer-section qrcode-section">
             <h3>关注我们</h3>
             <div class="qrcode">
-              <img src="../../assets/images/qrcode.png" alt="微信二维码">
+              <img src="../../assets/images/qrcode.png" alt="微信二维码" @error="handleImageError">
               <p>扫描二维码关注我们</p>
             </div>
           </div>
@@ -57,7 +57,12 @@
 
 <script>
 export default {
-  name: 'Footer'
+  name: 'Footer',
+  methods: {
+    handleImageError(e) {
+      e.target.src = require('../../assets/images/default-image.svg');
+    }
+  }
 }
 </script>
 

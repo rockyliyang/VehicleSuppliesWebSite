@@ -17,11 +17,11 @@
       <div v-if="product.id" class="product-detail">
         <div class="product-gallery">
           <div class="main-image">
-            <img :src="product.thumbnail_url" :alt="product.name">
+            <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError">
           </div>
           <div class="thumbnail-list">
             <div class="thumbnail active">
-              <img :src="product.thumbnail_url" :alt="product.name">
+              <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError">
             </div>
             <!-- 实际项目中会有多张产品图片 -->
           </div>
@@ -197,6 +197,9 @@ export default {
     this.fetchProduct()
   },
   methods: {
+    handleImageError(e) {
+      e.target.src = require('../assets/images/default-image.svg');
+    },
     async fetchCategories() {
       try {
         const response = await axios.get('/api/categories')

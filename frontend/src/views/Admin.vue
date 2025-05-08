@@ -95,6 +95,33 @@ export default {
       currentPage: '产品管理'
     }
   },
+  watch: {
+    '$route'(to) {
+      // 根据路由更新当前页面标题和活动菜单
+      if (to.path.includes('/admin/dashboard')) {
+        this.activeMenu = '/admin/dashboard'
+        this.currentPage = '控制面板'
+      } else if (to.path.includes('/admin/products')) {
+        this.activeMenu = '/admin/products'
+        this.currentPage = '产品管理'
+      } else if (to.path.includes('/admin/categories')) {
+        this.activeMenu = '/admin/categories'
+        this.currentPage = '分类管理'
+      } else if (to.path.includes('/admin/banners')) {
+        this.activeMenu = '/admin/banners'
+        this.currentPage = 'Banner管理'
+      } else if (to.path.includes('/admin/company')) {
+        this.activeMenu = '/admin/company'
+        this.currentPage = '公司信息'
+      } else if (to.path.includes('/admin/users')) {
+        this.activeMenu = '/admin/users'
+        this.currentPage = '用户管理'
+      } else if (to.path.includes('/admin/settings')) {
+        this.activeMenu = '/admin/settings'
+        this.currentPage = '系统设置'
+      }
+    }
+  },
   methods: {
     logout() {
       this.$confirm('确定要退出登录吗?', '提示', {

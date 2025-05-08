@@ -1,0 +1,7 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#f0f0f0"/>
+  <text x="50%" y="50%" font-family="Arial" font-size="16" text-anchor="middle" fill="#999999">图片加载失败</text>
+  <path d="M70,80 L130,80 L130,120 L70,120 Z" stroke="#999999" stroke-width="2" fill="none"/>
+  <path d="M85,95 A10,10 0 1 1 85,94 Z" fill="#999999"/>
+  <path d="M70,120 L90,100 L110,110 L130,90 L130,120 Z" stroke="#999999" stroke-width="2" fill="none"/>
+</svg>
