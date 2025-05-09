@@ -9,7 +9,7 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="data-card">
           <div class="data-icon">
-            <i class="el-icon-s-goods"></i>
+            <el-icon><Goods /></el-icon>
           </div>
           <div class="data-info">
             <div class="data-title">产品总数</div>
@@ -20,7 +20,7 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="data-card">
           <div class="data-icon" style="background-color: #67C23A;">
-            <i class="el-icon-user"></i>
+            <el-icon><User /></el-icon>
           </div>
           <div class="data-info">
             <div class="data-title">用户总数</div>
@@ -31,7 +31,7 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="data-card">
           <div class="data-icon" style="background-color: #E6A23C;">
-            <i class="el-icon-s-order"></i>
+            <el-icon><List /></el-icon>
           </div>
           <div class="data-info">
             <div class="data-title">订单总数</div>
@@ -42,7 +42,7 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="data-card">
           <div class="data-icon" style="background-color: #F56C6C;">
-            <i class="el-icon-message"></i>
+            <el-icon><Message /></el-icon>
           </div>
           <div class="data-info">
             <div class="data-title">消息总数</div>
@@ -56,21 +56,29 @@
     <el-row :gutter="20" class="quick-access">
       <el-col :span="24">
         <el-card shadow="hover">
-          <div slot="header">
+          <template #header>
             <span>快捷入口</span>
-          </div>
+          </template>
           <div class="quick-links">
             <router-link to="/admin/products/add">
-              <el-button type="primary" icon="el-icon-plus">添加产品</el-button>
+              <el-button type="primary">
+                <el-icon><Plus /></el-icon>添加产品
+              </el-button>
             </router-link>
             <router-link to="/admin/categories">
-              <el-button type="success" icon="el-icon-folder-add">管理分类</el-button>
+              <el-button type="success">
+                <el-icon><FolderAdd /></el-icon>管理分类
+              </el-button>
             </router-link>
             <router-link to="/admin/banners">
-              <el-button type="warning" icon="el-icon-picture-outline">管理Banner</el-button>
+              <el-button type="warning">
+                <el-icon><PictureRounded /></el-icon>管理Banner
+              </el-button>
             </router-link>
             <router-link to="/admin/users">
-              <el-button type="info" icon="el-icon-user">用户管理</el-button>
+              <el-button type="info">
+                <el-icon><User /></el-icon>用户管理
+              </el-button>
             </router-link>
           </div>
         </el-card>
@@ -81,14 +89,14 @@
     <el-row :gutter="20" class="recent-data">
       <el-col :xs="24" :lg="12">
         <el-card shadow="hover" class="recent-card">
-          <div slot="header">
+          <template #header>
             <span>最新产品</span>
             <router-link to="/admin/products" class="more-link">查看更多</router-link>
-          </div>
+          </template>
           <el-table :data="recentProducts" style="width: 100%" size="small">
             <el-table-column prop="id" label="ID" width="50" />
             <el-table-column label="产品图片" width="60">
-              <template slot-scope="{row}">
+              <template #default="{row}">
                 <el-image 
                   style="width: 40px; height: 40px" 
                   :src="row.image" 
@@ -101,7 +109,7 @@
             </el-table-column>
             <el-table-column prop="name" label="产品名称" show-overflow-tooltip />
             <el-table-column prop="created_at" label="创建时间" width="160">
-              <template slot-scope="{row}">
+              <template #default="{row}">
                 {{ formatDate(row.created_at) }}
               </template>
             </el-table-column>
@@ -110,27 +118,27 @@
       </el-col>
       <el-col :xs="24" :lg="12">
         <el-card shadow="hover" class="recent-card">
-          <div slot="header">
+          <template #header>
             <span>最新订单</span>
             <router-link to="/admin/orders" class="more-link">查看更多</router-link>
-          </div>
+          </template>
           <el-table :data="recentOrders" style="width: 100%" size="small">
             <el-table-column prop="id" label="订单号" width="80" show-overflow-tooltip />
             <el-table-column prop="user_name" label="用户" width="100" show-overflow-tooltip />
             <el-table-column prop="amount" label="金额" width="100">
-              <template slot-scope="{row}">
+              <template #default="{row}">
                 ¥{{ row.amount }}
               </template>
             </el-table-column>
             <el-table-column prop="status" label="状态" width="100">
-              <template slot-scope="{row}">
+              <template #default="{row}">
                 <el-tag :type="getOrderStatusType(row.status)" size="mini">
                   {{ getOrderStatusText(row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="created_at" label="创建时间" width="160">
-              <template slot-scope="{row}">
+              <template #default="{row}">
                 {{ formatDate(row.created_at) }}
               </template>
             </el-table-column>
@@ -143,9 +151,19 @@
 
 <script>
 import axios from 'axios'
+import { Goods, User, List, Message, Plus, FolderAdd, PictureRounded } from '@element-plus/icons-vue'
 
 export default {
   name: 'AdminDashboard',
+  components: {
+    Goods,
+    User,
+    List,
+    Message,
+    Plus,
+    FolderAdd,
+    PictureRounded
+  },
   data() {
     return {
       statistics: {

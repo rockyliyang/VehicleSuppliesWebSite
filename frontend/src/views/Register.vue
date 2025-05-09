@@ -10,40 +10,55 @@
         <el-form-item prop="username">
           <el-input 
             v-model="registerForm.username" 
-            prefix-icon="el-icon-user" 
             placeholder="用户名"
-          ></el-input>
+          >
+            <template #prefix>
+              <el-icon><User /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item prop="email">
           <el-input 
             v-model="registerForm.email" 
-            prefix-icon="el-icon-message" 
             placeholder="电子邮箱"
-          ></el-input>
+          >
+            <template #prefix>
+              <el-icon><Message /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item prop="phone">
           <el-input 
             v-model="registerForm.phone" 
-            prefix-icon="el-icon-mobile-phone" 
             placeholder="手机号码"
-          ></el-input>
+          >
+            <template #prefix>
+              <el-icon><PhoneFilled /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item prop="password">
           <el-input 
             v-model="registerForm.password" 
-            prefix-icon="el-icon-lock" 
             placeholder="密码" 
             show-password
-          ></el-input>
+          >
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item prop="confirmPassword">
           <el-input 
             v-model="registerForm.confirmPassword" 
-            prefix-icon="el-icon-lock" 
             placeholder="确认密码" 
             show-password
-            @keyup.enter.native="submitRegister"
-          ></el-input>
+            @keyup.enter="submitRegister"
+          >
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item>
           <el-checkbox v-model="agreeTerms">我已阅读并同意<a href="javascript:;">服务条款</a>和<a href="javascript:;">隐私政策</a></el-checkbox>
@@ -62,9 +77,10 @@
 
 <script>
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
 export default {
-  name: 'Register',
+  name: 'UserRegister',
   data() {
     // 自定义验证器：确认密码
     const validateConfirmPassword = (rule, value, callback) => {
@@ -112,7 +128,7 @@ export default {
   methods: {
     submitRegister() {
       if (!this.agreeTerms) {
-        this.$message.warning('请阅读并同意服务条款和隐私政策')
+        ElMessage.warning('请阅读并同意服务条款和隐私政策')
         return
       }
       
@@ -128,17 +144,17 @@ export default {
             })
             
             if (response.data.success) {
-              this.$message.success('注册成功，请登录')
+              ElMessage.success('注册成功，请登录')
               this.$router.push('/login')
             } else {
-              this.$message.error(response.data.message || '注册失败')
+              ElMessage.error(response.data.message || '注册失败')
             }
           } catch (error) {
             console.error('注册失败:', error)
             if (error.response && error.response.data && error.response.data.message) {
-              this.$message.error(error.response.data.message)
+              ElMessage.error(error.response.data.message)
             } else {
-              this.$message.error('注册失败，请稍后重试')
+              ElMessage.error('注册失败，请稍后重试')
             }
           } finally {
             this.loading = false

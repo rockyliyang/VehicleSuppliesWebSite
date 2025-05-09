@@ -164,7 +164,7 @@ export default {
       this.$refs[formName].resetFields()
       this.fetchCompanyInfo()
     },
-    handleLogoSuccess(res, file) {
+    handleLogoSuccess(res, file) { // eslint-disable-line no-unused-vars
       if (res.success) {
         this.companyForm.logo_url = res.url
         this.$message.success('Logo上传成功')
@@ -184,7 +184,7 @@ export default {
       }
       return isJPGOrPNG && isLt2M
     },
-    handleQrcodeSuccess(res, file) {
+    handleQrcodeSuccess(res, file) { // eslint-disable-line no-unused-vars
       if (res.success) {
         this.companyForm.wechat_qrcode = res.url
         this.$message.success('二维码上传成功')

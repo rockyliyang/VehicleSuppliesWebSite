@@ -1,20 +1,20 @@
 <template>
   <div id="app">
-    <Header />
+    <SiteHeader />
     <router-view/>
-    <Footer />
+    <SiteFooter />
   </div>
 </template>
 
 <script>
-import Header from './components/common/Header.vue'
-import Footer from './components/common/Footer.vue'
+import SiteHeader from './components/common/Header.vue'
+import SiteFooter from './components/common/Footer.vue'
 
 export default {
   name: 'App',
   components: {
-    Header,
-    Footer
+    SiteHeader,
+    SiteFooter
   }
 }
 </script>

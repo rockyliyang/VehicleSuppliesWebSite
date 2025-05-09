@@ -45,7 +45,7 @@
           <div v-for="product in displayProducts" :key="product.id" class="product-card">
             <router-link :to="`/product/${product.id}`">
               <div class="product-image">
-                <img :src="product.thumbnail_url" :alt="product.name">
+                <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError">
               </div>
               <div class="product-info">
                 <h3>{{ product.name }}</h3>
@@ -78,8 +78,11 @@
 </template>
 
 <script>
+// import axios from 'axios';
+import { handleImageError } from '../utils/imageUtils';
+
 export default {
-  name: 'Home',
+  name: 'HomePage',
   data() {
     return {
       activeCategory: '1',
@@ -158,6 +161,7 @@ export default {
     // this.fetchProducts()
   },
   methods: {
+    handleImageError,
     // 这些方法在实际项目中会调用API
     fetchBanners() {
       // axios.get('/api/banners').then(response => {

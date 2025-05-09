@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <rect width="800" height="400" fill="#f5f5f5"/>
+  <path d="M200 250 Q 300 150 400 250 Q 500 350 600 250" stroke="#333" stroke-width="8" fill="none"/>
+  <circle cx="250" cy="280" r="30" fill="#333"/>
+  <circle cx="550" cy="280" r="30" fill="#333"/>
+  <rect x="200" y="200" width="400" height="80" rx="20" ry="20" fill="#e60012"/>
+  <rect x="250" y="170" width="300" height="60" rx="10" ry="10" fill="#e60012"/>
+  <text x="400" y="100" font-family="Arial" font-size="32" text-anchor="middle" fill="#333">关于我们</text>
+  <text x="400" y="140" font-family="Arial" font-size="20" text-anchor="middle" fill="#666">专业汽车用品供应商</text>
+</svg>

@@ -20,7 +20,7 @@
               <div class="news-list">
                 <div v-for="(item, index) in companyNews" :key="index" class="news-item">
                   <div class="news-image">
-                    <img :src="item.image" :alt="item.title">
+                    <img :src="item.image" :alt="item.title" @error="handleImageError">
                   </div>
                   <div class="news-content">
                     <h3 class="news-title">{{ item.title }}</h3>
@@ -38,7 +38,7 @@
               <div class="news-list">
                 <div v-for="(item, index) in industryNews" :key="index" class="news-item">
                   <div class="news-image">
-                    <img :src="item.image" :alt="item.title">
+                    <img :src="item.image" :alt="item.title" @error="handleImageError">
                   </div>
                   <div class="news-content">
                     <h3 class="news-title">{{ item.title }}</h3>
@@ -72,7 +72,7 @@
           <ul class="popular-news-list">
             <li v-for="(item, index) in popularNews" :key="index" class="popular-news-item">
               <div class="popular-news-image">
-                <img :src="item.image" :alt="item.title">
+                <img :src="item.image" :alt="item.title" @error="handleImageError">
               </div>
               <div class="popular-news-content">
                 <h4>{{ item.title }}</h4>
@@ -112,8 +112,10 @@
 </template>
 
 <script>
+import { handleImageError } from '../utils/imageUtils';
+
 export default {
-  name: 'News',
+  name: 'NewsPage',
   data() {
     return {
       activeTab: 'company',
@@ -170,6 +172,7 @@ export default {
     };
   },
   methods: {
+    handleImageError,
     handleCurrentChange(val) {
       this.currentPage = val;
       // 在实际项目中，这里会请求对应页码的数据

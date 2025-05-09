@@ -12,7 +12,7 @@
         placeholder="产品名称/编号"
         style="width: 200px;"
         class="filter-item"
-        @keyup.enter.native="handleFilter"
+        @keyup.enter="handleFilter"
       />
       <el-select
         v-model="filters.category"
@@ -38,8 +38,14 @@
         <el-option label="上架" value="1" />
         <el-option label="下架" value="0" />
       </el-select>
-      <el-button type="primary" icon="el-icon-search" @click="handleFilter">搜索</el-button>
-      <el-button type="default" icon="el-icon-refresh" @click="resetFilter">重置</el-button>
+      <el-button type="primary" @click="handleFilter">
+        <el-icon><Search /></el-icon>
+        搜索
+      </el-button>
+      <el-button @click="resetFilter">
+        <el-icon><Refresh /></el-icon>
+        重置
+      </el-button>
     </div>
     
     <!-- 产品表格 -->
@@ -52,7 +58,7 @@
     >
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
       <el-table-column label="产品图片" width="120">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <img :src="row.image" alt="产品图片" class="product-image" v-if="row.image" @error="handleImageError">
           <span v-else>无图片</span>
         </template>
@@ -61,27 +67,27 @@
       <el-table-column prop="code" label="产品编号" width="120" />
       <el-table-column prop="category_name" label="分类" width="120" />
       <el-table-column prop="price" label="价格" width="120" sortable="custom">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <span>{{ row.price ? '¥' + row.price : '面议' }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="stock" label="库存" width="100" sortable="custom" />
       <el-table-column prop="status" label="状态" width="100">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
             {{ row.status === 1 ? '上架' : '下架' }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="created_at" label="创建时间" width="160" sortable="custom">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           {{ formatDate(row.created_at) }}
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
-        <template slot-scope="{row}">
-          <el-button type="primary" size="mini" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" size="mini" @click="handleDelete(row)">删除</el-button>
+        <template #default="{row}">
+          <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+          <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -101,8 +107,12 @@
     </div>
     
     <!-- 产品表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" :visible.sync="dialogVisible" width="700px">
-      <el-form :model="productForm" :rules="rules" ref="productForm" label-width="100px">
+    <el-dialog 
+      :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" 
+      v-model="dialogVisible" 
+      width="700px"
+    >
+      <el-form :model="productForm" :rules="rules" ref="productFormRef" label-width="100px">
         <el-form-item label="产品名称" prop="name">
           <el-input v-model="productForm.name" placeholder="请输入产品名称" />
         </el-form-item>
@@ -121,7 +131,7 @@
         </el-form-item>
         <el-form-item label="产品价格" prop="price">
           <el-input v-model.number="productForm.price" placeholder="请输入产品价格">
-            <template slot="prepend">¥</template>
+            <template #prepend>¥</template>
           </el-input>
         </el-form-item>
         <el-form-item label="产品库存" prop="stock">
@@ -135,7 +145,7 @@
             :on-success="handleImageSuccess"
             :before-upload="beforeImageUpload">
             <img v-if="productForm.image" :src="productForm.image" class="avatar" @error="handleImageError">
-            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
           </el-upload>
         </el-form-item>
         <el-form-item label="产品描述" prop="description">
@@ -151,16 +161,19 @@
           </el-radio-group>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
+      <template #footer>
+        <div class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
-      </div>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+import { Plus } from '@element-plus/icons-vue' // eslint-disable-line no-unused-vars
 
 export default {
   name: 'AdminProducts',
@@ -314,7 +327,7 @@ export default {
       }
       this.dialogVisible = true
       this.$nextTick(() => {
-        this.$refs.productForm.clearValidate()
+        this.$refs.productFormRef.clearValidate()
       })
     },
     
@@ -324,7 +337,7 @@ export default {
       this.productForm = Object.assign({}, row)
       this.dialogVisible = true
       this.$nextTick(() => {
-        this.$refs.productForm.clearValidate()
+        this.$refs.productFormRef.clearValidate()
       })
     },
     
@@ -352,7 +365,7 @@ export default {
     
     // 提交表单
     submitForm() {
-      this.$refs.productForm.validate(async valid => {
+      this.$refs.productFormRef.validate(async valid => {
         if (valid) {
           this.submitLoading = true
           try {
@@ -381,7 +394,7 @@ export default {
     },
     
     // 图片上传成功回调
-    handleImageSuccess(res, file) {
+    handleImageSuccess(res, file) { // eslint-disable-line no-unused-vars
       if (res.success) {
         this.productForm.image = res.data.url
       } else {

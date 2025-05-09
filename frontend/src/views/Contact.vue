@@ -97,7 +97,7 @@
         
         <div class="map-container">
           <!-- 实际项目中会使用地图API，这里用图片代替 -->
-          <img src="../assets/images/map.jpg" alt="公司地图">
+          <img src="../assets/images/map.jpg" alt="公司地图" @error="handleImageError">
         </div>
       </div>
       
@@ -110,7 +110,7 @@
         <div class="qrcode-container">
           <div class="qrcode-item">
             <div class="qrcode-image">
-              <img :src="companyInfo.wechat_qrcode || '../assets/images/qrcode.png'" alt="微信二维码">
+              <img :src="companyInfo.wechat_qrcode || '../assets/images/qrcode.png'" alt="微信二维码" @error="handleImageError">
             </div>
             <p>扫描二维码关注我们的微信公众号</p>
           </div>
@@ -122,9 +122,10 @@
 
 <script>
 import axios from 'axios'
+import { handleImageError } from '../utils/imageUtils'
 
 export default {
-  name: 'Contact',
+  name: 'ContactPage',
   data() {
     return {
       companyInfo: {},
@@ -159,6 +160,7 @@ export default {
     this.fetchCompanyInfo()
   },
   methods: {
+    handleImageError,
     async fetchCompanyInfo() {
       try {
         const response = await axios.get('/api/company')

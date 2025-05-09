@@ -14,7 +14,7 @@
     >
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column label="Banner图片" width="200">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <img :src="row.image" alt="Banner图片" class="banner-image" v-if="row.image">
           <span v-else>无图片</span>
         </template>
@@ -23,14 +23,14 @@
       <el-table-column prop="url" label="链接" min-width="150" show-overflow-tooltip />
       <el-table-column prop="sort_order" label="排序" width="100" />
       <el-table-column prop="status" label="状态" width="100">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
             {{ row.status === 1 ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <el-button type="primary" size="mini" @click="handleEdit(row)">编辑</el-button>
           <el-button type="danger" size="mini" @click="handleDelete(row)">删除</el-button>
         </template>
@@ -38,7 +38,7 @@
     </el-table>
     
     <!-- Banner表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加Banner' : '编辑Banner'" :visible.sync="dialogVisible" width="600px">
+    <el-dialog :title="dialogStatus === 'create' ? '添加Banner' : '编辑Banner'" v-model="dialogVisible" width="600px">
       <el-form :model="bannerForm" :rules="rules" ref="bannerForm" label-width="100px">
         <el-form-item label="标题" prop="title">
           <el-input v-model="bannerForm.title" placeholder="请输入标题" />
@@ -71,10 +71,12 @@
           <el-input type="textarea" v-model="bannerForm.description" :rows="3" placeholder="请输入描述" />
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -208,7 +210,7 @@ export default {
     },
     
     // 图片上传成功回调
-    handleImageSuccess(res, file) {
+    handleImageSuccess(res, file) { // eslint-disable-line no-unused-vars
       if (res.success) {
         this.bannerForm.image = res.data.url
       } else {
@@ -217,7 +219,7 @@ export default {
     },
     
     // 图片上传前验证
-    beforeImageUpload(file) {
+    beforeImageUpload(file) { // eslint-disable-line no-unused-vars
       const isJPG = file.type === 'image/jpeg'
       const isPNG = file.type === 'image/png'
       const isLt2M = file.size / 1024 / 1024 < 2

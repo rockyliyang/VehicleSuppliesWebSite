@@ -3,19 +3,21 @@
     <div class="top-bar">
       <div class="container">
         <div class="contact-info">
-          <span><i class="el-icon-phone-outline"></i> {{ companyInfo.phone || '+86 123 4567 8910' }}</span>
-          <span><i class="el-icon-message"></i> {{ companyInfo.email || 'contact@autoease.com' }}</span>
+          <span><el-icon><PhoneFilled /></el-icon> {{ companyInfo.phone || '+86 123 4567 8910' }}</span>
+          <span><el-icon><Message /></el-icon> {{ companyInfo.email || 'contact@autoease.com' }}</span>
         </div>
         <div class="top-right">
           <span class="discount">10% OFF All Items</span>
           <el-dropdown>
             <span class="language-selector">
-              中文 <i class="el-icon-arrow-down"></i>
+              中文 <el-icon><ArrowDown /></el-icon>
             </span>
-            <el-dropdown-menu slot="dropdown">
+            <template #dropdown>
+              <el-dropdown-menu>
               <el-dropdown-item>English</el-dropdown-item>
               <el-dropdown-item>中文</el-dropdown-item>
             </el-dropdown-menu>
+            </template>
           </el-dropdown>
         </div>
       </div>
@@ -25,7 +27,7 @@
       <div class="container">
         <div class="logo">
           <router-link to="/">
-            <img :src="companyInfo.logo_url || require('../../assets/images/logo.png')" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'" @error="handleImageError">
+            <img :src="companyInfo.logo_url || logoImage" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'" @error="handleImageError">
           </router-link>
         </div>
         
@@ -40,8 +42,8 @@
         </nav>
         
         <div class="user-actions">
-          <el-button type="text" icon="el-icon-user" @click="login">登录</el-button>
-          <el-button type="text" icon="el-icon-shopping-cart-2">询价</el-button>
+          <el-button type="text" @click="login"><el-icon><User /></el-icon>登录</el-button>
+          <el-button type="text"><el-icon><ShoppingCartFull /></el-icon>询价</el-button>
         </div>
       </div>
     </div>
@@ -49,15 +51,23 @@
     <!-- 登录对话框 -->
     <el-dialog
       title="用户登录"
-      :visible.sync="loginDialogVisible"
+      v-model="loginDialogVisible"
       width="400px"
       center>
       <el-form :model="loginForm" :rules="loginRules" ref="loginForm">
         <el-form-item prop="username">
-          <el-input v-model="loginForm.username" prefix-icon="el-icon-user" placeholder="用户名"></el-input>
+          <el-input v-model="loginForm.username" placeholder="用户名">
+            <template #prefix>
+              <el-icon><User /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="loginForm.password" prefix-icon="el-icon-lock" placeholder="密码" show-password></el-input>
+          <el-input v-model="loginForm.password" placeholder="密码" show-password>
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="submitLogin" style="width: 100%">登录</el-button>
@@ -73,9 +83,21 @@
 
 <script>
 import axios from 'axios'
+import logoImage from '../../assets/images/logo.png'
+
+import { PhoneFilled, Message, ArrowDown, User, Lock, ShoppingCartFull } from '@element-plus/icons-vue'
+import { handleImageError } from '../../utils/imageUtils'
 
 export default {
-  name: 'Header',
+  name: 'SiteHeader',
+  components: {
+    PhoneFilled,
+    Message,
+    ArrowDown,
+    User,
+    Lock,
+    ShoppingCartFull
+  },
   data() {
     return {
       loginDialogVisible: false,
@@ -91,13 +113,15 @@ export default {
           { required: true, message: '请输入密码', trigger: 'blur' }
         ]
       },
-      companyInfo: {}
+      companyInfo: {},
+      logoImage,
     }
   },
   created() {
     this.fetchCompanyInfo()
   },
   methods: {
+    handleImageError,
     async fetchCompanyInfo() {
       try {
         const response = await axios.get('/api/company')
@@ -108,9 +132,7 @@ export default {
         console.error('获取公司信息失败:', error)
       }
     },
-    handleImageError(e) {
-      e.target.src = require('../../assets/images/default-image.svg');
-    },
+
     login() {
       this.loginDialogVisible = true
     },

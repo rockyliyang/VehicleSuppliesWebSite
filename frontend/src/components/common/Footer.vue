@@ -7,10 +7,10 @@
             <h3>About Us</h3>
             <p>我们是一家专业从事汽车用品研发、生产和销售的公司，拥有多年的行业经验和专业技术。我们致力于为客户提供高品质、高性能的汽车用品。</p>
             <div class="social-links">
-              <a href="#" title="Facebook"><i class="el-icon-s-platform"></i></a>
-              <a href="#" title="Twitter"><i class="el-icon-s-promotion"></i></a>
-              <a href="#" title="Instagram"><i class="el-icon-picture-outline"></i></a>
-              <a href="#" title="LinkedIn"><i class="el-icon-s-custom"></i></a>
+              <a href="#" title="Facebook"><el-icon><Platform /></el-icon></a>
+              <a href="#" title="Twitter"><el-icon><Promotion /></el-icon></a>
+              <a href="#" title="Instagram"><el-icon><PictureIcon /></el-icon></a>
+              <a href="#" title="LinkedIn"><el-icon><UserFilled /></el-icon></a>
             </div>
           </div>
           
@@ -18,19 +18,19 @@
             <h3>联系我们</h3>
             <ul class="contact-info">
               <li>
-                <i class="el-icon-location-information"></i>
+                <el-icon><LocationInformation /></el-icon>
                 <span>123 Auto Street, Vehicle City</span>
               </li>
               <li>
-                <i class="el-icon-phone"></i>
+                <el-icon><PhoneFilled /></el-icon>
                 <span>+86 123 4567 8910</span>
               </li>
               <li>
-                <i class="el-icon-message"></i>
+                <el-icon><Message /></el-icon>
                 <span>contact@autoease.com</span>
               </li>
               <li>
-                <i class="el-icon-time"></i>
+                <el-icon><Clock /></el-icon>
                 <span>周一至周五: 9:00 - 18:00</span>
               </li>
             </ul>
@@ -39,7 +39,7 @@
           <div class="footer-section qrcode-section">
             <h3>关注我们</h3>
             <div class="qrcode">
-              <img src="../../assets/images/qrcode.png" alt="微信二维码" @error="handleImageError">
+              <img :src="qrCodeImage" alt="微信二维码" @error="handleImageError">
               <p>扫描二维码关注我们</p>
             </div>
           </div>
@@ -56,12 +56,30 @@
 </template>
 
 <script>
+import qrCodeImage from '../../assets/images/qrcode.png';
+import { handleImageError } from '../../utils/imageUtils';
+import { Platform, Promotion, UserFilled, LocationInformation, PhoneFilled, Message, Clock } from '@element-plus/icons-vue';
+import { Picture as PictureIcon } from '@element-plus/icons-vue';
+
 export default {
-  name: 'Footer',
+  name: 'SiteFooter',
+  components: {
+    Platform,
+    Promotion,
+    PictureIcon,
+    UserFilled,
+    LocationInformation,
+    PhoneFilled,
+    Message,
+    Clock
+  },
+  data() {
+    return {
+      qrCodeImage
+    };
+  },
   methods: {
-    handleImageError(e) {
-      e.target.src = require('../../assets/images/default-image.svg');
-    }
+    handleImageError
   }
 }
 </script>

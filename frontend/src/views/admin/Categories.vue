@@ -19,14 +19,14 @@
       <el-table-column prop="code" label="分类编码" width="150" />
       <el-table-column prop="sort_order" label="排序" width="100" />
       <el-table-column prop="status" label="状态" width="100">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
             {{ row.status === 1 ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
-        <template slot-scope="{row}">
+        <template #default="{row}">
           <el-button type="primary" size="mini" @click="handleEdit(row)">编辑</el-button>
           <el-button type="danger" size="mini" @click="handleDelete(row)">删除</el-button>
         </template>
@@ -34,7 +34,7 @@
     </el-table>
     
     <!-- 分类表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加分类' : '编辑分类'" :visible.sync="dialogVisible" width="500px">
+    <el-dialog :title="dialogStatus === 'create' ? '添加分类' : '编辑分类'" v-model="dialogVisible" width="500px">
       <el-form :model="categoryForm" :rules="rules" ref="categoryForm" label-width="100px">
         <el-form-item label="分类名称" prop="name">
           <el-input v-model="categoryForm.name" placeholder="请输入分类名称" />
@@ -67,10 +67,12 @@
           <el-input type="textarea" v-model="categoryForm.description" :rows="3" placeholder="请输入分类描述" />
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>

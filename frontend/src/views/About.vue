@@ -22,7 +22,7 @@
           
           <div class="intro-content">
             <div class="intro-image">
-              <img src="../assets/images/about-company.jpg" alt="公司简介">
+              <img :src="aboutCompanyImage" alt="公司简介" @error="handleImageError">
             </div>
             <div class="intro-text">
               <h3>AUTO EASE EXPERT CO., LTD</h3>
@@ -42,7 +42,7 @@
           <div class="values-grid">
             <div class="value-card">
               <div class="value-icon">
-                <i class="el-icon-s-flag"></i>
+                <el-icon><Flag /></el-icon>
               </div>
               <h3>使命</h3>
               <p>为全球消费者提供高品质、高性能的汽车用品，让汽车生活更便捷、更舒适。</p>
@@ -50,7 +50,7 @@
             
             <div class="value-card">
               <div class="value-icon">
-                <i class="el-icon-view"></i>
+                <el-icon><ViewIcon /></el-icon>
               </div>
               <h3>愿景</h3>
               <p>成为全球领先的汽车用品供应商，引领行业发展，创造卓越价值。</p>
@@ -58,7 +58,7 @@
             
             <div class="value-card">
               <div class="value-icon">
-                <i class="el-icon-medal"></i>
+                <el-icon><Medal /></el-icon>
               </div>
               <h3>价值观</h3>
               <p>诚信、创新、品质、共赢。我们坚持诚信经营，不断创新，追求卓越品质，实现与客户、员工、合作伙伴的共同发展。</p>
@@ -66,7 +66,7 @@
             
             <div class="value-card">
               <div class="value-icon">
-                <i class="el-icon-s-management"></i>
+                <el-icon><Management /></el-icon>
               </div>
               <h3>经营理念</h3>
               <p>品质至上、客户为先。我们始终将产品品质放在首位，以客户需求为导向，不断提升产品和服务质量。</p>
@@ -83,7 +83,7 @@
           <div class="advantages-list">
             <div class="advantage-item">
               <div class="advantage-icon">
-                <i class="el-icon-s-opportunity"></i>
+                <el-icon><Opportunity /></el-icon>
               </div>
               <div class="advantage-content">
                 <h3>专业研发团队</h3>
@@ -93,7 +93,7 @@
             
             <div class="advantage-item">
               <div class="advantage-icon">
-                <i class="el-icon-s-cooperation"></i>
+                <el-icon><Service /></el-icon>
               </div>
               <div class="advantage-content">
                 <h3>严格质量控制</h3>
@@ -103,7 +103,7 @@
             
             <div class="advantage-item">
               <div class="advantage-icon">
-                <i class="el-icon-s-shop"></i>
+                <el-icon><Shop /></el-icon>
               </div>
               <div class="advantage-content">
                 <h3>现代化生产基地</h3>
@@ -113,7 +113,7 @@
             
             <div class="advantage-item">
               <div class="advantage-icon">
-                <i class="el-icon-s-claim"></i>
+                <el-icon><Trophy /></el-icon>
               </div>
               <div class="advantage-content">
                 <h3>完善的售后服务</h3>
@@ -132,7 +132,7 @@
           <div class="certificates-grid">
             <div class="certificate-card">
               <div class="certificate-image">
-                <img src="../assets/images/certificate1.jpg" alt="ISO9001认证">
+                <img :src="certificate1Image" alt="ISO9001认证" @error="handleImageError">
               </div>
               <div class="certificate-info">
                 <h3>ISO9001认证</h3>
@@ -142,7 +142,7 @@
             
             <div class="certificate-card">
               <div class="certificate-image">
-                <img src="../assets/images/certificate2.jpg" alt="CE认证">
+                <img :src="certificate2Image" alt="CE认证" @error="handleImageError">
               </div>
               <div class="certificate-info">
                 <h3>CE认证</h3>
@@ -152,7 +152,7 @@
             
             <div class="certificate-card">
               <div class="certificate-image">
-                <img src="../assets/images/certificate3.jpg" alt="RoHS认证">
+                <img :src="certificate3Image" alt="RoHS认证" @error="handleImageError">
               </div>
               <div class="certificate-info">
                 <h3>RoHS认证</h3>
@@ -162,7 +162,7 @@
             
             <div class="certificate-card">
               <div class="certificate-image">
-                <img src="../assets/images/certificate4.jpg" alt="FCC认证">
+                <img :src="certificate4Image" alt="FCC认证" @error="handleImageError">
               </div>
               <div class="certificate-info">
                 <h3>FCC认证</h3>
@@ -177,17 +177,37 @@
 </template>
 
 <script>
-import axios from 'axios'
+import axios from 'axios';
+import aboutCompanyImage from '../assets/images/about-company.jpg';
+import certificate1Image from '../assets/images/certificate1.jpg';
+import certificate2Image from '../assets/images/certificate2.jpg';
+import certificate3Image from '../assets/images/certificate3.jpg';
+import certificate4Image from '../assets/images/certificate4.jpg';
+import { Flag, Medal, Management, Opportunity, Service, Shop, Trophy } from '@element-plus/icons-vue';
+import { View as ViewIcon } from '@element-plus/icons-vue';
+import { handleImageError } from '../utils/imageUtils';
 
 export default {
-  name: 'About',
+  name: 'AboutPage',
+  components: {
+    Flag,
+    ViewIcon,
+    Medal,
+    Management,
+    Opportunity,
+    Service,
+    Shop,
+    Trophy
+  },
   data() {
     return {
-      companyInfo: {}
+      companyInfo: {},
+      aboutCompanyImage,
+      certificate1Image,
+      certificate2Image,
+      certificate3Image,
+      certificate4Image
     }
-  },
-  created() {
-    this.fetchCompanyInfo()
   },
   methods: {
     async fetchCompanyInfo() {
@@ -197,8 +217,13 @@ export default {
       } catch (error) {
         console.error('获取公司信息失败:', error)
       }
-    }
+    },
+    handleImageError
+  },
+  created() {
+    this.fetchCompanyInfo()
   }
+
 }
 </script>
 

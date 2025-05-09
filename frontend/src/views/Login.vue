@@ -12,18 +12,24 @@
             <el-form-item prop="username">
               <el-input 
                 v-model="loginForm.username" 
-                prefix-icon="el-icon-user" 
                 placeholder="用户名/邮箱"
-              ></el-input>
+              >
+                <template #prefix>
+                  <el-icon><User /></el-icon>
+                </template>
+              </el-input>
             </el-form-item>
             <el-form-item prop="password">
               <el-input 
                 v-model="loginForm.password" 
-                prefix-icon="el-icon-lock" 
                 placeholder="密码" 
                 show-password
-                @keyup.enter.native="submitLogin"
-              ></el-input>
+                @keyup.enter="submitLogin"
+              >
+                <template #prefix>
+                  <el-icon><Lock /></el-icon>
+                </template>
+              </el-input>
             </el-form-item>
             <div class="remember-forgot">
               <el-checkbox v-model="rememberMe">记住我</el-checkbox>
@@ -40,18 +46,24 @@
             <el-form-item prop="phone">
               <el-input 
                 v-model="phoneForm.phone" 
-                prefix-icon="el-icon-mobile-phone" 
                 placeholder="手机号码"
-              ></el-input>
+              >
+                <template #prefix>
+                  <el-icon><PhoneFilled /></el-icon>
+                </template>
+              </el-input>
             </el-form-item>
             <el-form-item prop="code">
               <div class="code-input">
                 <el-input 
                   v-model="phoneForm.code" 
-                  prefix-icon="el-icon-message" 
                   placeholder="验证码"
-                  @keyup.enter.native="submitPhoneLogin"
-                ></el-input>
+                  @keyup.enter="submitPhoneLogin"
+                >
+                  <template #prefix>
+                    <el-icon><Message /></el-icon>
+                  </template>
+                </el-input>
                 <el-button 
                   type="primary" 
                   :disabled="codeSending || cooldown > 0" 
@@ -84,9 +96,10 @@
 
 <script>
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
 export default {
-  name: 'Login',
+  name: 'UserLogin',
   data() {
     return {
       activeTab: 'account',
@@ -144,7 +157,7 @@ export default {
                 localStorage.setItem('isAdmin', 'true')
               }
               
-              this.$message.success('登录成功')
+              ElMessage.success('登录成功')
               
               // 根据用户角色跳转到不同页面
               if (response.data.data.user.is_admin) {
@@ -158,11 +171,11 @@ export default {
                 }
               }
             } else {
-              this.$message.error(response.data.message || '登录失败')
+              ElMessage.error(response.data.message || '登录失败')
             }
           } catch (error) {
             console.error('登录失败:', error)
-            this.$message.error('登录失败，请稍后重试')
+            ElMessage.error('登录失败，请稍后重试')
           } finally {
             this.loading = false
           }
@@ -176,7 +189,7 @@ export default {
           this.loading = true
           setTimeout(() => {
             this.loading = false
-            this.$message.success('登录成功')
+            ElMessage.success('登录成功')
             this.$router.push('/')
           }, 1500)
         }
@@ -189,7 +202,7 @@ export default {
           this.codeSending = true
           setTimeout(() => {
             this.codeSending = false
-            this.$message.success('验证码已发送')
+            ElMessage.success('验证码已发送')
             this.startCooldown()
           }, 1000)
         }
@@ -205,7 +218,7 @@ export default {
       }, 1000)
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.timer) {
       clearInterval(this.timer)
     }

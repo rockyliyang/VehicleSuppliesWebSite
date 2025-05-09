@@ -108,7 +108,7 @@
                 <div v-for="item in relatedProducts" :key="item.id" class="product-card">
                   <router-link :to="`/product/${item.id}`">
                     <div class="product-image">
-                      <img :src="item.thumbnail_url" :alt="item.name">
+                      <img :src="item.thumbnail_url" :alt="item.name" @error="handleImageError">
                     </div>
                     <div class="product-info">
                       <h3>{{ item.name }}</h3>
@@ -149,6 +149,7 @@
 
 <script>
 import axios from 'axios'
+import { handleImageError } from '../utils/imageUtils';
 
 export default {
   name: 'ProductDetail',
@@ -197,9 +198,7 @@ export default {
     this.fetchProduct()
   },
   methods: {
-    handleImageError(e) {
-      e.target.src = require('../assets/images/default-image.svg');
-    },
+    handleImageError,
     async fetchCategories() {
       try {
         const response = await axios.get('/api/categories')

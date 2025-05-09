@@ -19,7 +19,7 @@
             <span>控制面板</span>
           </el-menu-item>
           <el-submenu index="products">
-            <template slot="title">
+            <template #title>
               <i class="el-icon-s-goods"></i>
               <span>产品管理</span>
             </template>
@@ -62,11 +62,13 @@
                 <span>管理员</span>
                 <i class="el-icon-arrow-down"></i>
               </span>
-              <el-dropdown-menu slot="dropdown">
+              <template #dropdown>
+                <el-dropdown-menu>
                 <el-dropdown-item>个人信息</el-dropdown-item>
                 <el-dropdown-item>修改密码</el-dropdown-item>
-                <el-dropdown-item divided @click.native="logout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
+                <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
           </div>
         </el-header>
@@ -76,11 +78,7 @@
           <router-view></router-view>
         </el-main>
         
-        <el-footer>
-          <div class="footer-copyright">
-            © 2023 AUTO EASE EXPERT CO., LTD. All Rights Reserved
-          </div>
-        </el-footer>
+        
       </el-container>
     </el-container>
   </div>
@@ -88,7 +86,7 @@
 
 <script>
 export default {
-  name: 'Admin',
+  name: 'AdminPage',
   data() {
     return {
       activeMenu: '/admin/products',
@@ -217,13 +215,7 @@ export default {
   overflow-y: auto;
 }
 
-.el-footer {
-  background-color: #fff;
-  color: #666;
-  text-align: center;
-  line-height: 60px;
-  font-size: 14px;
-}
+
 
 .admin-content {
   background-color: #fff;
