@@ -16,9 +16,19 @@ module.exports = defineConfig({
   transpileDependencies: true,
   configureWebpack: {
     devtool: 'source-map',
-    output: {
-      devtoolModuleFilenameTemplate: 'webpack://vehicle-supplies-website/[resource-path]?[hash]'
-    }
+    // output: {
+    //   devtoolModuleFilenameTemplate: info => {
+    //     // 修复源映射路径重复问题
+    //     const resourcePath = info.resourcePath.replace(/^src\//, '');
+        
+    //     // 特殊处理.vue文件，确保它们的源映射路径正确
+    //     if (info.resourcePath.endsWith('.vue')) {
+    //       return `webpack:///${info.resourcePath}`;
+    //     }
+        
+    //     return `webpack:///${resourcePath}`;
+    //   }
+    // }
   },
   chainWebpack: config => {
     config.devtool('source-map')
@@ -43,15 +53,20 @@ module.exports = defineConfig({
         }
       })
 
-    // 添加对 Vue 单文件组件的特殊处理
+
+
+    // 确保.vue文件的源映射正确生成
     config.module
       .rule('vue')
       .use('vue-loader')
       .tap(options => ({
         ...options,
         hotReload: true,
-        sourceMap: true
+        sourceMap: true,
+        exposeFilename: true
       }))
+
+
   },
   css: {
     sourceMap: true

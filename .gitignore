@@ -46,3 +46,5 @@ __pycache__/
 # 其他
 .tmp/
 .temp/ 
+
+package-lock.json
