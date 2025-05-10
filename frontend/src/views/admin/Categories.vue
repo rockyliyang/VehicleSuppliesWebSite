@@ -4,16 +4,9 @@
       <h2>分类管理</h2>
       <el-button type="primary" @click="handleAdd">添加分类</el-button>
     </div>
-    
+
     <!-- 分类表格 -->
-    <el-table
-      v-loading="loading"
-      :data="categoryList"
-      border
-      style="width: 100%"
-      row-key="id"
-      default-expand-all
-    >
+    <el-table v-loading="loading" :data="categoryList" border style="width: 100%" row-key="id" default-expand-all>
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="name" label="分类名称" min-width="200" />
       <el-table-column prop="code" label="分类编码" width="150" />
@@ -27,12 +20,12 @@
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{row}">
-          <el-button type="primary" size="mini" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" size="mini" @click="handleDelete(row)">删除</el-button>
+          <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+          <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
-    
+
     <!-- 分类表单对话框 -->
     <el-dialog :title="dialogStatus === 'create' ? '添加分类' : '编辑分类'" v-model="dialogVisible" width="500px">
       <el-form :model="categoryForm" :rules="rules" ref="categoryForm" label-width="100px">
@@ -45,13 +38,8 @@
         <el-form-item label="父级分类" prop="parent_id">
           <el-select v-model="categoryForm.parent_id" placeholder="请选择父级分类" style="width: 100%" clearable>
             <el-option label="无父级分类" :value="0" />
-            <el-option
-              v-for="item in parentOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-              :disabled="item.id === categoryForm.id"
-            />
+            <el-option v-for="item in parentOptions" :key="item.id" :label="item.name" :value="item.id"
+              :disabled="item.id === categoryForm.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="排序" prop="sort_order">

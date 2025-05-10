@@ -125,12 +125,10 @@ export default {
     }
   },
   methods: {
-
     submitLogin() {
       this.$refs.loginForm.validate(async valid => {
         if (valid) {
           try {
-            debugger;
             this.loading = true
             const response = await axios.post('/api/users/login', {
               username: this.loginForm.username,

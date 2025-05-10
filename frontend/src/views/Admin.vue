@@ -6,50 +6,58 @@
           <img src="../assets/images/logo.png" alt="AUTO EASE EXPERT CO., LTD">
           <h2>管理后台</h2>
         </div>
-        <el-menu
-          :default-active="activeMenu"
-          class="admin-menu"
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409EFF"
-          router
-        >
+        <el-menu :default-active="activeMenu" class="admin-menu" background-color="#304156" text-color="#bfcbd9"
+          active-text-color="#409EFF" router>
           <el-menu-item index="/admin/dashboard">
-            <i class="el-icon-s-home"></i>
+            <el-icon>
+              <HomeFilled />
+            </el-icon>
             <span>控制面板</span>
           </el-menu-item>
-          <el-submenu index="products">
+          <el-sub-menu index="products">
             <template #title>
-              <i class="el-icon-s-goods"></i>
+              <el-icon>
+                <Goods />
+              </el-icon>
               <span>产品管理</span>
             </template>
             <el-menu-item index="/admin/products">产品列表</el-menu-item>
             <el-menu-item index="/admin/products/add">添加产品</el-menu-item>
             <el-menu-item index="/admin/categories">分类管理</el-menu-item>
-          </el-submenu>
+          </el-sub-menu>
           <el-menu-item index="/admin/banners">
-            <i class="el-icon-picture-outline"></i>
+            <el-icon>
+              <PictureIcon />
+            </el-icon>
             <span>Banner管理</span>
           </el-menu-item>
           <el-menu-item index="/admin/company">
-            <i class="el-icon-office-building"></i>
+            <el-icon>
+              <OfficeBuilding />
+            </el-icon>
             <span>公司信息</span>
           </el-menu-item>
           <el-menu-item index="/admin/users">
-            <i class="el-icon-user"></i>
+            <el-icon>
+              <User />
+            </el-icon>
             <span>用户管理</span>
           </el-menu-item>
           <el-menu-item index="/admin/settings">
-            <i class="el-icon-setting"></i>
+            <el-icon>
+              <Setting />
+            </el-icon>
             <span>系统设置</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
-      
+
       <el-container>
         <el-header>
           <div class="header-left">
-            <i class="el-icon-s-fold toggle-sidebar"></i>
+            <el-icon class="toggle-sidebar">
+              <Fold />
+            </el-icon>
             <el-breadcrumb separator="/">
               <el-breadcrumb-item :to="{ path: '/admin' }">首页</el-breadcrumb-item>
               <el-breadcrumb-item>{{ currentPage }}</el-breadcrumb-item>
@@ -60,33 +68,47 @@
               <span class="admin-user">
                 <img src="../assets/images/avatar.jpg" class="user-avatar">
                 <span>管理员</span>
-                <i class="el-icon-arrow-down"></i>
+                <el-icon>
+                  <ArrowDown />
+                </el-icon>
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
-                <el-dropdown-item>个人信息</el-dropdown-item>
-                <el-dropdown-item>修改密码</el-dropdown-item>
-                <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+                  <el-dropdown-item>个人信息</el-dropdown-item>
+                  <el-dropdown-item>修改密码</el-dropdown-item>
+                  <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
           </div>
         </el-header>
-        
+
         <el-main>
           <!-- 子路由内容区域 -->
           <router-view></router-view>
         </el-main>
-        
-        
+
+
       </el-container>
     </el-container>
   </div>
 </template>
 
 <script>
+import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown } from '@element-plus/icons-vue'
+
 export default {
   name: 'AdminPage',
+  components: {
+    HomeFilled,
+    Goods,
+    PictureIcon,
+    OfficeBuilding,
+    User,
+    Setting,
+    Fold,
+    ArrowDown
+  },
   data() {
     return {
       activeMenu: '/admin/products',
@@ -179,7 +201,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  box-shadow: 0 1px 4px rgba(0, 21, 41, .08);
   position: relative;
   z-index: 10;
 }
@@ -221,7 +243,7 @@ export default {
   background-color: #fff;
   padding: 20px;
   border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .page-header {
@@ -241,6 +263,4 @@ export default {
   display: flex;
   gap: 10px;
 }
-
-
 </style>

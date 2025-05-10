@@ -4,14 +4,9 @@
       <h2>Banner管理</h2>
       <el-button type="primary" @click="handleAdd">添加Banner</el-button>
     </div>
-    
+
     <!-- Banner列表 -->
-    <el-table
-      v-loading="loading"
-      :data="bannerList"
-      border
-      style="width: 100%"
-    >
+    <el-table v-loading="loading" :data="bannerList" border style="width: 100%">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column label="Banner图片" width="200">
         <template #default="{row}">
@@ -31,12 +26,12 @@
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{row}">
-          <el-button type="primary" size="mini" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" size="mini" @click="handleDelete(row)">删除</el-button>
+          <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+          <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
-    
+
     <!-- Banner表单对话框 -->
     <el-dialog :title="dialogStatus === 'create' ? '添加Banner' : '编辑Banner'" v-model="dialogVisible" width="600px">
       <el-form :model="bannerForm" :rules="rules" ref="bannerForm" label-width="100px">
@@ -44,14 +39,12 @@
           <el-input v-model="bannerForm.title" placeholder="请输入标题" />
         </el-form-item>
         <el-form-item label="Banner图片" prop="image">
-          <el-upload
-            class="banner-uploader"
-            action="/api/upload"
-            :show-file-list="false"
-            :on-success="handleImageSuccess"
-            :before-upload="beforeImageUpload">
+          <el-upload class="banner-uploader" action="/api/upload" :show-file-list="false"
+            :on-success="handleImageSuccess" :before-upload="beforeImageUpload">
             <img v-if="bannerForm.image" :src="bannerForm.image" class="banner-preview">
-            <i v-else class="el-icon-plus banner-uploader-icon"></i>
+            <el-icon v-else class="banner-uploader-icon">
+              <Plus />
+            </el-icon>
           </el-upload>
           <div class="image-tip">建议尺寸: 1920px × 500px</div>
         </el-form-item>
@@ -83,8 +76,12 @@
 
 <script>
 import axios from 'axios'
+import { Plus } from '@element-plus/icons-vue'
 
 export default {
+  components: {
+    Plus
+  },
   name: 'AdminBanners',
   data() {
     return {

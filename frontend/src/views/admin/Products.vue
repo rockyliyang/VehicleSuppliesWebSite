@@ -4,58 +4,34 @@
       <h2>产品管理</h2>
       <el-button type="primary" @click="handleAdd">添加产品</el-button>
     </div>
-    
+
     <!-- 搜索和筛选 -->
     <div class="filter-container">
-      <el-input
-        v-model="filters.keyword"
-        placeholder="产品名称/编号"
-        style="width: 200px;"
-        class="filter-item"
-        @keyup.enter="handleFilter"
-      />
-      <el-select
-        v-model="filters.category"
-        placeholder="产品分类"
-        clearable
-        style="width: 200px"
-        class="filter-item"
-      >
-        <el-option
-          v-for="item in categoryOptions"
-          :key="item.id"
-          :label="item.name"
-          :value="item.id"
-        />
+      <el-input v-model="filters.keyword" placeholder="产品名称/编号" style="width: 200px;" class="filter-item"
+        @keyup.enter="handleFilter" />
+      <el-select v-model="filters.category" placeholder="产品分类" clearable style="width: 200px" class="filter-item">
+        <el-option v-for="item in categoryOptions" :key="item.id" :label="item.name" :value="item.id" />
       </el-select>
-      <el-select
-        v-model="filters.status"
-        placeholder="状态"
-        clearable
-        style="width: 120px"
-        class="filter-item"
-      >
+      <el-select v-model="filters.status" placeholder="状态" clearable style="width: 120px" class="filter-item">
         <el-option label="上架" value="1" />
         <el-option label="下架" value="0" />
       </el-select>
       <el-button type="primary" @click="handleFilter">
-        <el-icon><Search /></el-icon>
+        <el-icon>
+          <Search />
+        </el-icon>
         搜索
       </el-button>
       <el-button @click="resetFilter">
-        <el-icon><Refresh /></el-icon>
+        <el-icon>
+          <Refresh />
+        </el-icon>
         重置
       </el-button>
     </div>
-    
+
     <!-- 产品表格 -->
-    <el-table
-      v-loading="loading"
-      :data="productList"
-      border
-      style="width: 100%"
-      @sort-change="handleSortChange"
-    >
+    <el-table v-loading="loading" :data="productList" border style="width: 100%" @sort-change="handleSortChange">
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
       <el-table-column label="产品图片" width="120">
         <template #default="{row}">
@@ -91,27 +67,16 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <!-- 分页 -->
     <div class="pagination-container">
-      <el-pagination
-        background
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :current-page="pagination.current"
-        :page-sizes="[10, 20, 30, 50]"
-        :page-size="pagination.size"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="pagination.total"
-      />
+      <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange"
+        :current-page="pagination.current" :page-sizes="[10, 20, 30, 50]" :page-size="pagination.size"
+        layout="total, sizes, prev, pager, next, jumper" :total="pagination.total" />
     </div>
-    
+
     <!-- 产品表单对话框 -->
-    <el-dialog 
-      :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" 
-      v-model="dialogVisible" 
-      width="700px"
-    >
+    <el-dialog :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" v-model="dialogVisible" width="700px">
       <el-form :model="productForm" :rules="rules" ref="productFormRef" label-width="100px">
         <el-form-item label="产品名称" prop="name">
           <el-input v-model="productForm.name" placeholder="请输入产品名称" />
@@ -121,12 +86,7 @@
         </el-form-item>
         <el-form-item label="产品分类" prop="category_id">
           <el-select v-model="productForm.category_id" placeholder="请选择产品分类" style="width: 100%">
-            <el-option
-              v-for="item in categoryOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
+            <el-option v-for="item in categoryOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="产品价格" prop="price">
@@ -138,14 +98,12 @@
           <el-input-number v-model="productForm.stock" :min="0" :max="999999" />
         </el-form-item>
         <el-form-item label="产品图片" prop="image">
-          <el-upload
-            class="avatar-uploader"
-            action="/api/upload"
-            :show-file-list="false"
-            :on-success="handleImageSuccess"
-            :before-upload="beforeImageUpload">
+          <el-upload class="avatar-uploader" action="/api/upload" :show-file-list="false"
+            :on-success="handleImageSuccess" :before-upload="beforeImageUpload">
             <img v-if="productForm.image" :src="productForm.image" class="avatar" @error="handleImageError">
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+            <el-icon v-else class="avatar-uploader-icon">
+              <Plus />
+            </el-icon>
           </el-upload>
         </el-form-item>
         <el-form-item label="产品描述" prop="description">
@@ -163,8 +121,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -173,10 +131,15 @@
 
 <script>
 import axios from 'axios'
-import { Plus } from '@element-plus/icons-vue' // eslint-disable-line no-unused-vars
+import { Plus, Search, Refresh } from '@element-plus/icons-vue'
 
 export default {
   name: 'AdminProducts',
+  components: {
+    Plus,
+    Search,
+    Refresh
+  },
   data() {
     return {
       loading: false,

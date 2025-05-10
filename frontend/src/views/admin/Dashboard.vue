@@ -3,13 +3,15 @@
     <div class="page-header">
       <h2>控制面板</h2>
     </div>
-    
+
     <!-- 数据概览卡片 -->
     <el-row :gutter="20" class="data-overview">
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="data-card">
           <div class="data-icon">
-            <el-icon><Goods /></el-icon>
+            <el-icon>
+              <Goods />
+            </el-icon>
           </div>
           <div class="data-info">
             <div class="data-title">产品总数</div>
@@ -20,7 +22,9 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="data-card">
           <div class="data-icon" style="background-color: #67C23A;">
-            <el-icon><User /></el-icon>
+            <el-icon>
+              <User />
+            </el-icon>
           </div>
           <div class="data-info">
             <div class="data-title">用户总数</div>
@@ -31,7 +35,9 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="data-card">
           <div class="data-icon" style="background-color: #E6A23C;">
-            <el-icon><List /></el-icon>
+            <el-icon>
+              <List />
+            </el-icon>
           </div>
           <div class="data-info">
             <div class="data-title">订单总数</div>
@@ -42,7 +48,9 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="data-card">
           <div class="data-icon" style="background-color: #F56C6C;">
-            <el-icon><Message /></el-icon>
+            <el-icon>
+              <Message />
+            </el-icon>
           </div>
           <div class="data-info">
             <div class="data-title">消息总数</div>
@@ -51,7 +59,7 @@
         </el-card>
       </el-col>
     </el-row>
-    
+
     <!-- 快捷入口 -->
     <el-row :gutter="20" class="quick-access">
       <el-col :span="24">
@@ -62,29 +70,37 @@
           <div class="quick-links">
             <router-link to="/admin/products/add">
               <el-button type="primary">
-                <el-icon><Plus /></el-icon>添加产品
+                <el-icon>
+                  <Plus />
+                </el-icon>添加产品
               </el-button>
             </router-link>
             <router-link to="/admin/categories">
               <el-button type="success">
-                <el-icon><FolderAdd /></el-icon>管理分类
+                <el-icon>
+                  <FolderAdd />
+                </el-icon>管理分类
               </el-button>
             </router-link>
             <router-link to="/admin/banners">
               <el-button type="warning">
-                <el-icon><PictureRounded /></el-icon>管理Banner
+                <el-icon>
+                  <PictureRounded />
+                </el-icon>管理Banner
               </el-button>
             </router-link>
             <router-link to="/admin/users">
               <el-button type="info">
-                <el-icon><User /></el-icon>用户管理
+                <el-icon>
+                  <User />
+                </el-icon>用户管理
               </el-button>
             </router-link>
           </div>
         </el-card>
       </el-col>
     </el-row>
-    
+
     <!-- 最近产品和订单 -->
     <el-row :gutter="20" class="recent-data">
       <el-col :xs="24" :lg="12">
@@ -97,11 +113,7 @@
             <el-table-column prop="id" label="ID" width="50" />
             <el-table-column label="产品图片" width="60">
               <template #default="{row}">
-                <el-image 
-                  style="width: 40px; height: 40px" 
-                  :src="row.image" 
-                  fit="cover"
-                  :preview-src-list="[row.image]"
+                <el-image style="width: 40px; height: 40px" :src="row.image" fit="cover" :preview-src-list="[row.image]"
                   v-if="row.image">
                 </el-image>
                 <span v-else>无图</span>
@@ -132,7 +144,7 @@
             </el-table-column>
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{row}">
-                <el-tag :type="getOrderStatusType(row.status)" size="mini">
+                <el-tag :type="getOrderStatusType(row.status)" size="small">
                   {{ getOrderStatusText(row.status) }}
                 </el-tag>
               </template>
@@ -375,12 +387,12 @@ export default {
   .data-card {
     margin-bottom: 15px;
   }
-  
+
   .quick-links {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .quick-links a {
     margin-bottom: 10px;
   }
