@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "vue-cli-service serve --source-map",
+    "debug": "vue-cli-service serve --source-map --mode development",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
@@ -30,6 +31,7 @@
     "eslint-plugin-vue": "^9.22.0",
     "sass": "^1.71.1",
     "sass-loader": "^14.1.1",
+    "source-map-loader": "^5.0.0",
     "vue-loader": "^17.3.1"
   }
 }

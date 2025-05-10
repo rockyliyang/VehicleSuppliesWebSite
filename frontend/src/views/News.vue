@@ -29,7 +29,7 @@
                       <span><i class="el-icon-view"></i> {{ item.views }}</span>
                     </div>
                     <p class="news-summary">{{ item.summary }}</p>
-                    <el-button type="text" class="read-more">阅读更多 <i class="el-icon-arrow-right"></i></el-button>
+                    <el-button link class="read-more">阅读更多 <i class="el-icon-arrow-right"></i></el-button>
                   </div>
                 </div>
               </div>
@@ -47,7 +47,7 @@
                       <span><i class="el-icon-view"></i> {{ item.views }}</span>
                     </div>
                     <p class="news-summary">{{ item.summary }}</p>
-                    <el-button type="text" class="read-more">阅读更多 <i class="el-icon-arrow-right"></i></el-button>
+                    <el-button link class="read-more">阅读更多 <i class="el-icon-arrow-right"></i></el-button>
                   </div>
                 </div>
               </div>

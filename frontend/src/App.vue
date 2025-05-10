@@ -1,8 +1,8 @@
 <template>
   <div id="app">
-    <SiteHeader />
+    <SiteHeader v-if="!isAdminRoute && !isAuthRoute" />
     <router-view/>
-    <SiteFooter />
+    <SiteFooter v-if="!isAdminRoute && !isAuthRoute" />
   </div>
 </template>
 
@@ -15,6 +15,14 @@ export default {
   components: {
     SiteHeader,
     SiteFooter
+  },
+  computed: {
+    isAdminRoute() {
+      return this.$route.path.startsWith('/admin')
+    },
+    isAuthRoute() {
+      return ['/login', '/register'].includes(this.$route.path)
+    }
   }
 }
 </script>

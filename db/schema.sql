@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   email VARCHAR(100) NOT NULL,
   phone VARCHAR(20),
+  user_role ENUM('admin', 'user') NOT NULL DEFAULT 'user',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
@@ -170,3 +171,7 @@ INSERT INTO site_settings (guid, setting_key, setting_value, setting_group) VALU
 (UUID_TO_BIN(UUID()), 'site_logo', '/static/images/logo.png', 'general'),
 (UUID_TO_BIN(UUID()), 'site_title', 'AUTO EASE EXPERT CO., LTD', 'general'),
 (UUID_TO_BIN(UUID()), 'copyright_text', '© 2023 AUTO EASE EXPERT CO., LTD. All Rights Reserved', 'general');
+
+-- 创建默认管理员用户 (密码: admin123)
+INSERT INTO users (guid, username, password, email, user_role) 
+VALUES (UUID_TO_BIN(UUID()), 'admin', '$2b$10$YourHashedPasswordHere', 'admin@autoease.com', 'admin');

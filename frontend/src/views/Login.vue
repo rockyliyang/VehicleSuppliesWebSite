@@ -5,29 +5,25 @@
         <img src="../assets/images/logo.png" alt="AUTO EASE EXPERT CO., LTD" class="logo">
         <h2>用户登录</h2>
       </div>
-      
+
       <el-tabs v-model="activeTab" class="login-tabs">
         <el-tab-pane label="账号登录" name="account">
           <el-form :model="loginForm" :rules="loginRules" ref="loginForm" class="login-form">
             <el-form-item prop="username">
-              <el-input 
-                v-model="loginForm.username" 
-                placeholder="用户名/邮箱"
-              >
+              <el-input v-model="loginForm.username" placeholder="用户名/邮箱">
                 <template #prefix>
-                  <el-icon><User /></el-icon>
+                  <el-icon>
+                    <User />
+                  </el-icon>
                 </template>
               </el-input>
             </el-form-item>
             <el-form-item prop="password">
-              <el-input 
-                v-model="loginForm.password" 
-                placeholder="密码" 
-                show-password
-                @keyup.enter="submitLogin"
-              >
+              <el-input v-model="loginForm.password" placeholder="密码" show-password @keyup.enter="submitLogin">
                 <template #prefix>
-                  <el-icon><Lock /></el-icon>
+                  <el-icon>
+                    <Lock />
+                  </el-icon>
                 </template>
               </el-input>
             </el-form-item>
@@ -40,36 +36,28 @@
             </el-form-item>
           </el-form>
         </el-tab-pane>
-        
+
         <el-tab-pane label="手机登录" name="phone">
           <el-form :model="phoneForm" :rules="phoneRules" ref="phoneForm" class="login-form">
             <el-form-item prop="phone">
-              <el-input 
-                v-model="phoneForm.phone" 
-                placeholder="手机号码"
-              >
+              <el-input v-model="phoneForm.phone" placeholder="手机号码">
                 <template #prefix>
-                  <el-icon><PhoneFilled /></el-icon>
+                  <el-icon>
+                    <PhoneFilled />
+                  </el-icon>
                 </template>
               </el-input>
             </el-form-item>
             <el-form-item prop="code">
               <div class="code-input">
-                <el-input 
-                  v-model="phoneForm.code" 
-                  placeholder="验证码"
-                  @keyup.enter="submitPhoneLogin"
-                >
+                <el-input v-model="phoneForm.code" placeholder="验证码" @keyup.enter="submitPhoneLogin">
                   <template #prefix>
-                    <el-icon><Message /></el-icon>
+                    <el-icon>
+                      <Message />
+                    </el-icon>
                   </template>
                 </el-input>
-                <el-button 
-                  type="primary" 
-                  :disabled="codeSending || cooldown > 0" 
-                  @click="sendCode"
-                  class="code-button"
-                >
+                <el-button type="primary" :disabled="codeSending || cooldown > 0" @click="sendCode" class="code-button">
                   {{ cooldown > 0 ? `${cooldown}秒后重新获取` : '获取验证码' }}
                 </el-button>
               </div>
@@ -80,7 +68,7 @@
           </el-form>
         </el-tab-pane>
       </el-tabs>
-      
+
       <div class="login-footer">
         <p>还没有账号? <router-link to="/register">立即注册</router-link></p>
         <p>或者使用以下方式登录</p>
@@ -137,10 +125,12 @@ export default {
     }
   },
   methods: {
+
     submitLogin() {
       this.$refs.loginForm.validate(async valid => {
         if (valid) {
           try {
+            debugger;
             this.loading = true
             const response = await axios.post('/api/users/login', {
               username: this.loginForm.username,
@@ -242,7 +232,7 @@ export default {
   width: 400px;
   background-color: #fff;
   border-radius: 4px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   padding: 30px;
 }
 
@@ -333,7 +323,7 @@ export default {
     width: 90%;
     padding: 20px;
   }
-  
+
   .code-button {
     width: 100px;
     font-size: 12px;

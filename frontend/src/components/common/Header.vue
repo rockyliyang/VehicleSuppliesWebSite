@@ -42,8 +42,8 @@
         </nav>
         
         <div class="user-actions">
-          <el-button type="text" @click="login"><el-icon><User /></el-icon>登录</el-button>
-          <el-button type="text"><el-icon><ShoppingCartFull /></el-icon>询价</el-button>
+          <el-button link @click="login"><el-icon><User /></el-icon>登录</el-button>
+          <el-button link><el-icon><ShoppingCartFull /></el-icon>询价</el-button>
         </div>
       </div>
     </div>
