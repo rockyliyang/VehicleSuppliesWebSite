@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <SiteHeader v-if="!isAdminRoute && !isAuthRoute" />
-    <router-view/>
+    <router-view />
     <SiteFooter v-if="!isAdminRoute && !isAuthRoute" />
   </div>
 </template>

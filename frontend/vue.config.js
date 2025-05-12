@@ -1,4 +1,5 @@
 const { defineConfig } = require('@vue/cli-service')
+const path = require('path')
 
 module.exports = defineConfig({
   devServer: {
@@ -16,19 +17,20 @@ module.exports = defineConfig({
   transpileDependencies: true,
   configureWebpack: {
     devtool: 'source-map',
-    // output: {
-    //   devtoolModuleFilenameTemplate: info => {
-    //     // 修复源映射路径重复问题
-    //     const resourcePath = info.resourcePath.replace(/^src\//, '');
-        
-    //     // 特殊处理.vue文件，确保它们的源映射路径正确
-    //     if (info.resourcePath.endsWith('.vue')) {
-    //       return `webpack:///${info.resourcePath}`;
-    //     }
-        
-    //     return `webpack:///${resourcePath}`;
-    //   }
-    // }
+     output: {
+       devtoolModuleFilenameTemplate: info => {
+          const resourcePath = path.normalize(info.resourcePath).replace(/\\/g, '/')
+          
+          // 特殊处理.vue文件，使用相对路径而非hash值确保断点正确工作
+          if (info.resourcePath.endsWith('.vue')) {
+            // 使用相对路径确保每个.vue文件都有唯一的标识
+            const relativePath = path.relative(process.cwd(), info.absoluteResourcePath).replace(/\\/g, '/')
+            return `webpack:///${info.moduleId}/${relativePath}`
+          }
+         
+          return `webpack:///${resourcePath}`
+        }
+     }
   },
   chainWebpack: config => {
     config.devtool('source-map')
