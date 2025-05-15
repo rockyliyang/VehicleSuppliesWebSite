@@ -2,51 +2,59 @@
   <footer class="site-footer">
     <div class="footer-main">
       <div class="container">
-        <div class="footer-info">
-          <div class="footer-section about-section">
-            <h3>About Us</h3>
-            <p>我们是一家专业从事汽车用品研发、生产和销售的公司，拥有多年的行业经验和专业技术。我们致力于为客户提供高品质、高性能的汽车用品。</p>
-            <div class="social-links">
-              <a href="#" title="Facebook"><el-icon><Platform /></el-icon></a>
-              <a href="#" title="Twitter"><el-icon><Promotion /></el-icon></a>
-              <a href="#" title="Instagram"><el-icon><PictureIcon /></el-icon></a>
-              <a href="#" title="LinkedIn"><el-icon><UserFilled /></el-icon></a>
-            </div>
+        <div class="footer-grid">
+          <!-- 公司信息 -->
+          <div class="footer-section company-section">
+            <h3>公司信息</h3>
+            <ul class="company-info">
+              <li><el-icon><LocationInformation /></el-icon>{{ companyInfo.address || '---' }}</li>
+              <li><el-icon><PhoneFilled /></el-icon>{{ companyInfo.phone || '---' }}</li>
+              <li><el-icon><Message /></el-icon>{{ companyInfo.email || '---' }}</li>
+            </ul>
           </div>
-          
-          <div class="footer-section contact-section">
-            <h3>联系我们</h3>
-            <ul class="contact-info">
-              <li>
-                <el-icon><LocationInformation /></el-icon>
-                <span>123 Auto Street, Vehicle City</span>
-              </li>
-              <li>
-                <el-icon><PhoneFilled /></el-icon>
-                <span>+86 123 4567 8910</span>
-              </li>
-              <li>
-                <el-icon><Message /></el-icon>
-                <span>contact@autoease.com</span>
-              </li>
-              <li>
-                <el-icon><Clock /></el-icon>
-                <span>周一至周五: 9:00 - 18:00</span>
+
+          <!-- 网站导航栏 -->
+          <div class="footer-section nav-section">
+            <h3>网站导航</h3>
+            <ul class="footer-nav">
+              <li><router-link to="/">首页</router-link></li>
+              <li><router-link to="/products">产品列表</router-link></li>
+              <li><router-link to="/about">关于</router-link></li>
+              <li><router-link to="/news">新闻</router-link></li>
+              <li><router-link to="/contact">联系</router-link></li>
+              <li><router-link to="/login">用户模块</router-link></li>
+            </ul>
+          </div>
+
+          <!-- 产品分类 -->
+          <div class="footer-section category-section">
+            <h3>产品分类</h3>
+            <ul class="category-list">
+              <li v-for="cat in categories" :key="cat.id">
+                <router-link :to="`/products?category=${cat.id}`">
+                  <span class="cat-name">{{ cat.name }}</span>
+                  <span class="cat-desc">{{ cat.description }}</span>
+                </router-link>
               </li>
             </ul>
           </div>
-          
-          <div class="footer-section qrcode-section">
-            <h3>关注我们</h3>
-            <div class="qrcode">
-              <img :src="qrCodeImage" alt="微信二维码" @error="handleImageError">
-              <p>扫描二维码关注我们</p>
+
+          <!-- 公司社交链接 -->
+          <div class="footer-section social-section">
+            <h3>社交链接</h3>
+            <div class="social-links">
+              <a v-if="companyInfo.wechat_qrcode" :href="companyInfo.wechat_qrcode" target="_blank" title="微信">
+                <img :src="companyInfo.wechat_qrcode" alt="微信二维码" class="social-qrcode" />
+              </a>
+              <a v-if="companyInfo.weibo" :href="companyInfo.weibo" target="_blank" title="微博"><i class="iconfont icon-weibo"></i></a>
+              <a v-if="companyInfo.qq" :href="companyInfo.qq" target="_blank" title="QQ"><i class="iconfont icon-qq"></i></a>
+              <a v-if="companyInfo.douyin" :href="companyInfo.douyin" target="_blank" title="抖音"><i class="iconfont icon-douyin"></i></a>
+              <a v-if="companyInfo.xiaohongshu" :href="companyInfo.xiaohongshu" target="_blank" title="小红书"><i class="iconfont icon-xiaohongshu"></i></a>
             </div>
           </div>
         </div>
       </div>
     </div>
-    
     <div class="footer-bottom">
       <div class="container">
         <p class="copyright">© 2023 AUTO EASE EXPERT CO., LTD. All Rights Reserved</p>
@@ -56,30 +64,35 @@
 </template>
 
 <script>
-import qrCodeImage from '../../assets/images/qrcode.png';
-import { handleImageError } from '../../utils/imageUtils';
-import { Platform, Promotion, UserFilled, LocationInformation, PhoneFilled, Message, Clock } from '@element-plus/icons-vue';
-import { Picture as PictureIcon } from '@element-plus/icons-vue';
-
+import { LocationInformation, PhoneFilled, Message } from '@element-plus/icons-vue';
 export default {
   name: 'SiteFooter',
-  components: {
-    Platform,
-    Promotion,
-    PictureIcon,
-    UserFilled,
-    LocationInformation,
-    PhoneFilled,
-    Message,
-    Clock
-  },
+  components: { LocationInformation, PhoneFilled, Message },
   data() {
     return {
-      qrCodeImage
+      companyInfo: {},
+      categories: []
     };
   },
-  methods: {
-    handleImageError
+  async created() {
+    // 获取公司信息
+    try {
+      const res = await this.$api.get('company');
+      if (res.success && res.data) {
+        this.companyInfo = res.data;
+      }
+    } catch (e) {
+      // ignore error
+    }
+    // 获取产品分类
+    try {
+      const res = await this.$api.get('categories');
+      if (res.success && res.data) {
+        this.categories = res.data;
+      }
+    } catch (e) {
+      // ignore error
+    }
   }
 }
 </script>
@@ -90,35 +103,29 @@ export default {
   color: #fff;
   margin-top: 50px;
 }
-
 .footer-main {
   padding: 50px 0;
 }
-
-.footer-info {
+.footer-grid {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
 }
-
 .footer-section {
   flex: 1;
-  min-width: 250px;
+  min-width: 220px;
   margin-right: 30px;
   margin-bottom: 30px;
 }
-
 .footer-section:last-child {
   margin-right: 0;
 }
-
 .footer-section h3 {
   font-size: 18px;
   margin-bottom: 20px;
   position: relative;
   padding-bottom: 10px;
 }
-
 .footer-section h3:after {
   content: '';
   position: absolute;
@@ -128,90 +135,77 @@ export default {
   height: 2px;
   background-color: #e60012;
 }
-
-.about-section p {
-  line-height: 1.6;
-  margin-bottom: 20px;
-  color: #ccc;
-}
-
-.social-links {
-  display: flex;
-}
-
-.social-links a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background-color: rgba(255,255,255,0.1);
-  border-radius: 50%;
-  margin-right: 10px;
-  color: #fff;
-  transition: background-color 0.3s;
-}
-
-.social-links a:hover {
-  background-color: #e60012;
-}
-
-.contact-info {
+.company-info {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-
-.contact-info li {
+.company-info li {
   display: flex;
-  align-items: flex-start;
-  margin-bottom: 15px;
+  align-items: center;
+  margin-bottom: 10px;
   color: #ccc;
 }
-
-.contact-info i {
-  margin-right: 10px;
-  margin-top: 3px;
-  color: #e60012;
+.company-info el-icon {
+  margin-right: 8px;
 }
-
-.qrcode {
-  text-align: center;
+.footer-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
-
-.qrcode img {
-  width: 120px;
-  height: 120px;
-  background-color: #fff;
-  padding: 5px;
+.footer-nav li {
   margin-bottom: 10px;
 }
-
-.qrcode p {
-  font-size: 14px;
-  color: #ccc;
+.footer-nav a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s;
 }
-
+.footer-nav a:hover {
+  color: #e60012;
+}
+.category-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.category-list li {
+  margin-bottom: 10px;
+}
+.cat-name {
+  font-weight: bold;
+  color: #fff;
+}
+.cat-desc {
+  color: #ccc;
+  font-size: 12px;
+  margin-left: 8px;
+}
+.social-section .social-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.social-qrcode {
+  width: 60px;
+  height: 60px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px;
+}
 .footer-bottom {
   background-color: #222;
   padding: 15px 0;
   text-align: center;
 }
-
-.copyright {
-  margin: 0;
-  font-size: 14px;
-  color: #999;
-}
-
-@media (max-width: 768px) {
-  .footer-info {
+@media (max-width: 900px) {
+  .footer-grid {
     flex-direction: column;
   }
-  
   .footer-section {
     margin-right: 0;
-    margin-bottom: 30px;
   }
 }
 </style>

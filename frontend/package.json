@@ -16,6 +16,7 @@
     "swiper": "^11.0.5",
     "vue": "^3.4.19",
     "vue-router": "^4.2.5",
+    "vue3-quill": "^0.3.1",
     "vuex": "^4.1.0"
   },
   "devDependencies": {

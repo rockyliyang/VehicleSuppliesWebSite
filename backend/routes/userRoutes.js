@@ -3,7 +3,11 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../db/db');
-const { authenticateToken, isAdmin } = require('../middleware/auth');
+const { auth, isAdmin } = require('../middleware/auth');
+const jwtMiddleware = require('../middleware/jwt');
+const { sendMail } = require('../utils/email');
+const crypto = require('crypto');
+const svgCaptcha = require('svg-captcha');
 
 // 模拟用户数据
 const users = [
@@ -25,98 +29,166 @@ const users = [
   }
 ];
 
-// 用户注册
+// 用户注册（只允许邮箱注册）
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, phone } = req.body;
-    
-    // 检查用户是否已存在
-    const [existingUsers] = await pool.query(
-      'SELECT * FROM users WHERE email = ? OR username = ?',
-      [email, username]
-    );
-
-    if (existingUsers.length > 0) {
-      return res.status(400).json({ message: '用户名或邮箱已存在' });
+    const { email, password, captcha } = req.body;
+    // TODO: 校验验证码
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: '邮箱和密码必填', data: null });
     }
-
-    // 密码加密过程：
-    // 1. bcrypt 自动生成随机盐值
-    // 2. 将盐值与密码结合
-    // 3. 使用 bcrypt 算法进行慢哈希计算
-    // 4. 将哈希结果（包含盐值）存储到数据库
+    // 检查邮箱是否已存在
+    const [existingUsers] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ success: false, message: '邮箱已存在', data: null });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 创建新用户
-    const [result] = await pool.query(
-      'INSERT INTO users (guid, username, email, password, phone, user_role) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, ?, "user")',
-      [username, email, hashedPassword, phone]
+    // 用邮箱@前的部分作为username
+    const username = email.split('@')[0];
+    const activation_token = crypto.randomBytes(32).toString('hex');
+    await pool.query(
+      'INSERT INTO users (guid, username, email, password, is_active, activation_token, user_role) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, 0, ?, "user")',
+      [username, email, hashedPassword, activation_token]
     );
-
-    res.status(201).json({ message: '注册成功' });
+    // 发送激活邮件
+    const link = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/activate?token=${activation_token}`;
+    await sendMail(email, '激活您的账号', `<p>请点击以下链接激活账号：<a href="${link}">${link}</a></p>`);
+    res.status(201).json({ success: true, message: '注册成功，请前往邮箱激活账号', data: null });
   } catch (error) {
     console.error('注册错误:', error);
-    res.status(500).json({ message: '服务器错误' });
+    res.status(500).json({ success: false, message: '服务器错误', data: null });
   }
+});
+
+// 邮箱激活接口
+router.get('/activate', async (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.status(400).json({ success: false, message: '激活码无效', data: null });
+  const [users] = await pool.query('SELECT * FROM users WHERE activation_token = ?', [token]);
+  if (users.length === 0) return res.status(400).json({ success: false, message: '激活码无效', data: null });
+  await pool.query('UPDATE users SET is_active=1, activation_token=NULL WHERE id=?', [users[0].id]);
+  res.json({ success: true, message: '账号激活成功', data: null });
+});
+
+// 忘记密码，发送重置邮件
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: '邮箱必填', data: null });
+  const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+  if (users.length === 0) return res.status(400).json({ success: false, message: '用户不存在', data: null });
+  const reset_token = crypto.randomBytes(32).toString('hex');
+  const expire = new Date(Date.now() + 1000 * 60 * 30); // 30分钟有效
+  await pool.query('UPDATE users SET reset_token=?, reset_token_expire=? WHERE id=?', [reset_token, expire, users[0].id]);
+  const link = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${reset_token}`;
+  await sendMail(email, '重置密码', `<p>请点击以下链接重置密码（30分钟内有效）：<a href="${link}">${link}</a></p>`);
+  res.json({ success: true, message: '重置邮件已发送，请查收', data: null });
+});
+
+// 重置密码
+router.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ success: false, message: '参数错误', data: null });
+  const [users] = await pool.query('SELECT * FROM users WHERE reset_token = ?', [token]);
+  if (users.length === 0) return res.status(400).json({ success: false, message: '重置码无效', data: null });
+  if (new Date(users[0].reset_token_expire) < new Date()) return res.status(400).json({ success: false, message: '重置码已过期', data: null });
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await pool.query('UPDATE users SET password=?, reset_token=NULL, reset_token_expire=NULL WHERE id=?', [hashedPassword, users[0].id]);
+  res.json({ success: true, message: '密码重置成功', data: null });
 });
 
 // 用户登录
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-
+    const { username, password, admin } = req.body; // admin: true/false
     // 查找用户
     const [users] = await pool.query(
       'SELECT * FROM users WHERE email = ? AND deleted = 0',
       [username]
     );
-
     if (users.length === 0) {
-      return res.status(401).json({ message: '用户不存在' });
+      return res.status(401).json({ success: false, message: '用户不存在', data: null });
     }
-
     const user = users[0];
 
-    // 密码验证过程：
-    // 1. 从数据库获取存储的哈希值（包含盐值）
-    // 2. bcrypt.compare 会自动：
-    //    - 提取存储的盐值
-    //    - 将盐值与输入的密码结合
-    //    - 进行哈希计算
-    //    - 与存储的哈希值比对
+    // 角色校验
+    if (admin) {
+      if (user.user_role !== 'admin') {
+        return res.status(403).json({ success: false, message: '非管理员账号', data: null });
+      }
+    } else {
+      if (user.user_role !== 'user' || user.is_active !== 1) {
+        return res.status(403).json({ success: false, message: '用户未激活或无权限', data: null });
+      }
+    }
+
+    // 密码校验
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.status(401).json({ message: '密码错误' });
+      return res.status(401).json({ success: false, message: '密码错误', data: null });
     }
 
     // 生成 JWT token
     const token = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email,
-        userRole: user.user_role 
-      },
+      { id: user.id, email: user.email, userRole: user.user_role },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '1h' }
     );
 
+    // 设置 Cookie
+    res.cookie('token', token, {
+      httpOnly: process.env.NODE_ENV === 'production' ? true : false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 1000 // 1小时
+    });
+
     res.json({
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        userRole: user.user_role
+      success: true,
+      message: '登录成功',
+      data: {
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          userRole: user.user_role
+        }
       }
     });
   } catch (error) {
-    console.error('登录错误:', error);
-    res.status(500).json({ message: '服务器错误' });
+    res.status(500).json({ success: false, message: '服务器错误', data: null });
+  }
+});
+
+router.get('/check-token', jwtMiddleware.verifyToken, (req, res) => {
+  try {
+    // 生成新的JWT token，有效期为1小时
+    const newToken = jwt.sign(
+      { id: req.userId, email: req.userEmail, userRole: req.userRole },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // 更新Cookie，有效期也为1小时
+    res.cookie('token', newToken, {
+      httpOnly: process.env.NODE_ENV === 'production' ? true : false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 1000 // 1小时
+    });
+
+    res.json({ 
+      success: true,
+      message: 'Token有效并已续期',
+      data: { userId: req.userId }
+    });
+  } catch (error) {
+    console.error('Token续期错误:', error);
+    res.status(500).json({ success: false, message: '服务器错误', data: null });
   }
 });
 
 // 获取用户信息
-router.get('/profile', authenticateToken, async (req, res) => {
+router.get('/profile', auth, async (req, res) => {
   try {
     const [users] = await pool.query(
       'SELECT id, username, email, phone, user_role FROM users WHERE id = ? AND deleted = 0',
@@ -124,18 +196,30 @@ router.get('/profile', authenticateToken, async (req, res) => {
     );
 
     if (users.length === 0) {
-      return res.status(404).json({ message: '用户不存在' });
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在',
+        data: null
+      });
     }
 
-    res.json(users[0]);
+    res.json({
+      success: true,
+      message: '获取用户信息成功',
+      data: users[0]
+    });
   } catch (error) {
     console.error('获取用户信息错误:', error);
-    res.status(500).json({ message: '服务器错误' });
+    res.status(500).json({
+      success: false,
+      message: '服务器错误',
+      data: null
+    });
   }
 });
 
 // 管理员创建新管理员
-router.post('/admin/create', authenticateToken, isAdmin, async (req, res) => {
+router.post('/admin/create', auth, isAdmin, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -146,7 +230,11 @@ router.post('/admin/create', authenticateToken, isAdmin, async (req, res) => {
     );
 
     if (existingUsers.length > 0) {
-      return res.status(400).json({ message: '用户名或邮箱已存在' });
+      return res.status(400).json({
+        success: false,
+        message: '用户名或邮箱已存在',
+        data: null
+      });
     }
 
     // 加密密码
@@ -158,24 +246,55 @@ router.post('/admin/create', authenticateToken, isAdmin, async (req, res) => {
       [username, email, hashedPassword]
     );
 
-    res.status(201).json({ message: '管理员创建成功' });
+    res.status(201).json({
+      success: true,
+      message: '管理员创建成功',
+      data: null
+    });
   } catch (error) {
     console.error('创建管理员错误:', error);
-    res.status(500).json({ message: '服务器错误' });
+    res.status(500).json({
+      success: false,
+      message: '服务器错误',
+      data: null
+    });
   }
 });
 
 // 获取所有用户列表（仅管理员）
-router.get('/admin/users', authenticateToken, isAdmin, async (req, res) => {
+router.get('/admin/users', auth, isAdmin, async (req, res) => {
   try {
     const [users] = await pool.query(
       'SELECT id, username, email, phone, user_role, created_at FROM users WHERE deleted = 0'
     );
-    res.json(users);
+    res.json({
+      success: true,
+      message: '获取用户列表成功',
+      data: users
+    });
   } catch (error) {
     console.error('获取用户列表错误:', error);
-    res.status(500).json({ message: '服务器错误' });
+    res.status(500).json({
+      success: false,
+      message: '服务器错误',
+      data: null
+    });
   }
+});
+
+// 验证码接口
+router.get('/captcha', (req, res) => {
+  const captcha = svgCaptcha.create({
+    size: 4,
+    noise: 2,
+    color: true,
+    background: '#f2f2f2'
+  });
+  // 可将 captcha.text 存入 session 或 redis 以便后续校验
+  req.session = req.session || {};
+  req.session.captcha = captcha.text;
+  res.type('svg');
+  res.status(200).send(captcha.data);
 });
 
 module.exports = router;

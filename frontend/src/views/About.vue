@@ -19,7 +19,7 @@
             <h2>公司简介</h2>
             <div class="title-underline"></div>
           </div>
-          
+
           <div class="intro-content">
             <div class="intro-image">
               <img :src="aboutCompanyImage" alt="公司简介" @error="handleImageError">
@@ -38,35 +38,43 @@
             <h2>企业文化</h2>
             <div class="title-underline"></div>
           </div>
-          
+
           <div class="values-grid">
             <div class="value-card">
               <div class="value-icon">
-                <el-icon><Flag /></el-icon>
+                <el-icon>
+                  <Flag />
+                </el-icon>
               </div>
               <h3>使命</h3>
               <p>为全球消费者提供高品质、高性能的汽车用品，让汽车生活更便捷、更舒适。</p>
             </div>
-            
+
             <div class="value-card">
               <div class="value-icon">
-                <el-icon><ViewIcon /></el-icon>
+                <el-icon>
+                  <ViewIcon />
+                </el-icon>
               </div>
               <h3>愿景</h3>
               <p>成为全球领先的汽车用品供应商，引领行业发展，创造卓越价值。</p>
             </div>
-            
+
             <div class="value-card">
               <div class="value-icon">
-                <el-icon><Medal /></el-icon>
+                <el-icon>
+                  <Medal />
+                </el-icon>
               </div>
               <h3>价值观</h3>
               <p>诚信、创新、品质、共赢。我们坚持诚信经营，不断创新，追求卓越品质，实现与客户、员工、合作伙伴的共同发展。</p>
             </div>
-            
+
             <div class="value-card">
               <div class="value-icon">
-                <el-icon><Management /></el-icon>
+                <el-icon>
+                  <Management />
+                </el-icon>
               </div>
               <h3>经营理念</h3>
               <p>品质至上、客户为先。我们始终将产品品质放在首位，以客户需求为导向，不断提升产品和服务质量。</p>
@@ -79,41 +87,49 @@
             <h2>我们的优势</h2>
             <div class="title-underline"></div>
           </div>
-          
+
           <div class="advantages-list">
             <div class="advantage-item">
               <div class="advantage-icon">
-                <el-icon><Opportunity /></el-icon>
+                <el-icon>
+                  <Opportunity />
+                </el-icon>
               </div>
               <div class="advantage-content">
                 <h3>专业研发团队</h3>
                 <p>拥有一支经验丰富的研发团队，不断推出创新产品，满足市场需求。</p>
               </div>
             </div>
-            
+
             <div class="advantage-item">
               <div class="advantage-icon">
-                <el-icon><Service /></el-icon>
+                <el-icon>
+                  <Service />
+                </el-icon>
               </div>
               <div class="advantage-content">
                 <h3>严格质量控制</h3>
                 <p>建立完善的质量管理体系，从原材料采购到成品出厂，每个环节都严格把关。</p>
               </div>
             </div>
-            
+
             <div class="advantage-item">
               <div class="advantage-icon">
-                <el-icon><Shop /></el-icon>
+                <el-icon>
+                  <Shop />
+                </el-icon>
               </div>
               <div class="advantage-content">
                 <h3>现代化生产基地</h3>
                 <p>拥有现代化的生产基地和先进的生产设备，确保产品品质和生产效率。</p>
               </div>
             </div>
-            
+
             <div class="advantage-item">
               <div class="advantage-icon">
-                <el-icon><Trophy /></el-icon>
+                <el-icon>
+                  <Trophy />
+                </el-icon>
               </div>
               <div class="advantage-content">
                 <h3>完善的售后服务</h3>
@@ -128,7 +144,7 @@
             <h2>荣誉资质</h2>
             <div class="title-underline"></div>
           </div>
-          
+
           <div class="certificates-grid">
             <div class="certificate-card">
               <div class="certificate-image">
@@ -139,7 +155,7 @@
                 <p>国际质量管理体系认证</p>
               </div>
             </div>
-            
+
             <div class="certificate-card">
               <div class="certificate-image">
                 <img :src="certificate2Image" alt="CE认证" @error="handleImageError">
@@ -149,7 +165,7 @@
                 <p>欧盟安全认证</p>
               </div>
             </div>
-            
+
             <div class="certificate-card">
               <div class="certificate-image">
                 <img :src="certificate3Image" alt="RoHS认证" @error="handleImageError">
@@ -159,7 +175,7 @@
                 <p>欧盟有害物质限制指令认证</p>
               </div>
             </div>
-            
+
             <div class="certificate-card">
               <div class="certificate-image">
                 <img :src="certificate4Image" alt="FCC认证" @error="handleImageError">
@@ -177,7 +193,6 @@
 </template>
 
 <script>
-import axios from 'axios';
 import aboutCompanyImage from '../assets/images/about-company.jpg';
 import certificate1Image from '../assets/images/certificate1.jpg';
 import certificate2Image from '../assets/images/certificate2.jpg';
@@ -212,10 +227,12 @@ export default {
   methods: {
     async fetchCompanyInfo() {
       try {
-        const response = await axios.get('/api/company')
-        this.companyInfo = response.data.data
+        const response = await this.$api.get('company')
+        // response已经是标准格式，直接使用response.data
+        this.companyInfo = response.data
       } catch (error) {
-        console.error('获取公司信息失败:', error)
+        // 错误已在api.js中统一处理
+        console.error('获取公司信息失败')
       }
     },
     handleImageError
@@ -235,7 +252,7 @@ export default {
 .page-banner {
   height: 200px;
   background-color: #f5f5f5;
-  background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('../assets/images/banner1.jpg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../assets/images/banner1.jpg');
   background-size: cover;
   background-position: center;
   display: flex;
@@ -257,7 +274,7 @@ export default {
   padding: 0 15px;
 }
 
-.about-section > div {
+.about-section>div {
   margin-bottom: 60px;
 }
 
@@ -297,7 +314,7 @@ export default {
   width: 100%;
   height: auto;
   border-radius: 4px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .intro-text {
@@ -334,7 +351,7 @@ export default {
 
 .value-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .value-icon {
@@ -371,7 +388,7 @@ export default {
 
 .advantage-item:hover {
   background-color: #f0f9ff;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
 }
 
 .advantage-icon {
@@ -405,7 +422,7 @@ export default {
 }
 
 .certificate-card:hover {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   transform: translateY(-5px);
 }
 
@@ -444,11 +461,11 @@ export default {
   .intro-content {
     flex-direction: column;
   }
-  
+
   .values-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
-  
+
   .certificates-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }

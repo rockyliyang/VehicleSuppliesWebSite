@@ -17,12 +17,8 @@
         <div class="filter-sidebar">
           <h3>产品分类</h3>
           <ul class="category-list">
-            <li 
-              v-for="category in categories" 
-              :key="category.id"
-              :class="{ active: selectedCategory === category.id }"
-              @click="selectCategory(category.id)"
-            >
+            <li v-for="category in categories" :key="category.id" :class="{ active: selectedCategory === category.id.toString() }"
+              @click="selectCategory(category.id.toString())">
               {{ category.name }}
             </li>
           </ul>
@@ -46,12 +42,12 @@
             <div v-for="product in sortedProducts" :key="product.id" class="product-card">
               <router-link :to="`/product/${product.id}`">
                 <div class="product-image">
-                  <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError">
+                  <img :src="product.thumbnail_url || require('../assets/images/default-image.svg')" :alt="product.name" @error="handleImageError">
                 </div>
                 <div class="product-info">
                   <h3>{{ product.name }}</h3>
                   <p class="product-desc">{{ product.short_description }}</p>
-                  <div class="product-price">¥{{ product.price.toFixed(2) }}</div>
+                  <div class="product-price">¥{{ formatPrice(product.price) }}</div>
                 </div>
               </router-link>
               <div class="product-actions">
@@ -67,13 +63,8 @@
           </div>
 
           <div class="pagination-container">
-            <el-pagination
-              background
-              layout="prev, pager, next"
-              :total="filteredProducts.length"
-              :page-size="12"
-              @current-change="handleCurrentChange"
-            ></el-pagination>
+            <el-pagination background layout="prev, pager, next" :total="filteredProducts.length" :page-size="12"
+              @current-change="handleCurrentChange"></el-pagination>
           </div>
         </div>
       </div>
@@ -82,7 +73,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+// 使用全局注册的$api替代axios
 
 export default {
   name: 'ProductsPage',
@@ -101,7 +92,7 @@ export default {
       if (!this.selectedCategory) {
         return this.products
       }
-      return this.products.filter(product => product.category_id === this.selectedCategory)
+      return this.products.filter(product => product.category_id && product.category_id.toString() === this.selectedCategory)
     },
     sortedProducts() {
       const products = [...this.filteredProducts]
@@ -127,21 +118,27 @@ export default {
     // 检查URL中是否有分类参数
     const categoryId = this.$route.query.category
     if (categoryId) {
-      this.selectedCategory = parseInt(categoryId)
+      this.selectedCategory = categoryId.toString()
     }
   },
   methods: {
     handleImageError(e) {
-      e.target.src = require('../assets/images/default-image.svg');
+      if (e && e.target) {
+        e.target.src = require('../assets/images/default-image.svg');
+      }
+    },
+    formatPrice(price) {
+      const n = Number(price)
+      return isNaN(n) ? '--' : n.toFixed(2)
     },
     async fetchCategories() {
       try {
         this.loading = true
-        const response = await axios.get('/api/categories')
-        this.categories = response.data.data
+        const response = await this.$api.get('categories')
+        this.categories = response.data || []
       } catch (error) {
         console.error('获取分类失败:', error)
-        this.$message.error('获取分类失败')
+        this.$message.error(error.response?.data?.message || '获取分类失败')
       } finally {
         this.loading = false
       }
@@ -149,8 +146,9 @@ export default {
     async fetchProducts() {
       try {
         this.loading = true
-        const response = await axios.get('/api/products')
-        this.products = response.data.data
+        const response = await this.$api.get('products')
+        this.products = (response.data && response.data.items) ? response.data.items : []
+        this.$message.success(response.message || '获取产品成功')
       } catch (error) {
         console.error('获取产品失败:', error)
         this.$message.error('获取产品失败')
@@ -189,7 +187,7 @@ export default {
 .page-banner {
   height: 200px;
   background-color: #f5f5f5;
-  background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('../assets/images/banner1.jpg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../assets/images/banner1.jpg');
   background-size: cover;
   background-position: center;
   display: flex;
@@ -283,7 +281,7 @@ export default {
 }
 
 .product-card:hover {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   transform: translateY(-5px);
 }
 
@@ -360,12 +358,12 @@ export default {
   .products-container {
     flex-direction: column;
   }
-  
+
   .filter-sidebar {
     width: 100%;
     margin-bottom: 20px;
   }
-  
+
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }

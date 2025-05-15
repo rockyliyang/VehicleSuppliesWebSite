@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS users (
   guid BINARY(16) NOT NULL,
   username VARCHAR(50) NOT NULL,
   password VARCHAR(255) NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 0,
+  activation_token VARCHAR(64) DEFAULT NULL,
+  reset_token VARCHAR(64) DEFAULT NULL,
+  reset_token_expire DATETIME DEFAULT NULL，   
   email VARCHAR(100) NOT NULL,
   phone VARCHAR(20),
   user_role ENUM('admin', 'user') NOT NULL DEFAULT 'user',
@@ -26,29 +30,35 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS product_categories (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   guid BINARY(16) NOT NULL,
-  name VARCHAR(100) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  code VARCHAR(32) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  status ENUM('on_shelf', 'off_shelf') NOT NULL DEFAULT 'off_shelf',
   description TEXT,
-  image_url VARCHAR(255),
+  deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  deleted TINYINT(1) DEFAULT 0
+  UNIQUE KEY unique_code_not_deleted (code, deleted)
 );
 
 -- 产品表
 CREATE TABLE IF NOT EXISTS products (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   guid BINARY(16) NOT NULL,
-  category_id BIGINT NOT NULL,
-  name VARCHAR(200) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  product_code VARCHAR(64) NOT NULL,
   short_description TEXT,
   full_description TEXT,
-  thumbnail_url VARCHAR(255),
-  price DECIMAL(10, 2),
-  stock INT,
+  price DECIMAL(10, 2) NOT NULL,
+  stock INT NOT NULL,
+  category_id BIGINT NOT NULL,
+  product_type ENUM('physical', 'virtual', 'service') NOT NULL DEFAULT 'physical' COMMENT '产品类型：physical-实物商品，virtual-虚拟商品，service-服务',
+  status ENUM('on_shelf', 'off_shelf') NOT NULL DEFAULT 'off_shelf',
+  deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  deleted TINYINT(1) DEFAULT 0,
-  FOREIGN KEY (category_id) REFERENCES product_categories(id)
+  FOREIGN KEY (category_id) REFERENCES product_categories(id),
+  UNIQUE KEY unique_product_code_not_deleted (product_code, deleted)
 );
 
 -- 产品图片表
@@ -58,6 +68,7 @@ CREATE TABLE IF NOT EXISTS product_images (
   product_id BIGINT NOT NULL,
   image_url VARCHAR(255) NOT NULL,
   sort_order INT DEFAULT 0,
+  session_id VARCHAR(64) DEFAULT NULL COMMENT '临时会话ID，用于未保存产品时图片归属',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
@@ -126,9 +137,12 @@ CREATE TABLE IF NOT EXISTS company_info (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   guid BINARY(16) NOT NULL,
   company_name VARCHAR(200) NOT NULL,
+  contact_name VARCHAR(50),
   address TEXT,
   phone VARCHAR(20),
   email VARCHAR(100),
+  description TEXT,
+  logo_url VARCHAR(255),
   wechat_qrcode VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

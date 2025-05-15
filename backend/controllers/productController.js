@@ -1,88 +1,204 @@
-const db = require('../config/database');
+const { v4: uuidv4 } = require('uuid');
+const { pool } = require('../db/db');
+const { uuidToBinary, binaryToUuid } = require('../utils/uuid');
 
-// 获取所有产品
-exports.getAllProducts = async (req, res) => {
+// Generate a unique product code
+exports.generateProductCode = async (req, res) => {
   try {
-    // 实际项目中会从数据库获取数据
-    // 这里使用模拟数据
-    const products = [
-      { 
-        id: 1, 
-        category_id: 1, 
-        name: 'XWC-001 Car Vacuum Cleaner', 
-        thumbnail_url: '/static/images/products/product1.jpg',
-        short_description: '强力吸尘，便携设计',
-        price: 299.00,
-        stock: 100
-      },
-      { 
-        id: 2, 
-        category_id: 1, 
-        name: 'XWC-002 Vacuum Cleaner', 
-        thumbnail_url: '/static/images/products/product2.jpg',
-        short_description: '无线设计，长效续航',
-        price: 359.00,
-        stock: 85
-      },
-      { 
-        id: 3, 
-        category_id: 1, 
-        name: 'XWC-003 Car Vacuum Cleaner', 
-        thumbnail_url: '/static/images/products/product3.jpg',
-        short_description: '多功能吸尘器，适用多种场景',
-        price: 399.00,
-        stock: 50
-      },
-      { 
-        id: 4, 
-        category_id: 1, 
-        name: 'XWC-004 Car Vacuum Cleaner', 
-        thumbnail_url: '/static/images/products/product4.jpg',
-        short_description: '大功率吸尘，快速清洁',
-        price: 459.00,
-        stock: 30
-      },
-      { 
-        id: 5, 
-        category_id: 3, 
-        name: 'F-39 4000A 12V&24V Jump Starter', 
-        thumbnail_url: '/static/images/products/product5.jpg',
-        short_description: '4000A峰值电流，适用12V/24V车辆',
-        price: 899.00,
-        stock: 20
-      },
-      { 
-        id: 6, 
-        category_id: 3, 
-        name: 'F-25 2000A Jump Starter', 
-        thumbnail_url: '/static/images/products/product6.jpg',
-        short_description: '2000A峰值电流，紧急启动电源',
-        price: 599.00,
-        stock: 40
-      },
-      { 
-        id: 7, 
-        category_id: 3, 
-        name: 'F-18 Wireless Charger Jump Starter', 
-        thumbnail_url: '/static/images/products/product7.jpg',
-        short_description: '无线充电功能，多功能应急电源',
-        price: 699.00,
-        stock: 25
-      },
-      { 
-        id: 8, 
-        category_id: 3, 
-        name: 'F-8 12V Jump Starter', 
-        thumbnail_url: '/static/images/products/product8.jpg',
-        short_description: '小巧便携，12V应急启动',
-        price: 499.00,
-        stock: 60
-      }
-    ];
+    const { category_id } = req.query;
     
+    // 获取分类信息
+    const [category] = await pool.query(
+      'SELECT code FROM product_categories WHERE id = ? AND deleted = 0',
+      [category_id]
+    );
+
+    if (category.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '分类不存在'
+      });
+    }
+
+    // 获取该分类下的产品数量
+    const [count] = await pool.query(
+      'SELECT COUNT(*) as count FROM products WHERE category_id = ? AND deleted = 0',
+      [category_id]
+    );
+
+    // 生成产品编号：分类编码 + 4位序号
+    const productCode = `${category[0].code}${String(count[0].count + 1).padStart(4, '0')}`;
+
     res.json({
       success: true,
-      data: products
+      data: productCode
+    });
+  } catch (error) {
+    console.error('生成产品编号失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '生成产品编号失败'
+    });
+  }
+};
+
+// Create a new product
+exports.createProduct = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const {
+      name,
+      product_code,
+      category_id,
+      price,
+      stock = 0,
+      status = 1,
+      product_type = 'consignment', // 默认为代销
+      thumbnail_url = null,
+      short_description = '',
+      full_description = ''
+    } = req.body;
+
+    // 验证产品类型
+    const validProductTypes = ['consignment', 'self_operated'];
+    if (!validProductTypes.includes(product_type)) {
+      return res.status(400).json({
+        success: false,
+        message: '无效的产品类型'
+      });
+    }
+
+    // 检查产品编号是否已存在
+    const [existing] = await connection.query(
+      'SELECT id FROM products WHERE product_code = ? AND deleted = 0',
+      [product_code]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: '产品编号已存在'
+      });
+    }
+
+    const guid = uuidToBinary(uuidv4());
+
+    const [result] = await connection.query(
+      `INSERT INTO products (
+        name, product_code, category_id, price, stock, status, product_type,
+        thumbnail_url, short_description, full_description, guid, deleted
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      [
+        name,
+        product_code,
+        category_id,
+        price,
+        stock,
+        status,
+        product_type,
+        thumbnail_url,
+        short_description,
+        full_description,
+        guid
+      ]
+    );
+
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      message: '产品创建成功',
+      data: {
+        id: result.insertId,
+        name,
+        product_code,
+        category_id,
+        price,
+        stock,
+        status,
+        product_type,
+        thumbnail_url,
+        short_description,
+        full_description,
+        guid: binaryToUuid(guid)
+      }
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('创建产品失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '创建产品失败'
+    });
+  } finally {
+    connection.release();
+  }
+};
+
+// Get all products (non-deleted)
+exports.getAllProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, sort_by = 'id', sort_order = 'desc', keyword, category_id, status, product_type } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = `
+      SELECT p.*, c.name as category_name, 
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = 0 ORDER BY sort_order ASC, id ASC LIMIT 1) as thumbnail_url
+      FROM products p
+      LEFT JOIN product_categories c ON p.category_id = c.id
+      WHERE p.deleted = 0
+    `;
+    const params = [];
+
+    if (keyword) {
+      query += ' AND (p.name LIKE ? OR p.product_code LIKE ?)';
+      params.push(`%${keyword}%`, `%${keyword}%`);
+    }
+
+    if (category_id) {
+      query += ' AND p.category_id = ?';
+      params.push(category_id);
+    }
+
+    if (status !== undefined) {
+      query += ' AND p.status = ?';
+      params.push(status);
+    }
+
+    if (product_type) {
+      query += ' AND p.product_type = ?';
+      params.push(product_type);
+    }
+
+    // 添加排序
+    query += ` ORDER BY p.${sort_by} ${sort_order === 'asc' ? 'ASC' : 'DESC'}`;
+
+    // 添加分页
+    query += ' LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), offset);
+
+    const [rows] = await pool.query(query, params);
+    const [total] = await pool.query(
+      'SELECT COUNT(*) as total FROM products WHERE deleted = 0',
+      []
+    );
+
+    // 转换 guid 为字符串
+    const products = rows.map(row => ({
+      ...row,
+      guid: binaryToUuid(row.guid)
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        items: products,
+        total: total[0].total,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
     });
   } catch (error) {
     console.error('获取产品列表失败:', error);
@@ -93,51 +209,44 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-// 获取单个产品详情
+// Get a single product by id
 exports.getProductById = async (req, res) => {
   try {
-    const { id } = req.params;
-    
-    // 实际项目中会从数据库获取数据
-    // 这里使用模拟数据
-    const product = {
-      id: parseInt(id),
-      category_id: id <= 4 ? 1 : 3,
-      name: id <= 4 ? `XWC-00${id} Car Vacuum Cleaner` : `F-${39 - (8 - parseInt(id))} ${id === '5' ? '4000A 12V&24V' : id === '6' ? '2000A' : id === '7' ? 'Wireless Charger' : '12V'} Jump Starter`,
-      thumbnail_url: `/static/images/products/product${id}.jpg`,
-      images: [
-        `/static/images/products/product${id}_1.jpg`,
-        `/static/images/products/product${id}_2.jpg`,
-        `/static/images/products/product${id}_3.jpg`
-      ],
-      short_description: id <= 4 ? '高效吸尘，便携设计' : '应急启动电源，多功能设计',
-      full_description: id <= 4 ? 
-        '<p>这款车载吸尘器采用强力电机，提供强大吸力，轻松清理汽车内的灰尘、碎屑和宠物毛发。便携式设计，可轻松存放在车内，随时使用。配备多种吸头，适用于不同清洁需求。</p><p>产品特点：</p><ul><li>强力吸尘</li><li>便携设计</li><li>多种吸头</li><li>长效电池</li></ul>' : 
-        '<p>这款汽车应急启动电源采用高品质电芯，提供强大启动电流，可轻松启动12V/24V汽车、摩托车、船舶等。内置多重保护系统，使用安全可靠。同时配备LED照明灯，具备SOS紧急求救功能。</p><p>产品特点：</p><ul><li>强大启动电流</li><li>多重保护系统</li><li>LED照明</li><li>USB充电输出</li></ul>',
-      price: id <= 4 ? 299 + (parseInt(id) - 1) * 60 : 499 + (parseInt(id) - 5) * 100,
-      stock: 100 - parseInt(id) * 10,
-      specifications: id <= 4 ? [
-        { name: '电池容量', value: '2000mAh' },
-        { name: '吸力', value: '8000Pa' },
-        { name: '噪音', value: '≤75dB' },
-        { name: '重量', value: '0.8kg' },
-        { name: '电源', value: 'DC 12V' }
-      ] : [
-        { name: '峰值电流', value: id === '5' ? '4000A' : id === '6' ? '2000A' : id === '7' ? '1500A' : '1000A' },
-        { name: '电池容量', value: id === '5' ? '24000mAh' : id === '6' ? '18000mAh' : id === '7' ? '12000mAh' : '8000mAh' },
-        { name: '输入', value: '5V/2A' },
-        { name: '输出', value: '5V/2.1A, 12V/10A' },
-        { name: '重量', value: `${parseInt(id) * 0.2 + 0.5}kg` }
-      ]
-    };
-    
-    if (!product) {
+    // 查询产品基本信息
+    const [rows] = await pool.query(
+      `SELECT p.*, c.name as category_name 
+       FROM products p
+       LEFT JOIN product_categories c ON p.category_id = c.id
+       WHERE p.id = ? AND p.deleted = 0`,
+      [req.params.id]
+    );
+
+    if (rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: '产品不存在'
       });
     }
-    
+
+    // 查询主图
+    const [mainImages] = await pool.query(
+      'SELECT image_url FROM product_images WHERE product_id = ? AND image_type = 0 AND deleted = 0 ORDER BY sort_order ASC, id ASC LIMIT 1',
+      [req.params.id]
+    );
+    // 查询详情图
+    const [detailImages] = await pool.query(
+      'SELECT image_url FROM product_images WHERE product_id = ? AND image_type = 1 AND deleted = 0 ORDER BY sort_order ASC, id ASC',
+      [req.params.id]
+    );
+
+    // 转换 guid 为字符串
+    const product = {
+      ...rows[0],
+      guid: binaryToUuid(rows[0].guid),
+      thumbnail_url: mainImages.length > 0 ? mainImages[0].image_url : '',
+      detail_images: detailImages.map(img => img.image_url)
+    };
+
     res.json({
       success: true,
       data: product
@@ -151,162 +260,194 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+// Update a product
+exports.updateProduct = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const { id } = req.params;
+    const {
+      name,
+      product_code,
+      category_id,
+      price,
+      stock,
+      status,
+      product_type,
+      thumbnail_url,
+      short_description,
+      full_description
+    } = req.body;
+
+    // 验证产品类型
+    const validProductTypes = ['consignment', 'self_operated'];
+    if (!validProductTypes.includes(product_type)) {
+      return res.status(400).json({
+        success: false,
+        message: '无效的产品类型'
+      });
+    }
+
+    // 检查产品是否存在
+    const [existing] = await connection.query(
+      'SELECT id FROM products WHERE id = ? AND deleted = 0',
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '产品不存在'
+      });
+    }
+
+    // 检查产品编号是否已被其他产品使用
+    const [codeExists] = await connection.query(
+      'SELECT id FROM products WHERE product_code = ? AND id != ? AND deleted = 0',
+      [product_code, id]
+    );
+
+    if (codeExists.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: '产品编号已被其他产品使用'
+      });
+    }
+
+    await connection.query(
+      `UPDATE products SET 
+        name = ?, 
+        product_code = ?, 
+        category_id = ?, 
+        price = ?, 
+        stock = ?, 
+        status = ?, 
+        product_type = ?,
+        thumbnail_url = ?, 
+        short_description = ?, 
+        full_description = ? 
+      WHERE id = ?`,
+      [
+        name,
+        product_code,
+        category_id,
+        price,
+        stock,
+        status,
+        product_type,
+        thumbnail_url,
+        short_description,
+        full_description,
+        id
+      ]
+    );
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: '产品更新成功',
+      data: {
+        id,
+        name,
+        product_code,
+        category_id,
+        price,
+        stock,
+        status,
+        product_type,
+        thumbnail_url,
+        short_description,
+        full_description
+      }
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('更新产品失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '更新产品失败'
+    });
+  } finally {
+    connection.release();
+  }
+};
+
+// Soft delete a product
+exports.deleteProduct = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const { id } = req.params;
+
+    // 检查产品是否存在
+    const [existing] = await connection.query(
+      'SELECT id FROM products WHERE id = ? AND deleted = 0',
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '产品不存在'
+      });
+    }
+
+    // 软删除产品
+    await connection.query(
+      'UPDATE products SET deleted = 1 WHERE id = ?',
+      [id]
+    );
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: '产品删除成功'
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('删除产品失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '删除产品失败'
+    });
+  } finally {
+    connection.release();
+  }
+};
+
 // 按分类获取产品
 exports.getProductsByCategory = async (req, res) => {
   try {
     const { categoryId } = req.params;
-    
-    // 实际项目中会从数据库获取数据
-    // 这里使用模拟数据
-    const allProducts = [
-      { 
-        id: 1, 
-        category_id: 1, 
-        name: 'XWC-001 Car Vacuum Cleaner', 
-        thumbnail_url: '/static/images/products/product1.jpg',
-        short_description: '强力吸尘，便携设计',
-        price: 299.00,
-        stock: 100
-      },
-      { 
-        id: 2, 
-        category_id: 1, 
-        name: 'XWC-002 Vacuum Cleaner', 
-        thumbnail_url: '/static/images/products/product2.jpg',
-        short_description: '无线设计，长效续航',
-        price: 359.00,
-        stock: 85
-      },
-      { 
-        id: 3, 
-        category_id: 1, 
-        name: 'XWC-003 Car Vacuum Cleaner', 
-        thumbnail_url: '/static/images/products/product3.jpg',
-        short_description: '多功能吸尘器，适用多种场景',
-        price: 399.00,
-        stock: 50
-      },
-      { 
-        id: 4, 
-        category_id: 1, 
-        name: 'XWC-004 Car Vacuum Cleaner', 
-        thumbnail_url: '/static/images/products/product4.jpg',
-        short_description: '大功率吸尘，快速清洁',
-        price: 459.00,
-        stock: 30
-      },
-      { 
-        id: 5, 
-        category_id: 3, 
-        name: 'F-39 4000A 12V&24V Jump Starter', 
-        thumbnail_url: '/static/images/products/product5.jpg',
-        short_description: '4000A峰值电流，适用12V/24V车辆',
-        price: 899.00,
-        stock: 20
-      },
-      { 
-        id: 6, 
-        category_id: 3, 
-        name: 'F-25 2000A Jump Starter', 
-        thumbnail_url: '/static/images/products/product6.jpg',
-        short_description: '2000A峰值电流，紧急启动电源',
-        price: 599.00,
-        stock: 40
-      },
-      { 
-        id: 7, 
-        category_id: 3, 
-        name: 'F-18 Wireless Charger Jump Starter', 
-        thumbnail_url: '/static/images/products/product7.jpg',
-        short_description: '无线充电功能，多功能应急电源',
-        price: 699.00,
-        stock: 25
-      },
-      { 
-        id: 8, 
-        category_id: 3, 
-        name: 'F-8 12V Jump Starter', 
-        thumbnail_url: '/static/images/products/product8.jpg',
-        short_description: '小巧便携，12V应急启动',
-        price: 499.00,
-        stock: 60
-      }
-    ];
-    
-    const products = allProducts.filter(product => product.category_id === parseInt(categoryId));
-    
+    const [rows] = await pool.query(`
+      SELECT p.*, c.name as category_name,
+        (SELECT JSON_ARRAYAGG(image_url) FROM product_images WHERE product_id = p.id AND deleted = 0) as gallery_urls
+      FROM products p 
+      LEFT JOIN product_categories c ON p.category_id = c.id 
+      WHERE p.category_id = ? AND p.deleted = 0 AND p.status = 'on_shelf'
+    `, [categoryId]);
+
+    // 处理gallery_urls
+    const products = rows.map(product => ({
+      ...product,
+      gallery_urls: product.gallery_urls ? JSON.parse(product.gallery_urls) : []
+    }));
+
     res.json({
       success: true,
+      message: '获取产品成功',
       data: products
     });
   } catch (error) {
     console.error('按分类获取产品失败:', error);
     res.status(500).json({
       success: false,
-      message: '按分类获取产品失败'
-    });
-  }
-};
-
-// 创建产品
-exports.createProduct = async (req, res) => {
-  try {
-    // 实际项目中会将数据保存到数据库
-    res.status(201).json({
-      success: true,
-      message: '产品创建成功',
-      data: {
-        id: 9,
-        ...req.body
-      }
-    });
-  } catch (error) {
-    console.error('创建产品失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '创建产品失败'
-    });
-  }
-};
-
-// 更新产品
-exports.updateProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // 实际项目中会更新数据库中的数据
-    res.json({
-      success: true,
-      message: '产品更新成功',
-      data: {
-        id: parseInt(id),
-        ...req.body
-      }
-    });
-  } catch (error) {
-    console.error('更新产品失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '更新产品失败'
-    });
-  }
-};
-
-// 删除产品
-exports.deleteProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // 实际项目中会从数据库中删除数据（软删除）
-    res.json({
-      success: true,
-      message: '产品删除成功'
-    });
-  } catch (error) {
-    console.error('删除产品失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '删除产品失败'
+      message: '按分类获取产品失败',
+      data: null
     });
   }
 };

@@ -3,7 +3,7 @@
     <div class="page-header">
       <h2>公司信息管理</h2>
     </div>
-    
+
     <el-card class="company-form-card">
       <el-form :model="companyForm" :rules="rules" ref="companyForm" label-width="100px" label-position="left">
         <el-row :gutter="20">
@@ -13,42 +13,47 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="联系人姓名" prop="contact_name">
+              <el-input v-model="companyForm.contact_name" placeholder="请输入联系人姓名"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="联系电话" prop="phone">
               <el-input v-model="companyForm.phone" placeholder="请输入联系电话"></el-input>
             </el-form-item>
           </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="联系邮箱" prop="email">
               <el-input v-model="companyForm.email" placeholder="请输入联系邮箱"></el-input>
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="营业时间" prop="business_hours">
               <el-input v-model="companyForm.business_hours" placeholder="例如：周一至周五 9:00-18:00"></el-input>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="公司地址" prop="address">
+              <el-input v-model="companyForm.address" placeholder="请输入公司地址"></el-input>
+            </el-form-item>
+          </el-col>
         </el-row>
-        
-        <el-form-item label="公司地址" prop="address">
-          <el-input v-model="companyForm.address" placeholder="请输入公司地址"></el-input>
-        </el-form-item>
-        
+
         <el-form-item label="公司简介" prop="description">
           <el-input type="textarea" v-model="companyForm.description" :rows="4" placeholder="请输入公司简介"></el-input>
         </el-form-item>
-        
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="公司Logo" prop="logo_url">
-              <el-upload
-                class="logo-uploader"
-                action="/api/upload"
-                :show-file-list="false"
-                :on-success="handleLogoSuccess"
-                :before-upload="beforeLogoUpload">
+              <el-upload class="logo-uploader" :action="logoUploadUrl" :show-file-list="false"
+                :on-success="handleLogoSuccess" :before-upload="beforeLogoUpload" name="file">
                 <img v-if="companyForm.logo_url" :src="companyForm.logo_url" class="logo-image">
                 <i v-else class="el-icon-plus logo-uploader-icon"></i>
               </el-upload>
@@ -57,12 +62,8 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="微信二维码" prop="wechat_qrcode">
-              <el-upload
-                class="qrcode-uploader"
-                action="/api/upload"
-                :show-file-list="false"
-                :on-success="handleQrcodeSuccess"
-                :before-upload="beforeQrcodeUpload">
+              <el-upload class="qrcode-uploader" :action="wechatUploadUrl" :show-file-list="false"
+                :on-success="handleQrcodeSuccess" :before-upload="beforeQrcodeUpload" name="file">
                 <img v-if="companyForm.wechat_qrcode" :src="companyForm.wechat_qrcode" class="qrcode-image">
                 <i v-else class="el-icon-plus qrcode-uploader-icon"></i>
               </el-upload>
@@ -70,7 +71,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-form-item>
           <el-button type="primary" @click="submitForm('companyForm')" :loading="loading">保存修改</el-button>
           <el-button @click="resetForm('companyForm')">重置</el-button>
@@ -81,7 +82,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 
 export default {
   name: 'CompanyManagement',
@@ -90,6 +90,7 @@ export default {
       loading: false,
       companyForm: {
         company_name: '',
+        contact_name: '',
         address: '',
         phone: '',
         email: '',
@@ -102,6 +103,9 @@ export default {
         company_name: [
           { required: true, message: '请输入公司名称', trigger: 'blur' },
           { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+        ],
+        contact_name: [
+          { required: true, message: '请输入联系人姓名', trigger: 'blur' }
         ],
         phone: [
           { required: true, message: '请输入联系电话', trigger: 'blur' }
@@ -123,50 +127,48 @@ export default {
     this.fetchCompanyInfo()
   },
   methods: {
-    fetchCompanyInfo() {
-      axios.get('/api/company')
-        .then(response => {
-          if (response.data.success) {
-            this.companyForm = response.data.data
-          } else {
-            this.$message.error('获取公司信息失败')
-          }
-        })
-        .catch(error => {
-          console.error('获取公司信息出错:', error)
-          this.$message.error('获取公司信息出错')
-        })
-    },
-    submitForm(formName) {
-      this.$refs[formName].validate((valid) => {
-        if (valid) {
-          this.loading = true
-          axios.put('/api/company', this.companyForm)
-            .then(response => {
-              this.loading = false
-              if (response.data.success) {
-                this.$message.success('公司信息更新成功')
-              } else {
-                this.$message.error(response.data.message || '更新失败')
-              }
-            })
-            .catch(error => {
-              this.loading = false
-              console.error('更新公司信息出错:', error)
-              this.$message.error('更新公司信息出错')
-            })
+    async fetchCompanyInfo() {
+      try {
+        const { success, message, data } = await this.$api.get('company')
+        if (success) {
+          this.companyForm = data
         } else {
-          return false
+          this.$message.error(message || '获取公司信息失败')
         }
-      })
+      } catch (error) {
+        console.error('获取公司信息出错:', error)
+        this.$message.error('获取公司信息出错')
+      }
+    },
+    async submitForm(formName) {
+      try {
+        await this.$refs[formName].validate()
+      } catch (error) {
+        this.$message.error('表单验证失败，请检查输入项')
+        return false
+      }
+      this.loading = true
+      try {
+        const { success, message } = await this.$api.put('company', this.companyForm)
+        if (success) {
+          this.$message.success('公司信息更新成功')
+        } else {
+          this.$message.error(message || '更新失败')
+        }
+      } catch (error) {
+        this.$message.error('更新公司信息出错')
+        console.error('更新公司信息出错:', error)
+      } finally {
+        this.loading = false
+      }
     },
     resetForm(formName) {
       this.$refs[formName].resetFields()
       this.fetchCompanyInfo()
     },
-    handleLogoSuccess(res, file) { // eslint-disable-line no-unused-vars
+    handleLogoSuccess(res) {
       if (res.success) {
-        this.companyForm.logo_url = res.url
+        this.companyForm.logo_url = res.data.url
         this.$message.success('Logo上传成功')
       } else {
         this.$message.error(res.message || 'Logo上传失败')
@@ -184,9 +186,9 @@ export default {
       }
       return isJPGOrPNG && isLt2M
     },
-    handleQrcodeSuccess(res, file) { // eslint-disable-line no-unused-vars
+    handleQrcodeSuccess(res) {
       if (res.success) {
-        this.companyForm.wechat_qrcode = res.url
+        this.companyForm.wechat_qrcode = res.data.url
         this.$message.success('二维码上传成功')
       } else {
         this.$message.error(res.message || '二维码上传失败')
@@ -203,6 +205,14 @@ export default {
         this.$message.error('二维码大小不能超过2MB!')
       }
       return isJPGOrPNG && isLt2M
+    }
+  },
+  computed: {
+    logoUploadUrl() {
+      return '/api/company/upload/logo';
+    },
+    wechatUploadUrl() {
+      return '/api/company/upload/wechat';
     }
   }
 }

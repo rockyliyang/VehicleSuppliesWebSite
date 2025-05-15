@@ -33,7 +33,7 @@
           <el-input v-model="categoryForm.name" placeholder="请输入分类名称" />
         </el-form-item>
         <el-form-item label="分类编码" prop="code">
-          <el-input v-model="categoryForm.code" placeholder="请输入分类编码" />
+          <el-input v-model="categoryForm.code" placeholder="请输入分类编码" maxlength="32" show-word-limit />
         </el-form-item>
         <el-form-item label="父级分类" prop="parent_id">
           <el-select v-model="categoryForm.parent_id" placeholder="请选择父级分类" style="width: 100%" clearable>
@@ -66,8 +66,6 @@
 </template>
 
 <script>
-import axios from 'axios'
-
 export default {
   name: 'AdminCategories',
   data() {
@@ -89,7 +87,10 @@ export default {
       },
       rules: {
         name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
-        code: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
+        code: [
+          { required: true, message: '请输入分类编码', trigger: 'blur' },
+          { max: 32, message: '分类编码不能超过32个字符', trigger: 'blur' }
+        ],
         sort_order: [{ required: true, message: '请输入排序值', trigger: 'blur' }]
       }
     }
@@ -102,11 +103,9 @@ export default {
     async fetchCategories() {
       this.loading = true
       try {
-        const response = await axios.get('/api/categories')
-        if (response.data.success) {
-          this.categoryList = response.data.data
-          this.parentOptions = this.categoryList.filter(item => !item.parent_id)
-        }
+        const response = await this.$api.get('categories')
+        this.categoryList = response.data
+        this.parentOptions = this.categoryList.filter(item => !item.parent_id)
       } catch (error) {
         console.error('获取分类列表失败:', error)
         this.$message.error('获取分类列表失败')
@@ -158,13 +157,10 @@ export default {
         type: 'warning'
       }).then(async () => {
         try {
-          const response = await axios.delete(`/api/categories/${row.id}`)
-          if (response.data.success) {
-            this.$message.success('删除成功')
-            this.fetchCategories()
-          } else {
-            this.$message.error(response.data.message || '删除失败')
-          }
+          const response = await this.$api.delete(`categories/${row.id}`)
+          // response已经是标准格式，成功消息已在api.js中处理
+          this.$message.success(response.message || '删除成功')
+          this.fetchCategories()
         } catch (error) {
           console.error('删除分类失败:', error)
           this.$message.error('删除分类失败')
@@ -180,21 +176,18 @@ export default {
           try {
             let response
             if (this.dialogStatus === 'create') {
-              response = await axios.post('/api/categories', this.categoryForm)
+              response = await this.$api.post('categories', this.categoryForm)
             } else {
-              response = await axios.put(`/api/categories/${this.categoryForm.id}`, this.categoryForm)
+              response = await this.$api.put(`categories/${this.categoryForm.id}`, this.categoryForm)
             }
             
-            if (response.data.success) {
-              this.$message.success(this.dialogStatus === 'create' ? '添加成功' : '更新成功')
-              this.dialogVisible = false
-              this.fetchCategories()
-            } else {
-              this.$message.error(response.data.message || (this.dialogStatus === 'create' ? '添加失败' : '更新失败'))
-            }
+            // response已经是标准格式，成功消息已在api.js中处理
+            this.$message.success(response.message || (this.dialogStatus === 'create' ? '添加成功' : '更新成功'))
+            this.dialogVisible = false
+            this.fetchCategories()
           } catch (error) {
             console.error(this.dialogStatus === 'create' ? '添加分类失败:' : '更新分类失败:', error)
-            this.$message.error(this.dialogStatus === 'create' ? '添加分类失败' : '更新分类失败')
+            this.$message.error(error.response?.data?.message || (this.dialogStatus === 'create' ? '添加分类失败' : '更新分类失败'))
           } finally {
             this.submitLoading = false
           }

@@ -1,42 +1,24 @@
 <template>
   <div class="user-management">
     <h2>用户管理</h2>
-    
+
     <!-- 创建新管理员表单 -->
     <div class="create-admin-section">
       <h3>创建新管理员</h3>
       <form @submit.prevent="handleCreateAdmin" class="admin-form">
         <div class="form-group">
           <label for="adminUsername">用户名</label>
-          <input
-            type="text"
-            id="adminUsername"
-            v-model="adminForm.username"
-            required
-            placeholder="请输入用户名"
-          />
+          <input type="text" id="adminUsername" v-model="adminForm.username" required placeholder="请输入用户名" />
         </div>
 
         <div class="form-group">
           <label for="adminEmail">邮箱</label>
-          <input
-            type="email"
-            id="adminEmail"
-            v-model="adminForm.email"
-            required
-            placeholder="请输入邮箱"
-          />
+          <input type="email" id="adminEmail" v-model="adminForm.email" required placeholder="请输入邮箱" />
         </div>
 
         <div class="form-group">
           <label for="adminPassword">密码</label>
-          <input
-            type="password"
-            id="adminPassword"
-            v-model="adminForm.password"
-            required
-            placeholder="请输入密码"
-          />
+          <input type="password" id="adminPassword" v-model="adminForm.password" required placeholder="请输入密码" />
         </div>
 
         <button type="submit" class="submit-btn" :disabled="loading">
@@ -70,11 +52,8 @@
               <td>{{ user.user_role === 'admin' ? '管理员' : '普通用户' }}</td>
               <td>{{ formatDate(user.created_at) }}</td>
               <td>
-                <button 
-                  class="action-btn delete-btn"
-                  @click="handleDeleteUser(user.id)"
-                  :disabled="user.user_role === 'admin'"
-                >
+                <button class="action-btn delete-btn" @click="handleDeleteUser(user.id)"
+                  :disabled="user.user_role === 'admin'">
                   删除
                 </button>
               </td>
@@ -87,7 +66,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+// 使用全局注册的$api替代axios
 
 export default {
   name: 'UserManagement',
@@ -108,17 +87,18 @@ export default {
   methods: {
     async fetchUsers() {
       try {
-        const response = await axios.get('/api/users/admin/users');
-        this.users = response.data;
+        const response = await this.$api.get('users/admin/users');
+        // 使用标准响应格式
+        this.users = response.data || [];
       } catch (error) {
-        alert('获取用户列表失败');
+        this.$message.error(error.response?.data?.message || '获取用户列表失败');
       }
     },
     async handleCreateAdmin() {
       this.loading = true;
       try {
-        await axios.post('/api/users/admin/create', this.adminForm);
-        alert('管理员创建成功');
+        const response = await this.$api.post('users/admin/create', this.adminForm);
+        this.$message.success(response.message || '管理员创建成功');
         this.adminForm = {
           username: '',
           email: '',
@@ -126,7 +106,7 @@ export default {
         };
         this.fetchUsers();
       } catch (error) {
-        alert(error.response?.data?.message || '创建管理员失败');
+        this.$message.error(error.response?.data?.message || '创建管理员失败');
       } finally {
         this.loading = false;
       }
@@ -137,11 +117,11 @@ export default {
       }
 
       try {
-        await axios.delete(`/api/users/admin/${userId}`);
-        alert('用户删除成功');
+        const response = await this.$api.delete(`users/admin/${userId}`);
+        this.$message.success(response.message || '用户删除成功');
         this.fetchUsers();
       } catch (error) {
-        alert('删除用户失败');
+        this.$message.error(error.response?.data?.message || '删除用户失败');
       }
     },
     formatDate(dateString) {
@@ -217,7 +197,8 @@ table {
   margin-top: 1rem;
 }
 
-th, td {
+th,
+td {
   padding: 0.75rem;
   text-align: left;
   border-bottom: 1px solid #ddd;
@@ -249,4 +230,4 @@ th {
   background-color: #cccccc;
   cursor: not-allowed;
 }
-</style> 
+</style>

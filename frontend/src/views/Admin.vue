@@ -22,7 +22,6 @@
               <span>产品管理</span>
             </template>
             <el-menu-item index="/admin/products">产品列表</el-menu-item>
-            <el-menu-item index="/admin/products/add">添加产品</el-menu-item>
             <el-menu-item index="/admin/categories">分类管理</el-menu-item>
           </el-sub-menu>
           <el-menu-item index="/admin/banners">
@@ -149,8 +148,10 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        // 实际项目中会调用登出API，清除token等
-        this.$router.push('/login')
+        // 清除admin token
+        localStorage.removeItem('admin_token')
+        this.$store.commit('setUser', null)
+        this.$router.push({ path: '/admin-login', query: { redirect: '/admin' } })
       }).catch(() => {})
     }
   }

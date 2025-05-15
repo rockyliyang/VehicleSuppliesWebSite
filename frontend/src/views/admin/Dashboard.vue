@@ -162,7 +162,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 import { Goods, User, List, Message, Plus, FolderAdd, PictureRounded } from '@element-plus/icons-vue'
 
 export default {
@@ -213,7 +212,7 @@ export default {
     // 获取最新产品
     async fetchRecentProducts() {
       try {
-        const response = await axios.get('/api/products', {
+        const response = await this.$api.get('products', {
           params: {
             limit: 5,
             sort_by: 'created_at',
@@ -221,11 +220,11 @@ export default {
           }
         })
         
-        if (response.data.success) {
-          this.recentProducts = response.data.data.items.slice(0, 5)
-        }
+        // response已经是标准格式，直接使用response.data
+        this.recentProducts = response.data?.items?.slice(0, 5) || []
       } catch (error) {
-        console.error('获取最新产品失败:', error)
+        // 错误已在api.js中统一处理
+        console.error('获取最新产品失败')
       }
     },
     

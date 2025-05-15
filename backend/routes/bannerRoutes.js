@@ -42,20 +42,29 @@ router.get('/', (req, res) => {
 
 // 获取单个Banner
 router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  const banner = banners.find(b => b.id === parseInt(id));
-  
-  if (!banner) {
-    return res.status(404).json({
+  try {
+    const { id } = req.params;
+    const banner = banners.find(b => b.id === parseInt(id));
+    if (!banner) {
+      return res.status(404).json({
+        success: false,
+        message: 'Banner不存在',
+        data: null
+      });
+    }
+    res.json({
+      success: true,
+      message: '获取Banner成功',
+      data: banner
+    });
+  } catch (error) {
+    console.error('获取Banner失败:', error);
+    res.status(500).json({
       success: false,
-      message: 'Banner不存在'
+      message: '服务器错误',
+      data: null
     });
   }
-  
-  res.json({
-    success: true,
-    data: banner
-  });
 });
 
 // 管理员路由 - 创建Banner

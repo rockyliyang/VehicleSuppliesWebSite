@@ -1,179 +1,152 @@
 <template>
-  <div class="register-container">
-    <h2>用户注册</h2>
-    <form @submit.prevent="handleRegister" class="register-form">
-      <div class="form-group">
-        <label for="username">用户名</label>
-        <input
-          type="text"
-          id="username"
-          v-model="form.username"
-          required
-          placeholder="请输入用户名"
-        />
+  <div class="register-page">
+    <el-card class="register-card">
+      <h2 class="register-title">用户注册</h2>
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="form.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" show-password />
+        </el-form-item>
+        <el-form-item label="验证码" prop="captcha">
+          <el-input v-model="form.captcha" placeholder="请输入验证码" style="width: 120px; margin-right: 10px;" />
+          <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img" alt="验证码" />
+        </el-form-item>
+        <el-form-item prop="agree">
+          <el-checkbox v-model="form.agree">我已阅读并同意 <a href="/user-agreement" target="_blank">用户协议</a></el-checkbox>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitForm" :loading="loading">注册</el-button>
+        </el-form-item>
+      </el-form>
+      <div class="register-footer">
+        已有账号？<router-link to="/login">去登录</router-link>
+        <br />
+        忘记密码？<router-link to="/forgot-password">找回密码</router-link>
       </div>
-
-      <div class="form-group">
-        <label for="email">邮箱</label>
-        <input
-          type="email"
-          id="email"
-          v-model="form.email"
-          required
-          placeholder="请输入邮箱"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="phone">手机号</label>
-        <input
-          type="tel"
-          id="phone"
-          v-model="form.phone"
-          required
-          placeholder="请输入手机号"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="password">密码</label>
-        <input
-          type="password"
-          id="password"
-          v-model="form.password"
-          required
-          placeholder="请输入密码"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="confirmPassword">确认密码</label>
-        <input
-          type="password"
-          id="confirmPassword"
-          v-model="form.confirmPassword"
-          required
-          placeholder="请再次输入密码"
-        />
-      </div>
-
-      <button type="submit" class="submit-btn" :disabled="loading">
-        {{ loading ? '注册中...' : '注册' }}
-      </button>
-
-      <p class="login-link">
-        已有账号？ <router-link to="/login">立即登录</router-link>
-      </p>
-    </form>
+    </el-card>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
   name: 'UserRegister',
   data() {
     return {
       form: {
-        username: '',
         email: '',
-        phone: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        captcha: '',
+        agree: false
       },
-      loading: false
-    };
+      rules: {
+        email: [
+          { required: true, message: '请输入邮箱', trigger: 'blur' },
+          { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+        ],
+        password: [
+          { required: true, message: '请输入密码', trigger: 'blur' },
+          { min: 8, message: '密码至少8位', trigger: 'blur' },
+          { validator: (rule, value, callback) => {
+              if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=]{8,}$/.test(value)) {
+                callback(new Error('密码需包含字母和数字'));
+              } else {
+                callback();
+              }
+            }, trigger: 'blur' }
+        ],
+        confirmPassword: [
+          { required: true, message: '请确认密码', trigger: 'blur' },
+          { validator: (rule, value, callback) => {
+              if (value !== this.form.password) {
+                callback(new Error('两次输入的密码不一致'));
+              } else {
+                callback();
+              }
+            }, trigger: 'blur' }
+        ],
+        captcha: [
+          { required: true, message: '请输入验证码', trigger: 'blur' }
+        ],
+        agree: [
+          { required: true, type: 'boolean', validator: (rule, value, callback) => {
+              if (!value) callback(new Error('请同意用户协议'));
+              else callback();
+            }, trigger: 'change' }
+        ]
+      },
+      loading: false,
+      captchaUrl: '/api/users/captcha?'+Date.now()
+    }
   },
   methods: {
-    async handleRegister() {
-      if (this.form.password !== this.form.confirmPassword) {
-        alert('两次输入的密码不一致');
-        return;
-      }
-
-      this.loading = true;
-      try {
-        await axios.post('/api/users/register', {
-          username: this.form.username,
-          email: this.form.email,
-          phone: this.form.phone,
-          password: this.form.password
-        });
-
-        alert('注册成功！');
-        this.$router.push('/login');
-      } catch (error) {
-        alert(error.response?.data?.message || '注册失败，请稍后重试');
-      } finally {
-        this.loading = false;
-      }
+    refreshCaptcha() {
+      this.captchaUrl = '/api/users/captcha?' + Date.now();
+    },
+    submitForm() {
+      this.$refs.formRef.validate(async valid => {
+        if (!valid) return;
+        this.loading = true;
+        try {
+          const res = await this.$api.post('/users/register', {
+            email: this.form.email,
+            password: this.form.password,
+            captcha: this.form.captcha
+          });
+          if (res.success) {
+            this.$alert('注册成功，请前往邮箱激活账号！', '注册成功', {
+              confirmButtonText: '去登录',
+              callback: () => {
+                this.$router.push('/login');
+              }
+            });
+          } else {
+            this.$message.error(res.message || '注册失败');
+            this.refreshCaptcha();
+          }
+        } catch (e) {
+          this.$message.error(e.response?.data?.message || '注册失败');
+          this.refreshCaptcha();
+        } finally {
+          this.loading = false;
+        }
+      });
     }
   }
-};
+}
 </script>
 
 <style scoped>
-.register-container {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.register-form {
+.register-page {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  background: #f7f7f7;
 }
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.register-card {
+  width: 400px;
+  padding: 30px 40px 20px 40px;
 }
-
-label {
-  font-weight: 500;
-}
-
-input {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.submit-btn {
-  background-color: #4CAF50;
-  color: white;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.submit-btn:hover {
-  background-color: #45a049;
-}
-
-.submit-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.login-link {
+.register-title {
   text-align: center;
-  margin-top: 1rem;
+  margin-bottom: 20px;
 }
-
-.login-link a {
-  color: #4CAF50;
-  text-decoration: none;
+.captcha-img {
+  height: 32px;
+  vertical-align: middle;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1px solid #eee;
 }
-
-.login-link a:hover {
-  text-decoration: underline;
+.register-footer {
+  text-align: center;
+  margin-top: 20px;
+  color: #888;
 }
 </style>

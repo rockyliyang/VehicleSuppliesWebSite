@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
+import store from '../store'
+import api from '../utils/api'
 
 const routes = [
   {
@@ -38,11 +40,18 @@ const routes = [
     // 添加路由守卫，检查用户是否有管理员权限
     beforeEnter: (to, from, next) => {
       // 实际项目中会从store或localStorage中获取用户信息，检查是否有管理员权限
+      console.log(localStorage.getItem('isAdmin'))
       const isAdmin = localStorage.getItem('isAdmin') === 'true'
       if (isAdmin) {
         next()
       } else {
-        next('/login')
+        next({
+          path: '/admin-login',
+          query: {
+            ...to.query,
+            redirect: to.fullPath
+          }
+        })
       }
     },
     children: [
@@ -83,15 +92,81 @@ const routes = [
     component: () => import('../views/Login.vue')
   },
   {
+    path: '/admin-login',
+    name: 'AdminLogin',
+    component: () => import('../views/admin/AdminLogin.vue')
+  },
+  {
     path: '/register',
     name: 'Register',
     component: () => import('../views/Register.vue')
+  },
+  {
+    path: '/activate',
+    name: 'Activate',
+    component: () => import('../views/Activate.vue')
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+// 全局路由守卫 - 在每次路由跳转前验证token
+router.beforeEach(async (to, from, next) => {
+  // 不需要验证token的路由
+  const publicPages = ['/', '/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact']
+  const authRequired = !publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin')
+  
+  // 如果是管理员路由，检查管理员token
+  if (to.path.startsWith('/admin') && to.path !== '/admin-login') {
+    const adminToken = localStorage.getItem('admin_token')
+    if (!adminToken) {
+      return next({
+        path: '/admin-login',
+        query: { redirect: to.fullPath }
+      })
+    }
+    
+    try {
+      // 验证管理员token
+      await api.get('/users/check-token')
+    } catch (error) {
+      // token无效，清除并跳转到登录页
+      localStorage.removeItem('admin_token')
+      store.commit('setUser', null)
+      return next({
+        path: '/admin-login',
+        query: { redirect: to.fullPath }
+      })
+    }
+  }
+  
+  // 如果需要验证普通用户token
+  else if (authRequired) {
+    const isLoggedIn = store.state.isLoggedIn
+    if (!isLoggedIn) {
+      return next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+    }
+    
+    try {
+      // 验证用户token
+      await api.get('/users/check-token')
+    } catch (error) {
+      // token无效，清除并跳转到登录页
+      store.commit('setUser', null)
+      return next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+    }
+  }
+  
+  next()
 })
 
 export default router

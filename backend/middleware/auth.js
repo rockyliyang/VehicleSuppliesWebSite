@@ -1,20 +1,21 @@
 const jwt = require('jsonwebtoken');
 
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: '未提供认证令牌' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: '无效的认证令牌' });
+const auth = (req, res, next) => {
+  try {
+    let token = req.header('Authorization');
+    if (!token && req.cookies) {
+      token = req.cookies.token;
     }
-    req.user = user;
+    if (token && token.startsWith('Bearer ')) {
+      token = token.replace('Bearer ', '');
+    }
+    if (!token) throw new Error('未登录');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
     next();
-  });
+  } catch (err) {
+    res.status(401).json({ success: false, message: '请先登录', data: {} });
+  }
 };
 
 const isAdmin = (req, res, next) => {
@@ -25,6 +26,6 @@ const isAdmin = (req, res, next) => {
 };
 
 module.exports = {
-  authenticateToken,
+  auth,
   isAdmin
 }; 

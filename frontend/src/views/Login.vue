@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-container">
       <div class="login-header">
-        <img src="../assets/images/logo.png" alt="AUTO EASE EXPERT CO., LTD" class="logo">
+        <img :src="logoUrl" alt="AUTO EASE EXPERT CO., LTD" class="logo">
         <h2>用户登录</h2>
       </div>
 
@@ -83,11 +83,20 @@
 </template>
 
 <script>
-import axios from 'axios'
+/* eslint-disable no-unused-vars */
+// 使用全局注册的$api替代axios
 import { ElMessage } from 'element-plus'
+import { User, Lock, PhoneFilled, Message } from '@element-plus/icons-vue'
+/* eslint-enable no-unused-vars */
 
 export default {
   name: 'UserLogin',
+  components: {
+    User,
+    Lock,
+    PhoneFilled,
+    Message
+  },
   data() {
     return {
       activeTab: 'account',
@@ -121,46 +130,45 @@ export default {
       loading: false,
       codeSending: false,
       cooldown: 0,
-      timer: null
+      timer: null,
+      logoUrl: '/static/images/logo.png',
+      tokenCheckTimer: null
     }
   },
+  created() {
+    this.fetchCompanyLogo();
+  },
+  mounted() {
+    // 页面加载时检查登录状态
+    this.checkLocalStorage()
+  },
   methods: {
+    async fetchCompanyLogo() {
+      try {
+        const res = await this.$api.get('company');
+        if (res.success && res.data && res.data.logo_url) {
+          this.logoUrl = res.data.logo_url;
+        }
+      } catch (e) {
+        // 保持默认logo
+      }
+    },
     submitLogin() {
       this.$refs.loginForm.validate(async valid => {
         if (valid) {
           try {
             this.loading = true
-            const response = await axios.post('/api/users/login', {
+            const response = await this.$api.post('users/login', {
               username: this.loginForm.username,
               password: this.loginForm.password
             })
-            
-            if (response.data.success) {
-              // 保存token和用户信息
-              localStorage.setItem('token', response.data.data.token)
-              localStorage.setItem('user', JSON.stringify(response.data.data.user))
-              
-              // 如果是管理员，设置管理员标志
-              if (response.data.data.user.is_admin) {
-                localStorage.setItem('isAdmin', 'true')
-              }
-              
-              ElMessage.success('登录成功')
-              
-              // 根据用户角色跳转到不同页面
-              if (response.data.data.user.is_admin) {
-                this.$router.push('/admin')
-              } else {
-                // 如果有上一页，则返回上一页，否则跳转到首页
-                if (this.$route.query.redirect) {
-                  this.$router.push(this.$route.query.redirect)
-                } else {
-                  this.$router.push('/')
-                }
-              }
-            } else {
-              ElMessage.error(response.data.message || '登录失败')
-            }
+            // 登录成功，保存token和用户信息
+            const { token, user } = response.data
+            this.$store.commit('setUser', user)
+            localStorage.setItem('user_token', token)
+            this.$message.success(response.message || '登录成功')
+            this.startTokenCheck()
+            this.$router.push(this.$route.query.redirect || '/')
           } catch (error) {
             console.error('登录失败:', error)
             ElMessage.error('登录失败，请稍后重试')
@@ -204,6 +212,45 @@ export default {
           clearInterval(this.timer)
         }
       }, 1000)
+    },
+    startTokenCheck() {
+      if (this.tokenCheckTimer) clearInterval(this.tokenCheckTimer)
+      this.tokenCheckTimer = setInterval(this.checkTokenValidity, 5 * 60 * 1000)
+    },
+    async checkTokenValidity() {
+      const token = localStorage.getItem('user_token')
+      if (!token) return
+      try {
+        const res = await this.$api.get('/users/check-token', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.success) throw new Error('Token invalid')
+      } catch (e) {
+        localStorage.removeItem('user_token')
+        this.$store.commit('setUser', null)
+        this.$message.error('登录已过期，请重新登录')
+        this.$router.push('/login')
+      }
+    },
+    // 检查本地存储中的登录信息
+    checkLocalStorage() {
+      const token = localStorage.getItem('token')
+      if (token && !this.$store.state.isLoggedIn) {
+        // 如果有token但store中未登录，尝试获取用户信息
+        this.getUserInfo()
+      }
+    },
+    
+    // 获取用户信息
+    async getUserInfo() {
+      try {
+        const userRes = await this.$api.get('/users/profile')
+        if (userRes.success) {
+          this.$store.commit('setUser', userRes.data)
+        }
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+      }
     }
   },
   beforeUnmount() {
@@ -240,8 +287,13 @@ export default {
 }
 
 .logo {
-  height: 50px;
-  margin-bottom: 15px;
+  display: block;
+  margin: 0 auto 15px auto;
+  max-width: 60%;
+  max-height: 80px;
+  height: auto;
+  width: auto;
+  object-fit: contain;
 }
 
 .login-header h2 {

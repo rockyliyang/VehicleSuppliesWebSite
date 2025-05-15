@@ -3,34 +3,41 @@
     <div class="top-bar">
       <div class="container">
         <div class="contact-info">
-          <span><el-icon><PhoneFilled /></el-icon> {{ companyInfo.phone || '+86 123 4567 8910' }}</span>
-          <span><el-icon><Message /></el-icon> {{ companyInfo.email || 'contact@autoease.com' }}</span>
+          <span><el-icon>
+              <PhoneFilled />
+            </el-icon> {{ companyInfo.phone || '+86 123 4567 8910' }}</span>
+          <span><el-icon>
+              <Message />
+            </el-icon> {{ companyInfo.email || 'contact@autoease.com' }}</span>
         </div>
         <div class="top-right">
           <span class="discount">10% OFF All Items</span>
           <el-dropdown>
             <span class="language-selector">
-              中文 <el-icon><ArrowDown /></el-icon>
+              中文 <el-icon>
+                <ArrowDown />
+              </el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-              <el-dropdown-item>English</el-dropdown-item>
-              <el-dropdown-item>中文</el-dropdown-item>
-            </el-dropdown-menu>
+                <el-dropdown-item>English</el-dropdown-item>
+                <el-dropdown-item>中文</el-dropdown-item>
+              </el-dropdown-menu>
             </template>
           </el-dropdown>
         </div>
       </div>
     </div>
-    
+
     <div class="main-header">
       <div class="container">
         <div class="logo">
           <router-link to="/">
-            <img :src="companyInfo.logo_url || logoImage" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'" @error="handleImageError">
+            <img :src="companyInfo.logo_url || logoImage" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'"
+              @error="handleImageError">
           </router-link>
         </div>
-        
+
         <nav class="main-nav">
           <ul>
             <li><router-link to="/" exact>首页</router-link></li>
@@ -40,32 +47,51 @@
             <li><router-link to="/contact">联系我们</router-link></li>
           </ul>
         </nav>
-        
+
         <div class="user-actions">
-          <el-button link @click="login"><el-icon><User /></el-icon>登录</el-button>
-          <el-button link><el-icon><ShoppingCartFull /></el-icon>询价</el-button>
+          <!-- 购物车按钮 -->
+          <el-button link @click="handleCartClick">
+            <el-icon>
+              <ShoppingCartFull />
+            </el-icon>
+          </el-button>
+          <!-- 登录/用户按钮 -->
+          <el-dropdown trigger="hover" @command="handleUserMenu">
+            <span class="user-btn">
+              <el-icon>
+                <User />
+              </el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-if="isLoggedIn" command="orders">我的订单</el-dropdown-item>
+                <el-dropdown-item v-if="isLoggedIn" command="logout">退出</el-dropdown-item>
+                <el-dropdown-item v-if="!isLoggedIn" command="login">注册/登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
     </div>
-    
+
     <!-- 登录对话框 -->
-    <el-dialog
-      title="用户登录"
-      v-model="loginDialogVisible"
-      width="400px"
-      center>
+    <el-dialog title="用户登录" v-model="loginDialogVisible" width="400px" center>
       <el-form :model="loginForm" :rules="loginRules" ref="loginForm">
         <el-form-item prop="username">
           <el-input v-model="loginForm.username" placeholder="用户名">
             <template #prefix>
-              <el-icon><User /></el-icon>
+              <el-icon>
+                <User />
+              </el-icon>
             </template>
           </el-input>
         </el-form-item>
         <el-form-item prop="password">
           <el-input v-model="loginForm.password" placeholder="密码" show-password>
             <template #prefix>
-              <el-icon><Lock /></el-icon>
+              <el-icon>
+                <Lock />
+              </el-icon>
             </template>
           </el-input>
         </el-form-item>
@@ -82,7 +108,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+// 使用全局注册的$api替代axios
 import logoImage from '../../assets/images/logo.png'
 
 import { PhoneFilled, Message, ArrowDown, User, Lock, ShoppingCartFull } from '@element-plus/icons-vue'
@@ -115,21 +141,28 @@ export default {
       },
       companyInfo: {},
       logoImage,
+      tokenCheckTimer: null
+    }
+  },
+  computed: {
+    isLoggedIn() {
+      // 只判断user_token
+      return !!localStorage.getItem('user_token');
     }
   },
   created() {
-    this.fetchCompanyInfo()
+    this.fetchCompanyInfo();
+    this.startTokenCheck();
   },
   methods: {
     handleImageError,
     async fetchCompanyInfo() {
       try {
-        const response = await axios.get('/api/company')
-        if (response.data && response.data.success) {
-          this.companyInfo = response.data.data
-        }
+        const response = await this.$api.get('company')
+        this.companyInfo = response.data || {}
       } catch (error) {
         console.error('获取公司信息失败:', error)
+        this.$message.error(error.response?.data?.message || '获取公司信息失败')
       }
     },
 
@@ -147,16 +180,55 @@ export default {
     },
     showRegister() {
       this.loginDialogVisible = false
-      // 实际项目中这里会跳转到注册页面或显示注册对话框
-      this.$message.info('注册功能开发中')
-    }
+      // 跳转到注册页面
+      this.$router.push('/register')
+    },
+    handleCartClick() {
+      if (!this.isLoggedIn) {
+        this.$router.push('/login');
+      } else {
+        this.$router.push('/cart');
+      }
+    },
+    startTokenCheck() {
+      if (this.tokenCheckTimer) clearInterval(this.tokenCheckTimer)
+      this.tokenCheckTimer = setInterval(this.checkTokenValidity, 5 * 60 * 1000)
+    },
+    async checkTokenValidity() {
+      const token = localStorage.getItem('user_token')
+      if (!token) return
+      try {
+        const res = await this.$api.get('/users/check-token', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.success) throw new Error('Token invalid')
+      } catch (e) {
+        localStorage.removeItem('user_token')
+        this.$store.commit('setUser', null)
+        this.$message.error('登录已过期，请重新登录')
+        this.$router.push('/login')
+      }
+    },
+    handleUserMenu(command) {
+      if (command === 'orders') {
+        this.$router.push('/orders');
+      } else if (command === 'logout') {
+        // 清除登录状态
+        localStorage.removeItem('user_token');
+        this.$store.commit('setUser', null);
+        this.$message.success('已退出登录');
+        this.$router.push('/login');
+      } else if (command === 'login') {
+        this.$router.push('/login');
+      }
+    },
   }
 }
 </script>
 
 <style scoped>
 .site-header {
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .top-bar {
@@ -230,7 +302,8 @@ export default {
   transition: color 0.3s;
 }
 
-.main-nav a:hover, .main-nav a.router-link-active {
+.main-nav a:hover,
+.main-nav a.router-link-active {
   color: #e60012;
 }
 
@@ -276,16 +349,18 @@ export default {
     flex-direction: column;
     align-items: flex-start;
   }
-  
-  .top-right, .main-nav, .user-actions {
+
+  .top-right,
+  .main-nav,
+  .user-actions {
     margin-top: 10px;
     width: 100%;
   }
-  
+
   .main-nav ul {
     flex-wrap: wrap;
   }
-  
+
   .main-nav li {
     margin: 5px 10px 5px 0;
   }

@@ -9,7 +9,19 @@ module.exports = defineConfig({
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true
-      }
+      },
+      '/public/static': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
+      '/static': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
+      '/product-images/upload': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
     }
   },
   // 开发环境开启源映射

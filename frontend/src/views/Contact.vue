@@ -18,7 +18,7 @@
           <h2>联系方式</h2>
           <div class="title-underline"></div>
         </div>
-        
+
         <div class="contact-content">
           <div class="contact-info">
             <div class="info-item">
@@ -30,7 +30,7 @@
                 <p>{{ companyInfo.address || '123 Auto Street, Vehicle City' }}</p>
               </div>
             </div>
-            
+
             <div class="info-item">
               <div class="info-icon">
                 <i class="el-icon-phone"></i>
@@ -40,7 +40,7 @@
                 <p>{{ companyInfo.phone || '+86 123 4567 8910' }}</p>
               </div>
             </div>
-            
+
             <div class="info-item">
               <div class="info-icon">
                 <i class="el-icon-message"></i>
@@ -50,7 +50,7 @@
                 <p>{{ companyInfo.email || 'contact@autoease.com' }}</p>
               </div>
             </div>
-            
+
             <div class="info-item">
               <div class="info-icon">
                 <i class="el-icon-time"></i>
@@ -61,7 +61,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="contact-form-container">
             <h3>给我们留言</h3>
             <el-form :model="contactForm" :rules="contactRules" ref="contactForm" label-width="80px">
@@ -88,29 +88,30 @@
           </div>
         </div>
       </div>
-      
+
       <div class="map-section">
         <div class="section-title">
           <h2>公司位置</h2>
           <div class="title-underline"></div>
         </div>
-        
+
         <div class="map-container">
           <!-- 实际项目中会使用地图API，这里用图片代替 -->
           <img src="../assets/images/map.jpg" alt="公司地图" @error="handleImageError">
         </div>
       </div>
-      
+
       <div class="qrcode-section">
         <div class="section-title">
           <h2>关注我们</h2>
           <div class="title-underline"></div>
         </div>
-        
+
         <div class="qrcode-container">
           <div class="qrcode-item">
             <div class="qrcode-image">
-              <img :src="companyInfo.wechat_qrcode || '../assets/images/qrcode.png'" alt="微信二维码" @error="handleImageError">
+              <img :src="companyInfo.wechat_qrcode || '../assets/images/qrcode.png'" alt="微信二维码"
+                @error="handleImageError">
             </div>
             <p>扫描二维码关注我们的微信公众号</p>
           </div>
@@ -121,7 +122,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 import { handleImageError } from '../utils/imageUtils'
 
 export default {
@@ -163,10 +163,12 @@ export default {
     handleImageError,
     async fetchCompanyInfo() {
       try {
-        const response = await axios.get('/api/company')
-        this.companyInfo = response.data.data
+        const response = await this.$api.get('company')
+        // response已经是标准格式，直接使用response.data
+        this.companyInfo = response.data
       } catch (error) {
-        console.error('获取公司信息失败:', error)
+        // 错误已在api.js中统一处理
+        console.error('获取公司信息失败')
       }
     },
     submitForm() {
@@ -193,7 +195,7 @@ export default {
 .page-banner {
   height: 200px;
   background-color: #f5f5f5;
-  background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('../assets/images/banner1.jpg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../assets/images/banner1.jpg');
   background-size: cover;
   background-position: center;
   display: flex;
@@ -215,7 +217,9 @@ export default {
   padding: 0 15px;
 }
 
-.contact-section, .map-section, .qrcode-section {
+.contact-section,
+.map-section,
+.qrcode-section {
   margin-bottom: 60px;
 }
 
@@ -296,7 +300,7 @@ export default {
   height: 400px;
   border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .map-container img {
@@ -335,7 +339,7 @@ export default {
   .contact-content {
     flex-direction: column;
   }
-  
+
   .map-container {
     height: 300px;
   }

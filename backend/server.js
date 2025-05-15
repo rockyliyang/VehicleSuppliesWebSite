@@ -9,6 +9,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const userRoutes = require('./routes/userRoutes');
+const productImageRoutes = require('./routes/productImageRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,7 +20,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // 静态文件服务
-app.use('/static', express.static(path.join(__dirname, 'public')));
+app.use('/static', express.static(path.join(__dirname, 'public', 'static')));
+app.use('/public/static', express.static(path.join(__dirname, 'public', 'static')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // API路由
 app.use('/api/products', productRoutes);
@@ -27,6 +30,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/product-images', productImageRoutes);
 
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
@@ -47,6 +51,39 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`服务器运行在 http://localhost:${PORT}`);
+});
+
+// 优雅关闭服务器
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+// 处理未捕获的异常
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+// 处理未处理的 Promise 拒绝
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  server.close(() => {
+    process.exit(1);
+  });
 });

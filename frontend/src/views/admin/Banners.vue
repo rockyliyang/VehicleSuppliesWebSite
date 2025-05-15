@@ -39,8 +39,8 @@
           <el-input v-model="bannerForm.title" placeholder="请输入标题" />
         </el-form-item>
         <el-form-item label="Banner图片" prop="image">
-          <el-upload class="banner-uploader" action="/api/upload" :show-file-list="false"
-            :on-success="handleImageSuccess" :before-upload="beforeImageUpload">
+          <el-upload class="banner-uploader" action="upload" :show-file-list="false" :on-success="handleImageSuccess"
+            :before-upload="beforeImageUpload">
             <img v-if="bannerForm.image" :src="bannerForm.image" class="banner-preview">
             <el-icon v-else class="banner-uploader-icon">
               <Plus />
@@ -75,7 +75,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 import { Plus } from '@element-plus/icons-vue'
 
 export default {
@@ -114,9 +113,11 @@ export default {
     async fetchBanners() {
       this.loading = true
       try {
-        const response = await axios.get('/api/banners')
-        if (response.data.success) {
-          this.bannerList = response.data.data
+        const response = await this.$api.get('banners')
+        if (response.success) {
+          this.bannerList = response.data
+        } else {
+          this.$message.error(response.message || '获取Banner列表失败')
         }
       } catch (error) {
         console.error('获取Banner列表失败:', error)
@@ -162,12 +163,12 @@ export default {
         type: 'warning'
       }).then(async () => {
         try {
-          const response = await axios.delete(`/api/banners/${row.id}`)
-          if (response.data.success) {
+          const response = await this.$api.delete(`banners/${row.id}`)
+          if (response.success) {
             this.$message.success('删除成功')
             this.fetchBanners()
           } else {
-            this.$message.error(response.data.message || '删除失败')
+            this.$message.error(response.message || '删除失败')
           }
         } catch (error) {
           console.error('删除Banner失败:', error)
@@ -184,17 +185,17 @@ export default {
           try {
             let response
             if (this.dialogStatus === 'create') {
-              response = await axios.post('/api/banners', this.bannerForm)
+              response = await this.$api.post('banners', this.bannerForm)
             } else {
-              response = await axios.put(`/api/banners/${this.bannerForm.id}`, this.bannerForm)
+              response = await this.$api.put(`banners/${this.bannerForm.id}`, this.bannerForm)
             }
             
-            if (response.data.success) {
+            if (response.success) {
               this.$message.success(this.dialogStatus === 'create' ? '添加成功' : '更新成功')
               this.dialogVisible = false
               this.fetchBanners()
             } else {
-              this.$message.error(response.data.message || (this.dialogStatus === 'create' ? '添加失败' : '更新失败'))
+              this.$message.error(response.message || (this.dialogStatus === 'create' ? '添加失败' : '更新失败'))
             }
           } catch (error) {
             console.error(this.dialogStatus === 'create' ? '添加Banner失败:' : '更新Banner失败:', error)
@@ -207,11 +208,11 @@ export default {
     },
     
     // 图片上传成功回调
-    handleImageSuccess(res, file) { // eslint-disable-line no-unused-vars
+    handleImageSuccess(res) {
       if (res.success) {
         this.bannerForm.image = res.data.url
       } else {
-        this.$message.error('上传失败')
+        this.$message.error(res.message || '上传失败')
       }
     },
     

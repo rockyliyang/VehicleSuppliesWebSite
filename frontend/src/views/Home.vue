@@ -30,28 +30,35 @@
     <!-- 产品展示部分 -->
     <div class="products-section">
       <div class="section-title">
-        <h2>Our <span>Products</span></h2>
+        <h2><span class="section-title-main">Our</span> <span class="section-title-red">Products</span></h2>
         <div class="title-underline"></div>
+        <div class="section-subtitle">Your Car, Our Expert Care: Nurturing Automotive Excellence</div>
       </div>
 
       <div class="product-categories">
-        <div class="category-tabs">
-          <el-tabs v-model="activeCategory">
-            <el-tab-pane v-for="category in categories" :key="category.id" :label="category.name" :name="category.id.toString()"></el-tab-pane>
-          </el-tabs>
+        <div class="category-btn-group">
+          <button
+            v-for="category in categories"
+            :key="category.id"
+            :class="['category-btn', activeCategory === category.id.toString() ? 'active' : '']"
+            @click="activeCategory = category.id.toString()"
+          >
+            {{ category.name }}
+          </button>
+          <button class="category-btn more-btn">More</button>
         </div>
+      </div>
 
-        <div class="product-grid">
-          <div v-for="product in displayProducts" :key="product.id" class="product-card">
-            <router-link :to="`/product/${product.id}`">
-              <div class="product-image">
-                <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError">
-              </div>
-              <div class="product-info">
-                <h3>{{ product.name }}</h3>
-              </div>
-            </router-link>
-          </div>
+      <div class="product-grid">
+        <div v-for="product in displayProducts" :key="product.id" class="product-card">
+          <router-link :to="`/product/${product.id}`">
+            <div class="product-image">
+              <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError">
+            </div>
+            <div class="product-info">
+              <h3 class="product-title">{{ product.name }}</h3>
+            </div>
+          </router-link>
         </div>
       </div>
     </div>
@@ -85,101 +92,45 @@ export default {
   name: 'HomePage',
   data() {
     return {
-      activeCategory: '1',
+      activeCategory: '',
       banners: [
         { image_url: require('../assets/images/banner1.jpg') },
         { image_url: require('../assets/images/banner2.jpg') },
         { image_url: require('../assets/images/banner3.jpg') }
       ],
-      categories: [
-        { id: 1, name: '汽车吸尘器' },
-        { id: 2, name: '车载充电器' },
-        { id: 3, name: '汽车应急启动电源' },
-        { id: 4, name: '其他' }
-      ],
-      products: [
-        { 
-          id: 1, 
-          category_id: 1, 
-          name: 'XWC-001 Car Vacuum Cleaner', 
-          thumbnail_url: require('../assets/images/product1.jpg')
-        },
-        { 
-          id: 2, 
-          category_id: 1, 
-          name: 'XWC-002 Vacuum Cleaner', 
-          thumbnail_url: require('../assets/images/product2.jpg')
-        },
-        { 
-          id: 3, 
-          category_id: 1, 
-          name: 'XWC-003 Car Vacuum Cleaner', 
-          thumbnail_url: require('../assets/images/product3.jpg')
-        },
-        { 
-          id: 4, 
-          category_id: 1, 
-          name: 'XWC-004 Car Vacuum Cleaner', 
-          thumbnail_url: require('../assets/images/product4.jpg')
-        },
-        { 
-          id: 5, 
-          category_id: 3, 
-          name: 'F-39 4000A 12V&24V Jump Starter', 
-          thumbnail_url: require('../assets/images/product5.jpg')
-        },
-        { 
-          id: 6, 
-          category_id: 3, 
-          name: 'F-25 2000A Jump Starter', 
-          thumbnail_url: require('../assets/images/product6.jpg')
-        },
-        { 
-          id: 7, 
-          category_id: 3, 
-          name: 'F-18 Wireless Charger Jump Starter', 
-          thumbnail_url: require('../assets/images/product7.jpg')
-        },
-        { 
-          id: 8, 
-          category_id: 3, 
-          name: 'F-8 12V Jump Starter', 
-          thumbnail_url: require('../assets/images/product8.jpg')
-        }
-      ]
+      categories: [],
+      products: []
     }
   },
   computed: {
     displayProducts() {
-      return this.products.filter(product => product.category_id.toString() === this.activeCategory)
+      return this.products.filter(product => product.category_id && product.category_id.toString() === this.activeCategory)
     }
   },
   mounted() {
-    // 在实际项目中，这里会从API获取数据
-    // this.fetchBanners()
-    // this.fetchCategories()
-    // this.fetchProducts()
+    this.fetchCategories()
+    this.fetchProducts()
   },
   methods: {
     handleImageError,
-    // 这些方法在实际项目中会调用API
-    fetchBanners() {
-      // axios.get('/api/banners').then(response => {
-      //   this.banners = response.data
-      // })
+    async fetchCategories() {
+      try {
+        const res = await this.$api.get('categories')
+        this.categories = res.data || []
+        if (this.categories.length > 0) {
+          this.activeCategory = this.categories[0].id.toString()
+        }
+      } catch (e) {
+        this.categories = []
+      }
     },
-    fetchCategories() {
-      // axios.get('/api/categories').then(response => {
-      //   this.categories = response.data
-      //   if (this.categories.length > 0) {
-      //     this.activeCategory = this.categories[0].id.toString()
-      //   }
-      // })
-    },
-    fetchProducts() {
-      // axios.get('/api/products').then(response => {
-      //   this.products = response.data
-      // })
+    async fetchProducts() {
+      try {
+        const res = await this.$api.get('products')
+        this.products = (res.data && res.data.items) ? res.data.items : []
+      } catch (e) {
+        this.products = []
+      }
     }
   }
 }
@@ -252,13 +203,21 @@ export default {
   margin-bottom: 30px;
 }
 
-.section-title h2 {
+.section-title-main {
   font-size: 28px;
   font-weight: bold;
+  color: #222;
 }
-
-.section-title span {
+.section-title-red {
+  font-size: 28px;
+  font-weight: bold;
   color: #e60012;
+}
+.section-subtitle {
+  color: #888;
+  font-size: 16px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .title-underline {
@@ -266,6 +225,33 @@ export default {
   height: 3px;
   background-color: #e60012;
   margin: 15px auto;
+}
+
+.category-btn-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.category-btn {
+  padding: 10px 28px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #222;
+  font-size: 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.category-btn.active {
+  background: #e60012;
+  color: #fff;
+  border-color: #e60012;
+}
+.category-btn.more-btn {
+  background: #fff;
+  color: #222;
+  border: 1px solid #ddd;
 }
 
 .product-grid {
@@ -279,39 +265,40 @@ export default {
   border: 1px solid #eee;
   border-radius: 5px;
   overflow: hidden;
-  transition: all 0.3s ease;
+  background: #fff;
+  transition: box-shadow 0.2s;
+  box-shadow: none;
 }
-
 .product-card:hover {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(230, 0, 18, 0.08);
+  transform: translateY(-3px);
 }
-
 .product-image {
   height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
   overflow: hidden;
 }
-
 .product-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
   transition: transform 0.3s ease;
 }
-
 .product-card:hover .product-image img {
   transform: scale(1.05);
 }
-
 .product-info {
   padding: 15px;
   text-align: center;
 }
-
-.product-info h3 {
-  font-size: 16px;
+.product-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #222;
   margin: 0;
-  color: #333;
 }
 
 /* 关于我们部分 */
@@ -342,7 +329,7 @@ export default {
 .about-image img {
   width: 100%;
   border-radius: 5px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .more-btn {
@@ -364,15 +351,15 @@ export default {
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .about-content {
     flex-direction: column;
   }
-  
+
   .banner-content h2 {
     font-size: 28px;
   }
-  
+
   .banner-slogan h3 {
     font-size: 24px;
   }
