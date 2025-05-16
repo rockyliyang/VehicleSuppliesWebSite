@@ -17,7 +17,8 @@
         <div class="filter-sidebar">
           <h3>产品分类</h3>
           <ul class="category-list">
-            <li v-for="category in categories" :key="category.id" :class="{ active: selectedCategory === category.id.toString() }"
+            <li v-for="category in categories" :key="category.id"
+              :class="{ active: selectedCategory === category.id.toString() }"
               @click="selectCategory(category.id.toString())">
               {{ category.name }}
             </li>
@@ -40,19 +41,16 @@
 
           <div class="products-grid">
             <div v-for="product in sortedProducts" :key="product.id" class="product-card">
-              <router-link :to="`/product/${product.id}`">
-                <div class="product-image">
-                  <img :src="product.thumbnail_url || require('../assets/images/default-image.svg')" :alt="product.name" @error="handleImageError">
-                </div>
-                <div class="product-info">
-                  <h3>{{ product.name }}</h3>
-                  <p class="product-desc">{{ product.short_description }}</p>
-                  <div class="product-price">¥{{ formatPrice(product.price) }}</div>
-                </div>
-              </router-link>
+              <div class="product-image" @click="$router.push(`/product/${product.id}`)" style="cursor: pointer;">
+                <img :src="product.thumbnail_url || require('../assets/images/default-image.svg')" :alt="product.name"
+                  @error="handleImageError">
+              </div>
+              <div class="product-info">
+                <h3 @click="$router.push(`/product/${product.id}`)" style="cursor: pointer;">{{ product.name }}</h3>
+                <div class="product-price">¥{{ formatPrice(product.price) }}</div>
+              </div>
               <div class="product-actions">
-                <el-button type="primary" size="small" @click="addToInquiry(product)">加入询价</el-button>
-                <el-button size="small" @click="viewDetail(product.id)">查看详情</el-button>
+                <el-button type="primary" size="small" @click="addToInquiry(product)">加入购物车</el-button>
               </div>
             </div>
           </div>
@@ -73,8 +71,9 @@
 </template>
 
 <script>
-// 使用全局注册的$api替代axios
-
+import { handleImageError } from '../utils/imageUtils';
+import { formatPrice } from '../utils/format';
+import { addToCart } from '../utils/cartUtils';
 export default {
   name: 'ProductsPage',
   data() {
@@ -122,15 +121,8 @@ export default {
     }
   },
   methods: {
-    handleImageError(e) {
-      if (e && e.target) {
-        e.target.src = require('../assets/images/default-image.svg');
-      }
-    },
-    formatPrice(price) {
-      const n = Number(price)
-      return isNaN(n) ? '--' : n.toFixed(2)
-    },
+    formatPrice,
+    handleImageError,
     async fetchCategories() {
       try {
         this.loading = true
@@ -168,12 +160,13 @@ export default {
       // 滚动到页面顶部
       window.scrollTo(0, 0)
     },
-    addToInquiry(product) {
-      this.$store.commit('addToCart', product)
-      this.$message.success('已添加到询价单')
-    },
-    viewDetail(productId) {
-      this.$router.push(`/product/${productId}`)
+    async addToInquiry(product) {
+      // 使用公共的购物车工具函数
+      await addToCart(product, {
+        router: this.$router,
+        message: this.$message,
+        api: this.$api
+      });
     }
   }
 }
@@ -272,14 +265,6 @@ export default {
   margin-bottom: 30px;
 }
 
-.product-card {
-  border: 1px solid #eee;
-  border-radius: 4px;
-  overflow: hidden;
-  transition: all 0.3s;
-  background-color: white;
-}
-
 .product-card:hover {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   transform: translateY(-5px);
@@ -307,18 +292,7 @@ export default {
 
 .product-info h3 {
   font-size: 16px;
-  margin-bottom: 8px;
-  height: 40px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.product-desc {
-  color: #666;
-  font-size: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   height: 40px;
   overflow: hidden;
   display: -webkit-box;
@@ -330,12 +304,29 @@ export default {
   font-size: 18px;
   color: #f56c6c;
   font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .product-actions {
   padding: 0 15px 15px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+}
+
+.product-card {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.3s;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-info {
+  padding: 15px;
+  flex-grow: 1;
+  text-align: center;
 }
 
 .no-products {

@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../db/db');
-const { auth, isAdmin } = require('../middleware/auth');
+const { verifyToken, isAdmin } = require('../middleware/jwt');
 const jwtMiddleware = require('../middleware/jwt');
 const { sendMail } = require('../utils/email');
 const crypto = require('crypto');
@@ -163,7 +163,7 @@ router.get('/check-token', jwtMiddleware.verifyToken, (req, res) => {
   try {
     // 生成新的JWT token，有效期为1小时
     const newToken = jwt.sign(
-      { id: req.userId, email: req.userEmail, userRole: req.userRole },
+      { id: req.user.id, username: req.user.username,email: req.user.email, userRole: req.user.user_role },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -188,7 +188,7 @@ router.get('/check-token', jwtMiddleware.verifyToken, (req, res) => {
 });
 
 // 获取用户信息
-router.get('/profile', auth, async (req, res) => {
+router.get('/profile', verifyToken, async (req, res) => {
   try {
     const [users] = await pool.query(
       'SELECT id, username, email, phone, user_role FROM users WHERE id = ? AND deleted = 0',
@@ -219,7 +219,7 @@ router.get('/profile', auth, async (req, res) => {
 });
 
 // 管理员创建新管理员
-router.post('/admin/create', auth, isAdmin, async (req, res) => {
+router.post('/admin/create', verifyToken, isAdmin, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -262,7 +262,7 @@ router.post('/admin/create', auth, isAdmin, async (req, res) => {
 });
 
 // 获取所有用户列表（仅管理员）
-router.get('/admin/users', auth, isAdmin, async (req, res) => {
+router.get('/admin/users', verifyToken, isAdmin, async (req, res) => {
   try {
     const [users] = await pool.query(
       'SELECT id, username, email, phone, user_role, created_at FROM users WHERE deleted = 0'

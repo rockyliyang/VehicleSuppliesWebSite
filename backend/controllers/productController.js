@@ -212,9 +212,11 @@ exports.getAllProducts = async (req, res) => {
 // Get a single product by id
 exports.getProductById = async (req, res) => {
   try {
-    // 查询产品基本信息
+    // 查询产品基本信息，明确列出所有字段
     const [rows] = await pool.query(
-      `SELECT p.*, c.name as category_name 
+      `SELECT p.id, p.guid, p.name, p.product_code, p.category_id, p.price, p.stock, p.status, 
+       p.product_type, p.short_description, p.full_description, p.created_at, p.updated_at, 
+       c.name as category_name 
        FROM products p
        LEFT JOIN product_categories c ON p.category_id = c.id
        WHERE p.id = ? AND p.deleted = 0`,

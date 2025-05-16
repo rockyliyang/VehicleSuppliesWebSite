@@ -1,33 +1,6 @@
 <template>
   <header class="site-header">
-    <div class="top-bar">
-      <div class="container">
-        <div class="contact-info">
-          <span><el-icon>
-              <PhoneFilled />
-            </el-icon> {{ companyInfo.phone || '+86 123 4567 8910' }}</span>
-          <span><el-icon>
-              <Message />
-            </el-icon> {{ companyInfo.email || 'contact@autoease.com' }}</span>
-        </div>
-        <div class="top-right">
-          <span class="discount">10% OFF All Items</span>
-          <el-dropdown>
-            <span class="language-selector">
-              中文 <el-icon>
-                <ArrowDown />
-              </el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item>English</el-dropdown-item>
-                <el-dropdown-item>中文</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-      </div>
-    </div>
+
 
     <div class="main-header">
       <div class="container">
@@ -50,10 +23,11 @@
 
         <div class="user-actions">
           <!-- 购物车按钮 -->
-          <el-button link @click="handleCartClick">
+          <el-button link @click="handleCartClick" class="cart-button">
             <el-icon>
               <ShoppingCartFull />
             </el-icon>
+            <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
           </el-button>
           <!-- 登录/用户按钮 -->
           <el-dropdown trigger="hover" @command="handleUserMenu">
@@ -111,15 +85,12 @@
 // 使用全局注册的$api替代axios
 import logoImage from '../../assets/images/logo.png'
 
-import { PhoneFilled, Message, ArrowDown, User, Lock, ShoppingCartFull } from '@element-plus/icons-vue'
+import {  User, Lock, ShoppingCartFull } from '@element-plus/icons-vue'
 import { handleImageError } from '../../utils/imageUtils'
 
 export default {
   name: 'SiteHeader',
   components: {
-    PhoneFilled,
-    Message,
-    ArrowDown,
     User,
     Lock,
     ShoppingCartFull
@@ -141,7 +112,8 @@ export default {
       },
       companyInfo: {},
       logoImage,
-      tokenCheckTimer: null
+      tokenCheckTimer: null,
+      cartCount: 0
     }
   },
   computed: {
@@ -150,9 +122,19 @@ export default {
       return !!localStorage.getItem('user_token');
     }
   },
+  watch: {
+    isLoggedIn(newVal) {
+      if (newVal) {
+        this.fetchCartCount();
+      } else {
+        this.cartCount = 0;
+      }
+    }
+  },
   created() {
     this.fetchCompanyInfo();
     this.startTokenCheck();
+    this.fetchCartCount();
   },
   methods: {
     handleImageError,
@@ -185,9 +167,22 @@ export default {
     },
     handleCartClick() {
       if (!this.isLoggedIn) {
-        this.$router.push('/login');
+        this.$router.push('/login?redirect=/cart');
       } else {
         this.$router.push('/cart');
+      }
+    },
+    
+    async fetchCartCount() {
+      if (!this.isLoggedIn) return;
+      
+      try {
+        const response = await this.$api.get('/cart/count');
+        if (response.success) {
+          this.cartCount = response.data.count;
+        }
+      } catch (error) {
+        console.error('获取购物车数量失败:', error);
       }
     },
     startTokenCheck() {
@@ -217,6 +212,7 @@ export default {
         localStorage.removeItem('user_token');
         this.$store.commit('setUser', null);
         this.$message.success('已退出登录');
+        this.cartCount = 0;
         this.$router.push('/login');
       } else if (command === 'login') {
         this.$router.push('/login');
@@ -330,6 +326,25 @@ export default {
 .user-actions .el-button i {
   margin-right: 5px;
   font-size: 18px;
+}
+
+.cart-button {
+  position: relative;
+}
+
+.cart-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #e60012;
+  color: white;
+  border-radius: 50%;
+  min-width: 16px;
+  height: 16px;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  padding: 0 4px;
 }
 
 .login-options {

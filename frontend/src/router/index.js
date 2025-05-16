@@ -38,22 +38,7 @@ const routes = [
     path: '/admin',
     component: () => import('../views/Admin.vue'),
     // 添加路由守卫，检查用户是否有管理员权限
-    beforeEnter: (to, from, next) => {
-      // 实际项目中会从store或localStorage中获取用户信息，检查是否有管理员权限
-      console.log(localStorage.getItem('isAdmin'))
-      const isAdmin = localStorage.getItem('isAdmin') === 'true'
-      if (isAdmin) {
-        next()
-      } else {
-        next({
-          path: '/admin-login',
-          query: {
-            ...to.query,
-            redirect: to.fullPath
-          }
-        })
-      }
-    },
+
     children: [
       {
         path: 'dashboard',
@@ -97,6 +82,12 @@ const routes = [
     component: () => import('../views/admin/AdminLogin.vue')
   },
   {
+    path: '/cart',
+    name: 'Cart',
+    component: () => import('../views/Cart.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/register',
     name: 'Register',
     component: () => import('../views/Register.vue')
@@ -119,6 +110,10 @@ router.beforeEach(async (to, from, next) => {
   const publicPages = ['/', '/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact']
   const authRequired = !publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin')
   
+  if (to.path === '/admin-login' || to.path === '/login') {
+    // 如果是管理员登录页，清除普通用户token
+    return next()
+  }
   // 如果是管理员路由，检查管理员token
   if (to.path.startsWith('/admin') && to.path !== '/admin-login') {
     const adminToken = localStorage.getItem('admin_token')

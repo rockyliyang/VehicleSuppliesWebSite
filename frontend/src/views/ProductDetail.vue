@@ -27,24 +27,18 @@
         <!-- 主体内容 -->
         <div class="product-detail-content">
           <div class="product-gallery-block">
-            <div class="main-image" 
-                 ref="mainImage"
-                 @mousemove="handleMouseMove"
-                 @mouseenter="showZoom = true"
-                 @mouseleave="showZoom = false">
-              <img :src="activeImage || product.thumbnail_url" :alt="product.name" @error="handleImageError" ref="mainImgEl" @load="updateMainImgSize">
+            <div class="main-image" ref="mainImage" @mousemove="handleMouseMove" @mouseenter="showZoom = true"
+              @mouseleave="showZoom = false">
+              <img :src="activeImage || product.thumbnail_url" :alt="product.name" @error="handleImageError"
+                ref="mainImgEl" @load="updateMainImgSize">
               <div v-if="showZoom" class="zoom-lens" :style="zoomLensStyle"></div>
             </div>
             <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0" class="zoom-window" :style="zoomWindowStyle">
               <img :src="activeImage || product.thumbnail_url" :style="zoomImgStyle" />
             </div>
             <div class="thumbnail-list">
-              <div
-                v-for="(img, idx) in galleryImages"
-                :key="idx"
-                :class="['thumbnail', activeImage === img ? 'active' : '']"
-                @click="activeImage = img"
-              >
+              <div v-for="(img, idx) in galleryImages" :key="idx"
+                :class="['thumbnail', activeImage === img ? 'active' : '']" @click="activeImage = img">
                 <img :src="img" :alt="product.name" @error="handleImageError">
               </div>
             </div>
@@ -67,7 +61,8 @@
             </div>
             <div class="product-actions">
               <el-input-number v-model="quantity" :min="1" :max="product.stock" size="small"></el-input-number>
-              <el-button type="primary" @click="addToInquiry" :disabled="product.stock <= 0">加入询价单</el-button>
+              <el-button type="primary" @click="addToCart" :disabled="product.stock <= 0">加入购物车</el-button>
+              <el-button @click="addToInquiry" :disabled="product.stock <= 0">加入询价单</el-button>
               <el-button @click="contactUs">联系我们</el-button>
             </div>
             <div class="product-share">
@@ -92,27 +87,6 @@
         </el-tabs>
       </div>
 
-      <div class="inquiry-form">
-        <h2>产品询价</h2>
-        <el-form :model="inquiryForm" :rules="inquiryRules" ref="inquiryForm" label-width="100px">
-          <el-form-item label="姓名" prop="name">
-            <el-input v-model="inquiryForm.name"></el-input>
-          </el-form-item>
-          <el-form-item label="邮箱" prop="email">
-            <el-input v-model="inquiryForm.email"></el-input>
-          </el-form-item>
-          <el-form-item label="电话" prop="phone">
-            <el-input v-model="inquiryForm.phone"></el-input>
-          </el-form-item>
-          <el-form-item label="询价内容" prop="message">
-            <el-input type="textarea" v-model="inquiryForm.message" rows="4"></el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="submitInquiry">提交询价</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-
       <!-- 相关产品区，放在询价表单后面 -->
       <div class="related-products">
         <h2 class="related-title">Related Products</h2>
@@ -135,6 +109,8 @@
 <script>
 // 使用全局注册的$api替代axios
 import { handleImageError } from '../utils/imageUtils';
+import { formatPrice } from '../utils/format';
+import { addToCart as addProductToCart } from '../utils/cartUtils';
 
 export default {
   name: 'ProductDetail',
@@ -178,6 +154,7 @@ export default {
     }
   },
   computed: {
+
     categoryName() {
       if (!this.product.category_id || !this.categories.length) return ''
       const category = this.categories.find(cat => cat.id === this.product.category_id)
@@ -234,6 +211,7 @@ export default {
     }
   },
   created() {
+    console.log('ProductDetail created, this.$api =', this.$api)
     this.productId = parseInt(this.$route.params.id)
     this.fetchCategories()
     this.fetchProduct()
@@ -247,10 +225,7 @@ export default {
   },
   methods: {
     handleImageError,
-    formatPrice(price) {
-      const n = Number(price)
-      return isNaN(n) ? '--' : n.toFixed(2)
-    },
+    formatPrice,
     async fetchCategories() {
       try {
         const response = await this.$api.get('categories')
@@ -295,7 +270,16 @@ export default {
       this.$message.success(`已将 ${this.quantity} 个 ${this.product.name} 添加到询价单`)
     },
     contactUs() {
-      this.$router.push('/contact')
+      this.$router.push('/contact');
+    },
+    
+    async addToCart() {
+      // 使用公共的购物车工具函数
+      await addProductToCart(this.product, {
+        router: this.$router,
+        message: this.$message,
+        api: this.$api
+      }, this.quantity);
     },
     submitInquiry() {
       this.$refs.inquiryForm.validate(valid => {
@@ -592,7 +576,7 @@ export default {
   width: 160px;
   background: #fff;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   text-align: center;
   padding: 10px 10px 18px 10px;
   transition: box-shadow 0.2s;
@@ -645,27 +629,31 @@ export default {
 .product-detail-extra {
   margin: 40px 0;
 }
+
 .detail-images-block {
   display: flex;
   flex-direction: column;
   gap: 30px;
   margin-bottom: 30px;
 }
+
 .detail-image-row {
   width: 100%;
   text-align: center;
 }
+
 .detail-image-row img {
   max-width: 100%;
   border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
+
 .specification-html-block {
   margin: 30px 0;
   background: #fff;
   border-radius: 6px;
   padding: 30px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .related-title {
@@ -679,10 +667,11 @@ export default {
 .zoom-lens {
   position: absolute;
   border: 2px solid #e60012;
-  background: rgba(230,0,18,0.08);
+  background: rgba(230, 0, 18, 0.08);
   pointer-events: none;
   z-index: 2;
 }
+
 .zoom-window {
   position: absolute;
   left: 100%;
@@ -691,9 +680,10 @@ export default {
   background: #fff;
   border: 1px solid #ccc;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 10;
 }
+
 .zoom-window img {
   position: absolute;
   /* 由js控制left/top/size */
