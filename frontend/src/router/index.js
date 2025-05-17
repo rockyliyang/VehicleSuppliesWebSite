@@ -96,6 +96,18 @@ const routes = [
     path: '/activate',
     name: 'Activate',
     component: () => import('../views/Activate.vue')
+  },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('../views/Checkout.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/orders',
+    name: 'UserOrders',
+    component: () => import('../views/UserOrders.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -107,8 +119,9 @@ const router = createRouter({
 // 全局路由守卫 - 在每次路由跳转前验证token
 router.beforeEach(async (to, from, next) => {
   // 不需要验证token的路由
-  const publicPages = ['/', '/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact']
-  const authRequired = !publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin')
+  const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact']
+  const authRequired = (to.path != '/') && (!publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin'))
+
   
   if (to.path === '/admin-login' || to.path === '/login') {
     // 如果是管理员登录页，清除普通用户token

@@ -11,6 +11,8 @@ const companyRoutes = require('./routes/companyRoutes');
 const userRoutes = require('./routes/userRoutes');
 const productImageRoutes = require('./routes/productImageRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const paypalRoutes = require('./routes/paypalRoutes');
+const paymentConfigRoutes = require('./routes/paymentConfigRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,8 +34,10 @@ app.use('/api/banners', bannerRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/product-images', productImageRoutes);
-
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/paypal', paypalRoutes);
+app.use('/api/payment', paymentConfigRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
