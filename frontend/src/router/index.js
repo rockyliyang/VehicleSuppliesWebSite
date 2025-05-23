@@ -66,6 +66,11 @@ const routes = [
         component: () => import('../views/admin/Company.vue')
       },
       {
+        path: 'language',
+        name: 'AdminLanguage',
+        component: () => import('../views/admin/LanguageManagement.vue')
+      },
+      {
         path: '',
         redirect: '/admin/dashboard'
       }
@@ -104,6 +109,24 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/checkout2',
+    name: 'Checkout2',
+    component: () => import('../views/CheckoutV2.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/checkout-complete',
+    name: 'CheckoutComplete',
+    component: () => import('../views/CheckoutComplete.vue'),
+    // 不需要验证，因为是从PayPal回调
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/paypal-test',
+    name: 'PayPalTest',
+    component: () => import('../views/PayPalTestView.vue')
+  },
+  {
     path: '/user/orders',
     name: 'UserOrders',
     component: () => import('../views/UserOrders.vue'),
@@ -119,7 +142,7 @@ const router = createRouter({
 // 全局路由守卫 - 在每次路由跳转前验证token
 router.beforeEach(async (to, from, next) => {
   // 不需要验证token的路由
-  const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact']
+  const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact', '/paypal-test', '/checkout-complete']
   const authRequired = (to.path != '/') && (!publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin'))
 
   

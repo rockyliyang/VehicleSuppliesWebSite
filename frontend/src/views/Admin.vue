@@ -36,6 +36,12 @@
             </el-icon>
             <span>公司信息</span>
           </el-menu-item>
+          <el-menu-item index="/admin/language">
+            <el-icon>
+              <ChatDotRound />
+            </el-icon>
+            <span>语言管理</span>
+          </el-menu-item>
           <el-menu-item index="/admin/users">
             <el-icon>
               <User />
@@ -135,6 +141,9 @@ export default {
       } else if (to.path.includes('/admin/users')) {
         this.activeMenu = '/admin/users'
         this.currentPage = '用户管理'
+      } else if (to.path.includes('/admin/language')) {
+        this.activeMenu = '/admin/language'
+        this.currentPage = '语言管理'
       } else if (to.path.includes('/admin/settings')) {
         this.activeMenu = '/admin/settings'
         this.currentPage = '系统设置'

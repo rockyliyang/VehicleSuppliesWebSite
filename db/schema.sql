@@ -74,49 +74,61 @@ CREATE TABLE IF NOT EXISTS product_images (
   deleted TINYINT(1) DEFAULT 0,
   FOREIGN KEY (product_id) REFERENCES products(id)
 );
-
 -- 订单表
 CREATE TABLE IF NOT EXISTS orders (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  guid BINARY(16) NOT NULL,
+  order_guid BINARY(16) NOT NULL,
   user_id BIGINT NOT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
-  status VARCHAR(20) NOT NULL,
-  shipping_address TEXT,
-  contact_phone VARCHAR(20),
+  status VARCHAR(16) NOT NULL, -- pending, paid, shipped, delivered, cancelled
+  payment_method VARCHAR(16) NOT NULL, -- card, alipay, wechat
+  payment_id VARCHAR(64),
+  shipping_name VARCHAR(32) NOT NULL,
+  shipping_phone VARCHAR(16) NOT NULL,
+  shipping_email VARCHAR(64) NOT NULL,
+  shipping_address VARCHAR(256) NOT NULL,
+  shipping_zip_code VARCHAR(16) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  INDEX idx_user_id (user_id),
+  INDEX idx_order_guid (order_guid),
+  INDEX idx_status (status),
+  INDEX idx_created_at (created_at)
 );
 
--- 订单详情表
+-- 订单项表
 CREATE TABLE IF NOT EXISTS order_items (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  guid BINARY(16) NOT NULL,
   order_id BIGINT NOT NULL,
   product_id BIGINT NOT NULL,
   quantity INT NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
+  product_name VARCHAR(64) NOT NULL,
+  product_code VARCHAR(64) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
-  FOREIGN KEY (order_id) REFERENCES orders(id),
-  FOREIGN KEY (product_id) REFERENCES products(id)
+  INDEX idx_order_id (order_id),
+  INDEX idx_product_id (product_id)
 );
 
 -- 物流信息表
-CREATE TABLE IF NOT EXISTS shipping_info (
+CREATE TABLE IF NOT EXISTS logistics (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  guid BINARY(16) NOT NULL,
   order_id BIGINT NOT NULL,
-  tracking_number VARCHAR(100),
-  shipping_company VARCHAR(100),
-  status VARCHAR(50),
+  tracking_number VARCHAR(64),
+  carrier VARCHAR(32),
+  status VARCHAR(16) NOT NULL, -- processing, shipped, delivered
+  location VARCHAR(128),
+  description VARCHAR(256),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
-  FOREIGN KEY (order_id) REFERENCES orders(id)
+  INDEX idx_order_id (order_id),
+  INDEX idx_tracking_number (tracking_number),
+  INDEX idx_status (status),
+  INDEX idx_created_at (created_at)
 );
 
 -- 网站配置表

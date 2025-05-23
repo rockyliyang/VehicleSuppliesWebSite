@@ -13,7 +13,16 @@ const app = createApp(App)
 app.config.globalProperties.$api = api
 app.config.globalProperties.$axios = api
 
+// 添加翻译函数
+app.config.globalProperties.$t = (key) => {
+  return store.getters['language/translate'](key)
+}
+
 app.use(router)
 app.use(store)
 app.use(ElementPlus)
-app.mount('#app')
+
+// 初始化应用（包括语言设置）
+store.dispatch('initApp').then(() => {
+  app.mount('#app')
+})

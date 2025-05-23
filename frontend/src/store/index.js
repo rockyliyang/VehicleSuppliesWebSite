@@ -1,13 +1,12 @@
 import { createStore } from 'vuex'
+import languageModule from './modules/language.js'
 
 export default createStore({
   state: {
     user: null,
     isLoggedIn: false,
     cart: [],
-    categories: [],
-    products: [],
-    banners: []
+    categories: []
   },
   mutations: {
     setUser(state, user) {
@@ -17,12 +16,7 @@ export default createStore({
     setCategories(state, categories) {
       state.categories = categories
     },
-    setProducts(state, products) {
-      state.products = products
-    },
-    setBanners(state, banners) {
-      state.banners = banners
-    },
+    
     addToCart(state, product) {
       const existItem = state.cart.find(item => item.id === product.id)
       if (existItem) {
@@ -39,6 +33,27 @@ export default createStore({
     }
   },
   actions: {
+    // 初始化应用
+    initApp({ dispatch }) {
+      // 返回Promise以支持then调用
+      return new Promise((resolve) => {
+        // 初始化语言设置
+        dispatch('language/initLanguage', null, { root: true })
+          .then(() => {
+            // 获取分类数据
+            return dispatch('fetchCategories')
+          })
+          .then(() => {
+            // 初始化完成
+            resolve()
+          })
+          .catch(error => {
+            console.error('初始化应用失败:', error)
+            // 即使出错也要resolve，确保应用能够挂载
+            resolve()
+          })
+      })
+    },
     login({ commit }, credentials) {
       // 实际项目中这里会调用登录API
       return new Promise((resolve) => {
@@ -71,37 +86,15 @@ export default createStore({
         }, 500)
       })
     },
-    fetchProducts({ commit }) {
-      // 实际项目中这里会调用API
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // 模拟数据
-          const products = [
-            // 产品数据会从后端获取
-          ]
-          commit('setProducts', products)
-          resolve(products)
-        }, 500)
-      })
-    },
-    fetchBanners({ commit }) {
-      // 实际项目中这里会调用API
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // 模拟数据
-          const banners = [
-            // Banner数据会从后端获取
-          ]
-          commit('setBanners', banners)
-          resolve(banners)
-        }, 500)
-      })
-    }
+
   },
   getters: {
     isLoggedIn: state => state.isLoggedIn,
     user: state => state.user,
     cartItemCount: state => state.cart.reduce((total, item) => total + item.quantity, 0),
     cartTotalPrice: state => state.cart.reduce((total, item) => total + item.price * item.quantity, 0)
+  },
+  modules: {
+    language: languageModule
   }
 })

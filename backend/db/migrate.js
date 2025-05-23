@@ -1,7 +1,8 @@
 const mysql = require('mysql2/promise');
-const fs = require('fs').promises;
+const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+// 加载环境变量配置
+const env = require('../config/env');
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
@@ -58,4 +59,4 @@ async function runMigration() {
 }
 
 // 执行迁移
-runMigration().catch(console.error); 
+runMigration().catch(console.error);

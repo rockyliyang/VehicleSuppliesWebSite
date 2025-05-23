@@ -18,4 +18,10 @@ router.get('/', orderController.getOrders);
 // 获取订单详情
 router.get('/:orderId', orderController.getOrderDetail);
 
+// 生成二维码
+router.post('/qrcode', orderController.generateQrcode);
+
+// 检查支付状态
+router.post('/check-status', orderController.checkPaymentStatus);
+
 module.exports = router;

@@ -1,3 +1,6 @@
+// 加载环境变量配置
+const env = require('./config/env');
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -11,8 +14,9 @@ const companyRoutes = require('./routes/companyRoutes');
 const userRoutes = require('./routes/userRoutes');
 const productImageRoutes = require('./routes/productImageRoutes');
 const cartRoutes = require('./routes/cartRoutes');
-const paypalRoutes = require('./routes/paypalRoutes');
+//const paypalRoutes = require('./routes/paypalRoutes');
 const paymentConfigRoutes = require('./routes/paymentConfigRoutes');
+const languageRoutes = require('./routes/languageRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,8 +40,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/product-images', productImageRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', require('./routes/orderRoutes'));
-app.use('/api/paypal', paypalRoutes);
+app.use('/api/orders2', require('./routes/orderRoutes3'));
+//app.use('/api/paypal', paypalRoutes);
 app.use('/api/payment', paymentConfigRoutes);
+app.use('/api/language', languageRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));

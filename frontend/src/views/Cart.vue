@@ -59,6 +59,7 @@
               <el-button @click="$router.push('/products')">继续购物</el-button>
               <el-button type="danger" @click="clearCart">清空购物车</el-button>
               <el-button type="primary" @click="checkout">结算</el-button>
+              <el-button type="primary" @click="checkout2">结算2</el-button>
             </div>
           </div>
         </div>
@@ -170,6 +171,10 @@ export default {
     checkout() {
       // 跳转到结算页面
       this.$router.push('/checkout');
+    },
+    checkout2() {
+      // 跳转到结算页面
+      this.$router.push('/checkout2');
     }
   }
 };

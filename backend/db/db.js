@@ -1,5 +1,5 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+// 环境变量已在应用启动时通过config/env.js加载
 
 // 创建连接池
 const pool = mysql.createPool({
@@ -25,4 +25,4 @@ async function testConnection() {
 
 testConnection();
 
-module.exports = { pool }; 
+module.exports = { pool };

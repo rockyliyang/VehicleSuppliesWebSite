@@ -1,31 +1,20 @@
-const db = require('../db/db');
+const {pool} = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
+const AlipaySdk = require('alipay-sdk').default;
+const QRCode = require('qrcode');
+const { ALIPAY_APP_ID, ALIPAY_PRIVATE_KEY, ALIPAY_PUBLIC_KEY, ALIPAY_GATEWAY, WECHAT_APP_ID, WECHAT_MCH_ID, WECHAT_API_KEY, WECHAT_NOTIFY_URL } = require('../config/env');
 
 // 根据环境变量决定使用哪个支付网关
 const PAYMENT_GATEWAY = process.env.PAYMENT_GATEWAY || 'stripe';
 
 // 初始化支付网关
 let stripe;
-let paypal;
+
 
 if (PAYMENT_GATEWAY === 'stripe') {
   stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-} else if (PAYMENT_GATEWAY === 'paypal') {
-  paypal = require('@paypal/checkout-server-sdk');
-  
-  // PayPal环境配置函数
-  function getPayPalClient() {
-    const clientId = process.env.PAYPAL_CLIENT_ID;
-    const clientSecret = process.env.PAYPAL_SECRET_KEY;
-    
-    // 根据环境变量决定使用沙箱还是生产环境
-    const environment = process.env.NODE_ENV === 'production'
-      ? new paypal.core.LiveEnvironment(clientId, clientSecret)
-      : new paypal.core.SandboxEnvironment(clientId, clientSecret);
-    
-    return new paypal.core.PayPalHttpClient(environment);
-  }
-}
+} 
+
 
 /**
  * 创建订单
@@ -153,7 +142,7 @@ exports.processPayment = async (req, res) => {
 
   try {
     // 1. 获取用户购物车
-    const [cartItems] = await db.query(
+    const [cartItems] = await pool.query(
       `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code 
        FROM cart_items ci 
        JOIN products p ON ci.product_id = p.id 
@@ -197,62 +186,6 @@ exports.processPayment = async (req, res) => {
             user_id: userId
           }
         });
-      } else if (PAYMENT_GATEWAY === 'paypal' && paypal) {
-        // 使用PayPal处理信用卡支付
-        const client = getPayPalClient();
-        
-        // 构建PayPal订单请求
-        const request = new paypal.orders.OrdersCreateRequest();
-        request.prefer('return=representation');
-        
-        // 构建订单项
-        const items = cartItems.map(item => ({
-          name: item.name,
-          description: `产品编号: ${item.product_code}`,
-          sku: item.product_code,
-          unit_amount: {
-            currency_code: 'CNY',
-            value: item.price.toFixed(2)
-          },
-          quantity: item.quantity
-        }));
-        
-        // 设置订单详情
-        request.requestBody({
-          intent: 'CAPTURE',
-          payment_source: {
-            card: {
-              number: token.card_number,
-              expiry: token.expiry,
-              security_code: token.security_code,
-              name: token.name
-            }
-          },
-          purchase_units: [
-            {
-              amount: {
-                currency_code: 'CNY',
-                value: totalAmount.toFixed(2),
-                breakdown: {
-                  item_total: {
-                    currency_code: 'CNY',
-                    value: totalAmount.toFixed(2)
-                  }
-                }
-              },
-              items: items
-            }
-          ]
-        });
-
-        // 创建并捕获PayPal订单
-        const order = await client.execute(request);
-        const captureId = order.result.id;
-        
-        paymentResult = {
-          id: captureId,
-          status: order.result.status === 'COMPLETED' ? 'succeeded' : order.result.status
-        };
       } else {
         // 支付网关未正确配置
         return res.status(500).json({
@@ -284,7 +217,7 @@ exports.processPayment = async (req, res) => {
 
     // 4. 创建订单
     const orderGuid = uuidv4();
-    const [orderResult] = await db.query(
+    const [orderResult] = await pool.query(
       `INSERT INTO orders 
        (user_id, total_amount, status, payment_method, payment_id, order_guid, 
         shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code) 
@@ -308,7 +241,7 @@ exports.processPayment = async (req, res) => {
 
     // 5. 创建订单项并更新库存
     for (const item of cartItems) {
-      await db.query(
+      await pool.query(
         `INSERT INTO order_items 
          (order_id, product_id, quantity, price, product_name, product_code) 
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -323,14 +256,14 @@ exports.processPayment = async (req, res) => {
       );
 
       // 更新产品库存
-      await db.query(
+      await pool.query(
         `UPDATE products SET stock = stock - ? WHERE id = ? AND deleted = 0`,
         [item.quantity, item.product_id]
       );
     }
 
     // 6. 清空购物车
-    await db.query(
+    await pool.query(
       `UPDATE cart_items SET deleted = 1 WHERE user_id = ? AND deleted = 0`,
       [userId]
     );
@@ -369,14 +302,14 @@ exports.getOrders = async (req, res) => {
 
   try {
     // 获取订单总数
-    const [countResult] = await db.query(
+    const [countResult] = await pool.query(
       'SELECT COUNT(*) as total FROM orders WHERE user_id = ? AND deleted = 0',
       [userId]
     );
     const total = countResult[0].total;
 
     // 获取订单列表
-    const [orders] = await db.query(
+    const [orders] = await pool.query(
       `SELECT id, order_guid, total_amount, status, payment_method, 
               created_at, updated_at, shipping_name, shipping_phone 
        FROM orders 
@@ -417,7 +350,7 @@ exports.getOrderDetail = async (req, res) => {
 
   try {
     // 获取订单信息
-    const [orders] = await db.query(
+    const [orders] = await pool.query(
       `SELECT id, order_guid, total_amount, status, payment_method, payment_id, 
               created_at, updated_at, shipping_name, shipping_phone, 
               shipping_email, shipping_address, shipping_zip_code 
@@ -436,7 +369,7 @@ exports.getOrderDetail = async (req, res) => {
     const order = orders[0];
 
     // 获取订单项
-    const [orderItems] = await db.query(
+    const [orderItems] = await pool.query(
       `SELECT id, product_id, quantity, price, product_name, product_code 
        FROM order_items 
        WHERE order_id = ? AND deleted = 0`,
@@ -444,7 +377,7 @@ exports.getOrderDetail = async (req, res) => {
     );
 
     // 获取物流信息
-    const [logistics] = await db.query(
+    const [logistics] = await pool.query(
       `SELECT id, tracking_number, carrier, status, location, description, created_at 
        FROM logistics 
        WHERE order_id = ? AND deleted = 0 
@@ -469,4 +402,42 @@ exports.getOrderDetail = async (req, res) => {
       error: error.message
     });
   }
+};
+
+/**
+ * 生成支付宝/微信支付二维码
+ * @param {Object} req
+ * @param {Object} res
+ */
+exports.generateQrcode = async (req, res) => {
+  const { paymentMethod, orderInfo } = req.body;
+  try {
+    let payUrl = '';
+    if (paymentMethod === 'alipay') {
+      // 这里应调用alipay-sdk生成支付链接
+      payUrl = 'https://openapi.alipaydev.com/gateway.do?mock_alipay_qr';
+    } else if (paymentMethod === 'wechat') {
+      // 这里应调用微信支付SDK生成支付链接
+      payUrl = 'https://api.mch.weixin.qq.com/pay/unifiedorder?mock_wechat_qr';
+    } else {
+      return res.status(400).json({ success: false, message: '不支持的支付方式' });
+    }
+    // 生成二维码图片
+    const qrcodeDataUrl = await QRCode.toDataURL(payUrl);
+    return res.json({ success: true, message: '二维码生成成功', data: { qrcodeUrl: qrcodeDataUrl, payUrl } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: '二维码生成失败', error: error.message });
+  }
+};
+
+/**
+ * 轮询查询支付状态（mock实现，后续可对接真实支付SDK）
+ * @param {Object} req
+ * @param {Object} res
+ */
+exports.checkPaymentStatus = async (req, res) => {
+  const { orderId, paymentMethod } = req.body;
+  // 实际应查询支付网关订单状态
+  // 这里mock为已支付
+  return res.json({ success: true, message: '支付成功', data: { paid: true } });
 };

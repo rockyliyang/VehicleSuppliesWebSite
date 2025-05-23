@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PayPal JS SDK Standard Integration</title>
+    <link rel="stylesheet" href="https://www.paypalobjects.com/webstatic/en_US/developer/docs/css/cardfields.css" />
+</head>
+
+<body>
+    <div id="paypal-button-container" class="paypal-button-container"></div>
+    <p id="result-message"></p>
+
+    <script>
+        // 添加全局错误处理
+        window.addEventListener('error', function (event) {
+            console.error('全局错误:', event.error);
+            document.getElementById('result-message').textContent = '发生错误: ' + event.error.message;
+        });
+
+        // 添加全局消息处理
+        window.addEventListener('message', function (event) {
+            if (event.origin.includes('paypal.com')) {
+                console.log('收到PayPal消息:', event.data);
+            }
+        }, false);
+
+        // 加载PayPal SDK
+        function loadPayPalScript() {
+            const script = document.createElement('script');
+            script.src = 'https://www.paypal.com/sdk/js?client-id=AUzpZlYjrjpH0aiJ_6Nuxt8Pf5K0WWsREys-eXRRw-e8TjPbASpGPIlGy1O_U1EmpD8t0-ZkeZwIW3UC&currency=USD&components=buttons&enable-funding=paylater,card';
+            script.crossOrigin = 'anonymous';
+            script.async = true;
+            script.defer = true;
+            script.setAttribute('data-page-type', 'checkout');
+
+            script.onload = function () {
+                if (window.paypal) {
+                    try {
+                        window.paypal.Buttons({
+                            fundingEligibility: undefined,
+                            createOrder: function (data, actions) {
+                                return actions.order.create({
+                                    purchase_units: [{
+                                        amount: {
+                                            value: '100.00'
+                                        }
+                                    }]
+                                });
+                            },
+                            onApprove: function (data, actions) {
+                                return actions.order.capture().then(function (orderData) {
+                                    document.getElementById('result-message').textContent = '支付成功! 订单ID: ' + orderData.id;
+                                });
+                            },
+                            onError: function (err) {
+                                console.error('PayPal按钮错误:', err);
+                                document.getElementById('result-message').textContent = '支付过程中出现错误: ' + (err.message || '请稍后重试');
+                            }
+                        }).render('#paypal-button-container');
+                    } catch (error) {
+                        console.error('渲染PayPal按钮失败:', error);
+                        document.getElementById('paypal-button-container').innerHTML = '<div style="color:red;text-align:center;padding:10px;">PayPal初始化失败</div>';
+                    }
+                } else {
+                    console.error('PayPal SDK未能正确加载');
+                    document.getElementById('paypal-button-container').innerHTML = '<div style="color:red;text-align:center;padding:10px;">PayPal加载失败</div>';
+                }
+            };
+
+            script.onerror = function () {
+                console.error('PayPal SDK加载失败');
+                document.getElementById('paypal-button-container').innerHTML = '<div style="color:red;text-align:center;padding:10px;">PayPal加载失败</div>';
+            };
+
+            document.body.appendChild(script);
+        }
+
+        // 页面加载完成后初始化PayPal
+        window.onload = loadPayPalScript;
+    </script>
+</body>
+
+</html>

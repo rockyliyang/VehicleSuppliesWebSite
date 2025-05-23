@@ -13,15 +13,18 @@
 
         <nav class="main-nav">
           <ul>
-            <li><router-link to="/" exact>首页</router-link></li>
-            <li><router-link to="/products">产品中心</router-link></li>
-            <li><router-link to="/about">关于我们</router-link></li>
-            <li><router-link to="/news">新闻资讯</router-link></li>
-            <li><router-link to="/contact">联系我们</router-link></li>
+            <li><router-link to="/" exact>{{ $t('home') }}</router-link></li>
+            <li><router-link to="/products">{{ $t('products') }}</router-link></li>
+            <li><router-link to="/about">{{ $t('about') }}</router-link></li>
+            <li><router-link to="/news">{{ $t('news') }}</router-link></li>
+            <li><router-link to="/contact">{{ $t('contact') }}</router-link></li>
           </ul>
         </nav>
 
         <div class="user-actions">
+          <!-- 语言切换器 -->
+          <LanguageSwitcher />
+
           <!-- 购物车按钮 -->
           <el-button link @click="handleCartClick" class="cart-button">
             <el-icon>
@@ -38,9 +41,9 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-if="isLoggedIn" command="orders">我的订单</el-dropdown-item>
-                <el-dropdown-item v-if="isLoggedIn" command="logout">退出</el-dropdown-item>
-                <el-dropdown-item v-if="!isLoggedIn" command="login">注册/登录</el-dropdown-item>
+                <el-dropdown-item v-if="isLoggedIn" command="orders">{{ $t('orders') }}</el-dropdown-item>
+                <el-dropdown-item v-if="isLoggedIn" command="logout">{{ $t('logout') }}</el-dropdown-item>
+                <el-dropdown-item v-if="!isLoggedIn" command="login">{{ $t('login') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -87,13 +90,15 @@ import logoImage from '../../assets/images/logo.png'
 
 import {  User, Lock, ShoppingCartFull } from '@element-plus/icons-vue'
 import { handleImageError } from '../../utils/imageUtils'
+import LanguageSwitcher from './LanguageSwitcher.vue'
 
 export default {
   name: 'SiteHeader',
   components: {
     User,
     Lock,
-    ShoppingCartFull
+    ShoppingCartFull,
+    LanguageSwitcher
   },
   data() {
     return {

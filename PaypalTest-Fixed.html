@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 添加必要的安全头部，允许PayPal域的资源和通信 -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' https://*.paypal.com https://*.paypalobjects.com; script-src 'self' 'unsafe-inline' https://*.paypal.com; frame-src https://*.paypal.com; connect-src https://*.paypal.com; style-src 'self' 'unsafe-inline' https://*.paypalobjects.com;">
+    <title>PayPal JS SDK 集成测试</title>
+    <link rel="stylesheet" href="https://www.paypalobjects.com/webstatic/en_US/developer/docs/css/cardfields.css" />
+    <style>
+        .paypal-button-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+
+        #result-message {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .debug-info {
+            margin-top: 30px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+
+        .debug-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .debug-log {
+            height: 100px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="paypal-button-container" class="paypal-button-container"></div>
+    <p id="result-message"></p>
+
+    <!-- 调试信息区域 -->
+    <div class="debug-info">
+        <div class="debug-title">调试信息:</div>
+        <div id="debug-log" class="debug-log"></div>
+    </div>
+
+    <script>
+        // 调试日志函数
+        function logDebug(message) {
+            const logElement = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}<br/>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        // 添加全局错误处理
+        window.addEventListener('error', function (event) {
+            logDebug(`全局错误: ${event.error?.message || '未知错误'}`);
+            document.getElementById('result-message').textContent = '发生错误: ' + (event.error?.message || '未知错误');
+        });
+
+        // 添加全局消息处理 - 增强版
+        window.addEventListener('message', function (event) {
+            // 接受来自PayPal域的所有消息
+            if (event.origin.includes('paypal.com')) {
+                try {
+                    let messageData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                    logDebug(`收到PayPal消息: ${JSON.stringify(messageData).substring(0, 100)}...`);
+
+                    // 如果收到消息需要回复，立即发送确认
+                    if (messageData && messageData.messageName) {
+                        try {
+                            // 构建确认消息
+                            const ackMessage = {
+                                messageName: messageData.messageName + '_ack',
+                                data: {}
+                            };
+
+                            logDebug(`发送确认消息: ${JSON.stringify(ackMessage)}`);
+
+                            // 发送确认消息回PayPal
+                            event.source.postMessage(JSON.stringify(ackMessage), event.origin);
+                        } catch (err) {
+                            logDebug(`回复PayPal消息失败: ${err.message}`);
+                        }
+                    }
+                } catch (err) {
+                    logDebug(`处理PayPal消息失败: ${err.message}`);
+                }
+            }
+        }, false);
+
+        // 加载PayPal SDK
+        function loadPayPalScript() {
+            logDebug('开始加载PayPal SDK...');
+
+            // 清除可能存在的旧脚本
+            const existingScript = document.querySelector('script[src*="paypal.com/sdk/js"]');
+            if (existingScript) {
+                logDebug('移除已存在的PayPal脚本');
+                existingScript.parentNode.removeChild(existingScript);
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://www.paypal.com/sdk/js?client-id=AUzpZlYjrjpH0aiJ_6Nuxt8Pf5K0WWsREys-eXRRw-e8TjPbASpGPIlGy1O_U1EmpD8t0-ZkeZwIW3UC&currency=USD&components=buttons&enable-funding=paylater,card';
+            script.crossOrigin = 'anonymous'; // 关键：添加跨域属性
+            script.async = true;
+            script.defer = true;
+            script.setAttribute('data-csp-nonce', '');
+            script.setAttribute('data-page-type', 'checkout');
+
+            // 设置超时处理
+            const timeoutId = setTimeout(function () {
+                if (!window.paypal) {
+                    logDebug('PayPal SDK加载超时');
+                    document.getElementById('paypal-button-container').innerHTML =
+                        '<div style="color:red;text-align:center;padding:10px;">PayPal加载超时，请刷新页面重试</div>';
+                }
+            }, 10000);
+
+            script.onload = function () {
+                clearTimeout(timeoutId);
+                logDebug('PayPal SDK脚本加载完成');
+
+                if (window.paypal) {
+                    try {
+                        logDebug('开始渲染PayPal按钮');
+                        window.paypal.Buttons({
+                            // 明确设置style以避免默认样式问题
+                            style: {
+                                layout: 'vertical',
+                                color: 'gold',
+                                shape: 'rect',
+                                label: 'pay'
+                            },
+                            // 创建订单
+                            createOrder: function (data, actions) {
+                                logDebug('createOrder被调用');
+                                return actions.order.create({
+                                    purchase_units: [{
+                                        amount: {
+                                            value: '100.00'
+                                        }
+                                    }]
+                                });
+                            },
+                            // 支付批准
+                            onApprove: function (data, actions) {
+                                logDebug('onApprove被调用: ' + JSON.stringify(data));
+                                return actions.order.capture().then(function (orderData) {
+                                    logDebug('支付捕获成功: ' + JSON.stringify(orderData));
+                                    document.getElementById('result-message').textContent = '支付成功! 订单ID: ' + orderData.id;
+                                });
+                            },
+                            // 错误处理
+                            onError: function (err) {
+                                logDebug('PayPal按钮错误: ' + (err.message || err));
+                                document.getElementById('result-message').textContent = '支付过程中出现错误: ' + (err.message || '请稍后重试');
+                            }
+                        }).render('#paypal-button-container').then(function () {
+                            logDebug('PayPal按钮渲染成功');
+                        }).catch(function (error) {
+                            logDebug('PayPal按钮渲染失败: ' + error);
+                        });
+                    } catch (error) {
+                        logDebug('渲染PayPal按钮失败: ' + error);
+                        document.getElementById('paypal-button-container').innerHTML = '<div style="color:red;text-align:center;padding:10px;">PayPal初始化失败</div>';
+                    }
+                } else {
+                    logDebug('PayPal SDK未能正确加载 - window.paypal未定义');
+                    document.getElementById('paypal-button-container').innerHTML = '<div style="color:red;text-align:center;padding:10px;">PayPal加载失败</div>';
+                }
+            };
+
+            script.onerror = function () {
+                clearTimeout(timeoutId);
+                logDebug('PayPal SDK加载失败');
+                document.getElementById('paypal-button-container').innerHTML = '<div style="color:red;text-align:center;padding:10px;">PayPal加载失败</div>';
+            };
+
+            logDebug('添加PayPal脚本到文档');
+            document.body.appendChild(script);
+        }
+
+        // 页面加载完成后初始化PayPal
+        window.onload = function () {
+            logDebug('页面加载完成，准备初始化PayPal');
+            // 延迟100ms加载PayPal SDK，解决某些环境下的计时问题
+            setTimeout(loadPayPalScript, 100);
+        };
+    </script>
+</body>
+
+</html>

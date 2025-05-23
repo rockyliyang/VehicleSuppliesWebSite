@@ -3,10 +3,14 @@ const { v4: uuidv4 } = require('uuid');
 // 引入PayPal SDK
 const paypal = require('@paypal/checkout-server-sdk');
 
-// PayPal环境配置
 function getPayPalClient() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_SECRET_KEY;
+  const clientSecret = process.env.PAYPAL_SECRET;
+  
+  if (!clientId || !clientSecret) {
+    console.error('PayPal配置缺失: 需要设置 PAYPAL_CLIENT_ID 和 PAYPAL_SECRET 环境变量');
+    throw new Error('PayPal配置不完整');
+  }
   
   // 根据环境变量决定使用沙箱还是生产环境
   const environment = process.env.NODE_ENV === 'production'
@@ -15,7 +19,6 @@ function getPayPalClient() {
   
   return new paypal.core.PayPalHttpClient(environment);
 }
-
 /**
  * 创建PayPal支付订单
  * @param {Object} req - 请求对象
@@ -30,7 +33,10 @@ exports.createPayPalOrder = async (req, res) => {
     
     // 构建PayPal订单请求
     const request = new paypal.orders.OrdersCreateRequest();
-    request.prefer('return=representation');
+    request.prefer('return=minimal');
+    // 添加PayPal-Request-Id请求头，防止重复处理
+    const requestId = `${userId}_create_${Date.now()}`;
+    request.headers['PayPal-Request-Id'] = requestId;
     
     // 构建订单项
     const items = orderItems.map(item => ({
@@ -39,7 +45,7 @@ exports.createPayPalOrder = async (req, res) => {
       sku: item.product_code,
       unit_amount: {
         currency_code: currency,
-        value: item.price.toFixed(2)
+        value: Number(item.price).toFixed(2)
       },
       quantity: item.quantity
     }));
@@ -51,24 +57,17 @@ exports.createPayPalOrder = async (req, res) => {
         {
           amount: {
             currency_code: currency,
-            value: totalAmount.toFixed(2),
+            value: Number(totalAmount).toFixed(2),
             breakdown: {
               item_total: {
                 currency_code: currency,
-                value: totalAmount.toFixed(2)
+                value: Number(totalAmount).toFixed(2)
               }
             }
           },
           items: items
         }
-      ],
-      application_context: {
-        brand_name: '车辆用品商城',
-        landing_page: 'BILLING',
-        user_action: 'PAY_NOW',
-        return_url: `${process.env.FRONTEND_URL}/checkout/success`,
-        cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`
-      }
+      ]
     });
 
     // 创建PayPal订单
@@ -98,19 +97,33 @@ exports.createPayPalOrder = async (req, res) => {
  * @param {Object} res - 响应对象
  */
 exports.capturePayPalPayment = async (req, res) => {
-  const { paypalOrderId, shippingInfo } = req.body;
+  const { paypalOrderId, captureResult, shippingInfo } = req.body;
   const userId = req.user.id; // 从JWT获取用户ID
 
   try {
-    const client = getPayPalClient();
+    let captureId, captureStatus;
     
-    // 捕获PayPal支付
-    const request = new paypal.orders.OrdersCaptureRequest(paypalOrderId);
-    request.requestBody({});
-    
-    const captureResponse = await client.execute(request);
-    const captureId = captureResponse.result.purchase_units[0].payments.captures[0].id;
-    const captureStatus = captureResponse.result.status;
+    // 处理前端已捕获的订单
+    if (captureResult) {
+      console.log('使用前端已捕获的订单结果');
+      captureId = captureResult.purchase_units[0].payments.captures[0].id;
+      captureStatus = captureResult.status;
+    } else {
+      // 后端捕获支付（备用方案）
+      console.log('使用后端捕获支付');
+      const client = getPayPalClient();
+      
+      // 捕获PayPal支付
+      const request = new paypal.orders.OrdersCaptureRequest(paypalOrderId);
+      // 添加PayPal-Request-Id请求头，防止重复处理
+      const requestId = `${userId}_${paypalOrderId}_${Date.now()}`;
+      request.headers['PayPal-Request-Id'] = requestId;
+      request.requestBody({});
+      
+      const captureResponse = await client.execute(request);
+      captureId = captureResponse.result.purchase_units[0].payments.captures[0].id;
+      captureStatus = captureResponse.result.status;
+    }
     
     if (captureStatus !== 'COMPLETED') {
       return res.status(400).json({
@@ -228,6 +241,9 @@ exports.verifyPayPalPayment = async (req, res) => {
     
     // 获取PayPal订单详情
     const request = new paypal.orders.OrdersGetRequest(paypalOrderId);
+    // 添加PayPal-Request-Id请求头，防止重复处理
+    const requestId = `verify_${paypalOrderId}_${Date.now()}`;
+    request.headers['PayPal-Request-Id'] = requestId;
     const order = await client.execute(request);
     
     return res.status(200).json({

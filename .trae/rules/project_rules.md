@@ -21,3 +21,5 @@ alwaysApply: true
 2. 所有接口都使用 {success: boolean, message: string, data: object} 的格式返回数据。
 3. 后台所有接口都应该用 try/catch 包裹，不要让进程挂掉。
 4. 后端的所有查询db 的请求都要列出具体的字段，不要使用 select * 
+
+每次修改完代码，需要检查是否有编译错误
