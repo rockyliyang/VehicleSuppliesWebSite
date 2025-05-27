@@ -101,14 +101,25 @@ b. 展现一个简要介绍公司文化的栏目，
 ### 11. 物流跟踪模块
 物流跟踪模块，包括物流跟踪列表，物流跟踪详情。
 
-### 12. 结算模块
-结算模块，包括结算页面，结算提交。
+### 12. 结算流程
+有两种结算方式. 在购物车页面，有Paypal 结算和结算两个按钮，分别进入Paypal 结算和普通结算。
+1. Paypal结算， 在购物车页面，点击Paypal Checkout按钮，会跳转到Paypal 结算页面。在Paypal结算页面，把用户在购物车选中的商品作为订单信息，用户地址信息，PayPal SDK 产生的按钮放在一个页面。 用户必须填入用户地址，用户的姓名，用户的电话，用户的邮箱。
+   
+   点击PayPal Checkout 或者 Credit/Debit Cared 按钮后，PayPal JDK 会回调createOrder函数，需要在此把订单信息，用户地址信息做为参数，调用后端的PalPayCreateOrder API，后端接口调用OrdersController 的createOrder方法创建订单， 并调用我们自己的InitOrder 方法,把订单信息和地址信息插入order 和 order_items 表,此时候订单是未支付状态。在order 表需要有字段保存Paypal 的订单Id， PalPayCreateOrder API返回系统自己的OrderId 和 Paypal 的OrderId到前端，前端的createOrder 函数需要把后端返回的Papal Order Id 返回给PayPal Javascript SDK.
+   PayPal JDK 会回调onApprove 函数，需要在此调用后端API，后端接口确认订单，，onApprove 函数需要处理3种情况
+   (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
+   (2) Other non-recoverable errors -> Show a failure message
+   (3) Successful transaction -> Show confirmation or thank you message
 
-结算页面，展示如下信息
-1. 展示订单中的产品基本信息，包括产品的图片，产品的名称，产品的价格，产品的数量，产品的总价。
-2. 需要用户填写收货地址，用户的姓名，用户的电话，用户的邮箱。
-3. 需要用户填写选择支付方式， 我们要使用Paypal 支付网关来支持信用卡的交易,支付宝和微信支付调用支付宝和微信的支付接口.在UI 上点击支付宝按钮显示支付宝的二维码，点击微信显示微信的二维码，其他的支付方式都使用Paypal 的JavaScriptSDK提供的UI, 请参考Paypal 的https://demo.paypal.com/us/paypal/v5/physical-goods/cart 里面的输入功能
-3. 发起支付, 支付成功后，跳转到订单管理页面。
+2. 在购物车页面，点击结算按钮，进入普通结算页面，普通结算页面使用微信和支付宝支付,普通结算页面和PayPal 结算页面类似，把订单信息，用户地址信息，以及微信和支付宝的选择项放在一个页面。 
+   用户必须填入用户地址，用户的姓名，用户的电话，用户的邮箱。
+   点击微信或者支付宝的产生二维码按钮，需要在此把订单信息，用户地址信息做为参数，调用后端CommonCreateOrder API, CommonCreateOrder API调用我们自己的InitOrder 方法,把订单信息和地址信息插入order 和 order_items 表,此时候订单是未支付状态,PayPalOrderId 字段是空，CommonCreateOrder返回系统OrderId, 此时订单状态是未支付状态，前端再用orderId 作为参数，调用后端API产生微信和支付宝的二维码图片，前端再把二维码图片显示在页面上。
+
+   需要提供两个回调API 注册到微信和支付宝的回调接口，当用户支付成功后，微信和支付宝会回调我们的接口，我们的接口需要处理3种情况
+   (1) 支付成功 -> 调用后端的CommonOrderPaySuccess API, 把订单状态改为已支付状态
+   (2) 支付失败 -> 调用后端的CommonOrderPayFail API, 把订单状态改为已取消状态
+   (3) 支付取消 -> 调用后端的CommonOrderPayCancel API, 把订单状态改为已取消状态
+
 
 ## 管理后台
 

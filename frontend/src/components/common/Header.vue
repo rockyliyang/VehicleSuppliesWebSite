@@ -211,7 +211,7 @@ export default {
     },
     handleUserMenu(command) {
       if (command === 'orders') {
-        this.$router.push('/orders');
+        this.$router.push('/user/orders');
       } else if (command === 'logout') {
         // 清除登录状态
         localStorage.removeItem('user_token');

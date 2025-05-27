@@ -122,6 +122,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/checkout3',
+    name: 'Checkout3',
+    component: () => import('../views/Checkout3.vue'),
+    meta: { requiresAuth: false } // 测试时不需要验证
+  },
+  {
     path: '/paypal-test',
     name: 'PayPalTest',
     component: () => import('../views/PayPalTestView.vue')
@@ -130,6 +136,12 @@ const routes = [
     path: '/user/orders',
     name: 'UserOrders',
     component: () => import('../views/UserOrders.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/checkout-unified',
+    name: 'UnifiedCheckout',
+    component: () => import('../views/UnifiedCheckout.vue'),
     meta: { requiresAuth: true }
   }
 ]
@@ -142,7 +154,7 @@ const router = createRouter({
 // 全局路由守卫 - 在每次路由跳转前验证token
 router.beforeEach(async (to, from, next) => {
   // 不需要验证token的路由
-  const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact', '/paypal-test', '/checkout-complete']
+  const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact', '/paypal-test', '/checkout-complete', '/checkout3']
   const authRequired = (to.path != '/') && (!publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin'))
 
   

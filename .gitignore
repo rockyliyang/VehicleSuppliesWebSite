@@ -7,7 +7,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
-
+.env.*
 # 日志文件
 logs
 *.log

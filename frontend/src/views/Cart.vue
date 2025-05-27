@@ -15,7 +15,8 @@
     <div class="container">
       <div class="cart-content" v-loading="loading">
         <div v-if="cartItems.length > 0" class="cart-items">
-          <el-table :data="cartItems" style="width: 100%">
+          <el-table :data="cartItems" style="width: 100%" @selection-change="handleSelectionChange" ref="cartTable">
+            <el-table-column type="selection" width="55"></el-table-column>
             <el-table-column label="商品" width="400">
               <template #default="{row}">
                 <div class="product-info">
@@ -58,8 +59,9 @@
             <div class="cart-actions">
               <el-button @click="$router.push('/products')">继续购物</el-button>
               <el-button type="danger" @click="clearCart">清空购物车</el-button>
-              <el-button type="primary" @click="checkout">结算</el-button>
-              <el-button type="primary" @click="checkout2">结算2</el-button>
+              <!--el-button type="primary" @click="checkout">结算</el-button>
+              <el-button type="primary" @click="checkout2">结算2</el-button-->>
+              <el-button type="primary" @click="checkout4">结算</el-button>
             </div>
           </div>
         </div>
@@ -83,6 +85,7 @@ export default {
   data() {
     return {
       cartItems: [],
+      selectedItems: [],
       loading: false,
       totalPrice: 0
     };
@@ -92,7 +95,6 @@ export default {
   },
   methods: {
     handleImageError,
-    // 移除本地 formatPrice 方法，import utils/format.js 的 formatPrice，并统一调用。
     formatPrice,
     async fetchCart() {
       if (!localStorage.getItem('user_token')) {
@@ -174,7 +176,22 @@ export default {
     },
     checkout2() {
       // 跳转到结算页面
-      this.$router.push('/checkout2');
+      this.$router.push('/Checkout3');
+    },
+    handleSelectionChange(val) {
+      this.selectedItems = val;
+    },
+    checkout4() {
+      if (!this.selectedItems.length) {
+        this.$message.warning('请先选择要结算的商品');
+        return;
+      }
+      this.$router.push({
+        path: '/checkout-unified',
+        query: {
+          items: encodeURIComponent(JSON.stringify(this.selectedItems))
+        }
+      });
     }
   }
 };

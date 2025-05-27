@@ -1,7 +1,7 @@
 <template>
     <div class="checkout-container">
         <h1>结账</h1>
-        
+
         <div class="order-summary">
             <h2>订单详情</h2>
             <div class="order-items">
@@ -11,13 +11,13 @@
                     <span class="item-price">{{ formatPrice(item.price * item.quantity) }}</span>
                 </div>
             </div>
-            
+
             <div class="order-total">
                 <span>总计:</span>
                 <span>{{ formatPrice(orderTotal) }}</span>
             </div>
         </div>
-        
+
         <div class="payment-methods">
             <h2>付款方式</h2>
             <button @click="proceedToPaypal" :disabled="loading" class="paypal-button">
@@ -25,7 +25,7 @@
                 <span v-else>使用 PayPal 支付</span>
             </button>
         </div>
-        
+
         <div v-if="errorMessage" class="error-message">
             {{ errorMessage }}
         </div>
@@ -102,7 +102,8 @@ export default {
     padding: 20px;
 }
 
-h1, h2 {
+h1,
+h2 {
     color: #333;
 }
 

@@ -17,6 +17,7 @@ const cartRoutes = require('./routes/cartRoutes');
 //const paypalRoutes = require('./routes/paypalRoutes');
 const paymentConfigRoutes = require('./routes/paymentConfigRoutes');
 const languageRoutes = require('./routes/languageRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,7 @@ app.use('/public/static', express.static(path.join(__dirname, 'public', 'static'
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // API路由
+// API路由
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/banners', bannerRoutes);
@@ -42,7 +44,8 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/orders2', require('./routes/orderRoutes3'));
 //app.use('/api/paypal', paypalRoutes);
-app.use('/api/payment', paymentConfigRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/payment-config', paymentConfigRoutes); // Register payment config routes
 app.use('/api/language', languageRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
