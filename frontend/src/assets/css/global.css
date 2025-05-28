@@ -1,4 +1,7 @@
-/* 全局样式 */
+/* Font Awesome CDN */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+
+/* 全局样式重置 */
 * {
   margin: 0;
   padding: 0;
@@ -64,6 +67,31 @@ a:hover {
 .btn-outline:hover {
   background-color: var(--primary-color);
   color: #fff;
+}
+
+/* 移除所有按钮的默认边框 */
+button {
+  border: none;
+  outline: none;
+}
+
+button:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Tailwind CSS 按钮边框重置 */
+.rounded-md {
+  border: none !important;
+}
+
+/* 确保红色按钮没有边框 */
+.bg-red-600 {
+  border: none !important;
+}
+
+.bg-gray-200 {
+  border: none !important;
 }
 
 /* 标题样式 */

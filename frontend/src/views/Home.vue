@@ -5,82 +5,105 @@
       <el-carousel height="500px" indicator-position="outside">
         <el-carousel-item v-for="(item, index) in banners" :key="index">
           <div class="banner-item" :style="{ backgroundImage: `url(${item.image_url})` }">
-            <div class="banner-content">
-              <h2 v-if="index === 0">CAR VACUUM CLEANER</h2>
-              <div v-if="index === 0" class="banner-features">
-                <div class="feature">
-                  <i class="el-icon-success"></i>
-                  <span>STRONG SUCTION</span>
-                </div>
-                <div class="feature">
-                  <i class="el-icon-time"></i>
-                  <span>LONG BATTERY LIFE</span>
-                </div>
-              </div>
-              <div v-if="index === 0" class="banner-slogan">
-                <h3>STRONG SUCTION</h3>
-                <p>EASY TO CLEAN ALL KINDS OF GARBAGE</p>
-              </div>
-            </div>
           </div>
         </el-carousel-item>
       </el-carousel>
     </div>
 
-    <!-- 产品展示部分 -->
-    <div class="products-section">
-      <div class="section-title">
-        <h2><span class="section-title-main">Our</span> <span class="section-title-red">Products</span></h2>
-        <div class="title-underline"></div>
-        <div class="section-subtitle">Your Car, Our Expert Care: Nurturing Automotive Excellence</div>
-      </div>
-
-      <div class="product-categories">
-        <div class="category-btn-group">
-          <button
-            v-for="category in categories"
-            :key="category.id"
-            :class="['category-btn', activeCategory === category.id.toString() ? 'active' : '']"
-            @click="activeCategory = category.id.toString()"
-          >
-            {{ category.name }}
-          </button>
-          <button class="category-btn more-btn">More</button>
+    <!-- Products Section -->
+    <section class="py-16 bg-white">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold mb-2">
+            Our <span class="text-red-600">Products</span>
+          </h2>
+          <div class="w-24 h-1 bg-red-600 mx-auto mb-6"></div>
+          <p class="text-gray-600 max-w-3xl mx-auto">
+            {{ $t('products.description') || defaultProductDescription}}
+          </p>
         </div>
-      </div>
 
-      <div class="product-grid">
-        <div v-for="product in displayProducts" :key="product.id" class="product-card">
-          <router-link :to="`/product/${product.id}`">
-            <div class="product-image">
-              <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError">
-            </div>
-            <div class="product-info">
-              <h3 class="product-title">{{ product.name }}</h3>
-            </div>
+        <!-- Product Categories Tabs -->
+        <div class="mb-10">
+          <div class="flex flex-wrap justify-center gap-2 mb-8">
+            <button v-for="category in categories" :key="category.id"
+              :class="activeCategory === category.id.toString() ? 'px-6 py-2 bg-red-600 text-white rounded-md !rounded-button whitespace-nowrap cursor-pointer' : 'px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 !rounded-button whitespace-nowrap cursor-pointer'"
+              @click="activeCategory = category.id.toString()">
+              {{ category.name }}
+            </button>
+            <button
+              class="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 !rounded-button whitespace-nowrap cursor-pointer">
+              {{ $t('products.more') || 'More' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div v-for="product in displayProducts" :key="product.id"
+            class="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+            <router-link :to="`/product/${product.id}`">
+              <div class="h-64 overflow-hidden">
+                <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
+                  class="w-full h-full object-cover object-center">
+              </div>
+              <div class="p-4">
+                <h3 class="text-lg font-semibold mb-2">{{ product.name }}</h3>
+                <p class="text-gray-600 text-sm mb-3">{{ product.description || 'Powerful suction with long batter life'
+                  }}</p>
+                <div class="flex justify-between items-center">
+                  <span class="text-red-600 font-bold">${{ product.price || '59.99' }}</span>
+                  <button class="text-red-600 hover:text-red-800 !rounded-button whitespace-nowrap cursor-pointer">
+                    <i class="fas fa-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+            </router-link>
+          </div>
+        </div>
+
+        <div class="text-center mt-12">
+          <router-link to="/products">
+            <button
+              class="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition duration-300 !rounded-button whitespace-nowrap cursor-pointer">
+              {{ $t('products.viewAll') || 'View All Products' }} <i class="fas fa-arrow-right ml-2"></i>
+            </button>
           </router-link>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 关于我们部分 -->
-    <div class="about-section">
-      <div class="section-title">
-        <h2>About <span>Us</span></h2>
-        <div class="title-underline"></div>
-      </div>
-
-      <div class="about-content">
-        <div class="about-text">
-          <p>我们是一家专业从事汽车用品研发、生产和销售的公司，拥有多年的行业经验和专业技术。我们致力于为客户提供高品质、高性能的汽车用品，包括汽车吸尘器、车载充电器和汽车应急启动电源等产品。</p>
-          <p>我们的产品以卓越的性能、可靠的品质和创新的设计而闻名，已经获得了众多客户的信赖和好评。我们不断追求技术创新和产品改进，为客户提供更好的产品和服务。</p>
-          <router-link to="/about" class="more-btn">了解更多</router-link>
+    <!-- About Us Section -->
+    <section class="py-16 bg-gray-100">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row items-center gap-12">
+          <div class="md:w-1/2">
+            <h2 class="text-3xl font-bold mb-2">
+              About <span class="text-red-600">Us</span>
+            </h2>
+            <div class="w-24 h-1 bg-red-600 mb-6"></div>
+            <p class="text-gray-700 mb-6">
+              {{ $t('about.description1') ||
+              '我们是一家专业的汽车电子产品制造商，致力于为客户提供高品质的汽车吸尘器、充气泵、启动电源等产品。我们拥有先进的生产设备和专业的技术团队，确保每一款产品都能满足客户的需求。' }}
+            </p>
+            <p class="text-gray-700 mb-6">
+              {{ $t('about.description2') || '我们的产品以卓越的性能、可靠的品质和创新的设计而闻名，已经获得了众多客户的信赖和好评。我们不断追求技术创新和产品改进，为客户提供更好的产品和服务。'
+              }}
+            </p>
+            <router-link to="/about">
+              <button
+                class="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition duration-300 !rounded-button whitespace-nowrap cursor-pointer">
+                {{ $t('about.learnMore') || '了解更多' }} <i class="fas fa-arrow-right ml-2"></i>
+              </button>
+            </router-link>
+          </div>
+          <div class="md:w-1/2">
+            <img src="https://via.placeholder.com/600x400/f3f4f6/6b7280?text=About+Us" alt="About Us"
+              class="rounded-lg shadow-lg w-full h-auto" />
+          </div>
         </div>
-        <div class="about-image">
-          <img src="../assets/images/about-car.jpg" alt="About Us">
-        </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -99,7 +122,8 @@ export default {
         { image_url: require('../assets/images/banner3.jpg') }
       ],
       categories: [],
-      products: []
+      products: [],
+      defaultProductDescription: 'We offer the best selection of automotive electronic products. Our            high-quality car vacuum cleaners, tire inflators, and jump starters are designed for maximum performance and reliability.',
     }
   },
   computed: {
@@ -137,237 +161,314 @@ export default {
 </script>
 
 <style scoped>
-.home {
-  width: 100%;
-}
-
-/* Banner样式 */
+/* Banner轮播图样式 */
 .banner-container {
   width: 100%;
-  margin-bottom: 40px;
+  height: 500px;
 }
 
 .banner-item {
+  width: 100%;
   height: 100%;
   background-size: cover;
   background-position: center;
-  display: flex;
-  align-items: center;
-  padding-left: 10%;
-  color: white;
+  background-repeat: no-repeat;
 }
 
-.banner-content {
-  max-width: 600px;
+/* 基础样式 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
-.banner-content h2 {
-  font-size: 36px;
-  margin-bottom: 20px;
-  font-weight: bold;
-}
-
-.banner-features {
-  display: flex;
-  margin-bottom: 30px;
-}
-
-.feature {
-  display: flex;
-  align-items: center;
-  margin-right: 30px;
-}
-
-.feature i {
-  margin-right: 10px;
-  font-size: 20px;
-}
-
-.banner-slogan h3 {
-  font-size: 32px;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-
-.banner-slogan p {
-  font-size: 18px;
-}
-
-/* 产品部分样式 */
-.products-section {
-  padding: 40px 5%;
-}
-
-.section-title {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.section-title-main {
-  font-size: 28px;
-  font-weight: bold;
-  color: #222;
-}
-.section-title-red {
-  font-size: 28px;
-  font-weight: bold;
-  color: #e60012;
-}
-.section-subtitle {
-  color: #888;
-  font-size: 16px;
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-
-.title-underline {
-  width: 60px;
-  height: 3px;
-  background-color: #e60012;
-  margin: 15px auto;
-}
-
-.category-btn-group {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-.category-btn {
-  padding: 10px 28px;
-  border: 1px solid #ddd;
-  background: #fff;
-  color: #222;
-  font-size: 16px;
-  border-radius: 2px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.category-btn.active {
-  background: #e60012;
-  color: #fff;
-  border-color: #e60012;
-}
-.category-btn.more-btn {
-  background: #fff;
-  color: #222;
-  border: 1px solid #ddd;
-}
-
-.product-grid {
+/* Grid 样式 */
+.grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-top: 30px;
 }
 
-.product-card {
-  border: 1px solid #eee;
-  border-radius: 5px;
-  overflow: hidden;
-  background: #fff;
-  transition: box-shadow 0.2s;
-  box-shadow: none;
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
 }
-.product-card:hover {
-  box-shadow: 0 5px 15px rgba(230, 0, 18, 0.08);
-  transform: translateY(-3px);
+
+.gap-8 {
+  gap: 2rem;
 }
-.product-image {
-  height: 200px;
+
+/* 响应式网格 */
+@media (min-width: 640px) {
+  .sm\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* 其他必要样式 */
+.relative {
+  position: relative;
+}
+
+.flex {
   display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.items-center {
   align-items: center;
+}
+
+.justify-center {
   justify-content: center;
-  background: #fafafa;
-  overflow: hidden;
 }
-.product-image img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  transition: transform 0.3s ease;
+
+.justify-between {
+  justify-content: space-between;
 }
-.product-card:hover .product-image img {
-  transform: scale(1.05);
+
+.gap-2 {
+  gap: 0.5rem;
 }
-.product-info {
-  padding: 15px;
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
+
+.mb-12 {
+  margin-bottom: 3rem;
+}
+
+.mt-12 {
+  margin-top: 3rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.py-16 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.text-center {
   text-align: center;
 }
-.product-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #222;
-  margin: 0;
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
-/* 关于我们部分 */
-.about-section {
-  padding: 40px 5%;
-  background-color: #f8f8f8;
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
 }
 
-.about-content {
-  display: flex;
-  align-items: center;
-  gap: 40px;
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
 }
 
-.about-text {
-  flex: 1;
+.font-bold {
+  font-weight: 700;
 }
 
-.about-text p {
-  margin-bottom: 15px;
-  line-height: 1.6;
+.font-semibold {
+  font-weight: 600;
 }
 
-.about-image {
-  flex: 1;
+.text-white {
+  color: #ffffff;
 }
 
-.about-image img {
+.text-gray-600 {
+  color: #6b7280;
+}
+
+.text-gray-700 {
+  color: #374151;
+}
+
+.text-red-600 {
+  color: #dc2626;
+}
+
+.bg-white {
+  background-color: #ffffff;
+}
+
+.bg-gray-100 {
+  background-color: #f3f4f6;
+}
+
+.bg-gray-200 {
+  background-color: #e5e7eb;
+}
+
+.bg-red-600 {
+  background-color: #dc2626;
+}
+
+.rounded-md {
+  border-radius: 0.375rem;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.transition-transform {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.transition {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.duration-300 {
+  transition-duration: 300ms;
+}
+
+.hover\:shadow-xl:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.hover\:-translate-y-1:hover {
+  transform: translateY(-0.25rem);
+}
+
+.hover\:bg-gray-300:hover {
+  background-color: #d1d5db;
+}
+
+.hover\:bg-red-700:hover {
+  background-color: #b91c1c;
+}
+
+.hover\:text-red-800:hover {
+  color: #991b1b;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.max-w-3xl {
+  max-width: 48rem;
+}
+
+.w-24 {
+  width: 6rem;
+}
+
+.w-full {
   width: 100%;
-  border-radius: 5px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.more-btn {
-  display: inline-block;
-  padding: 10px 25px;
-  background-color: #e60012;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  margin-top: 15px;
-  transition: background-color 0.3s ease;
+.h-1 {
+  height: 0.25rem;
 }
 
-.more-btn:hover {
-  background-color: #c5000f;
+.h-64 {
+  height: 16rem;
 }
 
-@media (max-width: 768px) {
-  .product-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .about-content {
-    flex-direction: column;
-  }
-
-  .banner-content h2 {
-    font-size: 28px;
-  }
-
-  .banner-slogan h3 {
-    font-size: 24px;
-  }
+.h-full {
+  height: 100%;
 }
 
-@media (max-width: 480px) {
-  .product-grid {
-    grid-template-columns: 1fr;
+.h-auto {
+  height: auto;
+}
+
+.object-cover {
+  object-fit: cover;
+}
+
+.object-center {
+  object-position: center;
+}
+
+@media (min-width: 768px) {
+  .md\:w-1\/2 {
+    width: 50%;
+  }
+
+  .md\:flex-row {
+    flex-direction: row;
   }
 }
 </style>
