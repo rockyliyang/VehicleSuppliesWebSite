@@ -1,58 +1,52 @@
 <template>
-  <header class="site-header">
-
-
-    <div class="main-header">
-      <div class="container">
-        <div class="logo">
-          <router-link to="/">
-            <img :src="companyInfo.logo_url || logoImage" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'"
-              @error="handleImageError">
-          </router-link>
-        </div>
-
-        <nav class="main-nav">
-          <ul>
-            <li><router-link to="/" exact>{{ $t('home') }}</router-link></li>
-            <li><router-link to="/products">{{ $t('products') }}</router-link></li>
-            <li><router-link to="/about">{{ $t('about') }}</router-link></li>
-            <li><router-link to="/news">{{ $t('news') }}</router-link></li>
-            <li><router-link to="/contact">{{ $t('contact') }}</router-link></li>
-          </ul>
-        </nav>
-
-        <div class="user-actions">
-          <!-- 语言切换器 -->
-          <LanguageSwitcher />
-
-          <!-- 购物车按钮 -->
-          <el-button link @click="handleCartClick" class="cart-button">
-            <el-icon>
-              <ShoppingCartFull />
+  <header class="bg-white shadow-md">
+    <div class="container">
+      <!-- Logo -->
+      <div class="logo">
+        <router-link to="/">
+          <img :src="companyInfo.logo_url || logoImage" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'"
+            @error="handleImageError" />
+        </router-link>
+      </div>
+      <!-- Navigation -->
+      <nav class="main-nav">
+        <router-link to="/" exact-active-class="nav-active">{{$t('home')}}</router-link>
+        <router-link to="/about" active-class="nav-active">{{$t('about')}}</router-link>
+        <router-link to="/products" active-class="nav-active">{{$t('products')}}</router-link>
+        <router-link to="/news" active-class="nav-active">{{$t('news')}}</router-link>
+        <router-link to="/contact" active-class="nav-active">{{$t('contact')}}</router-link>
+      </nav>
+      <!-- Actions -->
+      <div class="user-actions">
+        <!-- Language Switcher -->
+        <LanguageSwitcher />
+        <!-- Cart Button -->
+        <el-button link @click="handleCartClick" class="action-btn cart-button">
+          <el-icon :size="22">
+            <ShoppingCartFull />
+          </el-icon>
+          <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
+        </el-button>
+        <!-- User Dropdown -->
+        <el-dropdown trigger="hover" @command="handleUserMenu">
+          <span class="action-btn user-btn">
+            <el-icon :size="22">
+              <User />
             </el-icon>
-            <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
-          </el-button>
-          <!-- 登录/用户按钮 -->
-          <el-dropdown trigger="hover" @command="handleUserMenu">
-            <span class="user-btn">
-              <el-icon>
-                <User />
-              </el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-if="isLoggedIn" command="orders">{{ $t('orders') }}</el-dropdown-item>
-                <el-dropdown-item v-if="isLoggedIn" command="logout">{{ $t('logout') }}</el-dropdown-item>
-                <el-dropdown-item v-if="!isLoggedIn" command="login">{{ $t('login') }}</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+            <i class="el-icon-arrow-down"></i>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-if="isLoggedIn" command="orders">{{ $t('orders') }}</el-dropdown-item>
+              <el-dropdown-item v-if="isLoggedIn" command="logout">{{ $t('logout') }}</el-dropdown-item>
+              <el-dropdown-item v-if="!isLoggedIn" command="login">{{ $t('login') }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
-
     <!-- 登录对话框 -->
-    <el-dialog title="用户登录" v-model="loginDialogVisible" width="400px" center>
+    <el-dialog title="用户登录" v-model="loginDialogVisible" width="400px" center class="login-dialog">
       <el-form :model="loginForm" :rules="loginRules" ref="loginForm">
         <el-form-item prop="username">
           <el-input v-model="loginForm.username" placeholder="用户名">
@@ -73,7 +67,7 @@
           </el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitLogin" style="width: 100%">登录</el-button>
+          <el-button type="primary" @click="submitLogin" class="submit-btn">登录</el-button>
         </el-form-item>
         <div class="login-options">
           <span>没有账号？<a href="javascript:;" @click="showRegister">立即注册</a></span>
@@ -228,161 +222,217 @@ export default {
 </script>
 
 <style scoped>
-.site-header {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.bg-white {
+  background: #fff;
 }
 
-.top-bar {
-  background-color: #333;
-  color: #fff;
-  padding: 8px 0;
-  font-size: 14px;
+.shadow-md {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .container {
-  width: 90%;
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1280px;
   margin: 0 auto;
+  padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 40px;
 }
 
-.contact-info span {
-  margin-right: 20px;
-}
-
-.contact-info i {
-  margin-right: 5px;
-}
-
-.top-right {
+/* Logo */
+.logo {
+  flex: 0 0 auto;
+  min-width: 180px;
+  max-width: 220px;
+  height: 48px;
   display: flex;
   align-items: center;
 }
 
-.discount {
-  background-color: #e60012;
-  padding: 2px 10px;
-  border-radius: 3px;
-  margin-right: 15px;
-}
-
-.language-selector {
-  cursor: pointer;
-  color: #fff;
-}
-
-.main-header {
-  padding: 15px 0;
-  background-color: #fff;
-}
-
 .logo img {
-  height: 50px;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
 }
 
-.main-nav ul {
+/* Navigation */
+.main-nav {
+  flex: 1;
   display: flex;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.main-nav li {
-  margin: 0 15px;
+  justify-content: center;
+  align-items: center;
+  gap: 32px;
+  min-width: 0;
+  margin: 0 20px;
 }
 
 .main-nav a {
-  text-decoration: none;
   color: #333;
   font-size: 16px;
   font-weight: 500;
-  padding: 5px 0;
+  text-decoration: none;
+  padding: 6px 0;
   position: relative;
-  transition: color 0.3s;
+  transition: color 0.2s ease;
+  white-space: nowrap;
 }
 
-.main-nav a:hover,
-.main-nav a.router-link-active {
-  color: #e60012;
+.main-nav a:hover {
+  color: #dc2626;
 }
 
-.main-nav a.router-link-active:after {
+.main-nav .nav-active {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.main-nav .nav-active::after {
   content: '';
   position: absolute;
   bottom: -2px;
   left: 0;
   width: 100%;
   height: 2px;
-  background-color: #e60012;
+  background: #dc2626;
+  border-radius: 2px;
 }
 
+/* User Actions */
 .user-actions {
+  flex: 0 0 auto;
+  min-width: 140px;
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
-.user-actions .el-button {
-  margin-left: 15px;
-  font-size: 16px;
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: color 0.2s ease;
+  padding: 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  position: relative;
 }
 
-.user-actions .el-button i {
-  margin-right: 5px;
-  font-size: 18px;
+.action-btn:hover {
+  color: #dc2626;
 }
 
 .cart-button {
-  position: relative;
+  padding: 4px !important;
+  height: auto !important;
 }
 
 .cart-count {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  background-color: #e60012;
-  color: white;
-  border-radius: 50%;
-  min-width: 16px;
-  height: 16px;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  background: #dc2626;
+  color: #fff;
   font-size: 12px;
-  line-height: 16px;
+  font-weight: 600;
+  line-height: 18px;
   text-align: center;
-  padding: 0 4px;
+  border-radius: 9px;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.user-btn {
+  gap: 4px;
+}
+
+.user-btn .el-icon-arrow-down {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Login Dialog */
+.login-dialog :deep(.el-dialog__body) {
+  padding: 30px 40px;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 40px;
+  margin-top: 10px;
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.submit-btn:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
 
 .login-options {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
-  margin-top: 10px;
+  margin-top: 16px;
 }
 
 .login-options a {
-  color: #e60012;
+  color: #dc2626;
   text-decoration: none;
 }
 
-@media (max-width: 768px) {
+.login-options a:hover {
+  color: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
   .container {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 12px 16px;
+    gap: 20px;
   }
 
-  .top-right,
-  .main-nav,
+  .main-nav {
+    gap: 24px;
+  }
+
+  .logo {
+    min-width: 160px;
+  }
+}
+
+@media (max-width: 900px) {
+  .main-nav {
+    display: none;
+  }
+
+  .container {
+    justify-content: space-between;
+  }
+
+  .logo {
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 8px 12px;
+  }
+
+  .logo img {
+    height: 40px;
+  }
+
   .user-actions {
-    margin-top: 10px;
-    width: 100%;
-  }
-
-  .main-nav ul {
-    flex-wrap: wrap;
-  }
-
-  .main-nav li {
-    margin: 5px 10px 5px 0;
+    min-width: auto;
+    gap: 12px;
   }
 }
 </style>
