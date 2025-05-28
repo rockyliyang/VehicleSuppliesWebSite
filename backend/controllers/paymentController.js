@@ -71,47 +71,30 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, connect
 // PayPal订单创建
 exports.createPayPalOrder = async (req, res) => {
   try {
-    const { shippingInfo, orderItems, orderId } = req.body;
+    const { shippingInfo, orderItems } = req.body;
     const userId = req.user.id;
     const connection = await pool.getConnection();
     await connection.beginTransaction();
     try {
       let cartItems;
-      let orderToUse = null;
-      if (orderId) {
-        const [orders] = await connection.query('SELECT * FROM orders WHERE id = ? AND user_id = ? AND status = ? AND deleted = 0', [orderId, userId, 'pending']);
-        if (orders.length > 0) {
-          orderToUse = orders[0];
-        }
-      }
-      if (orderToUse) {
-        // 复用原订单明细
-        const [items] = await connection.query('SELECT * FROM order_items WHERE order_id = ? AND deleted = 0', [orderToUse.id]);
-        cartItems = orderItems && orderItems.length > 0 ? orderItems : items;
+      if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
+        cartItems = orderItems;
       } else {
-        if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
-          cartItems = orderItems;
-        } else {
-          const [dbCartItems] = await connection.query(
-            `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
-             FROM cart_items ci 
-             JOIN products p ON ci.product_id = p.id 
-             WHERE ci.user_id = ? AND ci.deleted = 0 AND p.deleted = 0`,
-            [userId]
-          );
-          cartItems = dbCartItems;
-        }
+        const [dbCartItems] = await connection.query(
+          `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
+           FROM cart_items ci 
+           JOIN products p ON ci.product_id = p.id 
+           WHERE ci.user_id = ? AND ci.deleted = 0 AND p.deleted = 0`,
+          [userId]
+        );
+        cartItems = dbCartItems;
       }
       if (!cartItems || cartItems.length === 0) {
         await connection.rollback();
         connection.release();
         return res.json({ success: false, message: '购物车为空', data: null });
       }
-      let realOrderId = orderToUse ? orderToUse.id : null;
-      if (!orderToUse) {
-        const result = await initOrder(userId, cartItems, shippingInfo, 'paypal', connection);
-        realOrderId = result.orderId;
-      }
+      const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, 'paypal', connection);
       const client = getPayPalClient();
       const ordersController = new OrdersController(client);
       const request = {
@@ -121,7 +104,7 @@ exports.createPayPalOrder = async (req, res) => {
             {
               amount: {
                 currencyCode: 'USD',
-                value: result.totalAmount.toFixed(2)
+                value: totalAmount.toFixed(2)
               }
             }
           ]
@@ -132,12 +115,12 @@ exports.createPayPalOrder = async (req, res) => {
       const paypalOrderData = JSON.parse(body);
       await connection.query(
         `UPDATE orders SET payment_id = ? WHERE id = ?`,
-        [paypalOrderData.id, realOrderId]
+        [paypalOrderData.id, orderId]
       );
       await connection.commit();
       connection.release();
       
-       return res.json({ success: true, message: 'PayPal订单创建成功', data: { orderId: realOrderId, paypalOrderId: paypalOrderData.id } });
+       return res.json({ success: true, message: 'PayPal订单创建成功', data: { orderId, paypalOrderId: paypalOrderData.id } });
     } catch (error) {
       await connection.rollback();
       connection.release();
@@ -181,7 +164,7 @@ exports.capturePayPalPayment = async (req, res) => {
 // 创建普通订单（微信/支付宝）
 exports.createCommonOrder = async (req, res) => {
   try {
-    const { shippingInfo, paymentMethod, orderItems, orderId } = req.body;
+    const { shippingInfo, paymentMethod, orderItems } = req.body;
     const userId = req.user.id;
     if (!['wechat', 'alipay'].includes(paymentMethod)) {
       return res.json({ success: false, message: '不支持的支付方式', data: null });
@@ -190,40 +173,24 @@ exports.createCommonOrder = async (req, res) => {
     await connection.beginTransaction();
     try {
       let cartItems;
-      let orderToUse = null;
-      if (orderId) {
-        const [orders] = await connection.query('SELECT * FROM orders WHERE id = ? AND user_id = ? AND status = ? AND deleted = 0', [orderId, userId, 'pending']);
-        if (orders.length > 0) {
-          orderToUse = orders[0];
-        }
-      }
-      if (orderToUse) {
-        const [items] = await connection.query('SELECT * FROM order_items WHERE order_id = ? AND deleted = 0', [orderToUse.id]);
-        cartItems = orderItems && orderItems.length > 0 ? orderItems : items;
+      if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
+        cartItems = orderItems;
       } else {
-        if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
-          cartItems = orderItems;
-        } else {
-          const [dbCartItems] = await connection.query(
-            `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
-             FROM cart_items ci 
-             JOIN products p ON ci.product_id = p.id 
-             WHERE ci.user_id = ? AND ci.deleted = 0 AND p.deleted = 0`,
-            [userId]
-          );
-          cartItems = dbCartItems;
-        }
+        const [dbCartItems] = await connection.query(
+          `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
+           FROM cart_items ci 
+           JOIN products p ON ci.product_id = p.id 
+           WHERE ci.user_id = ? AND ci.deleted = 0 AND p.deleted = 0`,
+          [userId]
+        );
+        cartItems = dbCartItems;
       }
       if (!cartItems || cartItems.length === 0) {
         await connection.rollback();
         connection.release();
         return res.json({ success: false, message: '购物车为空', data: null });
       }
-      let realOrderId = orderToUse ? orderToUse.id : null;
-      if (!orderToUse) {
-        const result = await initOrder(userId, cartItems, shippingInfo, paymentMethod, connection);
-        realOrderId = result.orderId;
-      }
+      const { orderId } = await initOrder(userId, cartItems, shippingInfo, paymentMethod, connection);
       await connection.commit();
       connection.release();
       
@@ -235,7 +202,7 @@ exports.createCommonOrder = async (req, res) => {
         );
       }
       
-      return res.json({ success: true, message: '订单创建成功', data: { orderId: realOrderId } });
+      return res.json({ success: true, message: '订单创建成功', data: { orderId } });
     } catch (error) {
       await connection.rollback();
       connection.release();

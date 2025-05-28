@@ -204,8 +204,7 @@ export default {
                 product_name: item.name,
                 quantity: item.quantity,
                 price: item.price
-              })),
-              orderId: this.$route.query.orderId || undefined
+              }))
             });
             
             if (response.success) {
@@ -270,8 +269,7 @@ export default {
           product_name: item.name,
           quantity: item.quantity,
           price: item.price
-        })),
-        orderId: this.$route.query.orderId || undefined
+        }))
       });
       if (orderRes.success) {
         this.orderId = orderRes.data.orderId;

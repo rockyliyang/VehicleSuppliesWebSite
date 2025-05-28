@@ -1,77 +1,111 @@
 <template>
-  <footer class="site-footer">
-    <div class="footer-main">
-      <div class="container">
-        <div class="footer-grid">
-          <!-- 公司信息 -->
-          <div class="footer-section company-section">
-            <h3>公司信息</h3>
-            <ul class="company-info">
-              <li><el-icon><LocationInformation /></el-icon>{{ companyInfo.address || '---' }}</li>
-              <li><el-icon><PhoneFilled /></el-icon>{{ companyInfo.phone || '---' }}</li>
-              <li><el-icon><Message /></el-icon>{{ companyInfo.email || '---' }}</li>
-            </ul>
+  <footer class="bg-gray-900 text-white pt-16 pb-8">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div>
+          <img
+            :src="companyInfo.logo_url || 'https://static.readdy.ai/image/01b5af88fa941f59119e27a41ea4862d/63b7adac1fa1c8b6813bfaf6742a426b.png'"
+            :alt="companyInfo.company_name || 'Auto Ease Tech X Logo'" class="h-8 w-auto mb-6" />
+          <p class="text-gray-400 mb-6">
+            {{ companyInfo.company_intro || defaultCompanyIntro }}
+          </p>
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-400 hover:text-white transition duration-300 cursor-pointer">
+              <i class="fab fa-facebook-f"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white transition duration-300 cursor-pointer">
+              <i class="fab fa-twitter"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white transition duration-300 cursor-pointer">
+              <i class="fab fa-instagram"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white transition duration-300 cursor-pointer">
+              <i class="fab fa-linkedin-in"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white transition duration-300 cursor-pointer">
+              <i class="fab fa-youtube"></i>
+            </a>
           </div>
-
-          <!-- 网站导航栏 -->
-          <div class="footer-section nav-section">
-            <h3>网站导航</h3>
-            <ul class="footer-nav">
-              <li><router-link to="/">首页</router-link></li>
-              <li><router-link to="/products">产品列表</router-link></li>
-              <li><router-link to="/about">关于</router-link></li>
-              <li><router-link to="/news">新闻</router-link></li>
-              <li><router-link to="/contact">联系</router-link></li>
-              <li><router-link to="/login">用户模块</router-link></li>
-            </ul>
-          </div>
-
-          <!-- 产品分类 -->
-          <div class="footer-section category-section">
-            <h3>产品分类</h3>
-            <ul class="category-list">
-              <li v-for="cat in categories" :key="cat.id">
-                <router-link :to="`/products?category=${cat.id}`">
-                  <span class="cat-name">{{ cat.name }}</span>
-                  <span class="cat-desc">{{ cat.description }}</span>
-                </router-link>
-              </li>
-            </ul>
-          </div>
-
-          <!-- 公司社交链接 -->
-          <div class="footer-section social-section">
-            <h3>社交链接</h3>
-            <div class="social-links">
-              <a v-if="companyInfo.wechat_qrcode" :href="companyInfo.wechat_qrcode" target="_blank" title="微信">
-                <img :src="companyInfo.wechat_qrcode" alt="微信二维码" class="social-qrcode" />
-              </a>
-              <a v-if="companyInfo.weibo" :href="companyInfo.weibo" target="_blank" title="微博"><i class="iconfont icon-weibo"></i></a>
-              <a v-if="companyInfo.qq" :href="companyInfo.qq" target="_blank" title="QQ"><i class="iconfont icon-qq"></i></a>
-              <a v-if="companyInfo.douyin" :href="companyInfo.douyin" target="_blank" title="抖音"><i class="iconfont icon-douyin"></i></a>
-              <a v-if="companyInfo.xiaohongshu" :href="companyInfo.xiaohongshu" target="_blank" title="小红书"><i class="iconfont icon-xiaohongshu"></i></a>
-            </div>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold mb-6">{{$t('QuickLinks')}}</h3>
+          <ul class="space-y-3">
+            <li>
+              <router-link to="/"
+                class="text-gray-400 hover:text-white transition duration-300">{{$t('home')}}</router-link>
+            </li>
+            <li>
+              <router-link to="/about"
+                class="text-gray-400 hover:text-white transition duration-300">{{$t('about')}}</router-link>
+            </li>
+            <li>
+              <router-link to="/products"
+                class="text-gray-400 hover:text-white transition duration-300">{{$t('products')}}</router-link>
+            </li>
+            <li>
+              <router-link to="/news"
+                class="text-gray-400 hover:text-white transition duration-300">{{$t('news')}}</router-link>
+            </li>
+            <li>
+              <router-link to="/contact"
+                class="text-gray-400 hover:text-white transition duration-300">{{$t('contact')}}</router-link>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold mb-6">{{$t('OurProducts')}}</h3>
+          <ul class="space-y-3">
+            <li v-for="category in categories.slice(0, 7)" :key="category.id">
+              <router-link :to="`/products?category=${category.id}`"
+                class="text-gray-400 hover:text-white transition duration-300">{{ category.name }}</router-link>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold mb-6">{{$t('ContactInfo')}}</h3>
+          <ul class="space-y-4">
+            <li class="flex items-start">
+              <i class="fas fa-map-marker-alt text-red-600 mt-1 mr-3"></i>
+              <span class="text-gray-400">{{ companyInfo.address || defaultAddress }}</span>
+            </li>
+            <li class="flex items-center">
+              <i class="fas fa-phone-alt text-red-600 mr-3"></i>
+              <span class="text-gray-400">{{ companyInfo.phone || '+1 (800) 567-8901' }}</span>
+            </li>
+            <li class="flex items-center">
+              <i class="fas fa-envelope text-red-600 mr-3"></i>
+              <span class="text-gray-400">{{ companyInfo.email || 'info@autoeasexpert.com' }}</span>
+            </li>
+            <li class="flex items-center">
+              <i class="fas fa-clock text-red-600 mr-3"></i>
+              <span class="text-gray-400">{{ companyInfo.business_hours || 'Mon-Fri: 9:00 AM - 6:00 PM' }}</span>
+            </li>
+          </ul>
+          <div class="mt-6" v-if="companyInfo.wechat_qrcode">
+            <img :src="companyInfo.wechat_qrcode" alt="QR Code" class="w-24 h-24" />
           </div>
         </div>
       </div>
-    </div>
-    <div class="footer-bottom">
-      <div class="container">
-        <p class="copyright">© 2023 AUTO EASE EXPERT CO., LTD. All Rights Reserved</p>
+      <div class="pt-4 border-t border-gray-800 text-center">
+        <p class="text-gray-500">
+          © 2025 {{ companyInfo.company_name || 'Auto Ease Xpert Co., Ltd.' }} All Rights Reserved.
+        </p>
       </div>
     </div>
   </footer>
 </template>
 
 <script>
-import { LocationInformation, PhoneFilled, Message } from '@element-plus/icons-vue';
+//import { LocationInformation, PhoneFilled, Message } from '@element-plus/icons-vue';
 export default {
   name: 'SiteFooter',
-  components: { LocationInformation, PhoneFilled, Message },
+  //components: { LocationInformation, PhoneFilled, Message },
   data() {
     return {
       companyInfo: {},
-      categories: []
+      categories: [],
+      defaultAddress: '123 Innovation Drive, Tech Park,  CA 94103, United States',
+      defaultCompanyIntro: 'Auto Ease Xpert Co., Ltd. is a leading manufacturer of high-quality automotive electronic products designed to make your driving experience more comfortable and convenient.'
     };
   },
   async created() {
@@ -98,114 +132,215 @@ export default {
 </script>
 
 <style scoped>
-.site-footer {
-  background-color: #333;
-  color: #fff;
-  margin-top: 50px;
+/* 完整的Tailwind CSS类定义 */
+.bg-gray-900 {
+  background-color: #111827;
 }
-.footer-main {
-  padding: 50px 0;
+
+.text-white {
+  color: #ffffff;
 }
-.footer-grid {
+
+.pt-16 {
+  padding-top: 4rem;
+}
+
+.pb-8 {
+  padding-bottom: 2rem;
+}
+
+.container {
+  max-width: 1280px;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.gap-8 {
+  gap: 2rem;
+}
+
+.mb-12 {
+  margin-bottom: 3rem;
+}
+
+.h-8 {
+  height: 2rem;
+}
+
+.h-12 {
+  height: 3rem;
+}
+
+.w-auto {
+  width: auto;
+  max-width: 100%;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+.flex {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
 }
-.footer-section {
-  flex: 1;
-  min-width: 220px;
-  margin-right: 30px;
-  margin-bottom: 30px;
+
+.space-x-4> :not([hidden])~ :not([hidden]) {
+  margin-left: 1rem;
 }
-.footer-section:last-child {
-  margin-right: 0;
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
 }
-.footer-section h3 {
-  font-size: 18px;
-  margin-bottom: 20px;
-  position: relative;
-  padding-bottom: 10px;
+
+.font-semibold {
+  font-weight: 600;
 }
-.footer-section h3:after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 50px;
-  height: 2px;
-  background-color: #e60012;
+
+.space-y-3> :not([hidden])~ :not([hidden]) {
+  margin-top: 0.75rem;
 }
-.company-info {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+
+.space-y-4> :not([hidden])~ :not([hidden]) {
+  margin-top: 1rem;
 }
-.company-info li {
-  display: flex;
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-center {
   align-items: center;
-  margin-bottom: 10px;
-  color: #ccc;
 }
-.company-info el-icon {
-  margin-right: 8px;
+
+.text-red-600 {
+  color: #dc2626;
 }
-.footer-nav {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+
+.mt-1 {
+  margin-top: 0.25rem;
 }
-.footer-nav li {
-  margin-bottom: 10px;
+
+.mr-3 {
+  margin-right: 0.75rem;
 }
-.footer-nav a {
-  color: #fff;
-  text-decoration: none;
-  transition: color 0.3s;
+
+.mr-2 {
+  margin-right: 0.5rem;
 }
-.footer-nav a:hover {
-  color: #e60012;
+
+.mt-6 {
+  margin-top: 1.5rem;
 }
-.category-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+
+.w-24 {
+  width: 6rem;
 }
-.category-list li {
-  margin-bottom: 10px;
+
+.h-24 {
+  height: 6rem;
 }
-.cat-name {
-  font-weight: bold;
-  color: #fff;
+
+.pt-8 {
+  padding-top: 2rem;
 }
-.cat-desc {
-  color: #ccc;
-  font-size: 12px;
-  margin-left: 8px;
+
+.border-t {
+  border-top-width: 1px;
 }
-.social-section .social-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+
+.border-gray-800 {
+  border-color: #1f2937;
 }
-.social-qrcode {
-  width: 60px;
-  height: 60px;
-  background: #fff;
-  border-radius: 8px;
-  padding: 4px;
-}
-.footer-bottom {
-  background-color: #222;
-  padding: 15px 0;
+
+.text-center {
   text-align: center;
 }
-@media (max-width: 900px) {
-  .footer-grid {
-    flex-direction: column;
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.hover\:text-white:hover {
+  color: #ffffff;
+}
+
+.transition {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.duration-300 {
+  transition-duration: 300ms;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* 响应式设计 */
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .footer-section {
-    margin-right: 0;
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+/* 确保链接样式正确 */
+a {
+  text-decoration: none;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  margin: 0;
 }
 </style>

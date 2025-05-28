@@ -16,11 +16,7 @@
       <div class="orders-content" v-loading="loading">
         <div v-if="orders.length > 0" class="orders-list">
           <el-table :data="orders" style="width: 100%">
-            <el-table-column label="订单号" prop="order_guid" width="220">
-              <template #default="{row}">
-                {{ typeof row.order_guid === 'string' ? row.order_guid : (row.order_guid?.toString('hex') || row.id) }}
-              </template>
-            </el-table-column>
+            <el-table-column label="订单号" prop="order_guid" width="220"></el-table-column>
             <el-table-column label="下单时间" width="180">
               <template #default="{row}">
                 {{ formatDate(row.created_at) }}
@@ -38,8 +34,6 @@
             <el-table-column label="操作">
               <template #default="{row}">
                 <el-button type="primary" size="small" @click="viewOrderDetail(row.id)">查看详情</el-button>
-                <el-button v-if="row.status === 'pending'" type="warning" size="small"
-                  @click="handleRepay(row)">重新支付</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -256,15 +250,6 @@ export default {
       } finally {
         this.loading = false;
       }
-    },
-    handleRepay(order) {
-      this.$router.push({
-        path: '/checkout-unified',
-        query: {
-          items: encodeURIComponent(JSON.stringify(order.items || order.order_items || [])),
-          orderId: order.id
-        }
-      });
     }
   }
 };
