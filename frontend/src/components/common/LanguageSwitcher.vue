@@ -1,21 +1,21 @@
 <template>
-    <div class="language-switcher">
-        <el-dropdown trigger="click" @command="handleLanguageChange">
-            <span class="language-btn">
-                {{ currentLanguageDisplay }}
-                <el-icon class="el-icon--right">
-                    <arrow-down />
-                </el-icon>
-            </span>
-            <template #dropdown>
-                <el-dropdown-menu>
-                    <el-dropdown-item v-for="lang in supportedLanguages" :key="lang" :command="lang">
-                        {{ getLanguageDisplay(lang) }}
-                    </el-dropdown-item>
-                </el-dropdown-menu>
-            </template>
-        </el-dropdown>
-    </div>
+  <div class="language-switcher">
+    <el-dropdown trigger="click" @command="handleLanguageChange">
+      <span class="language-btn">
+        {{ currentLanguageDisplay }}
+        <el-icon class="el-icon--right">
+          <arrow-down />
+        </el-icon>
+      </span>
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item v-for="lang in supportedLanguages" :key="lang" :command="lang">
+            {{ getLanguageDisplay(lang) }}
+          </el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
+  </div>
 </template>
 
 <script>
@@ -71,19 +71,19 @@ export default {
 
 <style scoped>
 .language-switcher {
-    display: inline-block;
-    margin-left: 15px;
+  display: inline-block;
+  margin-left: 15px;
 }
 
 .language-btn {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    color: #333;
-    font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #333;
+  font-size: 14px;
 }
 
 .language-btn:hover {
-    color: #409EFF;
+  color: #dc2626;
 }
 </style>

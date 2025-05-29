@@ -1,68 +1,73 @@
 <template>
   <div class="products-page">
+    <!-- Modern Banner Section -->
     <div class="page-banner">
       <div class="banner-content">
-        <h1>产品中心</h1>
+        <h1 class="text-4xl font-bold mb-4">{{ $t('products.title') || '产品中心' }}</h1>
         <div class="breadcrumb">
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item>产品中心</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') || '首页' }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ $t('nav.products') || '产品中心' }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
       </div>
     </div>
 
-    <div class="container">
-      <div class="products-container">
-        <div class="filter-sidebar">
-          <h3>产品分类</h3>
-          <ul class="category-list">
-            <li v-for="category in categories" :key="category.id"
-              :class="{ active: selectedCategory === category.id.toString() }"
+    <!-- Category Navigation -->
+    <div class="category-navigation-wrapper py-8">
+      <div class="container mx-auto px-4">
+        <div class="flex justify-center py-12">
+          <div class="flex space-x-8 category-tabs">
+            <button :class="selectedCategory === null ? 'category-tab active ' : 'category-tab '"
+              @click="selectCategory(null)">
+              {{ $t('products.allCategories') || '全部产品' }}
+            </button>
+            <button v-for="category in categories" :key="category.id"
+              :class="selectedCategory === category.id.toString() ? 'category-tab active' : 'category-tab'"
               @click="selectCategory(category.id.toString())">
               {{ category.name }}
-            </li>
-          </ul>
-        </div>
-
-        <div class="products-content">
-          <div class="products-header">
-            <div class="products-count">
-              共 <span>{{ filteredProducts.length }}</span> 个产品
-            </div>
-            <div class="products-sort">
-              <el-select v-model="sortOption" placeholder="排序方式" size="small">
-                <el-option label="默认排序" value="default"></el-option>
-                <el-option label="价格从低到高" value="price-asc"></el-option>
-                <el-option label="价格从高到低" value="price-desc"></el-option>
-              </el-select>
-            </div>
+            </button>
           </div>
+        </div>
+      </div>
+    </div>
 
+    <div class="container mx-auto px-4 pt-16 pb-24">
+
+      <div class="products-container">
+        <!-- Products Content -->
+        <div class="products-content">
+
+          <!-- Modern Products Grid -->
           <div class="products-grid">
-            <div v-for="product in sortedProducts" :key="product.id" class="product-card">
-              <div class="product-image" @click="$router.push(`/product/${product.id}`)" style="cursor: pointer;">
-                <img :src="product.thumbnail_url || require('../assets/images/default-image.svg')" :alt="product.name"
-                  @error="handleImageError">
+            <div v-for="product in paginatedProducts" :key="product.id" class="product-card">
+              <!-- 在HTML部分，移除product-overlay div -->
+              <div class="product-image" @click="$router.push(`/product/${product.id}`)">
+                <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
+                  class="w-full h-full object-cover object-center">
               </div>
               <div class="product-info">
-                <h3 @click="$router.push(`/product/${product.id}`)" style="cursor: pointer;">{{ product.name }}</h3>
-                <div class="product-price">¥{{ formatPrice(product.price) }}</div>
-              </div>
-              <div class="product-actions">
-                <el-button type="primary" size="small" @click="addToInquiry(product)">加入购物车</el-button>
+                <h3 @click="$router.push(`/product/${product.id}`)" class="product-title">{{ product.name }}</h3>
+                <div class="product-footer">
+                  <span class="product-price">${{ formatPrice(product.price) }}</span>
+                  <span v-if="product.promo_message" class="promo-message">{{ product.promo_message }}</span>
+                </div>
               </div>
             </div>
           </div>
 
+          <!-- No Products Message -->
           <div v-if="filteredProducts.length === 0" class="no-products">
-            <i class="el-icon-warning-outline"></i>
-            <p>暂无相关产品</p>
+            <i class="fas fa-search text-6xl text-gray-400 mb-4"></i>
+            <p class="text-xl text-gray-500">{{ $t('products.noProducts') || '暂无相关产品' }}</p>
           </div>
 
+          <!-- Modern Pagination -->
           <div class="pagination-container">
-            <el-pagination background layout="prev, pager, next" :total="filteredProducts.length" :page-size="12"
-              @current-change="handleCurrentChange"></el-pagination>
+            <el-pagination background layout="total, prev, pager, next, jumper" :total="filteredProducts.length"
+              :page-size="12" :current-page="currentPage" @current-change="handleCurrentChange"
+              class="modern-pagination">
+            </el-pagination>
           </div>
         </div>
       </div>
@@ -153,7 +158,11 @@ export default {
       this.currentPage = 1
       
       // 更新URL参数
-      this.$router.push({ query: { category: categoryId } })
+      if (categoryId === null) {
+        this.$router.push({ query: {} })
+      } else {
+        this.$router.push({ query: { category: categoryId } })
+      }
     },
     handleCurrentChange(page) {
       this.currentPage = page
@@ -173,190 +182,348 @@ export default {
 </script>
 
 <style scoped>
-.products-page {
-  min-height: 100vh;
+.promo-message {
+  font-size: 0.8rem;
+  color: #e53e3e;
+  /* Red color for promo message */
+  background-color: #fff0f0;
+  /* Light red background */
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
 }
 
+/* Modern Tech Style for Products Page */
+.products-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+/* Modern Banner */
 .page-banner {
-  height: 200px;
-  background-color: #f5f5f5;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../assets/images/banner1.jpg');
-  background-size: cover;
-  background-position: center;
+  height: 500px;
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   text-align: center;
-  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('../assets/images/banner1.jpg') center/cover;
+  opacity: 0.1;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
 }
 
 .banner-content h1 {
-  font-size: 32px;
-  margin-bottom: 10px;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Container */
 .container {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 15px;
 }
 
+/* Products Container */
 .products-container {
-  display: flex;
-  gap: 30px;
-  margin-bottom: 40px;
+  margin-bottom: 2rem;
 }
 
-.filter-sidebar {
-  width: 250px;
-  flex-shrink: 0;
+/* Category Navigation */
+.category-navigation {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
 }
 
-.filter-sidebar h3 {
-  font-size: 18px;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
+.category-tab {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #4b5563;
+  position: relative;
+  transition: color 0.2s ease;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
-.category-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.category-tab:hover {
+  color: #dc2626;
 }
 
-.category-list li {
-  padding: 10px 0;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-  transition: all 0.3s;
+.category-tab.active {
+  color: #dc2626;
+  font-weight: 600;
 }
 
-.category-list li:hover {
-  color: #409EFF;
+.category-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #dc2626;
+  border-radius: 2px;
 }
 
-.category-list li.active {
-  color: #409EFF;
-  font-weight: bold;
+.category-navigation-wrapper {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
+.category-tabs {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Products Content */
 .products-content {
-  flex: 1;
+  padding: 0;
 }
 
-.products-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
 
-.products-count span {
-  font-weight: bold;
-  color: #409EFF;
-}
 
+/* Modern Products Grid */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  /* Adjusted minmax for smaller cards */
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.product-card {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
 }
 
 .product-card:hover {
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  transform: translateY(-5px);
+  transform: translateY(-0.25rem);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .product-image {
-  height: 200px;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .product-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s;
+  object-fit: contain;
+  object-position: center;
+  transition: transform 0.5s ease;
 }
 
 .product-card:hover .product-image img {
   transform: scale(1.05);
 }
 
+
+
 .product-info {
-  padding: 15px;
+  padding: 1rem;
 }
 
-.product-info h3 {
-  font-size: 16px;
-  margin-bottom: 12px;
-  height: 40px;
+.product-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1f2937;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  line-height: 1.4;
+  height: auto;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
+.product-title:hover {
+  color: #dc2626;
+}
+
+
+
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
 .product-price {
-  font-size: 18px;
-  color: #f56c6c;
-  font-weight: bold;
-  margin-bottom: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #dc2626;
 }
 
-.product-actions {
-  padding: 0 15px 15px;
+.add-to-cart-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
-  justify-content: center;
+  align-items: center;
 }
 
-.product-card {
-  border: 1px solid #eee;
-  border-radius: 4px;
-  overflow: hidden;
-  transition: all 0.3s;
-  background-color: white;
-  display: flex;
-  flex-direction: column;
+.add-to-cart-btn:hover {
+  background: #991b1b;
+  transform: translateY(-1px);
 }
 
-.product-info {
-  padding: 15px;
-  flex-grow: 1;
-  text-align: center;
-}
-
+/* No Products */
 .no-products {
   text-align: center;
-  padding: 50px 0;
-  color: #909399;
+  padding: 4rem 0;
+  color: #6b7280;
 }
 
-.no-products i {
-  font-size: 48px;
-  margin-bottom: 10px;
-}
-
+/* Modern Pagination */
 .pagination-container {
-  text-align: center;
-  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #f3f4f6;
+}
+
+.modern-pagination {
+  --el-color-primary: #dc2626;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .category-navigation {
+    padding: 1rem;
+  }
+
+  .category-navigation .flex {
+    gap: 1rem;
+  }
+
+  .category-navigation button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .products-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .products-container {
-    flex-direction: column;
+  .banner-content h1 {
+    font-size: 2rem;
   }
 
-  .filter-sidebar {
-    width: 100%;
-    margin-bottom: 20px;
+  .products-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
   }
 
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
   }
+
+  .product-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .add-to-cart-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Utility Classes */
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.text-red-600 {
+  color: #dc2626;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.object-cover {
+  object-fit: cover;
+}
+
+.object-center {
+  object-position: center;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
 }
 </style>
