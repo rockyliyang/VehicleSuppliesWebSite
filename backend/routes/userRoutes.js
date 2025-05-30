@@ -163,7 +163,7 @@ router.get('/check-token', jwtMiddleware.verifyToken, (req, res) => {
   try {
     // 生成新的JWT token，有效期为1小时
     const newToken = jwt.sign(
-      { id: req.user.id, username: req.user.username,email: req.user.email, userRole: req.user.user_role },
+      { id: req.userId, email: req.userEmail, userRole: req.userRole },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -192,7 +192,7 @@ router.get('/profile', verifyToken, async (req, res) => {
   try {
     const [users] = await pool.query(
       'SELECT id, username, email, phone, user_role FROM users WHERE id = ? AND deleted = 0',
-      [req.user.id]
+      [req.userId]
     );
 
     if (users.length === 0) {

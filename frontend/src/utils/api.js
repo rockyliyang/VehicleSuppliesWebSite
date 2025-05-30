@@ -17,21 +17,30 @@ function getTokenFromCookie(name) {
   return null;
 }
 
+// 导出的工具函数：获取当前用户token
+export function getAuthToken(isAdminRequest = false) {
+  // 优先从cookie读取token
+  let token = getTokenFromCookie('token');
+  
+  // 如果cookie中没有token，尝试从localStorage获取
+  if (!token) {
+    // 根据请求类型判断使用哪个token
+    if (isAdminRequest) {
+      token = localStorage.getItem('admin_token');
+    } else {
+      token = localStorage.getItem('user_token') || localStorage.getItem('token');
+    }
+  }
+  
+  return token;
+}
+
 // 请求拦截器 - 添加token到请求头
 api.interceptors.request.use(
   config => {
-    // 优先从cookie读取token
-    let token = getTokenFromCookie('token');
-    
-    // 如果cookie中没有token，尝试从localStorage获取
-    if (!token) {
-      // 根据请求路径判断使用哪个token
-      if (config.url && config.url.startsWith('/admin')) {
-        token = localStorage.getItem('admin_token');
-      } else {
-        token = localStorage.getItem('user_token') || localStorage.getItem('token');
-      }
-    }
+    // 使用封装的函数获取token
+    const isAdminRequest = config.url && config.url.startsWith('/admin');
+    const token = getAuthToken(isAdminRequest);
     
     // 如果有token，添加到请求头
     if (token) {

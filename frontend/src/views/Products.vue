@@ -15,7 +15,7 @@
 
     <!-- Category Navigation -->
     <div class="category-navigation-wrapper py-8">
-      <div class="container mx-auto px-4">
+      <div class="container mx-auto">
         <div class="flex justify-center py-12">
           <div class="flex space-x-8 category-tabs">
             <button :class="selectedCategory === null ? 'category-tab active ' : 'category-tab '"
@@ -182,6 +182,40 @@ export default {
 </script>
 
 <style scoped>
+@import '../assets/styles/shared.css';
+
+/* Element UI 组件样式穿透 */
+:deep(.el-breadcrumb__inner a) {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+}
+
+:deep(.el-breadcrumb__inner a:hover) {
+  color: #ffffff;
+}
+
+:deep(.el-breadcrumb__separator) {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+:deep(.el-pagination) {
+  --el-color-primary: #dc2626;
+}
+
+:deep(.el-pagination .btn-next),
+:deep(.el-pagination .btn-prev) {
+  color: #dc2626;
+}
+
+:deep(.el-pagination .el-pager li:hover) {
+  color: #dc2626;
+}
+
+:deep(.el-pagination .el-pager li.is-active) {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
 .promo-message {
   font-size: 0.8rem;
   color: #e53e3e;
@@ -237,7 +271,7 @@ export default {
 
 /* Container */
 .container {
-  max-width: 1200px;
+  max-width: 100%;
 }
 
 /* Products Container */
@@ -305,8 +339,6 @@ export default {
   padding: 0;
 }
 
-
-
 /* Modern Products Grid */
 .products-grid {
   display: grid;
@@ -316,18 +348,9 @@ export default {
   margin-bottom: 2rem;
 }
 
-.product-card {
-  background: white;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-}
-
-.product-card:hover {
+/* Products页面特有的产品卡片样式覆盖 */
+.products-grid .product-card:hover {
   transform: translateY(-0.25rem);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .product-image {
@@ -349,8 +372,6 @@ export default {
 .product-card:hover .product-image img {
   transform: scale(1.05);
 }
-
-
 
 .product-info {
   padding: 1rem;
@@ -375,19 +396,11 @@ export default {
   color: #dc2626;
 }
 
-
-
 .product-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-}
-
-.product-price {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #dc2626;
 }
 
 .add-to-cart-btn {

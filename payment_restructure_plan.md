@@ -318,7 +318,7 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, connect
 // 创建PayPal订单
 exports.createPayPalOrder = async (req, res) => {
   const { shippingInfo } = req.body;
-  const userId = req.user.id; // 从JWT获取用户ID
+  const userId = req.userId; // 从JWT获取用户ID
 
   // 开始数据库事务
   const connection = await db.getConnection();
@@ -468,7 +468,7 @@ exports.capturePayPalPayment = async (req, res) => {
 // 创建普通订单（微信/支付宝）
 exports.createCommonOrder = async (req, res) => {
   const { shippingInfo, paymentMethod } = req.body;
-  const userId = req.user.id; // 从JWT获取用户ID
+  const userId = req.userId; // 从JWT获取用户ID
 
   if (!['wechat', 'alipay'].includes(paymentMethod)) {
     return res.status(400).json({

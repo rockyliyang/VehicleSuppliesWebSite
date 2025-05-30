@@ -31,8 +31,8 @@ const verifyToken = (req, res, next) => {
     
     // 添加token续期功能
     req.token = token;
-    req.user = decoded;
-    
+
+     
     next();
   } catch (error) {
     // 处理token验证失败的情况

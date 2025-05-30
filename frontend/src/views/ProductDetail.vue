@@ -2,28 +2,31 @@
   <div class="product-detail-page">
     <div class="page-banner">
       <div class="banner-content">
-        <h1>产品详情</h1>
+        <h1>{{ $t('productDetail.title') }}</h1>
         <div class="breadcrumb">
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item :to="{ path: '/products' }">产品中心</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/' }">{{ $t('breadcrumb.home') }}</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/products' }">{{ $t('breadcrumb.products') }}</el-breadcrumb-item>
             <el-breadcrumb-item>{{ product.name }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
       </div>
     </div>
 
-    <div class="container" v-loading="loading">
-      <div class="product-detail-main">
-        <!-- 左侧分类导航 -->
-        <div class="side-categories">
-          <h3>Products</h3>
-          <ul>
-            <li v-for="cat in categories" :key="cat.id" :class="{ active: cat.id === product.category_id }">
-              <router-link :to="`/products?category=${cat.id}`">{{ cat.name }}</router-link>
-            </li>
-          </ul>
+    <div class="container mx-auto" v-loading=" loading">
+      <!-- 路径导航菜单 -->
+      <div class="navigation-menu">
+        <div class="nav-content">
+          <el-breadcrumb separator=">" class="nav-breadcrumb" id="product-breadcrumb-nav">
+            <el-breadcrumb-item :to="{ path: '/' }">{{ $t('breadcrumb.home') }}</el-breadcrumb-item>
+            <el-breadcrumb-item id="product-breadcrumb-level2" v-if="categoryName"
+              :to="{ path: '/products', query: { category: product.category_id } }">{{ categoryName
+              }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ product.name }}</el-breadcrumb-item>
+          </el-breadcrumb>
         </div>
+      </div>
+      <div class="product-detail-main">
         <!-- 主体内容 -->
         <div class="product-detail-content">
           <div class="product-gallery-block">
@@ -46,27 +49,29 @@
           <div class="product-info-block">
             <h1 class="product-title">{{ product.name }}</h1>
             <div class="product-meta">
-              <span class="product-id">产品编号: {{ product.product_code }}</span>
-              <span class="product-category">分类: {{ categoryName }}</span>
+              <span class="product-id">{{ $t('productDetail.productCode') }}: {{ product.product_code }}</span>
+              <span class="product-category">{{ $t('productDetail.category') }}: {{ categoryName }}</span>
             </div>
             <div class="product-price">¥{{ formatPrice(product.price) }}</div>
             <div class="product-stock">
               <span :class="['stock-status', product.stock > 0 ? 'in-stock' : 'out-of-stock']">
-                {{ product.stock > 0 ? '有货' : '缺货' }}
+                {{ product.stock > 0 ? $t('productDetail.inStock') : $t('productDetail.outOfStock') }}
               </span>
-              <span class="stock-number">库存: {{ product.stock }}</span>
+              <span class="stock-number">{{ $t('productDetail.stock') }}: {{ product.stock }}</span>
             </div>
             <div class="product-short-desc">
               <p>{{ product.short_description }}</p>
             </div>
             <div class="product-actions">
               <el-input-number v-model="quantity" :min="1" :max="product.stock" size="small"></el-input-number>
-              <el-button type="primary" @click="addToCart" :disabled="product.stock <= 0">加入购物车</el-button>
-              <el-button @click="addToInquiry" :disabled="product.stock <= 0">加入询价单</el-button>
-              <el-button @click="contactUs">联系我们</el-button>
+              <el-button type="primary" @click="addToCart" :disabled="product.stock <= 0">{{ $t('buttons.addToCart')
+                }}</el-button>
+              <el-button @click="addToInquiry" :disabled="product.stock <= 0">{{ $t('buttons.addToInquiry')
+                }}</el-button>
+              <el-button @click="contactUs">{{ $t('buttons.contactUs') }}</el-button>
             </div>
             <div class="product-share">
-              <span>分享到:</span>
+              <span>{{ $t('productDetail.shareTo') }}:</span>
               <div class="share-icons">
                 <i class="el-icon-s-platform"></i>
                 <i class="el-icon-s-promotion"></i>
@@ -80,16 +85,25 @@
 
       <div class="product-tabs">
         <el-tabs v-model="activeTab">
-          <el-tab-pane label="产品详情" name="description">
-            <div class="product-description" v-html="product.full_description || '暂无详细描述'">
+          <el-tab-pane name="description">
+            <template #label>
+              <span class="custom-tab-label">
+                {{ $t('productDetail.tabs.description').split(' ')[0] }}
+                <span class="text-red-600">{{ $t('productDetail.tabs.description').split(' ').slice(1).join(' ')
+                  }}</span>
+              </span>
+            </template>
+            <div class="product-description" v-html="product.full_description || $t('productDetail.noDescription')">
             </div>
           </el-tab-pane>
+
         </el-tabs>
       </div>
 
       <!-- 相关产品区，放在询价表单后面 -->
       <div class="related-products">
-        <h2 class="related-title">Related Products</h2>
+        <h2 class="related-title">{{ $t('productDetail.related') }} <span class="text-red-600">{{
+            $t('productDetail.products') }}</span></h2>
         <div class="related-products-row">
           <div v-for="item in relatedProducts" :key="item.id" class="related-product-card">
             <router-link :to="`/product/${item.id}`">
@@ -132,17 +146,17 @@ export default {
       },
       inquiryRules: {
         name: [
-          { required: true, message: '请输入您的姓名', trigger: 'blur' }
+          { required: true, message: this.$t('validation.nameRequired'), trigger: 'blur' }
         ],
         email: [
-          { required: true, message: '请输入您的邮箱', trigger: 'blur' },
-          { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+          { required: true, message: this.$t('validation.emailRequired'), trigger: 'blur' },
+          { type: 'email', message: this.$t('validation.emailFormat'), trigger: 'blur' }
         ],
         phone: [
-          { required: true, message: '请输入您的电话', trigger: 'blur' }
+          { required: true, message: this.$t('validation.phoneRequired'), trigger: 'blur' }
         ],
         message: [
-          { required: true, message: '请输入询价内容', trigger: 'blur' }
+          { required: true, message: this.$t('validation.messageRequired'), trigger: 'blur' }
         ]
       },
       showZoom: false,
@@ -151,6 +165,8 @@ export default {
       lensSize: 100,
       mainImgWidth: 0,
       mainImgHeight: 0,
+      mainImageContainerWidth: 0,
+      mainImageContainerHeight: 0,
     }
   },
   computed: {
@@ -184,11 +200,35 @@ export default {
       }
     },
     zoomImgStyle() {
-      // 容错处理，防止NaN
-      const width = Number(this.mainImgWidth) > 0 ? this.mainImgWidth * this.zoom : 0;
-      const height = Number(this.mainImgHeight) > 0 ? this.mainImgHeight * this.zoom : 0;
-      const left = Number.isFinite(this.zoomPos.x) ? -(this.zoomPos.x * this.zoom - this.lensSize / 2 * this.zoom) : 0;
-      const top = Number.isFinite(this.zoomPos.y) ? -(this.zoomPos.y * this.zoom - this.lensSize / 2 * this.zoom) : 0;
+      const mainImgW = Number(this.mainImgWidth);
+      const mainImgH = Number(this.mainImgHeight);
+      const lensS = Number(this.lensSize);
+      const zoomF = Number(this.zoom);
+      const zoomPosX = Number(this.zoomPos.x);
+      const zoomPosY = Number(this.zoomPos.y);
+      const containerW = Number(this.mainImageContainerWidth);
+      const containerH = Number(this.mainImageContainerHeight);
+
+      let left = 0;
+      let top = 0;
+      const width = mainImgW > 0 ? mainImgW * zoomF : 0;
+      const height = mainImgH > 0 ? mainImgH * zoomF : 0;
+
+      if (Number.isFinite(zoomPosX) && Number.isFinite(zoomPosY) &&
+          mainImgW > 0 && mainImgH > 0 &&
+          containerW > 0 && containerH > 0 &&
+          lensS > 0 && zoomF > 0) {
+        
+        const scaleX = mainImgW / containerW;
+        const scaleY = mainImgH / containerH;
+
+        const originalImgLensCenterX = zoomPosX * scaleX;
+        const originalImgLensCenterY = zoomPosY * scaleY;
+
+        left = (lensS / 2 - originalImgLensCenterX) * zoomF;
+        top = (lensS / 2 - originalImgLensCenterY) * zoomF;
+      }
+
       return {
         position: 'absolute',
         left: left + 'px',
@@ -196,7 +236,7 @@ export default {
         width: width + 'px',
         height: height + 'px',
         display: 'block',
-      }
+      };
     }
   },
   watch: {
@@ -232,7 +272,7 @@ export default {
         this.categories = response.data || []
       } catch (error) {
         console.error('获取分类失败:', error)
-        this.$message.error(error.response?.data?.message || '获取分类失败')
+        this.$message.error(error.response?.data?.message || this.$t('messages.fetchCategoriesFailed'))
       }
     },
     async fetchProduct() {
@@ -245,7 +285,7 @@ export default {
         this.fetchRelatedProducts()
       } catch (error) {
         console.error('获取产品详情失败:', error)
-        this.$message.error(error.response?.data?.message || '获取产品详情失败')
+        this.$message.error(error.response?.data?.message || this.$t('messages.fetchProductFailed'))
       } finally {
         this.loading = false
       }
@@ -258,7 +298,7 @@ export default {
         this.relatedProducts = items.filter(p => p.id !== this.product.id).slice(0, 4)
       } catch (error) {
         console.error('获取相关产品失败:', error)
-        this.$message.error(error.response?.data?.message || '获取相关产品失败')
+        this.$message.error(error.response?.data?.message || this.$t('messages.fetchRelatedProductsFailed'))
       }
     },
     addToInquiry() {
@@ -267,7 +307,7 @@ export default {
         quantity: this.quantity
       }
       this.$store.commit('addToCart', productWithQuantity)
-      this.$message.success(`已将 ${this.quantity} 个 ${this.product.name} 添加到询价单`)
+      this.$message.success(this.$t('messages.addToInquirySuccess', { quantity: this.quantity, name: this.product.name }))
     },
     contactUs() {
       this.$router.push('/contact');
@@ -285,17 +325,23 @@ export default {
       this.$refs.inquiryForm.validate(valid => {
         if (valid) {
           // 实际项目中会发送到后端API
-          this.$message.success('询价信息已提交，我们会尽快与您联系')
+          this.$message.success(this.$t('messages.inquirySubmitted'))
           this.$refs.inquiryForm.resetFields()
         }
       })
     },
     updateMainImgSize() {
       this.$nextTick(() => {
-        const img = this.$refs.mainImgEl;
-        if (img) {
-          this.mainImgWidth = img.naturalWidth || img.width;
-          this.mainImgHeight = img.naturalHeight || img.height;
+        const imgEl = this.$refs.mainImgEl;
+        const containerEl = this.$refs.mainImage;
+
+        if (imgEl && containerEl) {
+          this.mainImgWidth = imgEl.naturalWidth || imgEl.width;
+          this.mainImgHeight = imgEl.naturalHeight || imgEl.height;
+
+          const rect = containerEl.getBoundingClientRect();
+          this.mainImageContainerWidth = rect.width;
+          this.mainImageContainerHeight = rect.height;
         }
       });
     },
@@ -313,33 +359,106 @@ export default {
 </script>
 
 <style scoped>
+@import '../assets/styles/shared.css';
+
 .product-detail-page {
   min-height: 100vh;
 }
 
 .page-banner {
-  height: 200px;
+  height: 500px;
+  /* 与其他页面Banner高度保持一致 */
   background-color: #f5f5f5;
   background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../assets/images/banner1.jpg');
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 0;
+  /* 移除底部间距，由导航菜单统一控制 */
 }
 
 .banner-content h1 {
-  font-size: 32px;
-  margin-bottom: 10px;
+  font-size: 2.5rem;
+  /* Tailwind text-4xl 约等于 2.25rem, text-3xl 约等于 1.875rem。调整为与Home.vue section title类似大小 */
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: white;
+  /* 保持白色以在背景图上清晰显示 */
+}
+
+.breadcrumb {
+  /* 将面包屑的样式移到 .banner-content 内部，确保其在 banner 内 */
+}
+
+:deep(.el-breadcrumb__inner a),
+:deep(.el-breadcrumb__inner.is-link) {
+  color: #d1d5db;
+  /* Tailwind gray-300, 适应深色背景 */
+  font-weight: normal;
+}
+
+:deep(.el-breadcrumb__inner a:hover),
+:deep(.el-breadcrumb__inner.is-link:hover) {
+  color: #ffffff;
+  /* Hover时为纯白 */
+}
+
+:deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+  color: #ffffff;
+  /* 当前页面面包屑为纯白 */
+}
+
+/* 路径导航菜单样式 */
+.navigation-menu {
+  background: #ffffff;
+  padding: 12px 0;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.nav-content {
+  padding: 0;
+}
+
+.nav-breadcrumb {
+  font-size: 14px;
+}
+
+:deep(.nav-breadcrumb .el-breadcrumb__inner) {
+  color: #666666;
+  font-weight: normal;
+}
+
+:deep(.nav-breadcrumb .el-breadcrumb__inner a) {
+  color: #666666;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+:deep(#product-breadcrumb-nav .el-breadcrumb__item .el-breadcrumb__inner.is-link:hover) {
+  color: #dc2626 !important;
+  text-decoration: none !important;
+}
+
+:deep(.nav-breadcrumb .el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+:deep(.nav-breadcrumb .el-breadcrumb__separator) {
+  color: #999999;
+  margin: 0 8px;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 15px;
+
 }
 
 .product-detail-main {
@@ -390,53 +509,81 @@ export default {
   flex: 1;
   display: flex;
   gap: 40px;
+  align-items: flex-start;
+  /* 确保两列顶部对齐 */
 }
 
 .product-gallery-block {
-  width: 350px;
+  width: 480px;
+  /* 增加宽度从350px到480px */
   position: relative;
+  flex-shrink: 0;
+  /* 防止被压缩 */
 }
 
 .main-image {
   width: 100%;
-  height: 350px;
-  background: #fafafa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  margin-bottom: 16px;
-  overflow: hidden;
+  /* 确保宽度与父容器一致 */
+  height: 480px;
   position: relative;
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  cursor: crosshair;
+  /* display: flex; */
+  /* 移除flex布局 */
+  /* justify-content: center; */
+  /* align-items: center; */
 }
 
 .main-image img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 修改: 改为cover以填充容器，可能会裁剪图片 */
+  display: block;
 }
 
 .thumbnail-list {
   display: flex;
-  gap: 10px;
+  gap: 0.75rem;
+  /* 12px */
+  justify-content: flex-start;
+  /* 修改: 缩略图左对齐 */
 }
 
 .thumbnail {
-  width: 60px;
-  height: 60px;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 3px;
+  width: 70px;
+  /* 略微增大缩略图尺寸 */
+  height: 70px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  /* Tailwind gray-200 */
+  border-radius: 6px;
+  /* 更圆润的边角 */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: border 0.2s;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  /* 确保图片不超出边框 */
+}
+
+.thumbnail img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  /* 保持与主图一致的object-fit */
 }
 
 .thumbnail.active,
 .thumbnail:hover {
-  border: 2px solid #e60012;
+  border-color: #dc2626;
+  /* 主题红色 Red-600 */
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3);
+  /* 添加轻微的红色外发光效果 */
 }
 
 .thumbnail img {
@@ -453,177 +600,323 @@ export default {
 }
 
 .product-title {
-  font-size: 28px;
+  font-size: 2rem;
+  /* Tailwind text-3xl 约等于 1.875rem, text-4xl 约等于 2.25rem. */
   font-weight: bold;
-  color: #222;
-  margin-bottom: 10px;
+  color: #1f2937;
+  /* Tailwind gray-800 */
+  margin-bottom: 0.75rem;
+  /* 12px */
 }
 
 .product-meta {
-  color: #888;
-  font-size: 15px;
-  margin-bottom: 10px;
+  color: #6b7280;
+  /* Tailwind gray-500 */
+  font-size: 0.9rem;
+  /* 14.4px */
+  margin-bottom: 0.75rem;
 }
 
 .product-meta .product-category {
-  margin-left: 20px;
+  margin-left: 1.25rem;
+  /* 20px */
 }
 
-.product-price {
-  font-size: 22px;
-  color: #e60012;
-  font-weight: bold;
-  margin-bottom: 10px;
+/* ProductDetail页面特有的产品价格样式覆盖 */
+.product-detail-page .product-price {
+  font-size: 1.75rem;
+  /* Tailwind text-2xl 约等于 1.5rem, text-3xl 约等于 1.875rem */
+  margin-bottom: 1rem;
 }
 
 .product-stock {
-  margin-bottom: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
 }
 
-.stock-status {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 14px;
-  margin-right: 10px;
-}
-
-.in-stock {
-  background-color: #67c23a;
-  color: white;
-}
-
-.out-of-stock {
-  background-color: #f56c6c;
-  color: white;
-}
+/* 库存状态样式已移至shared.css */
 
 .product-short-desc {
-  margin-bottom: 20px;
-  line-height: 1.6;
-  color: #666;
+  margin-bottom: 1.5rem;
+  /* 24px */
+  line-height: 1.65;
+  color: #4b5563;
+  /* Tailwind gray-600 */
+  font-size: 0.95rem;
 }
 
 .product-actions {
   display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  /* 16px */
+  margin-bottom: 1.5rem;
+  /* 24px */
   align-items: center;
+}
+
+/* 统一按钮样式，使其与Home.vue的按钮风格一致 */
+:deep(.el-button) {
+  border-radius: 0.375rem !important;
+  /* Tailwind rounded-md */
+  padding: 0.75rem 1.5rem !important;
+  /* 调整padding */
+  font-size: 0.95rem !important;
+}
+
+:deep(.el-button--primary) {
+  background-color: #dc2626 !important;
+  /* 主题红色 Red-600 */
+  border-color: #dc2626 !important;
+}
+
+:deep(.el-button--primary:hover) {
+  background-color: #b91c1c !important;
+  /* 主题红色 Red-700 */
+  border-color: #b91c1c !important;
+}
+
+:deep(.el-input-number) {
+  width: 120px;
+}
+
+:deep(.el-input-number .el-input__inner) {
+  border-radius: 0.375rem;
+  border-color: #d1d5db;
+}
+
+:deep(.el-input-number .el-input__inner:focus) {
+  border-color: #dc2626;
 }
 
 .product-share {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+  gap: 0.75rem;
+  /* 12px */
+  margin-top: 1.5rem;
+  /* 24px */
+  padding-top: 1.5rem;
+  /* 24px */
+  border-top: 1px solid #e5e7eb;
+  /* Tailwind gray-200 */
+  font-size: 0.9rem;
+  color: #4b5563;
+  /* Tailwind gray-600 */
 }
 
 .share-icons {
   display: flex;
-  gap: 15px;
+  gap: 1rem;
+  /* 16px */
 }
 
 .share-icons i {
-  font-size: 20px;
+  font-size: 1.25rem;
+  /* 20px */
   cursor: pointer;
-  color: #666;
-  transition: color 0.3s;
+  color: #6b7280;
+  /* Tailwind gray-500 */
+  transition: color 0.3s ease;
 }
 
 .share-icons i:hover {
-  color: #409EFF;
+  color: #dc2626;
+  /* 主题红色 Red-600 */
 }
 
 .product-tabs {
-  margin-bottom: 40px;
+  margin-bottom: 2.5rem;
+  /* 40px */
 }
 
+:deep(.el-tabs__nav-wrap::after) {
+  background-color: #e5e7eb;
+  /* Tailwind gray-200, 底部线条颜色 */
+}
+
+/* 标签页样式已移至shared.css */
+
 .product-description {
-  line-height: 1.8;
+  line-height: 1.75;
+  color: #374151;
+  /* Tailwind gray-700 */
+  font-size: 0.95rem;
+  padding: 1rem 0;
+  /* 给内容区域一些上下padding */
 }
 
 .specs-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-top: 1rem;
 }
 
 .specs-table th,
 .specs-table td {
-  padding: 12px 15px;
+  padding: 0.875rem 1rem;
+  /* 14px 16px */
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border: 1px solid #e5e7eb;
+  /* Tailwind gray-200, 使用完整边框 */
 }
 
 .specs-table th {
-  width: 150px;
-  background-color: #f9f9f9;
+  width: 200px;
+  /* 适当加宽表头 */
+  background-color: #f9fafb;
+  /* Tailwind gray-50 */
+  font-weight: 600;
+  color: #374151;
+  /* Tailwind gray-700 */
+}
+
+.specs-table td {
+  color: #4b5563;
+  /* Tailwind gray-600 */
 }
 
 .related-products {
-  margin-top: 20px;
+  margin-top: 2.5rem;
+  /* 40px */
+  padding-top: 2rem;
+  /* 32px, 与上方内容分隔 */
+  border-top: 1px solid #e5e7eb;
+  /* Tailwind gray-200, 添加一个分隔线 */
 }
 
 .related-products-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: flex-start;
+  display: grid;
+  /* 改为grid布局，方便控制列数和间距 */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* 响应式列，最小180px */
+  gap: 1.5rem;
+  /* 24px */
 }
 
+/* 相关产品卡片样式已移至shared.css，这里只保留ProductDetail特有的样式 */
 .related-product-card {
-  width: 160px;
-  background: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  text-align: center;
-  padding: 10px 10px 18px 10px;
-  transition: box-shadow 0.2s;
+  text-align: left;
+  /* 文字左对齐 */
+  padding: 1rem;
+  /* 16px */
 }
 
 .related-product-card:hover {
-  box-shadow: 0 5px 15px rgba(230, 0, 18, 0.08);
+  transform: translateY(-4px);
 }
 
 .related-product-image {
   width: 100%;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
+  padding-top: 100%;
+  /* 实现1:1的宽高比，即正方形 */
+  position: relative;
+  background-color: #f9fafb;
+  /* Tailwind gray-50 */
+  border-radius: 0.375rem;
+  /* 6px, Tailwind rounded-md */
+  margin-bottom: 0.75rem;
+  /* 12px */
+  overflow: hidden;
 }
 
 .related-product-image img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 或 contain */
 }
 
 .related-product-title {
-  font-size: 15px;
-  color: #222;
-  font-weight: bold;
-  margin-top: 6px;
-  height: 38px;
+  font-size: 0.95rem;
+  /* 约15px */
+  color: #1f2937;
+  /* Tailwind gray-800 */
+  font-weight: 600;
+  /* semibold */
+  line-height: 1.4;
+  height: 2.8em;
+  /* 约两行的高度 */
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  margin-bottom: 0.25rem;
+  /* 4px */
+}
+
+/* 可以为相关产品添加价格显示 */
+.related-product-price {
+  font-size: 0.9rem;
+  color: #dc2626;
+  /* 主题红色 Red-600 */
+  font-weight: bold;
 }
 
 .inquiry-form {
-  background-color: #f9f9f9;
-  padding: 30px;
-  border-radius: 4px;
-  margin-bottom: 40px;
+  background-color: #f9fafb;
+  /* Tailwind gray-50 */
+  padding: 2rem;
+  /* 32px */
+  border-radius: 0.5rem;
+  /* 8px, Tailwind rounded-lg */
+  margin-bottom: 2.5rem;
+  /* 40px */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  /* Tailwind shadow-sm */
 }
 
 .inquiry-form h2 {
-  font-size: 20px;
-  margin-bottom: 20px;
+  font-size: 1.5rem;
+  /* Tailwind text-2xl */
+  font-weight: bold;
+  color: #1f2937;
+  /* Tailwind gray-800 */
+  margin-bottom: 1.5rem;
+  /* 24px */
   text-align: center;
+}
+
+/* 统一Element UI表单项样式 */
+:deep(.el-form-item__label) {
+  color: #374151;
+  /* Tailwind gray-700 */
+  font-weight: 500;
+}
+
+:deep(.el-input__inner),
+:deep(.el-textarea__inner) {
+  border-radius: 0.375rem;
+  /* Tailwind rounded-md */
+  border-color: #d1d5db;
+  /* Tailwind gray-300 */
+}
+
+:deep(.el-input__inner:focus),
+:deep(.el-textarea__inner:focus) {
+  border-color: #dc2626;
+  /* 主题红色 Red-600 */
+  box-shadow: 0 0 0 1px #dc2626;
+}
+
+:deep(.el-button--primary) {
+  background-color: #dc2626 !important;
+  /* 主题红色 Red-600 */
+  border-color: #dc2626 !important;
+  border-radius: 0.375rem !important;
+  /* Tailwind rounded-md */
+  padding: 0.625rem 1.25rem !important;
+  /* 10px 20px */
+  font-size: 0.95rem !important;
+}
+
+:deep(.el-button--primary:hover) {
+  background-color: #b91c1c !important;
+  /* 主题红色 Red-700 */
+  border-color: #b91c1c !important;
 }
 
 .product-detail-extra {
@@ -657,11 +950,20 @@ export default {
 }
 
 .related-title {
-  font-size: 22px;
+  font-size: 1.875rem;
+  /* Equivalent to Tailwind's text-3xl, like 'About Us' */
   font-weight: bold;
-  color: #e60012;
-  margin: 30px 0 18px 0;
+  /* color: #1f2937; */
+  /* Color will be handled by spans in HTML */
+  margin-bottom: 1.5rem;
+  /* 24px */
   text-align: left;
+  /* padding-bottom: 0.75rem; */
+  /* Border removed */
+  /* border-bottom: 2px solid #dc2626; */
+  /* Border removed */
+  /* display: inline-block; */
+  /* Not needed if no border */
 }
 
 .zoom-lens {
@@ -674,19 +976,43 @@ export default {
 
 .zoom-window {
   position: absolute;
-  left: 100%;
+  left: calc(100% + 20px);
+  /* 修改: 使用calc确保间距 */
   top: 0;
-  margin-left: 20px;
+  /* margin-left: 20px; */
+  /* 移除，改用left: calc() */
   background: #fff;
   border: 1px solid #ccc;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 10;
+  pointer-events: none;
+  /* 新增: 防止放大窗口干扰鼠标事件 */
 }
 
 .zoom-window img {
   position: absolute;
   /* 由js控制left/top/size */
+  display: block;
+  /* 确保img是块级元素 */
+}
+
+.custom-tab-label {
+  font-size: 1.875rem;
+  /* 30px, text-3xl */
+  font-weight: bold;
+}
+
+/* Ensure the tab itself has enough padding if needed */
+:deep(.el-tabs__item) {
+  height: auto;
+  /* Adjust if content makes it too tall */
+  line-height: normal;
+  /* Reset line-height if custom font size causes issues */
+  padding-top: 10px;
+  /* Example padding */
+  padding-bottom: 10px;
+  /* Example padding */
 }
 
 @media (max-width: 768px) {

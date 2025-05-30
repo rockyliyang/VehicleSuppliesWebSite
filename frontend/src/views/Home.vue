@@ -2,7 +2,7 @@
   <div class="home">
     <!-- Banner轮播图 -->
     <div class="banner-container">
-      <el-carousel height="500px" indicator-position="outside">
+      <el-carousel height="500px" indicator-position="inside">
         <el-carousel-item v-for="(item, index) in banners" :key="index">
           <div class="banner-item" :style="{ backgroundImage: `url(${item.image_url})` }">
           </div>
@@ -12,7 +12,7 @@
 
     <!-- Products Section -->
     <section class="py-16 bg-white">
-      <div class="container mx-auto px-4">
+      <div class="container mx-auto">
         <div class="text-center mb-12">
           <h2 class="text-3xl font-bold mb-2">
             Our <span class="text-red-600">Products</span>
@@ -161,6 +161,52 @@ export default {
 </script>
 
 <style scoped>
+@import '../assets/styles/shared.css';
+
+/* Element UI 组件样式穿透 */
+:deep(.el-carousel__indicator) {
+  background-color: rgba(255, 255, 255, 0.4);
+  border: none;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  margin: 0 4px;
+  padding: 0;
+  transition: all 0.3s ease;
+  outline: none;
+  box-shadow: none;
+}
+
+:deep(.el-carousel__indicator.is-active) {
+  background-color: #dc2626;
+  transform: scale(1.3);
+}
+
+:deep(.el-carousel__indicator:hover) {
+  background-color: rgba(255, 255, 255, 0.7);
+  transform: scale(1.1);
+}
+
+:deep(.el-carousel__indicator button) {
+  background-color: inherit;
+  border: none;
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  outline: none;
+}
+
+:deep(.el-carousel__arrow) {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+}
+
+:deep(.el-carousel__arrow:hover) {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
 /* Banner轮播图样式 */
 .banner-container {
   width: 100%;
@@ -177,9 +223,7 @@ export default {
 
 /* 基础样式 */
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  max-width: 100%;
 }
 
 /* Grid 样式 */

@@ -23,7 +23,7 @@ if (PAYMENT_GATEWAY === 'stripe') {
  */
 exports.createOrder = async (req, res) => {
   const { shippingInfo, paymentMethod } = req.body;
-  const userId = req.user.id; // 从JWT获取用户ID
+  const userId = req.userId; // 从JWT获取用户ID
 
   try {
     // 开始数据库事务
@@ -138,7 +138,7 @@ exports.createOrder = async (req, res) => {
  */
 exports.processPayment = async (req, res) => {
   const { paymentMethod, token, shippingInfo } = req.body;
-  const userId = req.user.id; // 从JWT获取用户ID
+  const userId = req.userId; // 从JWT获取用户ID
 
   try {
     // 1. 获取用户购物车
@@ -295,7 +295,7 @@ exports.processPayment = async (req, res) => {
  * @param {Object} res - 响应对象
  */
 exports.getOrders = async (req, res) => {
-  const userId = req.user.id; // 从JWT获取用户ID
+  const userId = req.userId; // 从JWT获取用户ID
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 10;
   const offset = (page - 1) * pageSize;
@@ -345,7 +345,7 @@ exports.getOrders = async (req, res) => {
  * @param {Object} res - 响应对象
  */
 exports.getOrderDetail = async (req, res) => {
-  const userId = req.user.id; // 从JWT获取用户ID
+  const userId = req.userId; // 从JWT获取用户ID
   const { orderId } = req.params;
 
   try {

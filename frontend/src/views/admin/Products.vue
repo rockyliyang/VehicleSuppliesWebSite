@@ -21,11 +21,15 @@
         <el-option label="自营" value="self_operated" />
       </el-select>
       <el-button type="primary" @click="handleFilter">
-        <el-icon><Search /></el-icon>
+        <el-icon>
+          <Search />
+        </el-icon>
         搜索
       </el-button>
       <el-button @click="resetFilter">
-        <el-icon><Refresh /></el-icon>
+        <el-icon>
+          <Refresh />
+        </el-icon>
         重置
       </el-button>
     </div>
@@ -35,13 +39,8 @@
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
       <el-table-column label="产品图片" width="120">
         <template #default="{row}">
-          <el-image 
-            :src="row.thumbnail_url" 
-            :preview-src-list="[row.thumbnail_url]"
-            fit="cover"
-            class="product-image"
-            v-if="row.thumbnail_url"
-            @error="handleImageError">
+          <el-image :src="row.thumbnail_url" :preview-src-list="[row.thumbnail_url]" fit="cover" class="product-image"
+            v-if="row.thumbnail_url" @error="handleImageError">
           </el-image>
           <span v-else>无图片</span>
         </template>
@@ -122,60 +121,35 @@
           <el-input-number v-model="productForm.stock" :min="0" :max="999999" />
         </el-form-item>
         <el-form-item label="产品图片" prop="images">
-          <el-upload
-            class="product-image-uploader"
-            action="/api/product-images/upload"
-            :headers="uploadHeaders"
-            :data="{ product_id: productForm.id, image_type: 0, session_id: sessionId }"
-            :file-list="thumbnailList"
-            list-type="picture-card"
-            :on-preview="handlePictureCardPreview"
-            :on-remove="handleRemove"
-            :on-success="handleUploadSuccess"
-            :before-upload="beforeImageUpload"
-            :name="'images'"
-            :limit="1"
-            :multiple="false"
-            :show-file-list="true"
-          >
+          <el-upload class="product-image-uploader" action="/api/product-images/upload" :headers="uploadHeaders"
+            :data="{ product_id: productForm.id, image_type: 0, session_id: sessionId }" :file-list="thumbnailList"
+            list-type="picture-card" :on-preview="handlePictureCardPreview" :on-remove="handleRemove"
+            :on-success="handleUploadSuccess" :before-upload="beforeImageUpload" :name="'images'" :limit="1"
+            :multiple="false" :show-file-list="true">
             <template v-if="thumbnailList.length < 1">
-              <el-icon><Plus /></el-icon>
+              <el-icon>
+                <Plus />
+              </el-icon>
             </template>
           </el-upload>
         </el-form-item>
         <el-form-item label="轮播图片" prop="carousel_images">
-          <el-upload
-            class="product-image-uploader"
-            action="/api/product-images/upload"
-            :headers="uploadHeaders"
-            :data="{ product_id: productForm.id, image_type: 1, session_id: sessionId }"
-            :file-list="carouselList"
-            list-type="picture-card"
-            :on-preview="handlePictureCardPreview"
-            :on-remove="handleRemove"
-            :on-success="handleUploadSuccess"
-            :before-upload="beforeImageUpload"
-            :name="'images'"
-            :limit="10"
-            :multiple="true"
-            :show-file-list="true"
-          >
-            <el-icon><Plus /></el-icon>
+          <el-upload class="product-image-uploader" action="/api/product-images/upload" :headers="uploadHeaders"
+            :data="{ product_id: productForm.id, image_type: 1, session_id: sessionId }" :file-list="carouselList"
+            list-type="picture-card" :on-preview="handlePictureCardPreview" :on-remove="handleRemove"
+            :on-success="handleUploadSuccess" :before-upload="beforeImageUpload" :name="'images'" :limit="10"
+            :multiple="true" :show-file-list="true">
+            <el-icon>
+              <Plus />
+            </el-icon>
           </el-upload>
         </el-form-item>
         <el-form-item label="产品简介" prop="short_description">
           <el-input type="textarea" v-model="productForm.short_description" :rows="4" placeholder="请输入产品简介" />
         </el-form-item>
         <el-form-item label="产品详情" prop="full_description">
-          <quill-editor
-            ref="quillEditor"
-            v-model="productForm.full_description"
-            :options="quillOptions"
-            :key="quillKey"
-            style="height: 300px"
-            @change="onQuillChange"
-            @ready="onQuillReady"
-          />
+          <quill-editor ref="quillEditor" v-model="productForm.full_description" :options="quillOptions" :key="quillKey"
+            style="height: 300px" @change="onQuillChange" @ready="onQuillReady" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="productForm.status">
@@ -203,6 +177,7 @@
 import { Plus, Search, Refresh } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/format'
 import { quillEditor } from 'vue3-quill'
+import { getAuthToken } from '@/utils/api'
 
 export default {
   name: 'AdminProducts',
@@ -290,8 +265,9 @@ export default {
   },
   computed: {
     uploadHeaders() {
+      const token = getAuthToken(true); // true 表示这是管理员请求
       return {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+        Authorization: token ? `Bearer ${token}` : ''
       }
     }
   },

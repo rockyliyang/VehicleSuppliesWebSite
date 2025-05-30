@@ -72,7 +72,7 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, connect
 exports.createPayPalOrder = async (req, res) => {
   try {
     const { shippingInfo, orderItems } = req.body;
-    const userId = req.user.id;
+    const userId = req.userId;
     const connection = await pool.getConnection();
     await connection.beginTransaction();
     try {
@@ -165,7 +165,7 @@ exports.capturePayPalPayment = async (req, res) => {
 exports.createCommonOrder = async (req, res) => {
   try {
     const { shippingInfo, paymentMethod, orderItems } = req.body;
-    const userId = req.user.id;
+    const userId = req.userId;
     if (!['wechat', 'alipay'].includes(paymentMethod)) {
       return res.json({ success: false, message: '不支持的支付方式', data: null });
     }

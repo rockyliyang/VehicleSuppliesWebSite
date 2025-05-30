@@ -26,7 +26,7 @@ function getPayPalClient() {
  */
 exports.createPayPalOrder = async (req, res) => {
   const { totalAmount, orderItems, currency = 'USD' } = req.body;
-  const userId = req.user.id; // 从JWT获取用户ID
+  const userId = req.userId; // 从JWT获取用户ID
 
   try {
     const client = getPayPalClient();
@@ -98,7 +98,7 @@ exports.createPayPalOrder = async (req, res) => {
  */
 exports.capturePayPalPayment = async (req, res) => {
   const { paypalOrderId, captureResult, shippingInfo } = req.body;
-  const userId = req.user.id; // 从JWT获取用户ID
+  const userId = req.userId; // 从JWT获取用户ID
 
   try {
     let captureId, captureStatus;

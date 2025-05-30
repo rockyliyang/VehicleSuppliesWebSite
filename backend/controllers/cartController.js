@@ -5,7 +5,7 @@ const { uuidToBinary } = require('../utils/uuid');
 // 获取用户购物车
 exports.getUserCart = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     
     // 查询用户购物车中的商品
     const query = `SELECT ci.id, ci.guid, ci.quantity, 
@@ -48,7 +48,7 @@ exports.getUserCart = async (req, res) => {
 // 添加商品到购物车
 exports.addToCart = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { productId, quantity = 1 } = req.body;
     
     if (!productId) {
@@ -120,7 +120,7 @@ exports.addToCart = async (req, res) => {
 // 更新购物车商品数量
 exports.updateCartItem = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { cartItemId } = req.params;
     const { quantity } = req.body;
     
@@ -178,7 +178,7 @@ exports.updateCartItem = async (req, res) => {
 // 从购物车中删除商品
 exports.removeFromCart = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { cartItemId } = req.params;
     
     // 检查购物车项是否存在且属于当前用户
@@ -216,7 +216,7 @@ exports.removeFromCart = async (req, res) => {
 // 清空购物车
 exports.clearCart = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     
     // 软删除用户的所有购物车项
     await pool.query(
@@ -240,7 +240,7 @@ exports.clearCart = async (req, res) => {
 // 获取购物车商品数量
 exports.getCartCount = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     
     const [result] = await pool.query(
       'SELECT COUNT(*) as count FROM cart_items WHERE user_id = ? AND deleted = 0',
