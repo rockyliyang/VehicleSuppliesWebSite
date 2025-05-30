@@ -2,6 +2,7 @@
 node_modules/
 /dist
 /build
+dist/
 
 # 环境变量文件
 .env
@@ -48,3 +49,4 @@ __pycache__/
 .temp/ 
 
 package-lock.json
+

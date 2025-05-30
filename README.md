@@ -111,9 +111,10 @@ b. 展现一个简要介绍公司文化的栏目，
    (2) Other non-recoverable errors -> Show a failure message
    (3) Successful transaction -> Show confirmation or thank you message
 
-2. 在购物车页面，点击结算按钮，进入普通结算页面，普通结算页面使用微信和支付宝支付,普通结算页面和PayPal 结算页面类似，把订单信息，用户地址信息，以及微信和支付宝的选择项放在一个页面。 
+2. 微信支付宝结算，在购物车页面，点击结算按钮，进入普通结算页面，普通结算页面使用微信和支付宝支付,普通结算页面和PayPal 结算页面类似，把订单信息，用户地址信息，以及微信和支付宝的选择项放在一个页面。 
    用户必须填入用户地址，用户的姓名，用户的电话，用户的邮箱。
    点击微信或者支付宝的产生二维码按钮，需要在此把订单信息，用户地址信息做为参数，调用后端CommonCreateOrder API, CommonCreateOrder API调用我们自己的InitOrder 方法,把订单信息和地址信息插入order 和 order_items 表,此时候订单是未支付状态,PayPalOrderId 字段是空，CommonCreateOrder返回系统OrderId, 此时订单状态是未支付状态，前端再用orderId 作为参数，调用后端API产生微信和支付宝的二维码图片，前端再把二维码图片显示在页面上。
+   产生了二维码后，前端界面显示二维码，刷新二维码的按钮。前端定时刷新二维码，或者用户点击刷新二维码按钮，都会调用后端API刷新二维码图片，前端再把二维码图片显示在页面上。
 
    需要提供两个回调API 注册到微信和支付宝的回调接口，当用户支付成功后，微信和支付宝会回调我们的接口，我们的接口需要处理3种情况
    (1) 支付成功 -> 调用后端的CommonOrderPaySuccess API, 把订单状态改为已支付状态
