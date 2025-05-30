@@ -21,7 +21,7 @@ export default {
       return this.$route.path.startsWith('/admin')
     },
     isAuthRoute() {
-      return ['/login', '/register'].includes(this.$route.path)
+      return ['/login'].includes(this.$route.path)
     }
   }
 }

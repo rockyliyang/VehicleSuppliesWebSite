@@ -47,6 +47,12 @@ module.exports = defineConfig({
   chainWebpack: config => {
     config.devtool('source-map')
     
+    // 配置页面标题
+    config.plugin('html').tap(args => {
+      args[0].title = '汽车用品供应商'
+      return args
+    })
+    
     // 配置Vue特性标志
     config.plugin('define').tap(args => {
       args[0].__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = 'false'
