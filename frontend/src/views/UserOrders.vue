@@ -18,7 +18,7 @@
     <div class="container mx-auto px-4">
       <div class="orders-content" v-loading="loading">
         <div v-if="orders.length > 0" class="orders-list">
-          <el-table :data="orders" style="width: 100%">
+          <el-table :data="orders" style="width: 100%" @row-dblclick="handleRowDoubleClick">
             <el-table-column :label="$t('orders.orderNumber') || '订单号'" prop="order_guid" width="220"></el-table-column>
             <el-table-column :label="$t('orders.orderTime') || '下单时间'" width="180">
               <template #default="{row}">
@@ -35,12 +35,6 @@
             </el-table-column>
             <el-table-column :label="$t('orders.recipient') || '收货人'" prop="shipping_name"
               width="120"></el-table-column>
-            <el-table-column :label="$t('orders.actions') || '操作'">
-              <template #default="{row}">
-                <el-button type="primary" size="small" @click="viewOrderDetail(row.id)">{{ $t('orders.viewDetail') ||
-                  '查看详情' }}</el-button>
-              </template>
-            </el-table-column>
           </el-table>
 
           <div class="pagination-container">
@@ -233,7 +227,7 @@ export default {
         }
       } catch (error) {
         console.error('获取订单列表失败:', error);
-        this.$message.error(error.response?.data?.message || this.$t('orders.fetchError') || '获取订单列表失败');
+        this.$errorHandler.showError(error, 'order.error.fetchListFailed');
       } finally {
         this.loading = false;
       }
@@ -243,19 +237,15 @@ export default {
       this.fetchOrders();
     },
     async viewOrderDetail(orderId) {
-      this.loading = true;
-      try {
-        const response = await this.$api.get(`/orders/${orderId}`);
-        if (response.success) {
-          this.orderDetail = response.data;
-          this.dialogVisible = true;
-        }
-      } catch (error) {
-        console.error('获取订单详情失败:', error);
-        this.$message.error(error.response?.data?.message || this.$t('orders.fetchDetailError') || '获取订单详情失败');
-      } finally {
-        this.loading = false;
-      }
+      // 跳转到UnifiedCheckout页面查看订单详情
+      this.$router.push({
+        path: '/checkout-unified',
+        query: { orderId: orderId }
+      });
+    },
+    handleRowDoubleClick(row) {
+      // 双击行时查看订单详情
+      this.viewOrderDetail(row.id);
     }
   }
 };

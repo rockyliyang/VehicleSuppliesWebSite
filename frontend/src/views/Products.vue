@@ -135,7 +135,7 @@ export default {
         this.categories = response.data || []
       } catch (error) {
         console.error('获取分类失败:', error)
-        this.$message.error(error.response?.data?.message || '获取分类失败')
+        this.$errorHandler.showError(error, 'category.error.fetchFailed')
       } finally {
         this.loading = false
       }
@@ -145,10 +145,10 @@ export default {
         this.loading = true
         const response = await this.$api.get('products')
         this.products = (response.data && response.data.items) ? response.data.items : []
-        this.$message.success(response.message || '获取产品成功')
+        this.$errorHandler.showSuccess(response.message || '获取产品成功', 'product.success.fetchSuccess')
       } catch (error) {
         console.error('获取产品失败:', error)
-        this.$message.error('获取产品失败')
+        this.$errorHandler.showError(error, 'products.error.fetchFailed')
       } finally {
         this.loading = false
       }

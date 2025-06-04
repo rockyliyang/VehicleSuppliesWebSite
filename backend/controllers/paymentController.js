@@ -161,6 +161,82 @@ exports.capturePayPalPayment = async (req, res) => {
   }
 };
 
+// PayPal重新支付（为已存在的订单创建新的PayPal订单）
+exports.repayPayPalOrder = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    const userId = req.userId;
+    
+    // 验证订单是否存在且属于当前用户
+    const [orders] = await pool.query(
+      `SELECT id, total_amount, status, user_id FROM orders WHERE id = ? AND user_id = ? AND deleted = 0`,
+      [orderId, userId]
+    );
+    
+    if (orders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '订单不存在或无权限访问'
+      });
+    }
+    
+    const order = orders[0];
+    
+    // 只有未支付的订单才能重新支付
+    if (order.status === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: '订单已支付，无需重新支付'
+      });
+    }
+    
+    // 创建PayPal订单
+    const client = getPayPalClient();
+    const ordersController = new OrdersController(client);
+    
+    const request = {
+      body: {
+        intent: CheckoutPaymentIntent.Capture,
+        purchaseUnits: [
+          {
+            amount: {
+              currencyCode: 'USD',
+              value: Number(order.total_amount).toFixed(2)
+            }
+          }
+        ]
+      },
+      prefer: "return=minimal",
+    };
+    
+    const { body } = await ordersController.createOrder(request);
+    const paypalOrderData = JSON.parse(body);
+    
+    // 更新订单的PayPal订单ID
+    await pool.query(
+      `UPDATE orders SET payment_id = ? WHERE id = ?`,
+      [paypalOrderData.id, orderId]
+    );
+    
+    return res.status(200).json({
+      success: true,
+      message: 'PayPal重新支付订单创建成功',
+      data: {
+        orderId: orderId,
+        paypalOrderId: paypalOrderData.id
+      }
+    });
+    
+  } catch (error) {
+    console.error('PayPal重新支付失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'PayPal重新支付失败',
+      error: error.message
+    });
+  }
+};
+
 // 创建普通订单（微信/支付宝）
 exports.createCommonOrder = async (req, res) => {
   try {

@@ -30,7 +30,7 @@ export async function addToCart(product, { router, message, api }, quantity = 1)
   
   try {
     // 调用API添加到购物车
-    const response = await api.post('/cart/add', {
+    const response = await api.postWithErrorHandler('/cart/add', {
       productId: product.id,
       quantity: quantity
     });

@@ -44,22 +44,22 @@ export default {
         if (!valid) return;
         this.loading = true;
         try {
-          const res = await this.$api.post('/users/login', {
+          const res = await this.$api.postWithErrorHandler('/users/login', {
             username: this.form.email,
             password: this.form.password,
             admin: true
           });
           if (res.success) {
-            this.$message.success('登录成功');
+            this.$errorHandler.showSuccess('登录成功', 'login.success.loginSuccess');
             const {token, user } = res.data
             this.$store.commit('setUser', user)
             localStorage.setItem('admin_token', token)
             this.$router.push(this.$route.query.redirect || '/admin')
           } else {
-            this.$message.error(res.message || '登录失败');
+            this.$errorHandler.showError(res.message, 'admin.login.error.loginFailed');
           }
         } catch (e) {
-          this.$message.error(e.response?.data?.message || '登录失败');
+          this.$errorHandler.showError(e, 'admin.login.error.loginFailed');
         } finally {
           this.loading = false;
         }

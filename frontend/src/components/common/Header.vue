@@ -117,8 +117,8 @@ export default {
   },
   computed: {
     isLoggedIn() {
-      // 只判断user_token
-      return !!localStorage.getItem('user_token');
+      // 同时检查store状态和localStorage中的token
+      return this.$store.getters.isLoggedIn || !!localStorage.getItem('user_token');
     }
   },
   watch: {
@@ -133,6 +133,7 @@ export default {
   created() {
     this.fetchCompanyInfo();
     this.startTokenCheck();
+    this.checkLoginStatus();
     this.fetchCartCount();
   },
   methods: {
@@ -143,7 +144,7 @@ export default {
         this.companyInfo = response.data || {}
       } catch (error) {
         console.error('获取公司信息失败:', error)
-        this.$message.error(error.response?.data?.message || '获取公司信息失败')
+        this.$errorHandler.showError(error, 'company.error.fetchFailed')
       }
     },
 
@@ -154,7 +155,7 @@ export default {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
           // 实际项目中这里会调用登录API
-          this.$message.success('登录成功')
+          this.$errorHandler.showSuccess('登录成功', 'login.success.loginSuccess')
           this.loginDialogVisible = false
         }
       })
@@ -199,10 +200,31 @@ export default {
       } catch (e) {
         localStorage.removeItem('user_token')
         this.$store.commit('setUser', null)
-        this.$message.error('登录已过期，请重新登录')
+        this.$errorHandler.showError(null, 'common.error.tokenExpired')
         this.$router.push('/login')
       }
     },
+    
+    // 检查登录状态并同步到store
+    async checkLoginStatus() {
+      const token = localStorage.getItem('user_token');
+      if (token && !this.$store.getters.isLoggedIn) {
+        try {
+          // 验证token有效性并获取用户信息
+          const response = await this.$api.get('/users/profile', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (response.success) {
+            this.$store.commit('setUser', response.data);
+          }
+        } catch (error) {
+          // token无效，清除localStorage
+          localStorage.removeItem('user_token');
+          console.error('Token验证失败:', error);
+        }
+      }
+    },
+    
     handleUserMenu(command) {
       if (command === 'orders') {
         this.$router.push('/user/orders');
@@ -210,13 +232,19 @@ export default {
         // 清除登录状态
         localStorage.removeItem('user_token');
         this.$store.commit('setUser', null);
-        this.$message.success('已退出登录');
+        this.$errorHandler.showSuccess('已退出登录', 'login.success.logoutSuccess');
         this.cartCount = 0;
         this.$router.push('/login');
       } else if (command === 'login') {
         this.$router.push('/login');
       }
     },
+  },
+  beforeUnmount() {
+    // 清理定时器
+    if (this.tokenCheckTimer) {
+      clearInterval(this.tokenCheckTimer);
+    }
   }
 }
 </script>

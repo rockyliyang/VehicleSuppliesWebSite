@@ -4,14 +4,18 @@
     <div class="page-banner">
       <div class="banner-content">
         <h1 class="text-3xl font-bold mb-2">
-          {{ $t('checkout.title') || '结算页面' }}
+          {{ isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算页面') }}
         </h1>
         <div class="w-24 h-1 bg-red-600 mx-auto mb-6"></div>
         <div class="breadcrumb">
           <el-breadcrumb separator="/">
             <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') || '首页' }}</el-breadcrumb-item>
-            <el-breadcrumb-item :to="{ path: '/cart' }">{{ $t('cart.title') || '购物车' }}</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ $t('checkout.title') || '结算' }}</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="!isOrderDetail" :to="{ path: '/cart' }">{{ $t('cart.title') || '购物车'
+              }}</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="isOrderDetail" :to="{ path: '/user/orders' }">{{ $t('order.myOrders') || '我的订单'
+              }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算')
+              }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
       </div>
@@ -61,37 +65,37 @@
             <i class="el-icon-location"></i>
             {{ $t('checkout.shippingInfo') || '收货信息' }}
           </h2>
-          <el-form :model="shippingInfo" :rules="shippingRules" ref="shippingForm" label-width="100px"
-            class="shipping-form">
+          <el-form :model="shippingInfo" :rules="isOrderDetail ? {} : shippingRules" ref="shippingForm"
+            label-width="100px" class="shipping-form">
             <div class="form-row">
               <el-form-item :label="$t('checkout.name') || '姓名'" prop="name">
                 <el-input v-model="shippingInfo.name" :placeholder="$t('checkout.namePlaceholder') || '请输入收货人姓名'"
-                  clearable />
+                  :readonly="isOrderDetail" clearable />
               </el-form-item>
               <el-form-item :label="$t('checkout.phone') || '电话'" prop="phone">
                 <el-input v-model="shippingInfo.phone" :placeholder="$t('checkout.phonePlaceholder') || '请输入手机号码'"
-                  clearable />
+                  :readonly="isOrderDetail" clearable />
               </el-form-item>
             </div>
             <div class="form-row">
               <el-form-item :label="$t('checkout.email') || '邮箱'" prop="email">
                 <el-input v-model="shippingInfo.email" :placeholder="$t('checkout.emailPlaceholder') || '请输入邮箱地址'"
-                  clearable />
+                  :readonly="isOrderDetail" clearable />
               </el-form-item>
               <el-form-item :label="$t('checkout.zipCode') || '邮编'" prop="zipCode">
                 <el-input v-model="shippingInfo.zipCode" :placeholder="$t('checkout.zipCodePlaceholder') || '请输入邮政编码'"
-                  clearable />
+                  :readonly="isOrderDetail" clearable />
               </el-form-item>
             </div>
             <el-form-item :label="$t('checkout.address') || '地址'" prop="address">
               <el-input v-model="shippingInfo.address" type="textarea" :rows="3"
-                :placeholder="$t('checkout.addressPlaceholder') || '请输入详细收货地址'" />
+                :placeholder="$t('checkout.addressPlaceholder') || '请输入详细收货地址'" :readonly="isOrderDetail" />
             </el-form-item>
           </el-form>
         </section>
 
         <!-- 支付方式 -->
-        <section class="payment-methods">
+        <section class="payment-methods" v-if="!isOrderPaid">
           <h2 class="section-title">
             <i class="el-icon-credit-card"></i>
             {{ $t('checkout.paymentMethod') || '支付方式' }}
@@ -182,21 +186,65 @@
             </el-tab-pane>
           </el-tabs>
         </section>
+
+        <!-- 订单状态信息（已支付订单） -->
+        <section class="order-status" v-if="isOrderDetail && isOrderPaid">
+          <h2 class="section-title">
+            <i class="el-icon-success"></i>
+            {{ $t('order.status') || '订单状态' }}
+          </h2>
+          <div class="status-card">
+            <div class="status-info">
+              <div class="status-item">
+                <span class="status-label">{{ $t('order.orderNumber') || '订单号：' }}</span>
+                <span class="status-value">{{ orderData?.order_number || orderData?.id }}</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">{{ $t('order.paymentStatus') || '支付状态：' }}</span>
+                <span class="status-value paid">{{ $t('order.paid') || '已支付' }}</span>
+              </div>
+              <div class="status-item" v-if="orderData?.payment_method">
+                <span class="status-label">{{ $t('order.paymentMethod') || '支付方式：' }}</span>
+                <span class="status-value">{{ getPaymentMethodText(orderData.payment_method) }}</span>
+              </div>
+              <div class="status-item" v-if="orderData?.created_at">
+                <span class="status-label">{{ $t('order.orderTime') || '下单时间：' }}</span>
+                <span class="status-value">{{ formatDate(orderData.created_at) }}</span>
+              </div>
+              <div class="status-item" v-if="orderData?.paid_at">
+                <span class="status-label">{{ $t('order.paymentTime') || '支付时间：' }}</span>
+                <span class="status-value">{{ formatDate(orderData.paid_at) }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 
     <!-- 支付成功对话框 -->
-    <el-dialog v-model="paySuccess" :title="$t('checkout.paymentSuccess') || '支付成功'" width="400px"
-      class="success-dialog">
+    <el-dialog v-model="paySuccess" :title="$t('checkout.paymentSuccess') || '支付成功'" width="500px"
+      class="success-dialog" center>
       <div class="success-content">
-        <i class="el-icon-success success-icon"></i>
-        <p>{{ $t('checkout.paymentSuccessMessage') || '支付成功，订单号：' }}{{ orderId }}</p>
+        <div class="success-icon-wrapper">
+          <div class="success-icon">✓</div>
+        </div>
+        <h3 class="success-title">{{ $t('checkout.paymentSuccessTitle') || '支付成功！' }}</h3>
+        <p class="success-message">{{ $t('checkout.paymentSuccessMessage') || '您的订单已成功支付' }}</p>
+        <div class="order-info">
+          <span class="order-label">{{ $t('checkout.orderNumber') || '订单号：' }}</span>
+          <span class="order-id">{{ orderId }}</span>
+        </div>
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="goHome" class="home-btn">{{ $t('checkout.backHome') || '返回首页' }}</el-button>
-          <el-button type="primary" @click="goOrders" class="orders-btn">{{ $t('checkout.viewOrders') || '查看订单'
-            }}</el-button>
+          <el-button @click="goHome" class="home-btn">
+            <i class="el-icon-house"></i>
+            {{ $t('checkout.backHome') || '返回首页' }}
+          </el-button>
+          <el-button type="primary" @click="goOrders" class="orders-btn">
+            <i class="el-icon-document"></i>
+            {{ $t('checkout.viewOrders') || '查看订单' }}
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -217,6 +265,9 @@ export default {
       orderItems: [],
       orderTotal: 0,
       shippingInfo: { name: '', phone: '', email: '', address: '', zipCode: '' },
+      isOrderDetail: false, // 是否为订单详情模式
+      orderData: null, // 订单详情数据
+      isOrderPaid: false, // 订单是否已支付
       shippingRules: {
         name: [
           { required: true, message: this.$t('checkout.nameRequired') || '请输入收货人姓名', trigger: 'blur' },
@@ -270,12 +321,35 @@ export default {
     }
   },
   methods: {
-    initOrderItems() {
+    async initOrderItems() {
+      // 检查是否为订单详情模式
+      const orderId = this.$route.query.orderId;
+      if (orderId) {
+        this.isOrderDetail = true;
+        await this.fetchOrderDetail(orderId);
+        return;
+      }
+      
       // 优先使用props传递的数据
       if (this.items && this.items.length > 0) {
         this.orderItems = this.items;
         this.calculateTotal();
         return;
+      }
+      
+      // 从sessionStorage获取选中的购物车商品
+      const selectedItemsStr = sessionStorage.getItem('selectedCartItems');
+      if (selectedItemsStr) {
+        try {
+          this.orderItems = JSON.parse(selectedItemsStr);
+          this.calculateTotal();
+          // 使用后清除sessionStorage中的数据
+          sessionStorage.removeItem('selectedCartItems');
+          return;
+        } catch (e) {
+          console.error('解析sessionStorage中的订单数据失败:', e);
+          sessionStorage.removeItem('selectedCartItems');
+        }
       }
       
       // 兼容URL参数方式（向后兼容）
@@ -292,21 +366,42 @@ export default {
             customClass: 'modern-message'
           });
         }
-      } else {
-        this.$message({
-          message: this.$t('checkout.noOrderData') || '没有找到订单数据',
-          type: 'warning',
-          customClass: 'modern-message'
-        });
-        this.$router.push('/cart');
       }
-      this.fetchOrderInfo(); // fallback
+      
+      // 如果没有找到任何订单数据，显示警告并跳转回购物车
+      this.$message({
+        message: this.$t('checkout.noOrderData') || '没有找到订单数据',
+        type: 'warning',
+        customClass: 'modern-message'
+      });
+      this.$router.push('/cart');
     },
     calculateTotal() {
       this.orderTotal = this.orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     },
     formatPrice(price) {
       return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+    },
+    getPaymentMethodText(method) {
+      const methodMap = {
+        'paypal': 'PayPal',
+        'wechat': this.$t('checkout.wechat') || '微信支付',
+        'alipay': this.$t('checkout.alipay') || '支付宝',
+        'credit_card': this.$t('checkout.creditCard') || '信用卡'
+      };
+      return methodMap[method] || method;
+    },
+    formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
     },
     async fetchOrderInfo() {
       try {
@@ -315,11 +410,11 @@ export default {
           this.orderItems = res.data.items || [];
           this.orderTotal = res.data.totalPrice || 0;
         } else {
-          this.$message.error('获取购物车信息失败');
+          this.$errorHandler.showError('获取购物车信息失败', 'checkout.error.fetchCartFailed');
         }
       } catch (error) {
         console.error('获取购物车信息失败:', error);
-        this.$message.error('获取购物车信息失败，请刷新页面重试');
+        this.$errorHandler.showError(error, 'checkout.error.fetchCartFailed');
       }
     },
     async fetchPayPalConfig() {
@@ -335,7 +430,40 @@ export default {
         }
       } catch (error) {
         console.error('获取PayPal配置失败:', error);
-        this.$message.error('获取支付配置失败，请刷新页面重试');
+        this.$errorHandler.showError(error, 'checkout.error.fetchPaymentConfigFailed');
+      }
+    },
+    async fetchOrderDetail(orderId) {
+      try {
+        const response = await this.$api.get(`/orders/${orderId}`);
+        if (response.success) {
+          this.orderData = response.data;
+          this.orderItems = response.data.items || [];
+          this.orderTotal = response.data.order.total_amount || 0;
+          this.isOrderPaid = response.data.order.status === 'paid';
+          
+          // 填充收货信息（只读模式）
+          if (response.data.order) {
+            this.shippingInfo = {
+              name: response.data.order.shipping_name || '',
+              phone: response.data.order.shipping_phone || '',
+              email: response.data.order.shipping_email || '',
+              address: response.data.order.shipping_address || '',
+              zipCode: response.data.order.shipping_zip_code || ''
+            };
+          }
+        } else {
+          this.$message({
+            message: this.$t('order.fetchFailed') || '获取订单详情失败',
+            type: 'error',
+            customClass: 'modern-message'
+          });
+          this.$router.push('/user/orders');
+        }
+      } catch (error) {
+        console.error('获取订单详情失败:', error);
+        this.$errorHandler.showError(error, 'order.error.fetchDetailFailed');
+        this.$router.push('/user/orders');
       }
     },
     onTabChange() {
@@ -376,7 +504,7 @@ export default {
       };
       script.onerror = () => {
         console.error('PayPal SDK加载失败');
-        this.$message.error('PayPal SDK加载失败，请刷新页面重试');
+        this.$errorHandler.showError('PayPal SDK加载失败', 'checkout.error.paypalSDKLoadFailed');
       };
       document.head.appendChild(script);
     },
@@ -397,33 +525,45 @@ export default {
         style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' },
         enableFunding: window.paypal.FUNDING.PAYLATER,
         createOrder: async () => {
-          // 验证收货信息
-          const isValid = await this.validateShippingInfo();
-          if (!isValid) {
-            return Promise.reject(new Error(this.$t('checkout.shippingInfoInvalid') || '请完善收货信息'));
+          // 如果不是订单详情模式，验证收货信息
+          if (!this.isOrderDetail) {
+            const isValid = await this.validateShippingInfo();
+            if (!isValid) {
+              return Promise.reject(new Error(this.$t('checkout.shippingInfoInvalid') || '请完善收货信息'));
+            }
           }
           
           try {
-            // 调用后端创建PayPal订单
-            const response = await this.$api.post('/payment/paypal/create', {
-              shippingInfo: {
-                name: this.shippingInfo.name,
-                phone: this.shippingInfo.phone,
-                email: this.shippingInfo.email,
-                shipping_address: this.shippingInfo.address,
-                shipping_zip_code: this.shippingInfo.zipCode
-              },
-              orderItems: this.orderItems.map(item => ({
-                product_id: item.product_id,
-                product_code: item.product_code,
-                product_name: item.name,
-                quantity: item.quantity,
-                price: item.price
-              }))
-            });
+            let response;
+            
+            if (this.isOrderDetail && this.orderData) {
+              // 已存在订单，调用重新支付接口
+              console.log('orderData:', this.orderData)
+              response = await this.$api.postWithErrorHandler('/payment/paypal/repay', {
+                orderId: this.orderData.order.id
+              });
+            } else {
+              // 新订单，调用创建订单接口
+              response = await this.$api.postWithErrorHandler('/payment/paypal/create', {
+                shippingInfo: {
+                  name: this.shippingInfo.name,
+                  phone: this.shippingInfo.phone,
+                  email: this.shippingInfo.email,
+                  shipping_address: this.shippingInfo.address,
+                  shipping_zip_code: this.shippingInfo.zipCode
+                },
+                orderItems: this.orderItems.map(item => ({
+                  product_id: item.product_id,
+                  product_code: item.product_code,
+                  product_name: item.name,
+                  quantity: item.quantity,
+                  price: item.price
+                }))
+              });
+            }
             
             if (response.success) {
-              this.orderId = response.data.orderId;
+              this.orderId = response.data.orderId || this.orderData?.id;
               return response.data.paypalOrderId || response.data.id || response.data.orderID;
             } else {
               throw new Error(response.message || '创建订单失败');
@@ -440,19 +580,19 @@ export default {
         onApprove: async (data, actions) => {
           try {
             // 捕获PayPal支付
-            const response = await this.$api.post('/payment/paypal/capture', {
+            const response = await this.$api.postWithErrorHandler('/payment/paypal/capture', {
               paypalOrderId: data.orderID,
               orderId: this.orderId
             });
             
             if (response.success) {
               this.paySuccess = true;
-              this.$message.success('支付成功！');
+              this.$errorHandler.showSuccess('支付成功！', 'payment.success.paymentSuccess');
             } else {
               throw new Error(response.message || '支付捕获失败');
             }
           } catch (error) {
-            this.$message.error('PayPal支付失败: ' + error.message);
+            this.$errorHandler.showError('PayPal支付失败: ' + error.message, 'payment.error.paypalFailed');
             // 处理可恢复的错误
             if (error.message.includes('INSTRUMENT_DECLINED')) {
               return actions.restart();
@@ -460,14 +600,14 @@ export default {
           }
         },
         onError: (err) => {
-          this.$message.error('PayPal支付失败: ' + (err.message || '未知错误'));
+          this.$errorHandler.showError('PayPal支付失败: ' + (err.message || '未知错误'), 'payment.error.paypalFailed');
         },
         onCancel: () => {
           this.$message.info('支付已取消');
         }
       }).render('#paypal-button-container').catch(err => {
         console.error('PayPal按钮渲染失败:', err);
-        this.$message.error('PayPal按钮加载失败，请刷新页面重试');
+        this.$errorHandler.showError(err, 'checkout.error.paypalButtonLoadFailed');
       });
     },
     async generateQrcode(paymentMethod) {
@@ -484,7 +624,7 @@ export default {
       
       try {
         // 1. 创建订单
-        const orderRes = await this.$api.post('/payment/common/create', {
+        const orderRes = await this.$api.postWithErrorHandler('/payment/common/create', {
           shippingInfo: {
             name: this.shippingInfo.name,
             phone: this.shippingInfo.phone,
@@ -505,7 +645,7 @@ export default {
         if (orderRes.success) {
           this.orderId = orderRes.data.orderId;
           // 2. 生成二维码
-          const qrRes = await this.$api.post('/payment/qrcode', {
+          const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
             orderId: this.orderId,
             paymentMethod
           });
@@ -550,7 +690,7 @@ export default {
       this.clearPollingTimer();
       this.polling = true;
       this.pollingTimer = setInterval(async () => {
-        const statusRes = await this.$api.post('/payment/check-status', {
+        const statusRes = await this.$api.postWithErrorHandler('/payment/check-status', {
           orderId,
           paymentMethod
         });
@@ -581,7 +721,7 @@ export default {
       this.clearQrcodeTimers();
       
       try {
-        const qrRes = await this.$api.post('/payment/qrcode', {
+        const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
           orderId: this.orderId,
           paymentMethod
         });
@@ -1094,74 +1234,183 @@ export default {
 
 /* 支付成功对话框 */
 .success-dialog :deep(.el-dialog) {
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
 .success-dialog :deep(.el-dialog__header) {
   background: linear-gradient(135deg, #48bb78, #38a169);
   color: white;
-  padding: 20px 30px;
+  padding: 24px 30px;
   margin: 0;
+  text-align: center;
 }
 
 .success-dialog :deep(.el-dialog__title) {
   color: white;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 20px;
 }
 
 .success-content {
   text-align: center;
-  padding: 30px 20px 20px;
+  padding: 40px 30px 30px;
+}
+
+.success-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #e60012, #c50010);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 8px 25px rgba(230, 0, 18, 0.3);
 }
 
 .success-icon {
-  font-size: 48px;
-  color: #48bb78;
-  margin-bottom: 16px;
-  display: block;
+  font-size: 40px;
+  color: white;
+  font-weight: bold;
+  line-height: 1;
 }
 
-.success-content p {
+.success-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 12px 0;
+}
+
+.success-message {
   font-size: 16px;
-  color: #4a5568;
-  margin: 0;
+  color: #718096;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.order-info {
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 auto;
+  max-width: 300px;
+}
+
+.order-label {
+  font-size: 14px;
+  color: #718096;
+  font-weight: 500;
+}
+
+.order-id {
+  font-size: 16px;
+  color: #2d3748;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
 }
 
 .dialog-footer {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
-  padding: 20px;
+  padding: 0 30px 30px;
 }
 
 .home-btn,
 .orders-btn {
-  padding: 10px 24px;
-  border-radius: 8px;
+  padding: 12px 28px;
+  border-radius: 12px;
   font-weight: 600;
+  font-size: 14px;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+  justify-content: center;
 }
 
 .home-btn {
-  background: #f7fafc;
+  background: #ffffff;
   border: 2px solid #e2e8f0;
   color: #4a5568;
 }
 
 .home-btn:hover {
-  background: #edf2f7;
+  background: #f7fafc;
   border-color: #cbd5e0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .orders-btn {
-  background: linear-gradient(135deg, #e53e3e, #c53030);
+  background: linear-gradient(135deg, #e60012, #c50010);
   border: none;
+  color: white;
 }
 
 .orders-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(230, 0, 18, 0.4);
+}
+
+/* 订单状态样式 */
+.order-status {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.status-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #e9ecef;
+}
+
+.status-info {
+  display: grid;
+  gap: 16px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+.status-label {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.status-value {
+  font-size: 14px;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.status-value.paid {
+  color: #e60012;
+  background: linear-gradient(135deg, #e60012, #c50010);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
 }
 
 /* 现代消息样式 */
@@ -1172,7 +1421,7 @@ export default {
 }
 
 :deep(.modern-message.el-message--success) {
-  background: linear-gradient(135deg, #48bb78, #38a169);
+  background: linear-gradient(135deg, #e60012, #c50010);
   color: white;
 }
 

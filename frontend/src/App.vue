@@ -1,8 +1,8 @@
 <template>
   <div id="app">
-    <SiteHeader v-if="!isAdminRoute && !isAuthRoute" />
+    <SiteHeader v-if="!isAdminRoute " />
     <router-view />
-    <SiteFooter v-if="!isAdminRoute && !isAuthRoute" />
+    <SiteFooter v-if="!isAdminRoute " />
   </div>
 </template>
 

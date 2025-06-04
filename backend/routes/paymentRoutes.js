@@ -15,6 +15,7 @@ router.use((req, res, next) => {
 // PayPal相关接口
 router.post('/paypal/create', paymentController.createPayPalOrder);
 router.post('/paypal/capture', paymentController.capturePayPalPayment);
+router.post('/paypal/repay', paymentController.repayPayPalOrder);
 
 // 普通支付相关接口
 router.post('/common/create', paymentController.createCommonOrder);
@@ -25,4 +26,4 @@ router.post('/check-status', paymentController.checkPaymentStatus);
 router.post('/callback/wechat', paymentController.paymentCallback);
 router.post('/callback/alipay', paymentController.paymentCallback);
 
-module.exports = router; 
+module.exports = router;

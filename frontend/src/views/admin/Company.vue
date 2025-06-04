@@ -133,30 +133,30 @@ export default {
         if (success) {
           this.companyForm = data
         } else {
-          this.$message.error(message || '获取公司信息失败')
+          this.$errorHandler.showError(message, 'admin.company.error.fetchFailed')
         }
       } catch (error) {
         console.error('获取公司信息出错:', error)
-        this.$message.error('获取公司信息出错')
+        this.$errorHandler.showError(error, 'admin.company.error.fetchFailed')
       }
     },
     async submitForm(formName) {
       try {
         await this.$refs[formName].validate()
       } catch (error) {
-        this.$message.error('表单验证失败，请检查输入项')
+        this.$errorHandler.showError('表单验证失败，请检查输入项', 'admin.company.error.validationFailed')
         return false
       }
       this.loading = true
       try {
         const { success, message } = await this.$api.put('company', this.companyForm)
         if (success) {
-          this.$message.success('公司信息更新成功')
+          this.$errorHandler.showSuccess('公司信息更新成功', 'company.success.updateSuccess')
         } else {
-          this.$message.error(message || '更新失败')
+          this.$errorHandler.showError(message, 'admin.company.error.updateFailed')
         }
       } catch (error) {
-        this.$message.error('更新公司信息出错')
+        this.$errorHandler.showError(error, 'admin.company.error.updateFailed')
         console.error('更新公司信息出错:', error)
       } finally {
         this.loading = false
@@ -169,9 +169,9 @@ export default {
     handleLogoSuccess(res) {
       if (res.success) {
         this.companyForm.logo_url = res.data.url
-        this.$message.success('Logo上传成功')
+        this.$errorHandler.showSuccess('Logo上传成功', 'company.success.logoUploadSuccess')
       } else {
-        this.$message.error(res.message || 'Logo上传失败')
+        this.$errorHandler.showError(res.message, 'admin.company.error.logoUploadFailed')
       }
     },
     beforeLogoUpload(file) {
@@ -179,19 +179,19 @@ export default {
       const isLt2M = file.size / 1024 / 1024 < 2
 
       if (!isJPGOrPNG) {
-        this.$message.error('Logo只能是JPG或PNG格式!')
+        this.$errorHandler.showError('Logo只能是JPG或PNG格式!', 'admin.company.error.logoFormatInvalid')
       }
       if (!isLt2M) {
-        this.$message.error('Logo大小不能超过2MB!')
+        this.$errorHandler.showError('Logo大小不能超过2MB!', 'admin.company.error.logoTooLarge')
       }
       return isJPGOrPNG && isLt2M
     },
     handleQrcodeSuccess(res) {
       if (res.success) {
         this.companyForm.wechat_qrcode = res.data.url
-        this.$message.success('二维码上传成功')
+        this.$errorHandler.showSuccess('二维码上传成功', 'company.success.qrUploadSuccess')
       } else {
-        this.$message.error(res.message || '二维码上传失败')
+        this.$errorHandler.showError(res.message, 'admin.company.error.qrcodeUploadFailed')
       }
     },
     beforeQrcodeUpload(file) {
@@ -199,10 +199,10 @@ export default {
       const isLt2M = file.size / 1024 / 1024 < 2
 
       if (!isJPGOrPNG) {
-        this.$message.error('二维码只能是JPG或PNG格式!')
+        this.$errorHandler.showError('二维码只能是JPG或PNG格式!', 'admin.company.error.qrcodeFormatInvalid')
       }
       if (!isLt2M) {
-        this.$message.error('二维码大小不能超过2MB!')
+        this.$errorHandler.showError('二维码大小不能超过2MB!', 'admin.company.error.qrcodeTooLarge')
       }
       return isJPGOrPNG && isLt2M
     }

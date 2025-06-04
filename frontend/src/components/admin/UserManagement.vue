@@ -91,14 +91,14 @@ export default {
         // 使用标准响应格式
         this.users = response.data || [];
       } catch (error) {
-        this.$message.error(error.response?.data?.message || '获取用户列表失败');
+        this.$errorHandler.showError(error, 'user.error.fetchListFailed');
       }
     },
     async handleCreateAdmin() {
       this.loading = true;
       try {
-        const response = await this.$api.post('users/admin/create', this.adminForm);
-        this.$message.success(response.message || '管理员创建成功');
+        const response = await this.$api.postWithErrorHandler('users/admin/create', this.adminForm);
+        this.$errorHandler.showSuccess(response.message || '管理员创建成功', 'user.success.adminCreateSuccess');
         this.adminForm = {
           username: '',
           email: '',
@@ -106,7 +106,7 @@ export default {
         };
         this.fetchUsers();
       } catch (error) {
-        this.$message.error(error.response?.data?.message || '创建管理员失败');
+        this.$errorHandler.showError(error, 'user.error.createAdminFailed');
       } finally {
         this.loading = false;
       }
@@ -118,10 +118,10 @@ export default {
 
       try {
         const response = await this.$api.delete(`users/admin/${userId}`);
-        this.$message.success(response.message || '用户删除成功');
+        this.$errorHandler.showSuccess(response.message || '用户删除成功', 'user.success.deleteSuccess');
         this.fetchUsers();
       } catch (error) {
-        this.$message.error(error.response?.data?.message || '删除用户失败');
+        this.$errorHandler.showError(error, 'user.error.deleteFailed');
       }
     },
     formatDate(dateString) {

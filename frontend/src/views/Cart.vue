@@ -119,7 +119,7 @@ export default {
         }
       } catch (error) {
         console.error('获取购物车失败:', error);
-        this.$message.error(error.response?.data?.message || '获取购物车失败');
+        this.$errorHandler.showError(error, 'cart.error.fetchFailed');
       } finally {
         this.loading = false;
       }
@@ -128,13 +128,13 @@ export default {
       try {
         const response = await this.$api.put(`/cart/item/${cartItemId}`, { quantity });
         if (response.success) {
-          this.$message.success('数量已更新');
+          this.$errorHandler.showSuccess('数量已更新', 'cart.success.quantityUpdated');
           // 更新总价
           this.calculateTotal();
         }
       } catch (error) {
         console.error('更新数量失败:', error);
-        this.$message.error(error.response?.data?.message || '更新数量失败');
+        this.$errorHandler.showError(error, 'cart.error.updateFailed');
         // 刷新购物车
         this.fetchCart();
       }
@@ -143,7 +143,7 @@ export default {
       try {
         const response = await this.$api.delete(`/cart/item/${cartItemId}`);
         if (response.success) {
-          this.$message.success('商品已从购物车中移除');
+          this.$errorHandler.showSuccess('商品已从购物车中移除', 'cart.success.itemRemoved');
           // 从列表中移除
           this.cartItems = this.cartItems.filter(item => item.id !== cartItemId);
           // 更新总价
@@ -151,7 +151,7 @@ export default {
         }
       } catch (error) {
         console.error('移除商品失败:', error);
-        this.$message.error(error.response?.data?.message || '移除商品失败');
+        this.$errorHandler.showError(error, 'cart.error.removeFailed');
       }
     },
     async clearCart() {
@@ -232,11 +232,10 @@ export default {
         });
         return;
       }
+      // 将选中的商品数据存储到sessionStorage
+      sessionStorage.setItem('selectedCartItems', JSON.stringify(this.selectedItems));
       this.$router.push({
-        path: '/checkout-unified',
-        params: {
-          selectedItems: this.selectedItems
-        }
+        name: 'UnifiedCheckout'
       });
     }
   }

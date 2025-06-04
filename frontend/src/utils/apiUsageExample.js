@@ -26,7 +26,7 @@ export const apiUsageInComponent = {
   // 创建产品示例
   async createProduct(product) {
     try {
-      const response = await this.$api.post('products', product);
+      const response = await this.$api.postWithErrorHandler('products', product);
       // 成功后返回数据
       return response.data;
     } catch (error) {
@@ -52,7 +52,7 @@ export const apiUsageInVuex = {
 
   // 用户登录
   login({ commit }, credentials) {
-    return api.post('users/login', credentials)
+    return api.postWithErrorHandler('users/login', credentials)
       .then(response => {
         // 保存token
         localStorage.setItem('token', response.data.token);

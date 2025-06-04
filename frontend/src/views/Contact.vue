@@ -175,7 +175,7 @@ export default {
       this.$refs.contactForm.validate(valid => {
         if (valid) {
           // 实际项目中会发送到后端API
-          this.$message.success('留言已提交，我们会尽快与您联系')
+          this.$errorHandler.showSuccess('留言已提交，我们会尽快与您联系', 'contact.success.messageSubmitted')
           this.resetForm()
         }
       })

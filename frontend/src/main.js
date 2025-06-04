@@ -5,7 +5,9 @@ import store from './store'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import './assets/css/global.css'
+import './assets/css/elegant-messages.css'
 import api from './utils/api'
+import ErrorHandler from './utils/errorHandler'
 
 const app = createApp(App)
 
@@ -17,6 +19,9 @@ app.config.globalProperties.$axios = api
 app.config.globalProperties.$t = (key) => {
   return store.getters['language/translate'](key)
 }
+
+// 全局注册错误处理器
+app.config.globalProperties.$errorHandler = ErrorHandler
 
 app.use(router)
 app.use(store)

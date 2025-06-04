@@ -272,7 +272,7 @@ export default {
         this.categories = response.data || []
       } catch (error) {
         console.error('获取分类失败:', error)
-        this.$message.error(error.response?.data?.message || this.$t('messages.fetchCategoriesFailed'))
+        this.$errorHandler.showError(error, 'category.error.fetchFailed')
       }
     },
     async fetchProduct() {
@@ -285,7 +285,7 @@ export default {
         this.fetchRelatedProducts()
       } catch (error) {
         console.error('获取产品详情失败:', error)
-        this.$message.error(error.response?.data?.message || this.$t('messages.fetchProductFailed'))
+        this.$errorHandler.showError(error, 'product.error.fetchFailed')
       } finally {
         this.loading = false
       }
@@ -298,7 +298,7 @@ export default {
         this.relatedProducts = items.filter(p => p.id !== this.product.id).slice(0, 4)
       } catch (error) {
         console.error('获取相关产品失败:', error)
-        this.$message.error(error.response?.data?.message || this.$t('messages.fetchRelatedProductsFailed'))
+        this.$errorHandler.showError(error, 'product.error.fetchRelatedFailed')
       }
     },
     addToInquiry() {
@@ -307,7 +307,7 @@ export default {
         quantity: this.quantity
       }
       this.$store.commit('addToCart', productWithQuantity)
-      this.$message.success(this.$t('messages.addToInquirySuccess', { quantity: this.quantity, name: this.product.name }))
+      this.$errorHandler.showSuccess(this.$t('messages.addToInquirySuccess', { quantity: this.quantity, name: this.product.name }), 'product.success.addToInquirySuccess')
     },
     contactUs() {
       this.$router.push('/contact');
@@ -325,7 +325,7 @@ export default {
       this.$refs.inquiryForm.validate(valid => {
         if (valid) {
           // 实际项目中会发送到后端API
-          this.$message.success(this.$t('messages.inquirySubmitted'))
+          this.$errorHandler.showSuccess(this.$t('messages.inquirySubmitted'), 'product.success.inquirySubmitted')
           this.$refs.inquiryForm.resetFields()
         }
       })

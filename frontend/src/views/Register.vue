@@ -14,59 +14,38 @@
     <div class="register-container">
       <div class="form-wrapper">
         <div class="register-card">
-          <h2 class="register-title">
-            {{ $t('register.createAccount') || '创建新账户' }}
-          </h2>
-          <p class="register-subtitle">
-            {{ $t('register.subtitle') || '请填写以下信息完成注册' }}
-          </p>
+          <div class="register-header">
+            <img :src="logoUrl" alt="AUTO EASE EXPERT CO., LTD" class="logo">
+            <h2 class="register-title">
+              {{ $t('register.createAccount') || '创建新账户' }}
+            </h2>
+            <p class="register-subtitle">
+              {{ $t('register.subtitle') || '请填写以下信息完成注册' }}
+            </p>
+          </div>
 
           <el-form :model="form" :rules="rules" ref="formRef" class="register-form">
             <el-form-item prop="email">
-              <el-input v-model="form.email" :placeholder="$t('register.emailPlaceholder') || '请输入邮箱地址'" size="large"
-                class="form-input">
-                <template #prefix>
-                  <el-icon>
-                    <Message />
-                  </el-icon>
-                </template>
-              </el-input>
+              <FormInput v-model="form.email" :placeholder="$t('register.emailPlaceholder') || '请输入邮箱地址'"
+                :prefix-icon="Message" />
             </el-form-item>
 
             <el-form-item prop="password">
-              <el-input v-model="form.password" type="password"
-                :placeholder="$t('register.passwordPlaceholder') || '请输入密码（至少8位，包含字母和数字）'" size="large" show-password
-                class="form-input">
-                <template #prefix>
-                  <el-icon>
-                    <Lock />
-                  </el-icon>
-                </template>
-              </el-input>
+              <FormInput v-model="form.password" type="password"
+                :placeholder="$t('register.passwordPlaceholder') || '请输入密码（至少8位，包含字母和数字）'" :prefix-icon="Lock"
+                :show-password="true" />
             </el-form-item>
 
             <el-form-item prop="confirmPassword">
-              <el-input v-model="form.confirmPassword" type="password"
-                :placeholder="$t('register.confirmPasswordPlaceholder') || '请再次输入密码'" size="large" show-password
-                class="form-input">
-                <template #prefix>
-                  <el-icon>
-                    <Lock />
-                  </el-icon>
-                </template>
-              </el-input>
+              <FormInput v-model="form.confirmPassword" type="password"
+                :placeholder="$t('register.confirmPasswordPlaceholder') || '请再次输入密码'" :prefix-icon="Lock"
+                :show-password="true" />
             </el-form-item>
 
             <el-form-item prop="captcha">
               <div class="captcha-container">
-                <el-input v-model="form.captcha" :placeholder="$t('register.captchaPlaceholder') || '请输入验证码'"
-                  size="large" class="captcha-input">
-                  <template #prefix>
-                    <el-icon>
-                      <PictureIcon />
-                    </el-icon>
-                  </template>
-                </el-input>
+                <FormInput v-model="form.captcha" :placeholder="$t('register.captchaPlaceholder') || '请输入验证码'"
+                  :prefix-icon="PictureIcon" class="captcha-input" />
                 <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img"
                   :alt="$t('register.captchaAlt') || '验证码'" :title="$t('register.captchaRefresh') || '点击刷新验证码'" />
               </div>
@@ -109,16 +88,13 @@
 </template>
 
 <script>
-import { ElIcon } from 'element-plus'
 import { Message, Lock, Picture as PictureIcon } from '@element-plus/icons-vue'
+import FormInput from '@/components/common/FormInput.vue'
 
 export default {
   name: 'UserRegister',
   components: {
-    ElIcon,
-    Message,
-    Lock,
-    PictureIcon
+    FormInput
   },
   data() {
     return {
@@ -131,42 +107,47 @@ export default {
       },
       rules: {
         email: [
-          { required: true, message: this.$t('register.validation.emailRequired') || '请输入邮箱', trigger: 'blur' },
-          { type: 'email', message: this.$t('register.validation.emailFormat') || '邮箱格式不正确', trigger: 'blur' }
+          { required: true, message: this.$t('register.validation.emailRequired'), trigger: 'blur' },
+          { type: 'email', message: this.$t('register.validation.emailFormat'), trigger: 'blur' }
         ],
         password: [
-          { required: true, message: this.$t('register.validation.passwordRequired') || '请输入密码', trigger: 'blur' },
-          { min: 8, message: this.$t('register.validation.passwordLength') || '密码至少8位', trigger: 'blur' },
+          { required: true, message: this.$t('register.validation.passwordRequired'), trigger: 'blur' },
+          { min: 8, message: this.$t('register.validation.passwordLength'), trigger: 'blur' },
           { validator: (rule, value, callback) => {
               if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=]{8,}$/.test(value)) {
-                callback(new Error(this.$t('register.validation.passwordFormat') || '密码需包含字母和数字'));
+                callback(new Error(this.$t('register.validation.passwordFormat')));
               } else {
                 callback();
               }
             }, trigger: 'blur' }
         ],
         confirmPassword: [
-          { required: true, message: this.$t('register.validation.confirmPasswordRequired') || '请确认密码', trigger: 'blur' },
+          { required: true, message: this.$t('register.validation.confirmPasswordRequired'), trigger: 'blur' },
           { validator: (rule, value, callback) => {
               if (value !== this.form.password) {
-                callback(new Error(this.$t('register.validation.passwordMismatch') || '两次输入的密码不一致'));
+                callback(new Error(this.$t('register.validation.passwordMismatch')));
               } else {
                 callback();
               }
             }, trigger: 'blur' }
         ],
         captcha: [
-          { required: true, message: this.$t('register.validation.captchaRequired') || '请输入验证码', trigger: 'blur' }
+          { required: true, message: this.$t('register.validation.captchaRequired'), trigger: 'blur' }
         ],
         agree: [
           { required: true, type: 'boolean', validator: (rule, value, callback) => {
-              if (!value) callback(new Error(this.$t('register.validation.agreeRequired') || '请同意用户协议'));
+              if (!value) callback(new Error(this.$t('register.validation.agreeRequired')));
               else callback();
             }, trigger: 'change' }
         ]
       },
       loading: false,
-      captchaUrl: '/api/users/captcha?'+Date.now()
+      captchaUrl: '/api/users/captcha?'+Date.now(),
+      logoUrl: '/static/images/logo.png',
+      // 图标组件
+      Message,
+      Lock,
+      PictureIcon
     }
   },
   methods: {
@@ -178,28 +159,28 @@ export default {
         if (!valid) return;
         this.loading = true;
         try {
-          const res = await this.$api.post('/users/register', {
+          const res = await this.$api.postWithErrorHandler('/users/register', {
             email: this.form.email,
             password: this.form.password,
             captcha: this.form.captcha
           });
           if (res.success) {
             this.$alert(
-              this.$t('register.success.message') || '注册成功，请前往邮箱激活账号！', 
-              this.$t('register.success.title') || '注册成功', 
+              this.$t('register.success.message'), 
+              this.$t('register.success.title'), 
               {
-                confirmButtonText: this.$t('register.success.goToLogin') || '去登录',
+                confirmButtonText: this.$t('register.success.goToLogin'),
                 callback: () => {
                   this.$router.push('/login');
                 }
               }
             );
           } else {
-            this.$message.error(res.message || this.$t('register.error.failed') || '注册失败');
+            this.$errorHandler.showError(res.message, 'register.error.failed');
             this.refreshCaptcha();
           }
         } catch (e) {
-          this.$message.error(e.response?.data?.message || this.$t('register.error.failed') || '注册失败');
+          this.$errorHandler.showError(e, 'register.error.failed');
           this.refreshCaptcha();
         } finally {
           this.loading = false;
@@ -268,6 +249,20 @@ export default {
 
 .register-card:hover {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo {
+  width: 200px;
+  height: auto;
+  max-height: 100px;
+  margin: 0 auto 20px auto;
+  object-fit: contain;
+  display: block;
 }
 
 .register-title {
@@ -498,19 +493,32 @@ export default {
   height: 100%;
   display: inline-flex;
   align-items: center;
-  flex-shrink: 0;
+  justify-content: center;
 }
 
 :deep(.el-input__suffix) {
   position: relative;
   right: 0;
   margin-left: 8px;
+  color: #6b7280;
   height: 100%;
   display: inline-flex;
   align-items: center;
-  min-width: 30px;
   justify-content: center;
-  flex-shrink: 0;
+}
+
+:deep(.el-input__prefix .el-icon),
+:deep(.el-input__suffix .el-icon) {
+  font-size: 18px;
+}
+
+:deep(.el-input__password) {
+  color: #6b7280;
+  cursor: pointer;
+}
+
+:deep(.el-input__password:hover) {
+  color: #dc2626;
 }
 
 :deep(.el-input__icon) {

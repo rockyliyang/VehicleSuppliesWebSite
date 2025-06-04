@@ -95,37 +95,33 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('../views/Register.vue')
+    component: () => import('../views/Register.vue'),
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('../views/ForgotPassword.vue'),
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('../views/ResetPassword.vue'),
+    meta: { requiresGuest: true }
   },
   {
     path: '/activate',
     name: 'Activate',
     component: () => import('../views/Activate.vue')
   },
-  {
-    path: '/checkout',
-    name: 'Checkout',
-    component: () => import('../views/Checkout.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/checkout2',
-    name: 'Checkout2',
-    component: () => import('../views/CheckoutV2.vue'),
-    meta: { requiresAuth: true }
-  },
+
   {
     path: '/checkout-complete',
     name: 'CheckoutComplete',
     component: () => import('../views/CheckoutComplete.vue'),
     // 不需要验证，因为是从PayPal回调
     meta: { requiresAuth: false }
-  },
-  {
-    path: '/checkout3',
-    name: 'Checkout3',
-    component: () => import('../views/Checkout3.vue'),
-    meta: { requiresAuth: false } // 测试时不需要验证
   },
   {
     path: '/paypal-test',
@@ -154,7 +150,7 @@ const router = createRouter({
 // 全局路由守卫 - 在每次路由跳转前验证token
 router.beforeEach(async (to, from, next) => {
   // 不需要验证token的路由
-  const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact', '/paypal-test', '/checkout-complete', '/checkout3']
+  const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact', '/paypal-test', '/checkout-complete', '/forgot-password', '/reset-password']
   const authRequired = (to.path != '/') && (!publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin'))
 
   

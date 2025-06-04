@@ -1,6 +1,7 @@
 const { pool } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
 const { uuidToBinary } = require('../utils/uuid');
+const { getMessage } = require('../config/messages');
 
 // 获取用户购物车
 exports.getUserCart = async (req, res) => {
@@ -20,7 +21,7 @@ exports.getUserCart = async (req, res) => {
     if (cartItems.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '购物车为空'
+        message: getMessage('CART.EMPTY')
       });
     } 
     // 计算总价
@@ -40,7 +41,7 @@ exports.getUserCart = async (req, res) => {
     console.error('获取购物车失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取购物车失败'
+      message: getMessage('CART.GET_FAILED')
     });
   }
 };
@@ -54,7 +55,7 @@ exports.addToCart = async (req, res) => {
     if (!productId) {
       return res.status(400).json({
         success: false,
-        message: '商品ID不能为空'
+        message: getMessage('CART.PRODUCT_ID_REQUIRED')
       });
     }
     
@@ -64,14 +65,14 @@ exports.addToCart = async (req, res) => {
     if (!product || product.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '商品不存在'
+        message: getMessage('CART.PRODUCT_NOT_FOUND')
       });
     }
     
     if (product[0].stock < quantity) {
       return res.status(400).json({
         success: false,
-        message: '商品库存不足'
+        message: getMessage('CART.INSUFFICIENT_STOCK')
       });
     }
     
@@ -91,7 +92,7 @@ exports.addToCart = async (req, res) => {
       
       return res.json({
         success: true,
-        message: '商品已更新到购物车',
+        message: getMessage('CART.UPDATE_SUCCESS'),
         data: { id: existingItem[0].id, quantity: newQuantity }
       });
     } else {
@@ -104,7 +105,7 @@ exports.addToCart = async (req, res) => {
       
       return res.json({
         success: true,
-        message: '商品已添加到购物车',
+        message: getMessage('CART.ADD_SUCCESS'),
         data: { id: result.insertId, quantity }
       });
     }
@@ -112,7 +113,7 @@ exports.addToCart = async (req, res) => {
     console.error('添加到购物车失败:', error);
     return res.status(500).json({
       success: false,
-      message: '添加到购物车失败'
+      message: getMessage('CART.ADD_FAILED')
     });
   }
 };
@@ -127,7 +128,7 @@ exports.updateCartItem = async (req, res) => {
     if (!quantity || quantity < 1) {
       return res.status(400).json({
         success: false,
-        message: '数量必须大于0'
+        message: getMessage('CART.QUANTITY_INVALID')
       });
     }
     
@@ -143,7 +144,7 @@ exports.updateCartItem = async (req, res) => {
     if (!cartItem || cartItem.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '购物车商品不存在'
+        message: getMessage('CART.ITEM_NOT_FOUND')
       });
     }
     
@@ -151,7 +152,7 @@ exports.updateCartItem = async (req, res) => {
     if (cartItem[0].stock < quantity) {
       return res.status(400).json({
         success: false,
-        message: '商品库存不足'
+        message: getMessage('CART.INSUFFICIENT_STOCK')
       });
     }
     
@@ -163,14 +164,14 @@ exports.updateCartItem = async (req, res) => {
     
     return res.json({
       success: true,
-      message: '购物车已更新',
+      message: getMessage('CART.UPDATE_SUCCESS'),
       data: { id: cartItemId, quantity }
     });
   } catch (error) {
     console.error('更新购物车失败:', error);
     return res.status(500).json({
       success: false,
-      message: '更新购物车失败'
+      message: getMessage('CART.UPDATE_FAILED')
     });
   }
 };
@@ -190,7 +191,7 @@ exports.removeFromCart = async (req, res) => {
     if (!cartItem || cartItem.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '购物车商品不存在'
+        message: getMessage('CART.ITEM_NOT_FOUND')
       });
     }
     
@@ -202,13 +203,13 @@ exports.removeFromCart = async (req, res) => {
     
     return res.json({
       success: true,
-      message: '商品已从购物车中移除'
+      message: getMessage('CART.REMOVE_SUCCESS')
     });
   } catch (error) {
     console.error('从购物车移除商品失败:', error);
     return res.status(500).json({
       success: false,
-      message: '从购物车移除商品失败'
+      message: getMessage('CART.REMOVE_FAILED')
     });
   }
 };
@@ -226,13 +227,13 @@ exports.clearCart = async (req, res) => {
     
     return res.json({
       success: true,
-      message: '购物车已清空'
+      message: getMessage('CART.CLEAR_SUCCESS')
     });
   } catch (error) {
     console.error('清空购物车失败:', error);
     return res.status(500).json({
       success: false,
-      message: '清空购物车失败'
+      message: getMessage('CART.CLEAR_FAILED')
     });
   }
 };
@@ -255,7 +256,7 @@ exports.getCartCount = async (req, res) => {
     console.error('获取购物车数量失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取购物车数量失败'
+      message: getMessage('CART.COUNT_GET_FAILED')
     });
   }
 };

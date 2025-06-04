@@ -117,11 +117,11 @@ export default {
         if (response.success) {
           this.bannerList = response.data
         } else {
-          this.$message.error(response.message || '获取Banner列表失败')
+          this.$errorHandler.showError(response.message, 'admin.banners.error.fetchFailed')
         }
       } catch (error) {
         console.error('获取Banner列表失败:', error)
-        this.$message.error('获取Banner列表失败')
+        this.$errorHandler.showError(error, 'admin.banners.error.fetchFailed')
       } finally {
         this.loading = false
       }
@@ -165,14 +165,14 @@ export default {
         try {
           const response = await this.$api.delete(`banners/${row.id}`)
           if (response.success) {
-            this.$message.success('删除成功')
+            this.$errorHandler.showSuccess('删除成功', 'banner.success.deleteSuccess')
             this.fetchBanners()
           } else {
-            this.$message.error(response.message || '删除失败')
+            this.$errorHandler.showError(response.message, 'admin.banners.error.deleteFailed')
           }
         } catch (error) {
           console.error('删除Banner失败:', error)
-          this.$message.error('删除Banner失败')
+          this.$errorHandler.showError(error, 'admin.banners.error.deleteFailed')
         }
       }).catch(() => {})
     },
@@ -185,21 +185,21 @@ export default {
           try {
             let response
             if (this.dialogStatus === 'create') {
-              response = await this.$api.post('banners', this.bannerForm)
+              response = await this.$api.postWithErrorHandler('banners', this.bannerForm)
             } else {
               response = await this.$api.put(`banners/${this.bannerForm.id}`, this.bannerForm)
             }
             
             if (response.success) {
-              this.$message.success(this.dialogStatus === 'create' ? '添加成功' : '更新成功')
+              this.$errorHandler.showSuccess(this.dialogStatus === 'create' ? '添加成功' : '更新成功', this.dialogStatus === 'create' ? 'banner.success.createSuccess' : 'banner.success.updateSuccess')
               this.dialogVisible = false
               this.fetchBanners()
             } else {
-              this.$message.error(response.message || (this.dialogStatus === 'create' ? '添加失败' : '更新失败'))
+              this.$errorHandler.showError(response.message, this.dialogStatus === 'create' ? 'admin.banners.error.createFailed' : 'admin.banners.error.updateFailed')
             }
           } catch (error) {
             console.error(this.dialogStatus === 'create' ? '添加Banner失败:' : '更新Banner失败:', error)
-            this.$message.error(this.dialogStatus === 'create' ? '添加Banner失败' : '更新Banner失败')
+            this.$errorHandler.showError(error, this.dialogStatus === 'create' ? 'admin.banners.error.createFailed' : 'admin.banners.error.updateFailed')
           } finally {
             this.submitLoading = false
           }
@@ -212,7 +212,7 @@ export default {
       if (res.success) {
         this.bannerForm.image = res.data.url
       } else {
-        this.$message.error(res.message || '上传失败')
+        this.$errorHandler.showError(res.message, 'admin.banners.error.uploadFailed')
       }
     },
     
@@ -223,10 +223,10 @@ export default {
       const isLt2M = file.size / 1024 / 1024 < 2
 
       if (!isJPG && !isPNG) {
-        this.$message.error('上传图片只能是 JPG 或 PNG 格式!')
+        this.$errorHandler.showError('上传图片只能是 JPG 或 PNG 格式!', 'admin.banners.error.invalidFormat')
       }
       if (!isLt2M) {
-        this.$message.error('上传图片大小不能超过 2MB!')
+        this.$errorHandler.showError('上传图片大小不能超过 2MB!', 'admin.banners.error.fileTooLarge')
       }
       return (isJPG || isPNG) && isLt2M
     }
