@@ -167,15 +167,16 @@ const MESSAGES = {
 };
 
 /**
- * 获取消息文本
+ * 获取消息代码
  * @param {string} key - 消息键，支持点号分隔的嵌套键如 'USER.LOGIN_SUCCESS'
- * @param {object} params - 可选的参数对象，用于消息模板替换
- * @returns {string} 消息文本
+ * @param {object} params - 可选的参数对象，用于前端模板替换
+ * @returns {string} 消息代码(key)，前端根据此代码查询翻译表
  */
 function getMessage(key, params = {}) {
   const keys = key.split('.');
   let message = MESSAGES;
   
+  // 验证消息键是否存在
   for (const k of keys) {
     if (message && typeof message === 'object' && k in message) {
       message = message[k];
@@ -188,13 +189,9 @@ function getMessage(key, params = {}) {
     return key; // 如果最终结果不是字符串，返回原始键
   }
   
-  // 简单的模板替换
-  let result = message;
-  for (const [param, value] of Object.entries(params)) {
-    result = result.replace(new RegExp(`\\{${param}\\}`, 'g'), value);
-  }
-  
-  return result;
+  // 只返回消息代码(key)，不返回实际消息内容
+  // 前端将使用此代码查询翻译表获取对应语言的消息
+  return key;
 }
 
 module.exports = {

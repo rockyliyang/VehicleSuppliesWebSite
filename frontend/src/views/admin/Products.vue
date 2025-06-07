@@ -299,7 +299,7 @@ export default {
         this.categoryOptions = response.data || []
       } catch (error) {
         console.error('获取分类失败:', error)
-        this.$errorHandler.showError(error, 'admin.products.error.fetchCategoriesFailed')
+        this.$messageHandler.showError(error, 'admin.products.error.fetchCategoriesFailed')
       }
     },
     
@@ -325,7 +325,7 @@ export default {
         this.pagination.total = response.data?.total || 0
       } catch (error) {
         console.error('获取产品列表失败:', error)
-        this.$errorHandler.showError(error, 'admin.products.error.fetchProductsFailed')
+        this.$messageHandler.showError(error, 'admin.products.error.fetchProductsFailed')
       } finally {
         this.loading = false
       }
@@ -343,7 +343,7 @@ export default {
         this.productForm.product_code = response.data
       } catch (error) {
         console.error('生成产品编号失败:', error)
-        this.$errorHandler.showError(error, 'admin.products.error.generateCodeFailed')
+        this.$messageHandler.showError(error, 'admin.products.error.generateCodeFailed')
       }
     },
     
@@ -353,11 +353,11 @@ export default {
       const isLt5M = file.size / 1024 / 1024 < 5
 
       if (!isImage) {
-        this.$errorHandler.showError('只能上传图片文件!', 'admin.products.error.invalidImageFormat')
+        this.$messageHandler.showError('只能上传图片文件!', 'admin.products.error.invalidImageFormat')
         return false
       }
       if (!isLt5M) {
-        this.$errorHandler.showError('图片大小不能超过 5MB!', 'admin.products.error.imageTooLarge')
+        this.$messageHandler.showError('图片大小不能超过 5MB!', 'admin.products.error.imageTooLarge')
         return false
       }
       return true
@@ -366,7 +366,7 @@ export default {
     // 处理图片上传成功
     handleUploadSuccess(response, file) {
       if (response.success) {
-        this.$errorHandler.showSuccess('图片上传成功', 'product.success.imageUploadSuccess')
+        this.$messageHandler.showSuccess('图片上传成功', 'product.success.imageUploadSuccess')
         // 根据图片类型更新对应的列表
         if (file && file.status === 'success') {
           if (file.response && file.response.data && file.response.data.images) {
@@ -388,7 +388,7 @@ export default {
           }
         }
       } else {
-        this.$errorHandler.showError(response.message, 'admin.products.error.imageUploadFailed')
+        this.$messageHandler.showError(response.message, 'admin.products.error.imageUploadFailed')
       }
     },
     
@@ -396,10 +396,10 @@ export default {
     async handleRemove(file) {
       try {
         await this.$api.delete(`product-images/${file.id}`)
-        this.$errorHandler.showSuccess('图片删除成功', 'product.success.imageDeleteSuccess')
+        this.$messageHandler.showSuccess('图片删除成功', 'product.success.imageDeleteSuccess')
       } catch (error) {
         console.error('删除图片失败:', error)
-        this.$errorHandler.showError(error, 'admin.products.error.imageDeleteFailed')
+        this.$messageHandler.showError(error, 'admin.products.error.imageDeleteFailed')
       }
     },
     
@@ -502,7 +502,7 @@ export default {
         }))
       } catch (error) {
         console.error('获取产品图片失败:', error)
-        this.$errorHandler.showError(error, 'admin.products.error.fetchImagesFailed')
+        this.$messageHandler.showError(error, 'admin.products.error.fetchImagesFailed')
       }
       
       this.dialogVisible = true
@@ -520,11 +520,11 @@ export default {
       }).then(async () => {
         try {
           const response = await this.$api.delete(`products/${row.id}`)
-          this.$errorHandler.showSuccess(response.message || '删除成功', 'product.success.deleteSuccess')
+          this.$messageHandler.showSuccess(response.message || '删除成功', 'product.success.deleteSuccess')
           this.fetchProducts()
         } catch (error) {
           console.error('删除产品失败:', error)
-          this.$errorHandler.showError(error, 'admin.products.error.deleteProductFailed')
+          this.$messageHandler.showError(error, 'admin.products.error.deleteProductFailed')
         }
       }).catch(() => {})
     },
@@ -547,12 +547,12 @@ export default {
             } else {
               response = await this.$api.put(`products/${this.productForm.id}`, this.productForm)
             }
-            this.$errorHandler.showSuccess(response.message || (this.dialogStatus === 'create' ? '添加成功' : '更新成功'), this.dialogStatus === 'create' ? 'product.success.createSuccess' : 'product.success.updateSuccess')
+            this.$messageHandler.showSuccess(response.message || (this.dialogStatus === 'create' ? '添加成功' : '更新成功'), this.dialogStatus === 'create' ? 'product.success.createSuccess' : 'product.success.updateSuccess')
             this.dialogVisible = false
             this.fetchProducts()
           } catch (error) {
             console.error(this.dialogStatus === 'create' ? '添加产品失败:' : '更新产品失败:', error)
-            this.$errorHandler.showError(error, this.dialogStatus === 'create' ? 'admin.products.error.createProductFailed' : 'admin.products.error.updateProductFailed')
+            this.$messageHandler.showError(error, this.dialogStatus === 'create' ? 'admin.products.error.createProductFailed' : 'admin.products.error.updateProductFailed')
           } finally {
             this.submitLoading = false
           }
@@ -592,10 +592,10 @@ export default {
             const range = quill.getSelection();
             quill.insertEmbed(range ? range.index : 0, 'image', url);
           } else {
-            this.$errorHandler.showError(res.message, 'admin.products.error.imageUploadFailed');
+            this.$messageHandler.showError(res.message, 'admin.products.error.imageUploadFailed');
           }
         } catch (err) {
-          this.$errorHandler.showError(err, 'admin.products.error.imageUploadFailed');
+          this.$messageHandler.showError(err, 'admin.products.error.imageUploadFailed');
         }
       };
     },

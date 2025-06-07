@@ -1,14 +1,14 @@
 <template>
   <div class="contact-page">
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1>联系我们</h1>
-        <div class="breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item>联系我们</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
+    <PageBanner title="联系我们" />
+    
+    <!-- Breadcrumb Section -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item>联系我们</el-breadcrumb-item>
+        </el-breadcrumb>
       </div>
     </div>
 
@@ -123,9 +123,13 @@
 
 <script>
 import { handleImageError } from '../utils/imageUtils'
+import PageBanner from '@/components/common/PageBanner.vue'
 
 export default {
   name: 'ContactPage',
+  components: {
+    PageBanner
+  },
   data() {
     return {
       companyInfo: {},
@@ -175,7 +179,7 @@ export default {
       this.$refs.contactForm.validate(valid => {
         if (valid) {
           // 实际项目中会发送到后端API
-          this.$errorHandler.showSuccess('留言已提交，我们会尽快与您联系', 'contact.success.messageSubmitted')
+          this.$messageHandler.showSuccess('留言已提交，我们会尽快与您联系', 'contact.success.messageSubmitted')
           this.resetForm()
         }
       })
@@ -192,24 +196,6 @@ export default {
   min-height: 100vh;
 }
 
-.page-banner {
-  height: 200px;
-  background-color: #f5f5f5;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../assets/images/banner1.jpg');
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.banner-content h1 {
-  font-size: 32px;
-  margin-bottom: 10px;
-}
 
 .container {
   max-width: 1200px;

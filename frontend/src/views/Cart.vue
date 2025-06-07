@@ -1,19 +1,9 @@
 <template>
   <div class="cart-page">
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1 class="text-3xl font-bold mb-2">
-          {{ $t('cart.title') || '购物车' }}
-        </h1>
-        <div class="w-24 h-1 bg-red-600 mx-auto mb-6"></div>
-        <div class="breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') || '首页' }}</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ $t('cart.title') || '购物车' }}</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-      </div>
-    </div>
+    <PageBanner :title="$t('cart.title') || '购物车'" />
+
+    <!-- Navigation Menu -->
+    <NavigationMenu :breadcrumb-items="breadcrumbItems" />
 
     <div class="container mx-auto px-4">
       <div class="cart-content" v-loading="loading">
@@ -35,16 +25,16 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column :label="$t('cart.unitPrice') || '单价'" width="120">
+            <el-table-column :label="$t('cart.unitPrice') || '单价'" width="160">
               <template #default="{row}">¥{{ formatPrice(row.price) }}</template>
             </el-table-column>
-            <el-table-column :label="$t('cart.quantity') || '数量'" width="150">
+            <el-table-column :label="$t('cart.quantity') || '数量'" width="160">
               <template #default="{row}">
                 <el-input-number v-model="row.quantity" :min="1" :max="row.stock" size="small"
                   @change="(value) => updateQuantity(row.id, value)"></el-input-number>
               </template>
             </el-table-column>
-            <el-table-column :label="$t('cart.subtotal') || '小计'" width="120">
+            <el-table-column :label="$t('cart.subtotal') || '小计'" width="160">
               <template #default="{row}">¥{{ formatPrice(row.price * row.quantity) }}</template>
             </el-table-column>
             <el-table-column :label="$t('cart.actions') || '操作'">
@@ -87,9 +77,15 @@
 <script>
 import { handleImageError } from '../utils/imageUtils';
 import { formatPrice } from '../utils/format';
+import PageBanner from '@/components/common/PageBanner.vue';
+import NavigationMenu from '@/components/common/NavigationMenu.vue';
 
 export default {
   name: 'CartPage',
+  components: {
+    PageBanner,
+    NavigationMenu
+  },
   data() {
     return {
       cartItems: [],
@@ -98,6 +94,13 @@ export default {
       totalPrice: 0
     };
   },
+  computed: {
+    breadcrumbItems() {
+      return [
+        { text: this.$t('cart.title') || '购物车' }
+      ];
+    }
+  },
   created() {
     this.fetchCart();
   },
@@ -105,7 +108,7 @@ export default {
     handleImageError,
     formatPrice,
     async fetchCart() {
-      if (!localStorage.getItem('user_token')) {
+      if (!this.$store.getters.isLoggedIn) {
         this.$router.push('/login?redirect=/cart');
         return;
       }
@@ -119,7 +122,7 @@ export default {
         }
       } catch (error) {
         console.error('获取购物车失败:', error);
-        this.$errorHandler.showError(error, 'cart.error.fetchFailed');
+        this.$messageHandler.showError(error, 'cart.error.fetchFailed');
       } finally {
         this.loading = false;
       }
@@ -128,13 +131,15 @@ export default {
       try {
         const response = await this.$api.put(`/cart/item/${cartItemId}`, { quantity });
         if (response.success) {
-          this.$errorHandler.showSuccess('数量已更新', 'cart.success.quantityUpdated');
+          this.$messageHandler.showSuccess('数量已更新', 'cart.success.quantityUpdated');
+          // 触发购物车更新事件
+          this.$bus.emit('cart-updated')
           // 更新总价
           this.calculateTotal();
         }
       } catch (error) {
         console.error('更新数量失败:', error);
-        this.$errorHandler.showError(error, 'cart.error.updateFailed');
+        this.$messageHandler.showError(error, 'cart.error.updateFailed');
         // 刷新购物车
         this.fetchCart();
       }
@@ -143,7 +148,9 @@ export default {
       try {
         const response = await this.$api.delete(`/cart/item/${cartItemId}`);
         if (response.success) {
-          this.$errorHandler.showSuccess('商品已从购物车中移除', 'cart.success.itemRemoved');
+          this.$messageHandler.showSuccess('商品已从购物车中移除', 'cart.success.itemRemoved');
+        // 触发购物车更新事件
+        this.$bus.emit('cart-updated')
           // 从列表中移除
           this.cartItems = this.cartItems.filter(item => item.id !== cartItemId);
           // 更新总价
@@ -151,7 +158,7 @@ export default {
         }
       } catch (error) {
         console.error('移除商品失败:', error);
-        this.$errorHandler.showError(error, 'cart.error.removeFailed');
+        this.$messageHandler.showError(error, 'cart.error.removeFailed');
       }
     },
     async clearCart() {
@@ -190,6 +197,8 @@ export default {
             });
             this.cartItems = [];
             this.totalPrice = 0;
+            // 触发购物车更新事件
+            this.$bus.emit('cart-updated')
           }
         } catch (error) {
           console.error('清空购物车失败:', error);
@@ -242,73 +251,51 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
+
 .cart-page {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: $gray-100;
 }
 
-.page-banner {
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-  color: white;
-  padding: 80px 0;
-  text-align: center;
-}
+
 
 .banner-content {
-  width: 90%;
-  max-width: 1200px;
-  margin: 0 auto;
+  @include container;
   text-align: center;
 }
 
 .banner-content h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  font-weight: 700;
-  color: white;
+  @include heading-1;
+  margin-bottom: $spacing-md;
+  color: $white;
 }
 
-.breadcrumb {
-  margin-top: 1.5rem;
-}
 
-.breadcrumb :deep(.el-breadcrumb__inner) {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.breadcrumb :deep(.el-breadcrumb__inner:hover) {
-  color: white;
-}
 
 .container {
-  width: 90%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 3rem 1rem;
+  @include container;
 }
 
 .cart-content {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb;
+  @include card;
+  border: 1px solid $gray-200;
 }
 
 .product-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  @include flex-start;
+  gap: $spacing-md;
 }
 
 .product-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
+  width: $spacing-4xl;
+  height: $spacing-4xl;
+  border-radius: $border-radius-md;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid #e5e7eb;
+  border: 1px solid $gray-200;
 }
 
 .product-image img {
@@ -321,134 +308,228 @@ export default {
   flex: 1;
 }
 
+/* 产品标题样式 - 参考ProductDetail.vue */
 .product-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+  margin-bottom: $spacing-sm;
+  line-height: $line-height-tight;
+  letter-spacing: 0.3px;
   text-decoration: none;
   display: block;
-  margin-bottom: 0.5rem;
-  transition: color 0.3s ease;
+  transition: $transition-base;
 }
 
 .product-name:hover {
-  color: #dc2626;
+  color: $primary-color;
 }
 
 .product-code {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: $font-size-md;
+  color: $text-secondary;
+  font-weight: $font-weight-normal;
 }
 
-.price,
+/* 价格样式 - 参考ProductDetail.vue */
+.price {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $primary-color;
+  letter-spacing: 0.5px;
+}
+
 .subtotal {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #dc2626;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $primary-color;
+  letter-spacing: 0.5px;
 }
 
 .cart-summary {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin-top: $spacing-2xl;
+  padding-top: $spacing-xl;
+  border-top: 2px solid $gray-200;
+  @include flex-between;
 }
 
+/* 购物车总计样式 - 参考Home.vue */
 .cart-total {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
+  @include flex-between;
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, $gray-50 0%, $white 100%);
+  border-radius: $border-radius-lg;
+  margin-bottom: $spacing-lg;
+  border: 2px solid $primary-color;
+  box-shadow: 0 4px 15px rgba($primary-color, 0.1);
+  transition: all 0.3s ease;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+}
+
+.cart-total:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba($primary-color, 0.15);
 }
 
 .total-price {
-  color: #dc2626;
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-left: 0.75rem;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $primary-color;
+  letter-spacing: 0.25px;
+  margin-left: $spacing-sm;
 }
 
 .cart-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+  @include flex-start;
+  gap: $spacing-md;
 }
 
-.continue-shopping-btn {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-  color: #374151;
-  font-weight: 500;
+/* Navigation Menu 高度调整 */
+:deep(.navigation-menu) {
+  padding: $spacing-md 0;
+}
+
+/* 按钮样式优化 - 与Home.vue保持一致，使用:deep()覆盖el-button样式 */
+:deep(.continue-shopping-btn) {
+  @include button-base;
+  background-color: $gray-200 !important;
+  color: $gray-700 !important;
+  padding: $spacing-md $spacing-xl !important;
+  margin: 0 $spacing-xs;
+  white-space: nowrap;
+  font-size: $font-size-lg !important;
+  font-weight: $font-weight-semibold !important;
+  border: none !important;
+  border-radius: $border-radius-md !important;
   transition: all 0.3s ease;
+  height: auto !important;
+  min-height: auto !important;
+
+  &:hover:not(:disabled) {
+    background-color: $gray-300 !important;
+    border-color: transparent !important;
+  }
+
+  &:focus {
+    background-color: $gray-200 !important;
+    border-color: transparent !important;
+  }
 }
 
-.continue-shopping-btn:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
-  color: #1f2937;
-}
-
-.clear-cart-btn {
-  font-weight: 500;
+:deep(.clear-cart-btn) {
+  @include button-base;
+  background-color: $primary-color !important;
+  color: $white !important;
+  height: auto !important;
+  min-height: auto !important;
+  font-size: $font-size-lg !important;
+  font-weight: $font-weight-semibold !important;
+  padding: $spacing-md $spacing-xl !important;
+  margin: 0 $spacing-xs;
+  border: none !important;
+  border-radius: $border-radius-md !important;
   transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background-color: darken($primary-color, 10%) !important;
+    border-color: transparent !important;
+  }
+
+  &:focus {
+    background-color: $primary-color !important;
+    border-color: transparent !important;
+  }
 }
 
-.checkout-btn {
-  background: #dc2626;
-  border-color: #dc2626;
-  font-weight: 600;
-  padding: 0.75rem 2rem;
+:deep(.checkout-btn) {
+  @include button-primary;
+  height: auto !important;
+  min-height: auto !important;
+  padding: $spacing-md $spacing-xl !important;
+  margin: 0 $spacing-xs;
+  white-space: nowrap;
+  font-size: $font-size-lg !important;
+  font-weight: $font-weight-semibold !important;
+  border: none !important;
+  border-radius: $border-radius-md !important;
+  background-color: $primary-color !important;
+  color: $white !important;
   transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-dark !important;
+    border-color: transparent !important;
+  }
+
+  &:focus {
+    background-color: $primary-color !important;
+    border-color: transparent !important;
+  }
 }
 
-.checkout-btn:hover {
-  background: #b91c1c;
-  border-color: #b91c1c;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-}
-
-.go-shopping-btn {
-  background: #dc2626;
-  border-color: #dc2626;
-  font-weight: 600;
-  padding: 0.75rem 2rem;
+:deep(.go-shopping-btn) {
+  @include button-primary;
+  @include button-lg;
+  height: auto !important;
+  min-height: auto !important;
+  margin-top: $spacing-lg;
+  font-size: $font-size-lg !important;
+  font-weight: $font-weight-semibold !important;
+  background-color: $primary-color !important;
+  color: $white !important;
+  border: none !important;
+  border-radius: $border-radius-md !important;
+  padding: $spacing-md $spacing-lg !important;
   transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-dark !important;
+    border-color: transparent !important;
+  }
+
+  &:focus {
+    background-color: $primary-color !important;
+    border-color: transparent !important;
+  }
 }
 
 .go-shopping-btn:hover {
-  background: #b91c1c;
-  border-color: #b91c1c;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba($primary-color, 0.4);
+  background: linear-gradient(135deg, $primary-dark 0%, darken($primary-dark, 10%) 100%);
 }
 
 .empty-cart {
   text-align: center;
-  padding: 4rem 1.5rem;
+  padding: $spacing-4xl $spacing-xl;
 }
 
 /* Element UI 表格样式优化 */
 :deep(.el-table) {
-  border-radius: 8px;
+  border-radius: $border-radius-md;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  box-shadow: $shadow-sm;
 }
 
 :deep(.el-table th) {
-  background: #f9fafb;
-  color: #374151;
-  font-weight: 600;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: $gray-100;
+  color: $text-primary;
+  font-weight: $font-weight-semibold;
+  border-bottom: 2px solid $primary-color;
+  font-size: $font-size-lg;
+  padding: $spacing-lg $spacing-md;
 }
 
 :deep(.el-table td) {
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid $gray-200;
+  padding: $spacing-lg $spacing-md;
+  font-size: $font-size-md;
 }
 
 :deep(.el-table tr:hover > td) {
-  background: #f9fafb;
+  background-color: $gray-50;
 }
 
 :deep(.el-input-number) {
@@ -456,30 +537,34 @@ export default {
 }
 
 :deep(.el-button--danger) {
-  background: #ef4444;
-  border-color: #ef4444;
-  transition: all 0.3s ease;
+  background-color: $error-color;
+  border-color: $error-color;
+  font-size: $font-size-md;
+  padding: $spacing-md $spacing-lg;
+  font-weight: $font-weight-medium;
 }
 
 :deep(.el-button--danger:hover) {
-  background: #dc2626;
-  border-color: #dc2626;
+  background-color: darken($error-color, 10%);
+  border-color: darken($error-color, 10%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba($error-color, 0.3);
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@include mobile {
   .container {
-    padding: 1.5rem 0.5rem;
+    padding: $spacing-xl $spacing-sm;
   }
 
   .cart-content {
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: $spacing-xl;
+    border-radius: $border-radius-md;
   }
 
   .cart-summary {
-    flex-direction: column;
-    gap: 1.5rem;
+    @include flex-column;
+    gap: $spacing-xl;
     align-items: stretch;
   }
 
@@ -489,23 +574,18 @@ export default {
   }
 
   .product-info {
-    flex-direction: column;
+    @include flex-column;
     text-align: center;
-    gap: 0.75rem;
+    gap: $spacing-sm;
   }
 
   .banner-content h1 {
-    font-size: 2rem;
+    font-size: $font-size-2xl;
   }
 
-  .page-banner {
-    padding: 3rem 0;
-  }
-}
 
-@media (max-width: 480px) {
   .cart-actions {
-    flex-direction: column;
+    @include flex-column;
     width: 100%;
   }
 
@@ -514,188 +594,148 @@ export default {
   }
 }
 
-/* Tailwind CSS 兼容性 */
-.text-3xl {
-  font-size: 1.875rem;
-  line-height: 2.25rem;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.mb-2 {
-  margin-bottom: 0.5rem;
-}
-
-.w-24 {
-  width: 6rem;
-}
-
-.h-1 {
-  height: 0.25rem;
-}
-
-.bg-red-600 {
-  background-color: #dc2626;
-}
-
-.mx-auto {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.mb-6 {
-  margin-bottom: 1.5rem;
-}
-
-.px-4 {
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
 /* 现代风格确认对话框样式 */
 :deep(.modern-confirm-dialog) {
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-xl;
   border: none;
   overflow: hidden;
 }
 
 :deep(.modern-confirm-dialog .el-message-box__header) {
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-  color: white;
-  padding: 24px 24px 20px;
+  @include gradient-primary;
+  color: $white;
+  padding: $spacing-lg $spacing-lg $spacing-md;
   border-bottom: none;
 }
 
 :deep(.modern-confirm-dialog .el-message-box__title) {
-  color: white;
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: $white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
   margin: 0;
 }
 
 :deep(.modern-confirm-dialog .el-message-box__headerbtn) {
-  top: 20px;
-  right: 20px;
+  top: $spacing-md;
+  right: $spacing-md;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 18px;
+  font-size: $font-size-lg;
 }
 
 :deep(.modern-confirm-dialog .el-message-box__headerbtn:hover) {
-  color: white;
+  color: $white;
 }
 
 :deep(.modern-confirm-dialog .el-message-box__content) {
-  padding: 24px;
-  background: white;
+  padding: $spacing-lg;
+  background: $white;
 }
 
 :deep(.modern-confirm-dialog .el-message-box__message) {
-  font-size: 1rem;
-  color: #374151;
-  line-height: 1.6;
+  font-size: $font-size-md;
+  color: $text-primary;
+  line-height: $line-height-relaxed;
   margin: 0;
 }
 
 :deep(.modern-confirm-dialog .el-message-box__icon) {
-  color: #f59e0b;
-  font-size: 24px;
-  margin-right: 16px;
+  color: $warning-color;
+  font-size: $font-size-2xl;
+  margin-right: $spacing-md;
 }
 
 :deep(.modern-confirm-dialog .el-message-box__btns) {
-  padding: 20px 24px 24px;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  padding: $spacing-md $spacing-lg $spacing-lg;
+  background: $gray-50;
+  border-top: 1px solid $gray-200;
   text-align: right;
 }
 
 :deep(.modern-confirm-dialog .el-button) {
-  border-radius: 8px;
-  font-weight: 500;
-  padding: 10px 20px;
-  margin-left: 12px;
-  transition: all 0.3s ease;
+  border-radius: $border-radius-md;
+  font-weight: $font-weight-medium;
+  padding: $spacing-sm $spacing-md;
+  margin-left: $spacing-sm;
+  transition: $transition-base;
 }
 
 :deep(.modern-confirm-dialog .el-button--default) {
-  background: white;
-  border-color: #d1d5db;
-  color: #374151;
+  background: $white;
+  border-color: $gray-300;
+  color: $text-primary;
 }
 
 :deep(.modern-confirm-dialog .el-button--default:hover) {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-  color: #1f2937;
+  background: $gray-100;
+  border-color: $gray-400;
+  color: $text-primary;
 }
 
 :deep(.modern-confirm-dialog .el-button--primary) {
-  background: #dc2626;
-  border-color: #dc2626;
-  color: white;
+  background: $primary-color;
+  border-color: $primary-color;
+  color: $white;
 }
 
 :deep(.modern-confirm-dialog .el-button--primary:hover) {
-  background: #b91c1c;
-  border-color: #b91c1c;
+  background: $primary-dark;
+  border-color: $primary-dark;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 4px 12px rgba($primary-color, 0.3);
 }
 
 :deep(.modern-confirm-dialog .el-button--primary.is-loading) {
-  background: #dc2626;
-  border-color: #dc2626;
+  background: $primary-color;
+  border-color: $primary-color;
   transform: none;
   box-shadow: none;
 }
 
 /* 现代风格消息提示样式 */
 :deep(.modern-message) {
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
   border: none;
-  padding: 16px 20px;
+  padding: $spacing-md $spacing-md;
   min-width: 300px;
 }
 
 :deep(.modern-message.el-message--success) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  background: linear-gradient(135deg, $success-color 0%, darken($success-color, 10%) 100%);
+  color: $white;
 }
 
 :deep(.modern-message.el-message--success .el-message__icon) {
-  color: white;
-  font-size: 18px;
+  color: $white;
+  font-size: $font-size-lg;
 }
 
 :deep(.modern-message.el-message--error) {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
+  background: linear-gradient(135deg, $error-color 0%, $primary-dark 100%);
+  color: $white;
 }
 
 :deep(.modern-message.el-message--error .el-message__icon) {
-  color: white;
-  font-size: 18px;
+  color: $white;
+  font-size: $font-size-lg;
 }
 
 :deep(.modern-message .el-message__content) {
   color: inherit;
-  font-weight: 500;
-  font-size: 0.95rem;
+  font-weight: $font-weight-medium;
+  font-size: $font-size-sm;
 }
 
 :deep(.modern-message .el-message__closeBtn) {
   color: rgba(255, 255, 255, 0.8);
-  font-size: 16px;
+  font-size: $font-size-md;
   top: 50%;
   transform: translateY(-50%);
 }
 
 :deep(.modern-message .el-message__closeBtn:hover) {
-  color: white;
+  color: $white;
 }
 
 /* 动画效果 */
@@ -706,7 +746,7 @@ export default {
 @keyframes modernDialogFadeIn {
   from {
     opacity: 0;
-    transform: scale(0.9) translateY(-20px);
+    transform: scale(0.9) translateY(-$spacing-lg);
   }
 
   to {
@@ -722,7 +762,7 @@ export default {
 @keyframes modernMessageSlideIn {
   from {
     opacity: 0;
-    transform: translateY(-30px) scale(0.95);
+    transform: translateY(-$spacing-xl) scale(0.95);
   }
 
   to {

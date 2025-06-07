@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const { pool } = require('../db/db');
+const { getMessage } = require('../config/messages');
 
 // 将 UUID 字符串转换为 BINARY(16)
 function uuidToBinary(uuid) {
@@ -30,7 +31,7 @@ exports.createCategory = async (req, res) => {
     if (existing.length > 0) {
       return res.status(400).json({
         success: false,
-        message: '分类编码已存在'
+        message: getMessage('CATEGORY.CODE_EXISTS')
       });
     }
 
@@ -43,7 +44,7 @@ exports.createCategory = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: '分类创建成功',
+      message: getMessage('CATEGORY.CREATE_SUCCESS'),
       data: {
         id: result.insertId,
         name,
@@ -59,7 +60,7 @@ exports.createCategory = async (req, res) => {
     console.error('创建分类失败:', error);
     res.status(500).json({
       success: false,
-      message: '创建分类失败'
+      message: getMessage('CATEGORY.CREATE_FAILED')
     });
   } finally {
     connection.release();
@@ -87,7 +88,7 @@ exports.getAllCategories = async (req, res) => {
     console.error('获取分类列表失败:', error);
     res.status(500).json({
       success: false,
-      message: '获取分类列表失败'
+      message: getMessage('CATEGORY.GET_LIST_FAILED')
     });
   }
 };
@@ -103,7 +104,7 @@ exports.getCategoryById = async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '分类不存在'
+        message: getMessage('CATEGORY.NOT_FOUND')
       });
     }
 
@@ -121,7 +122,7 @@ exports.getCategoryById = async (req, res) => {
     console.error('获取分类详情失败:', error);
     res.status(500).json({
       success: false,
-      message: '获取分类详情失败'
+      message: getMessage('CATEGORY.GET_DETAIL_FAILED')
     });
   }
 };
@@ -144,7 +145,7 @@ exports.updateCategory = async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '分类不存在'
+        message: getMessage('CATEGORY.NOT_FOUND')
       });
     }
 
@@ -157,7 +158,7 @@ exports.updateCategory = async (req, res) => {
     if (codeExists.length > 0) {
       return res.status(400).json({
         success: false,
-        message: '分类编码已被其他分类使用'
+        message: getMessage('CATEGORY.CODE_USED_BY_OTHER')
       });
     }
 
@@ -170,7 +171,7 @@ exports.updateCategory = async (req, res) => {
 
     res.json({
       success: true,
-      message: '分类更新成功',
+      message: getMessage('CATEGORY.UPDATE_SUCCESS'),
       data: {
         id,
         name,
@@ -185,7 +186,7 @@ exports.updateCategory = async (req, res) => {
     console.error('更新分类失败:', error);
     res.status(500).json({
       success: false,
-      message: '更新分类失败'
+      message: getMessage('CATEGORY.UPDATE_FAILED')
     });
   } finally {
     connection.release();
@@ -209,7 +210,7 @@ exports.deleteCategory = async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '分类不存在'
+        message: getMessage('CATEGORY.NOT_FOUND')
       });
     }
 
@@ -223,16 +224,16 @@ exports.deleteCategory = async (req, res) => {
 
     res.json({
       success: true,
-      message: '分类删除成功'
+      message: getMessage('CATEGORY.DELETE_SUCCESS')
     });
   } catch (error) {
     await connection.rollback();
     console.error('删除分类失败:', error);
     res.status(500).json({
       success: false,
-      message: '删除分类失败'
+      message: getMessage('CATEGORY.DELETE_FAILED')
     });
   } finally {
     connection.release();
   }
-}; 
+};

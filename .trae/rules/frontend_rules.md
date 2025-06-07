@@ -5,6 +5,35 @@ alwaysApply: true
 ---
 # 前端开发规则
 
+## 开发流程规范
+
+### 代码修改后的检查流程
+每次修改前端代码后，必须按以下步骤进行检查：
+
+1. **检查开发服务状态**
+   - 首先检查开发服务是否正在运行
+   - 如果服务已启动，直接在控制台窗口检查是否有编译错误
+   - 如果服务未启动，使用 `npm run serve` 启动开发服务
+
+2. **编译错误检查**
+   - 观察控制台输出，确保没有编译错误
+   - 如果出现编译错误，必须立即修复后再继续开发
+   - 常见编译错误包括：
+     - SCSS变量未定义
+     - 导入路径错误
+     - 语法错误
+     - 类型错误
+
+3. **错误修复原则**
+   - 优先修复编译错误，确保项目可以正常构建
+   - 检查SCSS变量导入路径是否正确（使用 `_variables.scss` 而不是 `variables.scss`）
+   - 确保所有依赖项已正确安装
+
+### 构建验证
+- 重要功能完成后运行 `npm run build` 确保生产构建正常
+- 提交代码前必须通过 `npm run lint` 检查
+- 确保所有警告和错误都已解决
+
 ## Vue.js 开发规范
 
 ### 组件命名规范
@@ -299,6 +328,7 @@ async fetchData() {
 
 ## API 调用规范
 
+
 ### 统一API调用方法
 
 #### 使用 `getWithErrorHandler` 和 `postWithErrorHandler`
@@ -329,7 +359,15 @@ async saveUserData(userData) {
     return null;
   }
 }
-
+//post 如果需要自定义错误处理
+const response = await this.$api.postWithErrorHandler('/api/users', userData, {
+  fallbackKey: 'USER.CREATE.FAILED',
+  errorHandler: (error, fallbackKey) => {
+    // 自定义错误处理逻辑
+    console.error('Custom error handling:', error);
+    this.$message.error('操作失败，请重试');
+  }
+});
 // PUT 请求
 async updateUserData(userId, userData) {
   try {
@@ -387,13 +425,99 @@ async fetchData() {
 }
 ```
 
+### Message 使用规范
+
+所有组件和工具函数应使用 `$message` 进行消息提示：
+
+**在 Vue 组件中使用：**
+```javascript
+// 显示成功消息
+this.$message.success('操作成功')
+
+// 显示错误消息
+this.$message.error('操作失败')
+
+// 显示警告消息
+this.$message.warning('请注意')
+
+// 确认对话框
+this.$message.confirm('确认执行此操作？', '提示', {
+  confirmButtonText: '确定',
+  cancelButtonText: '取消',
+  type: 'warning'
+})
+
+// 在工具函数中使用（需要传递 $message）
+import { someUtilFunction } from '@/utils/someUtil'
+
+export default {
+  methods: {
+    async handleAction() {
+      await someUtilFunction({
+        $message: this.$message,
+        // 其他参数
+      })
+    }
+  }
+}
+```
+
+**在工具函数中使用：**
+```javascript
+// utils/someUtil.js
+export const someUtilFunction = async (context) => {
+  const { $message } = context
+  
+  try {
+    await $message.confirm('确认执行此操作？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 执行操作
+    $message.success('操作成功')
+  } catch {
+    // 用户取消
+  }
+}
+```
+
+**调用工具函数时传递参数：**
+```javascript
+// 在组件中调用工具函数
+import { addToCart } from '@/utils/cartUtils'
+
+export default {
+  methods: {
+    async handleAddToCart(product) {
+      await addToCart(product, {
+        store: this.$store,
+        router: this.$router,
+        api: this.$api,
+        $t: this.$t,
+        $message: this.$message,
+        $bus: this.$bus
+      })
+    }
+  }
+}
+```
+
+**使用 Message 的优势：**
+- 简单直接的消息处理
+- Element UI 原生支持
+- 统一的用户体验
+- 易于理解和维护
+
+
 ### 请求拦截器配置
 ```javascript
 // axios 请求拦截器
 axios.interceptors.request.use(
   config => {
     // 添加认证头
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('aex-token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -784,6 +908,44 @@ export default {
 ```
 
 ## 样式规范
+
+### 样式开发规范
+
+#### 样式文件组织
+```
+src/
+├── assets/
+│   ├── css/
+│   │   └── global.css          # 全局基础样式（保留CSS格式）
+│   └── styles/
+│       ├── _variables.scss     # SCSS变量
+│       ├── _mixins.scss        # SCSS混入
+│       ├── shared.scss         # 共享样式
+│       └── elegant-messages.scss # 全局消息样式
+└── components/
+    └── ComponentName.vue       # 组件样式写在<style lang="scss">标签内
+```
+
+#### SCSS 文件使用规范
+1. **新建样式文件必须使用 `.scss` 格式**
+   - 所有新的独立样式文件都应该使用SCSS格式
+   - 放置在 `src/assets/styles/` 目录下
+   - 可以使用SCSS变量、混入等功能
+
+2. **变量共享**
+   - 所有SCSS文件都应该导入变量文件：`@import './variables';`
+   - 使用统一的设计变量，确保样式一致性
+   - 优先使用已定义的变量，避免硬编码数值
+
+3. **混入使用**
+   - 导入混入文件：`@import './mixins';`
+   - 使用预定义的按钮、布局等混入
+   - 避免重复的样式代码
+
+4. **文件命名**
+   - 全局样式文件：`kebab-case.scss`
+   - 私有变量文件：`_variables.scss`（下划线开头）
+   - 私有混入文件：`_mixins.scss`（下划线开头）
 
 ### SCSS 变量和混入
 
@@ -1262,7 +1424,7 @@ const actions = {
       });
       
       const { token, user } = response.data;
-      localStorage.setItem('token', token);
+      localStorage.setItem('aex-token', token);
       commit('SET_CURRENT_USER', user);
       
       return user;
@@ -1275,7 +1437,7 @@ const actions = {
   },
   
   logout({ commit }) {
-    localStorage.removeItem('token');
+    localStorage.removeItem('aex-token');
     commit('SET_CURRENT_USER', null);
   }
 };
@@ -1429,6 +1591,126 @@ export default {
 </template>
 ```
 
+## 多语言支持规范
+
+### 国际化(i18n)使用规范
+
+#### $t函数使用规范
+1. **统一使用方式**：在Vue组件中使用 `this.$t('key')` 或模板中使用 `$t('key')`
+2. **消息键命名规范**：
+   ```
+   模块.操作.状态 或 页面.元素.描述
+   例如：user.login.success, product.form.title, common.button.save
+   ```
+3. **消息键分类**：
+   - `common.*` - 通用文本（按钮、标签等）
+   - `nav.*` - 导航相关
+   - `form.*` - 表单相关
+   - `message.*` - 提示消息
+   - `page.*` - 页面特定内容
+   - `error.*` - 错误信息
+
+#### showError函数fallbackKey规范
+1. **fallbackKey命名**：与后端getMessage的消息键保持一致
+2. **使用场景**：API调用失败时的错误处理
+3. **示例用法**：
+   ```javascript
+   this.showError(error, {
+     fallbackKey: 'USER.LOGIN.FAILED',
+     fallbackMessage: '登录失败，请重试'
+   });
+   ```
+
+#### 新增翻译键规则
+**重要：每当添加新的翻译键时，必须同时执行以下步骤：**
+
+1. **在前端翻译文件中添加新的翻译键**（如果使用本地翻译文件）
+2. **更新 `db/insert_message_translations.sql` 文件**，添加对应的中英文翻译：
+   ```sql
+   -- 新增前端翻译键
+   INSERT INTO language_translations (guid, code, lang, value) VALUES
+   (UNHEX(REPLACE(UUID(), '-', '')), 'common.button.save', 'en', 'Save'),
+   (UNHEX(REPLACE(UUID(), '-', '')), 'common.button.save', 'zh-CN', '保存');
+   ```
+3. **执行SQL脚本更新数据库**
+4. **确保前端从数据库加载翻译数据**
+
+### 示例代码
+
+#### 模板中使用
+```vue
+<template>
+  <div>
+    <!-- 基本使用 -->
+    <h1>{{ $t('page.home.title') }}</h1>
+    <button @click="save">{{ $t('common.button.save') }}</button>
+    
+    <!-- 带参数的翻译 -->
+    <p>{{ $t('message.welcome', { name: userName }) }}</p>
+    
+    <!-- 条件翻译 -->
+    <span>{{ $t(isEdit ? 'common.button.update' : 'common.button.create') }}</span>
+  </div>
+</template>
+```
+
+#### JavaScript中使用
+```javascript
+export default {
+  methods: {
+    async saveData() {
+      try {
+        await this.apiCall();
+        this.$message.success(this.$t('message.save.success'));
+      } catch (error) {
+        // 使用showError处理API错误
+        this.showError(error, {
+          fallbackKey: 'COMMON.SAVE.FAILED',
+          fallbackMessage: this.$t('message.save.failed')
+        });
+      }
+    },
+    
+    validateForm() {
+      if (!this.email) {
+        this.$message.error(this.$t('form.validation.email.required'));
+        return false;
+      }
+      return true;
+    }
+  }
+};
+```
+
+#### 错误处理最佳实践
+```javascript
+// API调用错误处理
+async callApi() {
+  try {
+    const response = await this.$api.post('/users', userData);
+    this.$message.success(this.$t('user.create.success'));
+  } catch (error) {
+    // 优先使用后端返回的消息键
+    this.showError(error, {
+      fallbackKey: 'USER.CREATE.FAILED',
+      fallbackMessage: this.$t('user.create.failed')
+    });
+  }
+}
+```
+
+### 翻译键收集和管理
+
+#### 前端翻译键收集
+当前项目中已使用的翻译键包括：
+- `$t` 函数调用的键
+- `showError` 函数的 `fallbackKey` 参数
+
+#### 与后端消息键的协调
+- 后端 `getMessage` 返回的消息键应与前端 `showError` 的 `fallbackKey` 保持一致
+- 确保前后端错误消息的统一性和一致性
+- 定期同步前后端的消息键，避免重复或冲突
+
 ---
 
-> 📝 **注意**: 所有前端开发都应遵循以上规范，确保代码的一致性、可维护性和用户体验。
+> 📝 **注意**: 所有前端开发都应遵循以上规范，确保代码的一致性、可维护性和用户体验。特别注意多语言支持的规范，每次添加新的翻译键都必须同时更新翻译数据库。

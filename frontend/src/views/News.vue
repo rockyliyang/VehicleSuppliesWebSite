@@ -1,14 +1,14 @@
 <template>
   <div class="news-page">
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1>新闻资讯</h1>
-        <div class="breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item>新闻资讯</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
+    <PageBanner title="新闻资讯" />
+
+    <!-- Breadcrumb Section -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item>新闻资讯</el-breadcrumb-item>
+        </el-breadcrumb>
       </div>
     </div>
 
@@ -56,13 +56,8 @@
         </div>
 
         <div class="pagination-container">
-          <el-pagination
-            background
-            layout="prev, pager, next"
-            :total="50"
-            :page-size="5"
-            @current-change="handleCurrentChange"
-          ></el-pagination>
+          <el-pagination background layout="prev, pager, next" :total="50" :page-size="5"
+            @current-change="handleCurrentChange"></el-pagination>
         </div>
       </div>
 
@@ -113,9 +108,13 @@
 
 <script>
 import { handleImageError } from '../utils/imageUtils';
+import PageBanner from '@/components/common/PageBanner.vue';
 
 export default {
   name: 'NewsPage',
+  components: {
+    PageBanner
+  },
   data() {
     return {
       activeTab: 'company',
@@ -187,24 +186,6 @@ export default {
   min-height: 100vh;
 }
 
-.page-banner {
-  height: 200px;
-  background-color: #f5f5f5;
-  background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('../assets/images/banner2.jpg');
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.banner-content h1 {
-  font-size: 32px;
-  margin-bottom: 10px;
-}
 
 .container {
   max-width: 1200px;
@@ -234,7 +215,7 @@ export default {
 }
 
 .news-item:hover {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   transform: translateY(-5px);
 }
 
@@ -295,7 +276,7 @@ export default {
   border-radius: 4px;
   padding: 20px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-title {
@@ -360,15 +341,15 @@ export default {
   .container {
     flex-direction: column;
   }
-  
+
   .sidebar {
     width: 100%;
   }
-  
+
   .news-item {
     flex-direction: column;
   }
-  
+
   .news-image {
     width: 100%;
     height: 200px;

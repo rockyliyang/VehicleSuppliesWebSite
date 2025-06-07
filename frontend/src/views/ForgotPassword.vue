@@ -1,14 +1,7 @@
 <template>
   <div class="forgot-password-page">
     <!-- Page Banner -->
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1 class="banner-title">
-          {{ $t('forgotPassword.title') || '重置密码' }}
-        </h1>
-        <div class="banner-divider"></div>
-      </div>
-    </div>
+    <PageBanner :title="$t('forgotPassword.title') || '重置密码'" />
 
     <!-- Forgot Password Form Section -->
     <div class="forgot-password-container">
@@ -71,11 +64,13 @@
 <script>
 import { Message, Picture as PictureIcon } from '@element-plus/icons-vue'
 import FormInput from '@/components/common/FormInput.vue'
+import PageBanner from '@/components/common/PageBanner.vue'
 
 export default {
   name: 'ForgotPassword',
   components: {
-    FormInput
+    FormInput,
+    PageBanner
   },
   data() {
     return {
@@ -125,11 +120,11 @@ export default {
               }
             );
           } else {
-            this.$errorHandler.showError(res.message, 'forgotPassword.error.failed');
+            this.$messageHandler.showError(res.message, 'forgotPassword.error.failed');
             this.refreshCaptcha();
           }
         } catch (e) {
-          this.$errorHandler.showError(e, 'forgotPassword.error.failed');
+          this.$messageHandler.showError(e, 'forgotPassword.error.failed');
           this.refreshCaptcha();
         } finally {
           this.loading = false;
@@ -141,53 +136,6 @@ export default {
 </script>
 
 <style scoped>
-/* Page Banner */
-.page-banner {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  padding: 60px 0;
-  text-align: center;
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-}
-
-.page-banner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
-  opacity: 0.3;
-}
-
-.banner-content {
-  position: relative;
-  z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.banner-title {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  letter-spacing: -0.025em;
-}
-
-.banner-divider {
-  width: 80px;
-  height: 4px;
-  background: #ffffff;
-  margin: 20px auto 0;
-  border-radius: 2px;
-  opacity: 0.9;
-}
-
 /* Main Container */
 .forgot-password-container {
   background: #f9fafb;
@@ -477,13 +425,7 @@ export default {
     padding: 30px 20px;
   }
 
-  .page-banner {
-    padding: 40px 0;
-  }
 
-  .page-banner h1 {
-    font-size: 2rem;
-  }
 
   .forgot-password-container {
     padding: 40px 0;

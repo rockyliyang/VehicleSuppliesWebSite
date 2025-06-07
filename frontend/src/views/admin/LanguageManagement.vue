@@ -201,11 +201,11 @@ export default {
         if (response.success) {
           this.translations = response.data
         } else {
-          this.$errorHandler.showError(response.message, 'admin.language.error.loadFailed')
+          this.$messageHandler.showError(response.message, 'admin.language.error.loadFailed')
         }
       } catch (error) {
         console.error('加载翻译失败:', error)
-        this.$errorHandler.showError(error, 'admin.language.error.loadFailed')
+        this.$messageHandler.showError(error, 'admin.language.error.loadFailed')
       } finally {
         this.loading = false
       }
@@ -244,15 +244,15 @@ export default {
           try {
             const response = await this.$api.postWithErrorHandler('/language/admin/translations', this.translationForm)
             if (response.success) {
-              this.$errorHandler.showSuccess('添加翻译成功', 'language.success.addSuccess')
+              this.$messageHandler.showSuccess('添加翻译成功', 'language.success.addSuccess')
               this.addDialogVisible = false
               this.loadTranslations() // 重新加载列表
             } else {
-              this.$errorHandler.showError(response.message, 'admin.language.error.addFailed')
+              this.$messageHandler.showError(response.message, 'admin.language.error.addFailed')
             }
           } catch (error) {
             console.error('添加翻译失败:', error)
-            this.$errorHandler.showError(error, 'admin.language.error.addFailed')
+            this.$messageHandler.showError(error, 'admin.language.error.addFailed')
           }
         }
       })
@@ -282,15 +282,15 @@ export default {
               value: this.editForm.value
             })
             if (response.success) {
-              this.$errorHandler.showSuccess('更新翻译成功', 'language.success.updateSuccess')
+              this.$messageHandler.showSuccess('更新翻译成功', 'language.success.updateSuccess')
               this.editDialogVisible = false
               this.loadTranslations() // 重新加载列表
             } else {
-              this.$errorHandler.showError(response.message, 'admin.language.error.updateFailed')
+              this.$messageHandler.showError(response.message, 'admin.language.error.updateFailed')
             }
           } catch (error) {
             console.error('更新翻译失败:', error)
-            this.$errorHandler.showError(error, 'admin.language.error.updateFailed')
+            this.$messageHandler.showError(error, 'admin.language.error.updateFailed')
           }
         }
       })
@@ -310,14 +310,14 @@ export default {
         try {
           const response = await this.$api.delete(`/language/admin/translations/${row.id}`)
           if (response.success) {
-            this.$errorHandler.showSuccess('删除翻译成功', 'language.success.deleteSuccess')
+            this.$messageHandler.showSuccess('删除翻译成功', 'language.success.deleteSuccess')
             this.loadTranslations() // 重新加载列表
           } else {
-            this.$errorHandler.showError(response.message, 'admin.language.error.deleteFailed')
+            this.$messageHandler.showError(response.message, 'admin.language.error.deleteFailed')
           }
         } catch (error) {
           console.error('删除翻译失败:', error)
-          this.$errorHandler.showError(error, 'admin.language.error.deleteFailed')
+          this.$messageHandler.showError(error, 'admin.language.error.deleteFailed')
         }
       }).catch(() => {
         // 取消删除，不做任何操作

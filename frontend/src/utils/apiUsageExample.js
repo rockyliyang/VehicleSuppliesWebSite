@@ -54,9 +54,7 @@ export const apiUsageInVuex = {
   login({ commit }, credentials) {
     return api.postWithErrorHandler('users/login', credentials)
       .then(response => {
-        // 保存token
-        localStorage.setItem('token', response.data.token);
-        // 更新用户状态
+        // 更新用户状态（token现在通过cookie自动管理）
         commit('setUser', response.data.user);
         return response.data.user;
       });

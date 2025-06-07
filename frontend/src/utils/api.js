@@ -1,6 +1,6 @@
 import axios from 'axios';
 import store from '../store';
-import ErrorHandler from './errorHandler';
+import MessageHandler from './messageHandler'
 //import router from '../router';
 
 // 创建axios实例
@@ -19,20 +19,12 @@ function getTokenFromCookie(name) {
 
 // 导出的工具函数：获取当前用户token
 export function getAuthToken(isAdminRequest = false) {
-  // 优先从cookie读取token
-  let token = getTokenFromCookie('token');
-  
-  // 如果cookie中没有token，尝试从localStorage获取
-  if (!token) {
-    // 根据请求类型判断使用哪个token
-    if (isAdminRequest) {
-      token = localStorage.getItem('admin_token');
-    } else {
-      token = localStorage.getItem('user_token') || localStorage.getItem('token');
-    }
+  // 从cookie读取token
+  if (isAdminRequest) {
+    return getTokenFromCookie('admin_token') || getTokenFromCookie('aex-token');
+  } else {
+    return getTokenFromCookie('aex-token');
   }
-  
-  return token;
 }
 
 // 请求拦截器 - 添加token到请求头
@@ -56,7 +48,7 @@ api.interceptors.request.use(
 
 // 默认错误处理函数
 let defaultErrorHandler = (error, fallbackKey) => {
-  ErrorHandler.showError(error, fallbackKey);
+  MessageHandler.showError(error, fallbackKey);
 };
 
 // 允许外部设置自定义错误处理函数
@@ -69,7 +61,7 @@ api.setErrorHandler = (handler) => {
 // 重置为默认错误处理函数
 api.resetErrorHandler = () => {
   defaultErrorHandler = (error, fallbackKey) => {
-    ErrorHandler.showError(error, fallbackKey);
+    MessageHandler.showError(error, fallbackKey);
   };
 };
 

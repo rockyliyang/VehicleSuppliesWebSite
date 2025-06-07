@@ -108,7 +108,7 @@ export default {
         this.parentOptions = this.categoryList.filter(item => !item.parent_id)
       } catch (error) {
         console.error('获取分类列表失败:', error)
-        this.$errorHandler.showError(error, 'admin.categories.error.fetchFailed')
+        this.$messageHandler.showError(error, 'admin.categories.error.fetchFailed')
       } finally {
         this.loading = false
       }
@@ -159,11 +159,11 @@ export default {
         try {
           const response = await this.$api.delete(`categories/${row.id}`)
           // response已经是标准格式，成功消息已在api.js中处理
-          this.$errorHandler.showSuccess(response.message || '删除成功', 'category.success.deleteSuccess')
+          this.$messageHandler.showSuccess(response.message || '删除成功', 'category.success.deleteSuccess')
           this.fetchCategories()
         } catch (error) {
           console.error('删除分类失败:', error)
-          this.$errorHandler.showError(error, 'admin.categories.error.deleteFailed')
+          this.$messageHandler.showError(error, 'admin.categories.error.deleteFailed')
         }
       }).catch(() => {})
     },
@@ -182,12 +182,12 @@ export default {
             }
             
             // response已经是标准格式，成功消息已在api.js中处理
-            this.$errorHandler.showSuccess(response.message || (this.dialogStatus === 'create' ? '添加成功' : '更新成功'), this.dialogStatus === 'create' ? 'category.success.createSuccess' : 'category.success.updateSuccess')
+            this.$messageHandler.showSuccess(response.message || (this.dialogStatus === 'create' ? '添加成功' : '更新成功'), this.dialogStatus === 'create' ? 'category.success.createSuccess' : 'category.success.updateSuccess')
             this.dialogVisible = false
             this.fetchCategories()
           } catch (error) {
             console.error(this.dialogStatus === 'create' ? '添加分类失败:' : '更新分类失败:', error)
-            this.$errorHandler.showError(error, this.dialogStatus === 'create' ? 'admin.categories.error.createFailed' : 'admin.categories.error.updateFailed')
+            this.$messageHandler.showError(error, this.dialogStatus === 'create' ? 'admin.categories.error.createFailed' : 'admin.categories.error.updateFailed')
           } finally {
             this.submitLoading = false
           }

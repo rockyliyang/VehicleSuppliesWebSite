@@ -75,7 +75,7 @@ const response = await this.$api.postWithErrorHandler('/api/users', userData, {
   fallbackKey: 'user.create.error',
   errorHandler: (error, fallbackKey) => {
     // 自定义错误处理逻辑
-    this.$errorHandler.showError(error, fallbackKey);
+    this.$messageHandler.showError(error, fallbackKey);
     // 记录错误日志
     this.$logger.error('User creation failed', { error, userData });
   }
@@ -99,7 +99,7 @@ export default {
       // 记录错误信息
       this.$logger.error('Component error', { error, errorInfo });
       // 显示友好的错误提示
-      this.$errorHandler.showError(error, 'component.error.generic');
+      this.$messageHandler.showError(error, 'component.error.generic');
     }
   }
 };

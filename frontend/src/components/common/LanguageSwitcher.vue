@@ -79,11 +79,20 @@ export default {
   cursor: pointer;
   display: flex;
   align-items: center;
-  color: #333;
-  font-size: 14px;
+  color: #6b7280;
+  font-size: 18px;
 }
 
 .language-btn:hover {
   color: #dc2626;
+}
+
+/* 下拉菜单项字体大小 - 与按钮字体大小保持一致 */
+:deep(.el-dropdown-menu) {
+  .el-dropdown-menu__item {
+    font-size: 18px !important;
+    line-height: 1.5;
+    padding: 8px 16px;
+  }
 }
 </style>

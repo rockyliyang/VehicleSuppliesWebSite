@@ -1,5 +1,6 @@
-// 加载环境变量配置
+// 加载环境变量
 const env = require('./config/env');
+const { getMessage } = require('./config/messages');
 
 const express = require('express');
 const cors = require('cors');
@@ -61,7 +62,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
-    message: '服务器内部错误',
+    message: getMessage('SERVER.INTERNAL_ERROR'),
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });

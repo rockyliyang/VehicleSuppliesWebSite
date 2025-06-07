@@ -1,17 +1,7 @@
 <template>
   <div class="products-page">
     <!-- Modern Banner Section -->
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1 class="text-4xl font-bold mb-4">{{ $t('products.title') || '产品中心' }}</h1>
-        <div class="breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') || '首页' }}</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ $t('nav.products') || '产品中心' }}</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-      </div>
-    </div>
+    <PageBanner :title="$t('products.title') || '产品中心'" />
 
     <!-- Category Navigation -->
     <div class="category-navigation-wrapper py-8">
@@ -40,20 +30,17 @@
 
           <!-- Modern Products Grid -->
           <div class="products-grid">
-            <div v-for="product in paginatedProducts" :key="product.id" class="product-card">
-              <!-- 在HTML部分，移除product-overlay div -->
-              <div class="product-image" @click="$router.push(`/product/${product.id}`)">
-                <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
-                  class="w-full h-full object-cover object-center">
-              </div>
-              <div class="product-info">
-                <h3 @click="$router.push(`/product/${product.id}`)" class="product-title">{{ product.name }}</h3>
-                <div class="product-footer">
-                  <span class="product-price">${{ formatPrice(product.price) }}</span>
-                  <span v-if="product.promo_message" class="promo-message">{{ product.promo_message }}</span>
-                </div>
-              </div>
-            </div>
+            <ProductCard 
+              v-for="product in paginatedProducts" 
+              :key="product.id" 
+              :product="product"
+              :show-description="true"
+              :show-arrow="true"
+              :default-description="'Powerful suction with long battery life'"
+              card-style="products"
+              @card-click="handleProductClick"
+              @title-click="handleProductClick"
+            />
           </div>
 
           <!-- No Products Message -->
@@ -79,8 +66,15 @@
 import { handleImageError } from '../utils/imageUtils';
 import { formatPrice } from '../utils/format';
 import { addToCart } from '../utils/cartUtils';
+import ProductCard from '../components/common/ProductCard.vue';
+import PageBanner from '../components/common/PageBanner.vue';
+
 export default {
   name: 'ProductsPage',
+  components: {
+    ProductCard,
+    PageBanner
+  },
   data() {
     return {
       products: [],
@@ -128,6 +122,10 @@ export default {
   methods: {
     formatPrice,
     handleImageError,
+    handleProductClick(product) {
+      // 产品点击事件处理，可以在这里添加额外的逻辑
+      console.log('Product clicked:', product);
+    },
     async fetchCategories() {
       try {
         this.loading = true
@@ -135,7 +133,7 @@ export default {
         this.categories = response.data || []
       } catch (error) {
         console.error('获取分类失败:', error)
-        this.$errorHandler.showError(error, 'category.error.fetchFailed')
+        this.$messageHandler.showError(error, 'category.error.fetchFailed')
       } finally {
         this.loading = false
       }
@@ -145,10 +143,10 @@ export default {
         this.loading = true
         const response = await this.$api.get('products')
         this.products = (response.data && response.data.items) ? response.data.items : []
-        this.$errorHandler.showSuccess(response.message || '获取产品成功', 'product.success.fetchSuccess')
+        this.$messageHandler.showSuccess(response.message || '获取产品成功', 'product.success.fetchSuccess')
       } catch (error) {
         console.error('获取产品失败:', error)
-        this.$errorHandler.showError(error, 'products.error.fetchFailed')
+        this.$messageHandler.showError(error, 'products.error.fetchFailed')
       } finally {
         this.loading = false
       }
@@ -172,17 +170,26 @@ export default {
     async addToInquiry(product) {
       // 使用公共的购物车工具函数
       await addToCart(product, {
-        router: this.$router,
-        message: this.$message,
-        api: this.$api
-      });
+          store: this.$store,
+          router: this.$router,
+          api: this.$api,
+          $t: this.$t,
+          messageHandler: this.$messageHandler,
+          $bus: this.$bus
+        });
     }
   }
 }
 </script>
 
-<style scoped>
-@import '../assets/styles/shared.css';
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
+
+/* 确保字体与全局保持一致 */
+* {
+  font-family: $font-family-base;
+}
 
 /* Element UI 组件样式穿透 */
 :deep(.el-breadcrumb__inner a) {
@@ -199,114 +206,102 @@ export default {
 }
 
 :deep(.el-pagination) {
-  --el-color-primary: #dc2626;
+  --el-color-primary: #{$primary-color};
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
 }
 
 :deep(.el-pagination .btn-next),
 :deep(.el-pagination .btn-prev) {
-  color: #dc2626;
+  color: $primary-color;
+  font-size: $font-size-md;
+}
+
+:deep(.el-pagination .el-pager li) {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
 }
 
 :deep(.el-pagination .el-pager li:hover) {
-  color: #dc2626;
+  color: $primary-color;
 }
 
 :deep(.el-pagination .el-pager li.is-active) {
-  color: #dc2626;
+  color: $primary-color;
   background-color: rgba(220, 38, 38, 0.1);
+  font-weight: $font-weight-semibold;
+}
+
+:deep(.el-pagination .el-pagination__total) {
+  font-size: $font-size-md;
+  color: $text-secondary;
+}
+
+:deep(.el-pagination .el-pagination__jump) {
+  font-size: $font-size-md;
+  color: $text-secondary;
 }
 
 .promo-message {
-  font-size: 0.8rem;
-  color: #e53e3e;
-  /* Red color for promo message */
-  background-color: #fff0f0;
-  /* Light red background */
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  margin-left: 0.5rem;
+  font-size: $font-size-xs;
+  color: $error-color;
+  background-color: rgba($error-color, 0.1);
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius-sm;
+  margin-left: $spacing-sm;
 }
 
 /* Modern Tech Style for Products Page */
 .products-page {
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: $white;
 }
 
-/* Modern Banner */
-.page-banner {
-  height: 500px;
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
+/* 确保PageBanner的遮罩效果正常显示 */
+:deep(.page-banner::before) {
+  background: rgba(0, 0, 0, 0.2) !important;
 }
 
-.page-banner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('../assets/images/banner1.jpg') center/cover;
-  opacity: 0.1;
-}
 
-.banner-content {
-  position: relative;
-  z-index: 2;
-}
-
-.banner-content h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
 
 /* Container */
 .container {
-  max-width: 100%;
+  @include container;
 }
 
 /* Products Container */
 .products-container {
-  margin-bottom: 2rem;
+  margin-bottom: $spacing-xl;
 }
 
 /* Category Navigation */
 .category-navigation {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  background: $white;
+  border-radius: $border-radius-lg;
+  padding: $spacing-xl;
+  box-shadow: $shadow-md;
+  border: 1px solid $gray-200;
 }
 
 .category-tab {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #4b5563;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $text-secondary;
   position: relative;
-  transition: color 0.2s ease;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
+  transition: $transition-base;
+  background: $white !important;
+  background-color: $white !important;
 }
 
 .category-tab:hover {
-  color: #dc2626;
+  color: $primary-color;
 }
 
 .category-tab.active {
-  color: #dc2626;
-  font-weight: 600;
+  color: $primary-color;
+  font-weight: $font-weight-semibold;
 }
 
 .category-tab.active::after {
@@ -316,13 +311,13 @@ export default {
   left: 0;
   width: 100%;
   height: 3px;
-  background-color: #dc2626;
-  border-radius: 2px;
+  background-color: $primary-color;
+  border-radius: $border-radius-sm;
 }
 
 .category-navigation-wrapper {
-  background: #ffffff !important;
-  background-color: #ffffff !important;
+  background: $white !important;
+  background-color: $white !important;
 }
 
 .category-tabs {
@@ -343,151 +338,86 @@ export default {
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  /* Adjusted minmax for smaller cards */
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: $spacing-xl;
+  margin-bottom: $spacing-xl;
 }
 
-/* Products页面特有的产品卡片样式覆盖 */
-.products-grid .product-card:hover {
-  transform: translateY(-0.25rem);
-}
-
-.product-image {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.product-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  transition: transform 0.5s ease;
-}
-
-.product-card:hover .product-image img {
-  transform: scale(1.05);
-}
-
-.product-info {
-  padding: 1rem;
-}
-
-.product-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #1f2937;
-  cursor: pointer;
-  transition: color 0.3s ease;
-  line-height: 1.4;
-  height: auto;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.product-title:hover {
-  color: #dc2626;
-}
-
-.product-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.add-to-cart-btn {
-  background: #dc2626;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-}
-
-.add-to-cart-btn:hover {
-  background: #991b1b;
-  transform: translateY(-1px);
+/* Products页面特定的产品卡片样式覆盖 */
+.products-style {
+  /* 这些样式会应用到ProductCard组件上 */
 }
 
 /* No Products */
 .no-products {
   text-align: center;
-  padding: 4rem 0;
-  color: #6b7280;
+  padding: $spacing-4xl 0;
+  color: $text-muted;
 }
 
 /* Modern Pagination */
 .pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 2px solid #f3f4f6;
+  @include flex-center;
+  margin-top: $spacing-xl;
+  padding-top: $spacing-xl;
+  border-top: 2px solid $gray-100;
 }
 
 .modern-pagination {
-  --el-color-primary: #dc2626;
+  --el-color-primary: #{$primary-color};
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
+@include desktop {
   .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
-  }
-
-  .category-navigation {
-    padding: 1rem;
-  }
-
-  .category-navigation .flex {
-    gap: 1rem;
-  }
-
-  .category-navigation button {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
-
-  .products-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
 
-@media (max-width: 768px) {
-  .banner-content h1 {
-    font-size: 2rem;
+@include tablet {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: $spacing-lg;
+  }
+
+  .category-navigation {
+    padding: $spacing-lg;
+  }
+
+  .category-navigation .flex {
+    gap: $spacing-lg;
+  }
+
+  .category-navigation button {
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-sm;
   }
 
   .products-header {
-    flex-direction: column;
-    gap: 1rem;
+    @include flex-column;
+    align-items: flex-start;
+    gap: $spacing-lg;
+  }
+}
+
+@include mobile {
+  .banner-content h1 {
+    font-size: $font-size-3xl;
+  }
+
+  .products-header {
+    @include flex-column;
+    gap: $spacing-lg;
     align-items: stretch;
   }
 
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
+    gap: $spacing-lg;
   }
 
   .product-footer {
-    flex-direction: column;
-    gap: 0.5rem;
+    @include flex-column;
+    gap: $spacing-sm;
   }
 
   .add-to-cart-btn {
@@ -503,21 +433,21 @@ export default {
 }
 
 .px-4 {
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: $spacing-lg;
+  padding-right: $spacing-lg;
 }
 
 .py-8 {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  padding-top: $spacing-xl;
+  padding-bottom: $spacing-xl;
 }
 
 .text-red-600 {
-  color: #dc2626;
+  color: $primary-color;
 }
 
 .font-bold {
-  font-weight: 700;
+  font-weight: $font-weight-bold;
 }
 
 .w-full {
@@ -537,6 +467,6 @@ export default {
 }
 
 .mr-2 {
-  margin-right: 0.5rem;
+  margin-right: $spacing-sm;
 }
 </style>

@@ -1,4 +1,4 @@
-import { ElMessage, ElNotification } from 'element-plus'
+import { ElMessage, ElNotification, ElMessageBox } from 'element-plus'
 import store from '../store'
 
 // 错误消息映射
@@ -214,9 +214,9 @@ function extractErrorMessage(error) {
 }
 
 /**
- * 错误处理器类
+ * 消息处理器类
  */
-class ErrorHandler {
+class MessageHandler {
   /**
    * 显示错误消息
    * @param {*} error 
@@ -297,6 +297,27 @@ class ErrorHandler {
       customClass: 'elegant-info-message'
     })
   }
+
+  /**
+   * 显示确认对话框
+   * @param {string} message 
+   * @param {string} translationKey 
+   * @param {Object} options 
+   */
+  static confirm({ message, translationKey = null, options = {}}) {
+    const displayMessage = translationKey ? getTranslation(translationKey) : message
+    return ElMessageBox.confirm(
+      displayMessage,
+      getTranslation('common.confirm.title') || '确认',
+      {
+        confirmButtonText: getTranslation('common.confirm.ok') || '确定',
+        cancelButtonText: getTranslation('common.confirm.cancel') || '取消',
+        type: 'warning',
+        customClass: 'elegant-confirm-dialog',
+        ...options
+      }
+    )
+  }
 }
 
-export default ErrorHandler
+export default MessageHandler

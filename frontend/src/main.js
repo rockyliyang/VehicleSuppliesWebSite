@@ -5,9 +5,10 @@ import store from './store'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import './assets/css/global.css'
-import './assets/css/elegant-messages.css'
+import './assets/styles/elegant-messages.scss'
 import api from './utils/api'
-import ErrorHandler from './utils/errorHandler'
+import MessageHandler from './utils/messageHandler'
+import mitt from 'mitt'
 
 const app = createApp(App)
 
@@ -20,14 +21,19 @@ app.config.globalProperties.$t = (key) => {
   return store.getters['language/translate'](key)
 }
 
-// 全局注册错误处理器
-app.config.globalProperties.$errorHandler = ErrorHandler
+// 全局注册消息处理器
+app.config.globalProperties.$messageHandler = MessageHandler
 
-app.use(router)
+// 创建事件总线用于组件间通信
+const emitter = mitt()
+app.config.globalProperties.$bus = emitter
+
 app.use(store)
 app.use(ElementPlus)
 
 // 初始化应用（包括语言设置）
 store.dispatch('initApp').then(() => {
+  app.use(router)
   app.mount('#app')
+
 })

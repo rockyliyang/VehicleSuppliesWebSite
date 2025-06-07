@@ -1,14 +1,7 @@
 <template>
   <div class="checkout-complete-page">
     <!-- Page Banner -->
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1 class="banner-title">
-          {{ $t('checkout.complete.title') || '支付结果' }}
-        </h1>
-        <div class="banner-divider"></div>
-      </div>
-    </div>
+    <PageBanner :title="$t('checkout.complete.title') || '支付结果'" />
 
     <!-- Checkout Complete Section -->
     <div class="checkout-complete-container">
@@ -57,8 +50,13 @@
 </template>
 
 <script>
+import PageBanner from '@/components/common/PageBanner.vue';
+
 export default {
     name: 'CheckoutComplete',
+    components: {
+        PageBanner
+    },
     data() {
         return {
             status: '',
@@ -112,35 +110,6 @@ export default {
 </script>
 
 <style scoped>
-/* Page Banner */
-.page-banner {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  padding: 60px 0;
-  text-align: center;
-  width: 100%;
-}
-
-.banner-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.banner-title {
-  font-family: Arial, sans-serif;
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: white;
-  margin: 0 0 1rem 0;
-}
-
-.banner-divider {
-  width: 6rem;
-  height: 0.25rem;
-  background-color: white;
-  margin: 0 auto;
-}
-
 /* Checkout Complete Container */
 .checkout-complete-container {
   padding: 80px 0;
@@ -339,13 +308,6 @@ export default {
     padding: 30px 20px;
   }
 
-  .page-banner {
-    padding: 40px 0;
-  }
-
-  .banner-title {
-    font-size: 2rem;
-  }
 
   .checkout-complete-container {
     padding: 40px 0;

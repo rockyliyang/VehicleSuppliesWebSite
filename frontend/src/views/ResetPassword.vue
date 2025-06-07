@@ -1,14 +1,7 @@
 <template>
     <div class="reset-password-page">
         <!-- Page Banner -->
-        <div class="page-banner">
-            <div class="banner-content">
-                <h1 class="banner-title">
-                    {{ $t('resetPassword.title') || '设置新密码' }}
-                </h1>
-                <div class="banner-divider"></div>
-            </div>
-        </div>
+        <PageBanner :title="$t('resetPassword.title') || '设置新密码'" />
 
         <!-- Reset Password Form Section -->
         <div class="reset-password-container">
@@ -62,11 +55,13 @@
 <script>
 import { Lock } from '@element-plus/icons-vue'
 import FormInput from '@/components/common/FormInput.vue'
+import PageBanner from '@/components/common/PageBanner.vue'
 
 export default {
   name: 'ResetPassword',
   components: {
-    FormInput
+    FormInput,
+    PageBanner
   },
   data() {
     return {
@@ -108,7 +103,7 @@ export default {
     // 从URL参数中获取重置密码的token
     this.token = this.$route.query.token;
     if (!this.token) {
-      this.$errorHandler.showError(null, 'resetPassword.error.invalidToken');
+      this.$messageHandler.showError(null, 'resetPassword.error.invalidToken');
       this.$router.push('/login');
     }
   },
@@ -134,10 +129,10 @@ export default {
               }
             );
           } else {
-            this.$errorHandler.showError(res.message, 'resetPassword.error.failed');
+            this.$messageHandler.showError(res.message, 'resetPassword.error.failed');
           }
         } catch (e) {
-          this.$errorHandler.showError(e, 'resetPassword.error.failed');
+          this.$messageHandler.showError(e, 'resetPassword.error.failed');
         } finally {
           this.loading = false;
         }
@@ -148,26 +143,7 @@ export default {
 </script>
 
 <style scoped>
-/* Page Banner */
-.page-banner {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-    padding: 60px 0;
-    text-align: center;
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-}
 
-.page-banner::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
-    opacity: 0.3;
-}
 
 .banner-content {
     position: relative;
@@ -475,13 +451,7 @@ export default {
         padding: 30px 20px;
     }
 
-    .page-banner {
-        padding: 40px 0;
-    }
 
-    .page-banner h1 {
-        font-size: 2rem;
-    }
 
     .reset-password-container {
         padding: 40px 0;

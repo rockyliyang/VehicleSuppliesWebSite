@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { uuidToBinary, binaryToUuid } = require('../utils/uuid');
+const { getMessage } = require('../config/messages');
 
 // 配置文件上传
 const storage = multer.diskStorage({
@@ -26,7 +27,7 @@ const uploadMain = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('只允许上传图片文件！'), false);
+      return cb(new Error(getMessage('PRODUCT_IMAGE.INVALID_FILE_TYPE')), false);
     }
     cb(null, true);
   }
@@ -37,7 +38,7 @@ const uploadCarousel = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('只允许上传图片文件！'), false);
+      return cb(new Error(getMessage('PRODUCT_IMAGE.INVALID_FILE_TYPE')), false);
     }
     cb(null, true);
   }
@@ -55,7 +56,7 @@ exports.uploadProductImages = async (req, res) => {
       const { product_id, image_type, session_id } = req.body;
       const files = req.files || (req.file ? [req.file] : []);
       if (!files || files.length === 0) {
-        return res.status(400).json({ success: false, message: '没有上传文件', data: null });
+        return res.status(400).json({ success: false, message: getMessage('PRODUCT_IMAGE.NO_FILE_UPLOADED'), data: null });
       }
       const connection = await pool.getConnection();
       await connection.beginTransaction();
@@ -76,7 +77,7 @@ exports.uploadProductImages = async (req, res) => {
         await connection.commit();
         res.json({
           success: true,
-          message: '图片上传成功',
+          message: getMessage('PRODUCT_IMAGE.UPLOAD_SUCCESS'),
           data: {
             images: files.map(file => ({ filename: file.filename, path: `/static/images/${file.filename}` }))
           }
@@ -88,7 +89,7 @@ exports.uploadProductImages = async (req, res) => {
         connection.release();
       }
     } catch (err) {
-      res.status(500).json({ success: false, message: '上传图片失败', data: { error: err.message } });
+      res.status(500).json({ success: false, message: getMessage('PRODUCT_IMAGE.UPLOAD_FAILED'), data: { error: err.message } });
     }
   });
 };
@@ -103,14 +104,14 @@ exports.getProductImages = async (req, res) => {
     );
     res.json({
       success: true,
-      message: '获取图片成功',
+      message: getMessage('PRODUCT_IMAGE.GET_SUCCESS'),
       data: rows
     });
   } catch (err) {
     console.error('获取图片失败:', err);
     res.status(500).json({
       success: false,
-      message: '获取图片失败',
+      message: getMessage('PRODUCT_IMAGE.GET_FAILED'),
       data: { error: err.message }
     });
   }
@@ -133,7 +134,7 @@ exports.deleteProductImage = async (req, res) => {
       if (rows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: '图片不存在',
+          message: getMessage('PRODUCT_IMAGE.NOT_FOUND'),
           data: null
         });
       }
@@ -153,7 +154,7 @@ exports.deleteProductImage = async (req, res) => {
       await connection.commit();
       res.json({
         success: true,
-        message: '图片删除成功',
+        message: getMessage('PRODUCT_IMAGE.DELETE_SUCCESS'),
         data: null
       });
     } catch (error) {
@@ -166,7 +167,7 @@ exports.deleteProductImage = async (req, res) => {
     console.error('删除图片失败:', err);
     res.status(500).json({
       success: false,
-      message: '删除图片失败',
+      message: getMessage('PRODUCT_IMAGE.DELETE_FAILED'),
       data: { error: err.message }
     });
   }
@@ -190,7 +191,7 @@ exports.updateImageOrder = async (req, res) => {
       await connection.commit();
       res.json({
         success: true,
-        message: '图片排序更新成功',
+        message: getMessage('PRODUCT_IMAGE.ORDER_UPDATE_SUCCESS'),
         data: null
       });
     } catch (error) {
@@ -203,7 +204,7 @@ exports.updateImageOrder = async (req, res) => {
     console.error('更新图片排序失败:', err);
     res.status(500).json({
       success: false,
-      message: '更新图片排序失败',
+      message: getMessage('PRODUCT_IMAGE.ORDER_UPDATE_FAILED'),
       data: { error: err.message }
     });
   }
@@ -214,14 +215,14 @@ exports.assignProductImages = async (req, res) => {
   try {
     const { product_id, session_id } = req.body;
     if (!product_id || !session_id) {
-      return res.status(400).json({ success: false, message: '缺少参数', data: null });
+      return res.status(400).json({ success: false, message: getMessage('PRODUCT_IMAGE.MISSING_PARAMS'), data: null });
     }
     await pool.query(
       'UPDATE product_images SET product_id = ? WHERE product_id IS NULL AND session_id = ?',
       [product_id, session_id]
     );
-    res.json({ success: true, message: '图片关联成功' });
+    res.json({ success: true, message: getMessage('PRODUCT_IMAGE.ASSIGN_SUCCESS') });
   } catch (err) {
-    res.status(500).json({ success: false, message: '图片关联失败', data: { error: err.message } });
+    res.status(500).json({ success: false, message: getMessage('PRODUCT_IMAGE.ASSIGN_FAILED'), data: { error: err.message } });
   }
-}; 
+};

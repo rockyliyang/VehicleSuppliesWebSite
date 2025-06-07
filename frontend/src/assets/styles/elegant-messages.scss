@@ -1,0 +1,442 @@
+@import './variables';
+@import './mixins';
+
+/* 错误消息样式 */
+.elegant-error-message {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+  border: none !important;
+  border-radius: $border-radius-md !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3) !important;
+  color: $white !important;
+  font-weight: $font-weight-medium !important;
+  backdrop-filter: blur(10px);
+  animation: slideInDown 0.3s ease-out;
+
+  .el-message__content {
+    color: $white !important;
+    font-size: $font-size-sm;
+    line-height: $line-height-normal;
+  }
+
+  .el-message__closeBtn {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: $font-size-md;
+    transition: $transition-base;
+
+    &:hover {
+      color: $white !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .el-message__icon {
+    color: $white !important;
+    font-size: $font-size-md;
+  }
+}
+
+/* 成功消息样式 */
+.elegant-success-message {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%) !important;
+  border: none !important;
+  border-radius: $border-radius-md !important;
+  box-shadow: 0 4px 12px rgba(81, 207, 102, 0.3) !important;
+  color: $white !important;
+  font-weight: $font-weight-medium !important;
+  backdrop-filter: blur(10px);
+  animation: slideInDown 0.3s ease-out;
+
+  .el-message__content {
+    color: $white !important;
+    font-size: $font-size-sm;
+    line-height: $line-height-normal;
+  }
+
+  .el-message__closeBtn {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: $font-size-md;
+    transition: $transition-base;
+
+    &:hover {
+      color: $white !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .el-message__icon {
+    color: $white !important;
+    font-size: $font-size-md;
+  }
+}
+
+/* 警告消息样式 */
+.elegant-warning-message {
+  background: linear-gradient(135deg, #ffd43b 0%, #fab005 100%) !important;
+  border: none !important;
+  border-radius: $border-radius-md !important;
+  box-shadow: 0 4px 12px rgba(255, 212, 59, 0.3) !important;
+  color: $gray-800 !important;
+  font-weight: $font-weight-medium !important;
+  backdrop-filter: blur(10px);
+  animation: slideInDown 0.3s ease-out;
+
+  .el-message__content {
+    color: $gray-800 !important;
+    font-size: $font-size-sm;
+    line-height: $line-height-normal;
+  }
+
+  .el-message__closeBtn {
+    color: rgba(51, 51, 51, 0.8) !important;
+    font-size: $font-size-md;
+    transition: $transition-base;
+
+    &:hover {
+      color: $gray-800 !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .el-message__icon {
+    color: $gray-800 !important;
+    font-size: $font-size-md;
+  }
+}
+
+/* 信息消息样式 */
+.elegant-info-message {
+  background: linear-gradient(135deg, #74c0fc 0%, #339af0 100%) !important;
+  border: none !important;
+  border-radius: $border-radius-md !important;
+  box-shadow: 0 4px 12px rgba(116, 192, 252, 0.3) !important;
+  color: $white !important;
+  font-weight: $font-weight-medium !important;
+  backdrop-filter: blur(10px);
+  animation: slideInDown 0.3s ease-out;
+
+  .el-message__content {
+    color: $white !important;
+    font-size: $font-size-sm;
+    line-height: $line-height-normal;
+  }
+
+  .el-message__closeBtn {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: $font-size-md;
+    transition: $transition-base;
+
+    &:hover {
+      color: $white !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .el-message__icon {
+    color: $white !important;
+    font-size: $font-size-md;
+  }
+}
+
+/* 优雅的确认对话框样式 - 使用Home.vue的样式变量 */
+.elegant-confirm-dialog {
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-xl !important;
+  min-width: 480px !important;
+  max-width: 520px !important;
+  overflow: hidden !important;
+
+  .el-message-box__header {
+    padding: $spacing-xl $spacing-xl $spacing-md !important;
+    border-bottom: 1px solid $gray-200 !important;
+    background: $white !important;
+  }
+
+  // 标题样式 - 与Home.vue About Us标题一样
+  .el-message-box__title {
+    font-size: $font-size-4xl !important;
+    font-weight: $font-weight-bold !important;
+    color: $text-primary !important;
+    line-height: $line-height-tight !important;
+  }
+
+  .el-message-box__headerbtn {
+    top: $spacing-lg !important;
+    right: $spacing-lg !important;
+    font-size: $font-size-xl !important;
+    color: $gray-500 !important;
+    transition: $transition-base !important;
+
+    &:hover {
+      color: $gray-700 !important;
+      transform: scale(1.1) !important;
+    }
+  }
+
+  .el-message-box__content {
+    padding: $spacing-xl $spacing-xl $spacing-2xl !important;
+    background: $white !important;
+    min-height: 100px !important;
+  }
+
+  // 描述文字样式 - 与Home.vue About描述文字一样
+  .el-message-box__message {
+    color: $text-secondary !important;
+    font-size: $font-size-lg !important;
+    line-height: $line-height-relaxed !important;
+    margin: 0 !important;
+  }
+
+  .el-message-box__icon {
+    font-size: $font-size-2xl !important;
+    margin-right: $spacing-md !important;
+  }
+
+  .el-message-box__btns {
+    padding: $spacing-lg $spacing-xl $spacing-xl !important;
+    text-align: center !important;
+    border-top: 1px solid $gray-200 !important;
+    gap: $spacing-xl !important;
+    display: flex !important;
+    justify-content: center !important;
+    background: $white !important;
+  }
+
+  // 覆盖Element UI默认按钮高度
+  .el-button {
+    height: auto !important;
+    line-height: normal !important;
+  }
+
+  // 确认按钮样式 - 与Home.vue Category button active状态一样
+  .el-button--primary {
+    @include button-primary;
+    padding: $spacing-md $spacing-xl !important;
+    font-size: $font-size-lg !important;
+    font-weight: $font-weight-semibold !important;
+    border-radius: $border-radius-md !important;
+    min-width: 120px !important;
+    height: auto !important;
+    line-height: normal !important;
+    transition: $transition-base !important;
+
+    &:hover {
+      background-color: $primary-dark !important;
+      border-color: $primary-dark !important;
+    }
+  }
+
+  // 取消按钮样式 - 与Home.vue More button一样
+  .el-message-box__btns .el-button:not(.el-button--primary) {
+    @include button-base;
+    background-color: $gray-200 !important;
+    color: $gray-700 !important;
+    border-color: $gray-200 !important;
+    padding: $spacing-md $spacing-xl !important;
+    font-size: $font-size-lg !important;
+    font-weight: $font-weight-semibold !important;
+    border-radius: $border-radius-md !important;
+    min-width: 120px !important;
+    height: auto !important;
+    line-height: normal !important;
+    transition: $transition-base !important;
+
+    &:hover:not(:disabled) {
+      background-color: $gray-300 !important;
+      border-color: $gray-300 !important;
+      color: $gray-700 !important;
+    }
+  }
+
+  // 额外的取消按钮选择器
+  .el-button--default,
+  .el-button--info {
+    @include button-base;
+    background-color: $gray-200 !important;
+    color: $gray-700 !important;
+    border-color: $gray-200 !important;
+    padding: $spacing-md $spacing-xl !important;
+    font-size: $font-size-lg !important;
+    font-weight: $font-weight-semibold !important;
+    border-radius: $border-radius-md !important;
+    min-width: 120px !important;
+    height: auto !important;
+    line-height: normal !important;
+    transition: $transition-base !important;
+
+    &:hover:not(:disabled) {
+      background-color: $gray-300 !important;
+      border-color: $gray-300 !important;
+      color: $gray-700 !important;
+    }
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: $breakpoint-tablet) {
+  .elegant-confirm-dialog {
+    min-width: 90vw !important;
+    margin: $spacing-lg !important;
+    
+    .el-message-box__btns {
+      flex-direction: column !important;
+      
+      .el-button {
+        width: 100% !important;
+        margin-bottom: $spacing-sm !important;
+        
+        &:last-child {
+          margin-bottom: 0 !important;
+        }
+      }
+    }
+  }
+}
+
+/* 动画效果 */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+  }
+  
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+  }
+  
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rotateIn {
+  from {
+    opacity: 0;
+    transform: rotate(-200deg);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0);
+  }
+}
+
+@keyframes flipInX {
+  from {
+    opacity: 0;
+    transform: perspective(400px) rotateX(90deg);
+  }
+  40% {
+    transform: perspective(400px) rotateX(-20deg);
+  }
+  60% {
+    transform: perspective(400px) rotateX(10deg);
+  }
+  80% {
+    transform: perspective(400px) rotateX(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(400px) rotateX(0deg);
+  }
+}
+
+@keyframes flipInY {
+  from {
+    opacity: 0;
+    transform: perspective(400px) rotateY(90deg);
+  }
+  40% {
+    transform: perspective(400px) rotateY(-20deg);
+  }
+  60% {
+    transform: perspective(400px) rotateY(10deg);
+  }
+  80% {
+    transform: perspective(400px) rotateY(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(400px) rotateY(0deg);
+  }
+}

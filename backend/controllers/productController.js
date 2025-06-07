@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const { pool } = require('../db/db');
 const { uuidToBinary, binaryToUuid } = require('../utils/uuid');
+const { getMessage } = require('../config/messages');
 
 // Generate a unique product code
 exports.generateProductCode = async (req, res) => {
@@ -16,7 +17,7 @@ exports.generateProductCode = async (req, res) => {
     if (category.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '分类不存在'
+        message: getMessage('PRODUCT.CATEGORY_NOT_FOUND')
       });
     }
 
@@ -31,13 +32,14 @@ exports.generateProductCode = async (req, res) => {
 
     res.json({
       success: true,
+      message: getMessage('PRODUCT.CODE_GENERATED'),
       data: productCode
     });
   } catch (error) {
     console.error('生成产品编号失败:', error);
     res.status(500).json({
       success: false,
-      message: '生成产品编号失败'
+      message: getMessage('PRODUCT.CODE_GENERATION_FAILED')
     });
   }
 };
@@ -66,7 +68,7 @@ exports.createProduct = async (req, res) => {
     if (!validProductTypes.includes(product_type)) {
       return res.status(400).json({
         success: false,
-        message: '无效的产品类型'
+        message: getMessage('PRODUCT.INVALID_TYPE')
       });
     }
 
@@ -79,7 +81,7 @@ exports.createProduct = async (req, res) => {
     if (existing.length > 0) {
       return res.status(400).json({
         success: false,
-        message: '产品编号已存在'
+        message: getMessage('PRODUCT.CODE_EXISTS')
       });
     }
 
@@ -109,7 +111,7 @@ exports.createProduct = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: '产品创建成功',
+      message: getMessage('PRODUCT.CREATE_SUCCESS'),
       data: {
         id: result.insertId,
         name,
@@ -130,7 +132,7 @@ exports.createProduct = async (req, res) => {
     console.error('创建产品失败:', error);
     res.status(500).json({
       success: false,
-      message: '创建产品失败'
+      message: getMessage('PRODUCT.CREATE_FAILED')
     });
   } finally {
     connection.release();
@@ -193,6 +195,7 @@ exports.getAllProducts = async (req, res) => {
 
     res.json({
       success: true,
+      message: getMessage('PRODUCT.LIST_SUCCESS'),
       data: {
         items: products,
         total: total[0].total,
@@ -204,7 +207,7 @@ exports.getAllProducts = async (req, res) => {
     console.error('获取产品列表失败:', error);
     res.status(500).json({
       success: false,
-      message: '获取产品列表失败'
+      message: getMessage('PRODUCT.LIST_FAILED')
     });
   }
 };
@@ -226,7 +229,7 @@ exports.getProductById = async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '产品不存在'
+        message: getMessage('PRODUCT.NOT_FOUND')
       });
     }
 
@@ -251,13 +254,14 @@ exports.getProductById = async (req, res) => {
 
     res.json({
       success: true,
+      message: getMessage('PRODUCT.GET_SUCCESS'),
       data: product
     });
   } catch (error) {
     console.error('获取产品详情失败:', error);
     res.status(500).json({
       success: false,
-      message: '获取产品详情失败'
+      message: getMessage('PRODUCT.GET_FAILED')
     });
   }
 };
@@ -287,7 +291,7 @@ exports.updateProduct = async (req, res) => {
     if (!validProductTypes.includes(product_type)) {
       return res.status(400).json({
         success: false,
-        message: '无效的产品类型'
+        message: getMessage('PRODUCT.INVALID_TYPE')
       });
     }
 
@@ -300,7 +304,7 @@ exports.updateProduct = async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '产品不存在'
+        message: getMessage('PRODUCT.NOT_FOUND')
       });
     }
 
@@ -313,7 +317,7 @@ exports.updateProduct = async (req, res) => {
     if (codeExists.length > 0) {
       return res.status(400).json({
         success: false,
-        message: '产品编号已被其他产品使用'
+        message: getMessage('PRODUCT.CODE_EXISTS')
       });
     }
 
@@ -349,7 +353,7 @@ exports.updateProduct = async (req, res) => {
 
     res.json({
       success: true,
-      message: '产品更新成功',
+      message: getMessage('PRODUCT.UPDATE_SUCCESS'),
       data: {
         id,
         name,
@@ -369,7 +373,7 @@ exports.updateProduct = async (req, res) => {
     console.error('更新产品失败:', error);
     res.status(500).json({
       success: false,
-      message: '更新产品失败'
+      message: getMessage('PRODUCT.UPDATE_FAILED')
     });
   } finally {
     connection.release();
@@ -393,7 +397,7 @@ exports.deleteProduct = async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '产品不存在'
+        message: getMessage('PRODUCT.NOT_FOUND')
       });
     }
 
@@ -407,14 +411,14 @@ exports.deleteProduct = async (req, res) => {
 
     res.json({
       success: true,
-      message: '产品删除成功'
+      message: getMessage('PRODUCT.DELETE_SUCCESS')
     });
   } catch (error) {
     await connection.rollback();
     console.error('删除产品失败:', error);
     res.status(500).json({
       success: false,
-      message: '删除产品失败'
+      message: getMessage('PRODUCT.DELETE_FAILED')
     });
   } finally {
     connection.release();
@@ -441,14 +445,14 @@ exports.getProductsByCategory = async (req, res) => {
 
     res.json({
       success: true,
-      message: '获取产品成功',
+      message: getMessage('PRODUCT.GET_BY_CATEGORY_SUCCESS'),
       data: products
     });
   } catch (error) {
     console.error('按分类获取产品失败:', error);
     res.status(500).json({
       success: false,
-      message: '按分类获取产品失败',
+      message: getMessage('PRODUCT.GET_BY_CATEGORY_FAILED'),
       data: null
     });
   }

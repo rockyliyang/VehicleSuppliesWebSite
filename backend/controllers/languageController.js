@@ -1,6 +1,7 @@
-const {pool} = require('../db/db');
+const { pool } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
 const { Buffer } = require('buffer');
+const { getMessage } = require('../config/messages');
 
 /**
  * 获取所有语言翻译
@@ -13,14 +14,14 @@ exports.getAllTranslations = async (req, res) => {
     
     return res.json({
       success: true,
-      message: '获取翻译成功',
+      message: getMessage('LANGUAGE.GET_SUCCESS'),
       data: rows
     });
   } catch (error) {
     console.error('获取翻译失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取翻译失败',
+      message: getMessage('LANGUAGE.GET_FAILED'),
       data: null
     });
   }
@@ -46,14 +47,14 @@ exports.getTranslationsByLang = async (req, res) => {
     
     return res.json({
       success: true,
-      message: '获取翻译成功',
+      message: getMessage('LANGUAGE.GET_SUCCESS'),
       data: translations
     });
   } catch (error) {
     console.error(`获取${req.params.lang}翻译失败:`, error);
     return res.status(500).json({
       success: false,
-      message: `获取${req.params.lang}翻译失败`,
+      message: getMessage('LANGUAGE.GET_FAILED'),
       data: null
     });
   }
@@ -69,7 +70,7 @@ exports.addTranslation = async (req, res) => {
     if (!code || !lang || !value) {
       return res.status(400).json({
         success: false,
-        message: '缺少必要参数',
+        message: getMessage('LANGUAGE.MISSING_PARAMS'),
         data: null
       });
     }
@@ -83,7 +84,7 @@ exports.addTranslation = async (req, res) => {
     if (existing.length > 0) {
       return res.status(400).json({
         success: false,
-        message: '该语言的翻译键已存在',
+        message: getMessage('LANGUAGE.TRANSLATION_EXISTS'),
         data: null
       });
     }
@@ -98,14 +99,14 @@ exports.addTranslation = async (req, res) => {
     
     return res.status(201).json({
       success: true,
-      message: '添加翻译成功',
+      message: getMessage('LANGUAGE.ADD_SUCCESS'),
       data: { code, lang, value }
     });
   } catch (error) {
     console.error('添加翻译失败:', error);
     return res.status(500).json({
       success: false,
-      message: '添加翻译失败',
+      message: getMessage('LANGUAGE.ADD_FAILED'),
       data: null
     });
   }
@@ -122,7 +123,7 @@ exports.updateTranslation = async (req, res) => {
     if (!value) {
       return res.status(400).json({
         success: false,
-        message: '缺少必要参数',
+        message: getMessage('LANGUAGE.MISSING_PARAMS'),
         data: null
       });
     }
@@ -135,21 +136,21 @@ exports.updateTranslation = async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: '翻译不存在',
+        message: getMessage('LANGUAGE.NOT_FOUND'),
         data: null
       });
     }
     
     return res.json({
       success: true,
-      message: '更新翻译成功',
+      message: getMessage('LANGUAGE.UPDATE_SUCCESS'),
       data: { id, value }
     });
   } catch (error) {
     console.error('更新翻译失败:', error);
     return res.status(500).json({
       success: false,
-      message: '更新翻译失败',
+      message: getMessage('LANGUAGE.UPDATE_FAILED'),
       data: null
     });
   }
@@ -170,21 +171,21 @@ exports.deleteTranslation = async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: '翻译不存在',
+        message: getMessage('LANGUAGE.NOT_FOUND'),
         data: null
       });
     }
     
     return res.json({
       success: true,
-      message: '删除翻译成功',
+      message: getMessage('LANGUAGE.DELETE_SUCCESS'),
       data: null
     });
   } catch (error) {
     console.error('删除翻译失败:', error);
     return res.status(500).json({
       success: false,
-      message: '删除翻译失败',
+      message: getMessage('LANGUAGE.DELETE_FAILED'),
       data: null
     });
   }
@@ -203,14 +204,14 @@ exports.getSupportedLanguages = async (req, res) => {
     
     return res.json({
       success: true,
-      message: '获取支持的语言列表成功',
+      message: getMessage('LANGUAGE.GET_LANGUAGES_SUCCESS'),
       data: languages
     });
   } catch (error) {
     console.error('获取支持的语言列表失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取支持的语言列表失败',
+      message: getMessage('LANGUAGE.GET_LANGUAGES_FAILED'),
       data: null
     });
   }
@@ -250,14 +251,14 @@ exports.getLanguageByIp = async (req, res) => {
     
     return res.json({
       success: true,
-      message: '获取默认语言成功',
+      message: getMessage('LANGUAGE.GET_DEFAULT_SUCCESS'),
       data: { lang: defaultLang }
     });
   } catch (error) {
     console.error('获取默认语言失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取默认语言失败',
+      message: getMessage('LANGUAGE.GET_DEFAULT_FAILED'),
       data: { lang: 'en' } // 出错时默认返回英语
     });
   }

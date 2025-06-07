@@ -754,6 +754,64 @@ describe('POST /api/v1/users', () => {
 });
 ```
 
+## 多语言支持规范
+
+### 消息键管理
+
+#### getMessage函数使用规范
+1. **统一引入路径**：所有文件必须使用 `require('../config/messages')` 引入getMessage函数
+2. **消息键命名规范**：
+   ```
+   模块.操作.状态
+   例如：USER.LOGIN.SUCCESS, PRODUCT.CREATE.FAILED
+   ```
+3. **消息键分类**：
+   - `AUTH.*` - 认证授权相关
+   - `USER.*` - 用户操作相关
+   - `PRODUCT.*` - 产品操作相关
+   - `CART.*` - 购物车操作相关
+   - `ORDER.*` - 订单操作相关
+   - `PAYMENT.*` - 支付相关
+   - `COMMON.*` - 通用消息
+
+#### 新增消息键规则
+**重要：每当添加新的消息键时，必须同时执行以下步骤：**
+
+1. **在 `config/messages.js` 中添加新的消息键**
+2. **更新 `db/insert_message_translations.sql` 文件**，添加对应的中英文翻译：
+   ```sql
+   -- 新增消息键翻译
+   INSERT INTO language_translations (guid, code, lang, value) VALUES
+   (UNHEX(REPLACE(UUID(), '-', '')), 'NEW.MESSAGE.KEY', 'en', 'English message'),
+   (UNHEX(REPLACE(UUID(), '-', '')), 'NEW.MESSAGE.KEY', 'zh-CN', '中文消息');
+   ```
+3. **执行SQL脚本更新数据库**
+4. **通知前端团队同步更新前端翻译文件**
+
+#### getMessage函数返回值
+- getMessage函数只返回消息键（code），不返回完整消息文本
+- 前端通过消息键查询language_translations表获取对应语言的翻译文本
+- 这确保了前后端翻译功能的一致性
+
+### 示例代码
+```javascript
+// 正确的使用方式
+const { getMessage } = require('../config/messages');
+
+// 在控制器中使用
+res.status(200).json({
+  success: true,
+  message: getMessage('USER.LOGIN.SUCCESS'),
+  data: userData
+});
+
+// 错误处理中使用
+res.status(400).json({
+  success: false,
+  message: getMessage('USER.EMAIL_EXISTS')
+});
+```
+
 ---
 
-> 📝 **注意**: 所有后端API开发都应遵循以上规范，确保接口的一致性、安全性和可维护性。
+> 📝 **注意**: 所有后端API开发都应遵循以上规范，确保接口的一致性、安全性和可维护性。特别注意多语言支持的规范，每次添加新的消息键都必须同时更新翻译数据。

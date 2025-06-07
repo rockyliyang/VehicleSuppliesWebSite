@@ -1,23 +1,20 @@
 <template>
   <div class="unified-checkout">
     <!-- 页面横幅 -->
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1 class="text-3xl font-bold mb-2">
-          {{ isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算页面') }}
-        </h1>
-        <div class="w-24 h-1 bg-red-600 mx-auto mb-6"></div>
-        <div class="breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') || '首页' }}</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="!isOrderDetail" :to="{ path: '/cart' }">{{ $t('cart.title') || '购物车'
-              }}</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="isOrderDetail" :to="{ path: '/user/orders' }">{{ $t('order.myOrders') || '我的订单'
-              }}</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算')
-              }}</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
+    <PageBanner :title="isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算页面')" />
+
+    <!-- 面包屑导航 -->
+    <div class="breadcrumb-section">
+      <div class="container mx-auto px-4 py-4">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') || '首页' }}</el-breadcrumb-item>
+          <el-breadcrumb-item v-if="!isOrderDetail" :to="{ path: '/cart' }">{{ $t('cart.title') || '购物车'
+            }}</el-breadcrumb-item>
+          <el-breadcrumb-item v-if="isOrderDetail" :to="{ path: '/user/orders' }">{{ $t('order.myOrders') || '我的订单'
+            }}</el-breadcrumb-item>
+          <el-breadcrumb-item>{{ isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算')
+            }}</el-breadcrumb-item>
+        </el-breadcrumb>
       </div>
     </div>
 
@@ -252,8 +249,13 @@
 </template>
 
 <script>
+import PageBanner from '@/components/common/PageBanner.vue';
+
 export default {
   name: 'UnifiedCheckout',
+  components: {
+    PageBanner
+  },
   props: {
     items: {
       type: Array,
@@ -410,11 +412,11 @@ export default {
           this.orderItems = res.data.items || [];
           this.orderTotal = res.data.totalPrice || 0;
         } else {
-          this.$errorHandler.showError('获取购物车信息失败', 'checkout.error.fetchCartFailed');
+          this.$messageHandler.showError('获取购物车信息失败', 'checkout.error.fetchCartFailed');
         }
       } catch (error) {
         console.error('获取购物车信息失败:', error);
-        this.$errorHandler.showError(error, 'checkout.error.fetchCartFailed');
+        this.$messageHandler.showError(error, 'checkout.error.fetchCartFailed');
       }
     },
     async fetchPayPalConfig() {
@@ -430,7 +432,7 @@ export default {
         }
       } catch (error) {
         console.error('获取PayPal配置失败:', error);
-        this.$errorHandler.showError(error, 'checkout.error.fetchPaymentConfigFailed');
+        this.$messageHandler.showError(error, 'checkout.error.fetchPaymentConfigFailed');
       }
     },
     async fetchOrderDetail(orderId) {
@@ -462,7 +464,7 @@ export default {
         }
       } catch (error) {
         console.error('获取订单详情失败:', error);
-        this.$errorHandler.showError(error, 'order.error.fetchDetailFailed');
+        this.$messageHandler.showError(error, 'order.error.fetchDetailFailed');
         this.$router.push('/user/orders');
       }
     },
@@ -504,7 +506,7 @@ export default {
       };
       script.onerror = () => {
         console.error('PayPal SDK加载失败');
-        this.$errorHandler.showError('PayPal SDK加载失败', 'checkout.error.paypalSDKLoadFailed');
+        this.$messageHandler.showError('PayPal SDK加载失败', 'checkout.error.paypalSDKLoadFailed');
       };
       document.head.appendChild(script);
     },
@@ -587,12 +589,12 @@ export default {
             
             if (response.success) {
               this.paySuccess = true;
-              this.$errorHandler.showSuccess('支付成功！', 'payment.success.paymentSuccess');
+              this.$messageHandler.showSuccess('支付成功！', 'payment.success.paymentSuccess');
             } else {
               throw new Error(response.message || '支付捕获失败');
             }
           } catch (error) {
-            this.$errorHandler.showError('PayPal支付失败: ' + error.message, 'payment.error.paypalFailed');
+            this.$messageHandler.showError('PayPal支付失败: ' + error.message, 'payment.error.paypalFailed');
             // 处理可恢复的错误
             if (error.message.includes('INSTRUMENT_DECLINED')) {
               return actions.restart();
@@ -600,14 +602,14 @@ export default {
           }
         },
         onError: (err) => {
-          this.$errorHandler.showError('PayPal支付失败: ' + (err.message || '未知错误'), 'payment.error.paypalFailed');
+          this.$messageHandler.showError('PayPal支付失败: ' + (err.message || '未知错误'), 'payment.error.paypalFailed');
         },
         onCancel: () => {
           this.$message.info('支付已取消');
         }
       }).render('#paypal-button-container').catch(err => {
         console.error('PayPal按钮渲染失败:', err);
-        this.$errorHandler.showError(err, 'checkout.error.paypalButtonLoadFailed');
+        this.$messageHandler.showError(err, 'checkout.error.paypalButtonLoadFailed');
       });
     },
     async generateQrcode(paymentMethod) {
@@ -811,28 +813,6 @@ export default {
 </script>
 
 <style scoped>
-/* 页面横幅 */
-.page-banner {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 60px 0;
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.banner-content h1 {
-  color: white;
-  margin-bottom: 16px;
-}
-
-.breadcrumb {
-  margin-top: 20px;
-}
-
-.breadcrumb :deep(.el-breadcrumb__inner) {
-  color: rgba(255, 255, 255, 0.8);
-}
-
 .breadcrumb :deep(.el-breadcrumb__inner:hover) {
   color: white;
 }
@@ -1437,9 +1417,7 @@ export default {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .page-banner {
-    padding: 40px 0;
-  }
+
 
   .banner-content h1 {
     font-size: 24px;

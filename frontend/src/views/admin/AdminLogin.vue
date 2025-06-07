@@ -50,16 +50,15 @@ export default {
             admin: true
           });
           if (res.success) {
-            this.$errorHandler.showSuccess('登录成功', 'login.success.loginSuccess');
-            const {token, user } = res.data
-            this.$store.commit('setUser', user)
-            localStorage.setItem('admin_token', token)
+            this.$messageHandler.showSuccess('登录成功', 'login.success.loginSuccess');
+            const { user } = res.data
+            this.$store.commit('setAdmin', user)
             this.$router.push(this.$route.query.redirect || '/admin')
           } else {
-            this.$errorHandler.showError(res.message, 'admin.login.error.loginFailed');
+            this.$messageHandler.showError(res.message, 'admin.login.error.loginFailed');
           }
         } catch (e) {
-          this.$errorHandler.showError(e, 'admin.login.error.loginFailed');
+          this.$messageHandler.showError(e, 'admin.login.error.loginFailed');
         } finally {
           this.loading = false;
         }

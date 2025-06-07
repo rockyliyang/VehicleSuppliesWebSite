@@ -1,14 +1,14 @@
 <template>
   <div class="about-page">
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1>关于我们</h1>
-        <div class="breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item>关于我们</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
+    <PageBanner title="关于我们" />
+
+    <!-- Breadcrumb Section -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item>关于我们</el-breadcrumb-item>
+        </el-breadcrumb>
       </div>
     </div>
 
@@ -201,6 +201,7 @@ import certificate4Image from '../assets/images/certificate4.jpg';
 import { Flag, Medal, Management, Opportunity, Service, Shop, Trophy } from '@element-plus/icons-vue';
 import { View as ViewIcon } from '@element-plus/icons-vue';
 import { handleImageError } from '../utils/imageUtils';
+import PageBanner from '@/components/common/PageBanner.vue';
 
 export default {
   name: 'AboutPage',
@@ -212,7 +213,8 @@ export default {
     Opportunity,
     Service,
     Shop,
-    Trophy
+    Trophy,
+    PageBanner
   },
   data() {
     return {
@@ -247,25 +249,6 @@ export default {
 <style scoped>
 .about-page {
   min-height: 100vh;
-}
-
-.page-banner {
-  height: 200px;
-  background-color: #f5f5f5;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../assets/images/banner1.jpg');
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.banner-content h1 {
-  font-size: 32px;
-  margin-bottom: 10px;
 }
 
 .container {

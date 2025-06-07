@@ -1,5 +1,6 @@
 const db = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
+const { getMessage } = require('../config/messages');
 // 引入PayPal SDK
 const paypal = require('@paypal/checkout-server-sdk');
 
@@ -85,7 +86,7 @@ exports.createPayPalOrder = async (req, res) => {
     console.error('创建PayPal订单失败:', error);
     return res.status(500).json({
       success: false,
-      message: '创建PayPal订单失败',
+      message: getMessage('PAYPAL.CREATE_ORDER_FAILED'),
       error: error.message
     });
   }
@@ -144,7 +145,7 @@ exports.capturePayPalPayment = async (req, res) => {
     if (cartItems.length === 0) {
       return res.status(400).json({
         success: false,
-        message: '购物车为空，无法处理支付'
+        message: getMessage('PAYPAL.CART_EMPTY')
       });
     }
 
@@ -222,7 +223,7 @@ exports.capturePayPalPayment = async (req, res) => {
     console.error('处理PayPal支付失败:', error);
     return res.status(500).json({
       success: false,
-      message: '处理PayPal支付失败',
+      message: getMessage('PAYPAL.PROCESS_PAYMENT_FAILED'),
       error: error.message
     });
   }
@@ -248,7 +249,7 @@ exports.verifyPayPalPayment = async (req, res) => {
     
     return res.status(200).json({
       success: true,
-      message: '获取PayPal支付状态成功',
+      message: getMessage('PAYPAL.GET_STATUS_SUCCESS'),
       data: {
         status: order.result.status,
         orderDetails: order.result
@@ -258,7 +259,7 @@ exports.verifyPayPalPayment = async (req, res) => {
     console.error('获取PayPal支付状态失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取PayPal支付状态失败',
+      message: getMessage('PAYPAL.GET_STATUS_FAILED'),
       error: error.message
     });
   }

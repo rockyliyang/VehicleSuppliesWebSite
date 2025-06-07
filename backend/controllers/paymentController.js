@@ -2,6 +2,7 @@ const { pool } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
 const { uuidToBinary, binaryToUuid } = require('../utils/uuid');
 const QRCode = require('qrcode');
+const { getMessage } = require('../config/messages');
 const {
   ApiError,
   CheckoutPaymentIntent,
@@ -92,7 +93,7 @@ exports.createPayPalOrder = async (req, res) => {
       if (!cartItems || cartItems.length === 0) {
         await connection.rollback();
         connection.release();
-        return res.json({ success: false, message: '购物车为空', data: null });
+        return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
       const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, 'paypal', connection);
       const client = getPayPalClient();
@@ -120,7 +121,7 @@ exports.createPayPalOrder = async (req, res) => {
       await connection.commit();
       connection.release();
       
-       return res.json({ success: true, message: 'PayPal订单创建成功', data: { orderId, paypalOrderId: paypalOrderData.id } });
+       return res.json({ success: true, message: getMessage('PAYMENT.PAYPAL_ORDER_CREATE_SUCCESS'), data: { orderId, paypalOrderId: paypalOrderData.id } });
     } catch (error) {
       await connection.rollback();
       connection.release();
@@ -140,11 +141,11 @@ exports.capturePayPalPayment = async (req, res) => {
       [orderId, paypalOrderId]
     );
     if (orders.length === 0) {
-      return res.json({ success: false, message: '订单不存在或PayPal订单ID不匹配', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND_OR_MISMATCH'), data: null });
     }
     const order = orders[0];
     if (order.status !== 'pending') {
-      return res.json({ success: false, message: '订单状态不正确，无法捕获支付', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.INVALID_ORDER_STATUS'), data: null });
     }
     const client = getPayPalClient();
     const ordersController = new OrdersController(client);
@@ -155,7 +156,7 @@ exports.capturePayPalPayment = async (req, res) => {
       `UPDATE orders SET status = ? WHERE id = ?`,
       ['paid',  orderId]
     );
-    return res.json({ success: true, message: 'PayPal支付捕获成功', data: { orderId, paymentId: captureData.id } });
+    return res.json({ success: true, message: getMessage('PAYMENT.PAYPAL_CAPTURE_SUCCESS'), data: { orderId, paymentId: captureData.id } });
   } catch (error) {
     return res.json({ success: false, message: error.message, data: null });
   }
@@ -176,7 +177,7 @@ exports.repayPayPalOrder = async (req, res) => {
     if (orders.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '订单不存在或无权限访问'
+        message: getMessage('PAYMENT.ORDER_NOT_FOUND_OR_NO_PERMISSION')
       });
     }
     
@@ -186,7 +187,7 @@ exports.repayPayPalOrder = async (req, res) => {
     if (order.status === 'paid') {
       return res.status(400).json({
         success: false,
-        message: '订单已支付，无需重新支付'
+        message: getMessage('PAYMENT.ORDER_ALREADY_PAID')
       });
     }
     
@@ -220,7 +221,7 @@ exports.repayPayPalOrder = async (req, res) => {
     
     return res.status(200).json({
       success: true,
-      message: 'PayPal重新支付订单创建成功',
+      message: getMessage('PAYMENT.PAYPAL_REPAY_ORDER_CREATE_SUCCESS'),
       data: {
         orderId: orderId,
         paypalOrderId: paypalOrderData.id
@@ -231,7 +232,7 @@ exports.repayPayPalOrder = async (req, res) => {
     console.error('PayPal重新支付失败:', error);
     return res.status(500).json({
       success: false,
-      message: 'PayPal重新支付失败',
+      message: getMessage('PAYMENT.PAYPAL_REPAY_FAILED'),
       error: error.message
     });
   }
@@ -243,7 +244,7 @@ exports.createCommonOrder = async (req, res) => {
     const { shippingInfo, paymentMethod, orderItems } = req.body;
     const userId = req.userId;
     if (!['wechat', 'alipay'].includes(paymentMethod)) {
-      return res.json({ success: false, message: '不支持的支付方式', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_METHOD'), data: null });
     }
     const connection = await pool.getConnection();
     await connection.beginTransaction();
@@ -264,7 +265,7 @@ exports.createCommonOrder = async (req, res) => {
       if (!cartItems || cartItems.length === 0) {
         await connection.rollback();
         connection.release();
-        return res.json({ success: false, message: '购物车为空', data: null });
+        return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
       const { orderId } = await initOrder(userId, cartItems, shippingInfo, paymentMethod, connection);
       await connection.commit();
@@ -278,7 +279,7 @@ exports.createCommonOrder = async (req, res) => {
         );
       }
       
-      return res.json({ success: true, message: '订单创建成功', data: { orderId } });
+      return res.json({ success: true, message: getMessage('PAYMENT.ORDER_CREATE_SUCCESS'), data: { orderId } });
     } catch (error) {
       await connection.rollback();
       connection.release();
@@ -298,11 +299,11 @@ exports.generateQrcode = async (req, res) => {
       [orderId]
     );
     if (orders.length === 0) {
-      return res.json({ success: false, message: '订单不存在', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND'), data: null });
     }
     const order = orders[0];
     if (order.status !== 'pending') {
-      return res.json({ success: false, message: '订单状态不正确，无法生成支付二维码', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.INVALID_ORDER_STATUS_FOR_QR'), data: null });
     }
     let paymentUrl;
     if (paymentMethod === 'wechat') {
@@ -310,10 +311,10 @@ exports.generateQrcode = async (req, res) => {
     } else if (paymentMethod === 'alipay') {
       paymentUrl = `https://example.com/alipay?orderId=${orderId}&amount=${order.total_amount}`;
     } else {
-      return res.json({ success: false, message: '不支持的支付方式', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_METHOD'), data: null });
     }
     const qrcodeDataUrl = await QRCode.toDataURL(paymentUrl);
-    return res.json({ success: true, message: '二维码生成成功', data: { qrcodeUrl: qrcodeDataUrl } });
+    return res.json({ success: true, message: getMessage('PAYMENT.QR_CODE_GENERATE_SUCCESS'), data: { qrcodeUrl: qrcodeDataUrl } });
   } catch (error) {
     return res.json({ success: false, message: error.message, data: null });
   }
@@ -328,10 +329,10 @@ exports.checkPaymentStatus = async (req, res) => {
       [orderId]
     );
     if (orders.length === 0) {
-      return res.json({ success: false, message: '订单不存在', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND'), data: null });
     }
     const order = orders[0];
-    return res.json({ success: true, message: '获取支付状态成功', data: { orderId, status: order.status } });
+    return res.json({ success: true, message: getMessage('PAYMENT.GET_STATUS_SUCCESS'), data: { orderId, status: order.status } });
   } catch (error) {
     return res.json({ success: false, message: error.message, data: null });
   }
@@ -346,11 +347,11 @@ exports.paymentCallback = async (req, res) => {
       [orderId]
     );
     if (orders.length === 0) {
-      return res.json({ success: false, message: '订单不存在', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND'), data: null });
     }
     const order = orders[0];
     if (order.status !== 'pending') {
-      return res.json({ success: false, message: '订单状态不正确，无法更新支付状态', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.INVALID_ORDER_STATUS_FOR_UPDATE'), data: null });
     }
     let newStatus;
     if (status === 'success') {
@@ -358,13 +359,13 @@ exports.paymentCallback = async (req, res) => {
     } else if (status === 'fail' || status === 'cancel') {
       newStatus = 'cancelled';
     } else {
-      return res.json({ success: false, message: '不支持的支付状态', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_STATUS'), data: null });
     }
     await pool.query(
       `UPDATE orders SET status = ?, payment_id = ? WHERE id = ?`,
       [newStatus, paymentId, orderId]
     );
-    return res.json({ success: true, message: '支付状态更新成功', data: { orderId, status: newStatus } });
+    return res.json({ success: true, message: getMessage('PAYMENT.STATUS_UPDATE_SUCCESS'), data: { orderId, status: newStatus } });
   } catch (error) {
     return res.json({ success: false, message: error.message, data: null });
   }

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { getMessage } = require('../config/messages');
 
 // 模拟Banner数据
 const banners = [
@@ -48,20 +49,20 @@ router.get('/:id', (req, res) => {
     if (!banner) {
       return res.status(404).json({
         success: false,
-        message: 'Banner不存在',
+        message: getMessage('BANNER.NOT_FOUND'),
         data: null
       });
     }
     res.json({
       success: true,
-      message: '获取Banner成功',
+      message: getMessage('BANNER.GET_SUCCESS'),
       data: banner
     });
   } catch (error) {
     console.error('获取Banner失败:', error);
     res.status(500).json({
       success: false,
-      message: '服务器错误',
+      message: getMessage('COMMON.SERVER_ERROR'),
       data: null
     });
   }
@@ -72,7 +73,7 @@ router.post('/', (req, res) => {
   // 实际项目中会将数据保存到数据库
   res.status(201).json({
     success: true,
-    message: 'Banner创建成功',
+    message: getMessage('BANNER.CREATE_SUCCESS'),
     data: {
       id: banners.length + 1,
       ...req.body
@@ -87,7 +88,7 @@ router.put('/:id', (req, res) => {
   // 实际项目中会更新数据库中的数据
   res.json({
     success: true,
-    message: 'Banner更新成功',
+    message: getMessage('BANNER.UPDATE_SUCCESS'),
     data: {
       id: parseInt(id),
       ...req.body
@@ -100,7 +101,7 @@ router.delete('/:id', (req, res) => {
   // 实际项目中会从数据库中删除数据（软删除）
   res.json({
     success: true,
-    message: 'Banner删除成功'
+    message: getMessage('BANNER.DELETE_SUCCESS')
   });
 });
 

@@ -1,14 +1,7 @@
 <template>
   <div class="register-page">
     <!-- Page Banner -->
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1 class="banner-title">
-          {{ $t('register.title') || '用户注册' }}
-        </h1>
-        <div class="banner-divider"></div>
-      </div>
-    </div>
+    <PageBanner :title="$t('register.title') || '用户注册'" />
 
     <!-- Register Form Section -->
     <div class="register-container">
@@ -51,7 +44,7 @@
               </div>
             </el-form-item>
 
-            <el-form-item prop="agree">
+            <el-form-item prop="agree" class="agree-form">
               <el-checkbox v-model="form.agree" class="agreement-checkbox">
                 {{ $t('register.agreeText') || '我已阅读并同意' }}
                 <a href="/user-agreement" target="_blank" class="agreement-link">
@@ -90,11 +83,13 @@
 <script>
 import { Message, Lock, Picture as PictureIcon } from '@element-plus/icons-vue'
 import FormInput from '@/components/common/FormInput.vue'
+import PageBanner from '@/components/common/PageBanner.vue'
 
 export default {
   name: 'UserRegister',
   components: {
-    FormInput
+    FormInput,
+    PageBanner
   },
   data() {
     return {
@@ -176,11 +171,11 @@ export default {
               }
             );
           } else {
-            this.$errorHandler.showError(res.message, 'register.error.failed');
+            this.$messageHandler.showError(res.message, 'register.error.failed');
             this.refreshCaptcha();
           }
         } catch (e) {
-          this.$errorHandler.showError(e, 'register.error.failed');
+          this.$messageHandler.showError(e, 'register.error.failed');
           this.refreshCaptcha();
         } finally {
           this.loading = false;
@@ -191,35 +186,9 @@ export default {
 }
 </script>
 
-<style scoped>
-/* Page Banner */
-.page-banner {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  padding: 60px 0;
-  text-align: center;
-  width: 100%;
-}
-
-.banner-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.banner-title {
-  font-family: Arial, sans-serif;
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: white;
-  margin: 0 0 1rem 0;
-}
-
-.banner-divider {
-  width: 6rem;
-  height: 0.25rem;
-  background-color: white;
-  margin: 0 auto;
-}
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
 
 /* Register Container */
 .register-container {
@@ -238,13 +207,11 @@ export default {
 }
 
 .register-card {
-  max-width: 600px;
+  width: 100%;
+  max-width: 550px;
   margin: 0 auto;
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 40px;
-  transition: box-shadow 0.3s ease;
+  @include card-hover;
+  padding: $spacing-2xl;
 }
 
 .register-card:hover {
@@ -275,17 +242,17 @@ export default {
 }
 
 .register-subtitle {
-  text-align: center;
-  color: #6b7280;
-  margin-bottom: 2rem;
-  font-size: 1rem;
-  font-family: Arial, sans-serif;
+  color: $text-secondary;
+  font-size: $font-size-xl;
+  max-width: 1000px;
+  margin: 0 auto;
+  line-height: $line-height-relaxed;
 }
 
 /* Form Styles */
 .register-form {
-  margin-top: 1.5rem;
-  max-width: 500px;
+  margin-top: $spacing-lg;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
 }
@@ -329,11 +296,24 @@ export default {
   border-color: #dc2626;
 }
 
+.agree-form {
+  @include flex-between;
+  margin-bottom: $spacing-lg;
+  font-size: $font-size-xl;
+}
+
 /* Agreement Checkbox */
 .agreement-checkbox {
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  color: #374151;
+  line-height: $line-height-relaxed;
+  font-size: $font-size-lg !important;
+  color: $text-secondary;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+/* 确保Element UI checkbox组件的字体大小 */
+:deep(.el-checkbox__label) {
+  font-size: $font-size-lg !important;
 }
 
 .agreement-link {
@@ -347,33 +327,7 @@ export default {
   text-decoration: underline;
 }
 
-/* Register Button */
-.register-button {
-  width: 100%;
-  background-color: #dc2626;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 0.375rem;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: Arial, sans-serif;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-}
 
-.register-button:hover:not(:disabled) {
-  background-color: #b91c1c;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.register-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
 
 /* Footer */
 .register-footer {
@@ -383,12 +337,6 @@ export default {
   border-top: 1px solid #e5e7eb;
 }
 
-.footer-text {
-  color: #6b7280;
-  margin-bottom: 0.5rem;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-}
 
 .footer-link {
   color: #dc2626;
@@ -403,150 +351,122 @@ export default {
 }
 
 /* Element UI Overrides */
-:deep(.el-form-item__content) {
-  width: 100%;
+.register-form :deep(.el-form-item) {
+  margin-bottom: $spacing-lg;
+}
+
+.register-form :deep(.el-form-item__content) {
   display: flex;
   justify-content: center;
-  line-height: normal;
-  margin-left: 0 !important;
+  max-width: 100%;
 }
 
-:deep(.el-input) {
+.register-form :deep(.el-input__inner) {
+  font-size: $font-size-xl;
+}
+
+.register-form :deep(.el-form-item__label) {
+  font-size: $font-size-xl;
+}
+
+/* Captcha Container */
+.captcha-container {
+  margin-top: $spacing-sm;
+  max-width: 100%;
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.captcha-input {
+  flex: 1;
   width: 100%;
 }
 
-:deep(.el-input__wrapper) {
-  width: 100% !important;
+.captcha-img {
   height: 48px;
-  border-radius: 0.375rem;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-}
-
-:deep(.el-input__wrapper:hover) {
-  border-color: #9ca3af;
-}
-
-:deep(.el-input__wrapper.is-focus) {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-}
-
-:deep(.el-input__inner) {
-  width: 100% !important;
-  height: 100%;
-  border: none;
-  border-radius: 0;
-  font-family: Arial, sans-serif;
-  font-size: 16px;
-  padding: 0 0px;
-  background-color: transparent;
-  transition: none;
-  line-height: 48px;
-  /* 恢复行高以确保文本垂直居中 */
-  box-sizing: border-box;
-  outline: none;
-  text-align: left;
-}
-
-:deep(.el-input__inner:focus) {
-  border: none;
-  box-shadow: none;
-  background-color: transparent;
-}
-
-/* 处理浏览器自动填充样式 */
-:deep(.el-input__inner:-webkit-autofill),
-:deep(.el-input__inner:-webkit-autofill:hover),
-:deep(.el-input__inner:-webkit-autofill:focus),
-:deep(.el-input__inner:-webkit-autofill:active) {
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-  -webkit-text-fill-color: #374151 !important;
-  background-color: #ffffff !important;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-/* 处理Firefox自动填充样式 */
-:deep(.el-input__inner:-moz-autofill) {
-  background-color: #ffffff !important;
-  color: #374151 !important;
-}
-
-/* 处理其他浏览器自动填充样式 */
-:deep(.el-input__inner:autofill) {
-  background-color: #ffffff !important;
-  color: #374151 !important;
-}
-
-
-
-:deep(.el-input__prefix) {
-  position: relative;
-  left: 0;
-  margin-right: 8px;
-  color: #6b7280;
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-:deep(.el-input__suffix) {
-  position: relative;
-  right: 0;
-  margin-left: 8px;
-  color: #6b7280;
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-:deep(.el-input__prefix .el-icon),
-:deep(.el-input__suffix .el-icon) {
-  font-size: 18px;
-}
-
-:deep(.el-input__password) {
-  color: #6b7280;
   cursor: pointer;
+  border: 1px solid #d1d5db;
+  transition: all 0.3s ease;
+  background-color: #f9fafb;
+  object-fit: cover;
+  flex: 0 0 auto;
 }
 
-:deep(.el-input__password:hover) {
-  color: #dc2626;
+.captcha-img:hover {
+  border-color: #9ca3af;
+  background-color: #f3f4f6;
 }
 
-:deep(.el-input__icon) {
-  line-height: 48px;
+/* Agreement Link */
+.agreement-link {
+  color: $primary-color;
+  text-decoration: none;
+  font-weight: $font-weight-medium;
+  transition: color 0.3s ease;
 }
 
-:deep(.el-checkbox) {
-  color: #374151;
+.agreement-link:hover {
+  color: darken($primary-color, 10%);
+  text-decoration: underline;
 }
 
-:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #dc2626;
-  border-color: #dc2626;
-}
-
-:deep(.el-checkbox__inner:hover) {
-  border-color: #dc2626;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 1.5rem;
-  display: flex;
-  justify-content: center;
+/* Register Button */
+.register-button {
   width: 100%;
+  @include button-primary;
+  @include button-lg;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-sm;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba($primary-color, 0.3);
+  }
+
+  &:disabled {
+    background: $gray-400;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+
+
+
+/* Footer */
+.register-footer {
+  text-align: center;
+  margin-top: $spacing-lg;
+}
+
+.footer-text {
+  color: $text-secondary;
+  margin: $spacing-sm 0;
+  font-size: $font-size-lg;
+  line-height: $line-height-relaxed;
+}
+
+.footer-link {
+  @include link-base;
+  font-weight: $font-weight-medium;
+  margin-left: $spacing-xs;
 }
 
 :deep(.el-form-item:not(.button-form-item) .el-form-item__content) {
-  max-width: 400px;
+  width: 100%;
+}
+
+/* 确保协议复选框与其他输入框左对齐 */
+:deep(.agree-form .el-form-item__content) {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+/* 确保注册按钮与输入框宽度一致 */
+:deep(.button-form-item .el-form-item__content) {
   width: 100%;
 }
 
@@ -555,15 +475,6 @@ export default {
   justify-content: center;
   margin-left: 0;
   margin-right: 0;
-}
-
-:deep(.button-form-item .el-form-item__content) {
-  display: flex;
-  justify-content: center;
-  margin-left: 0 !important;
-  /* Ensure no inherited margin */
-  width: 100%;
-  /* Ensure content area takes full width */
 }
 
 :deep(.el-form-item__error) {
@@ -580,13 +491,6 @@ export default {
     padding: 30px 20px;
   }
 
-  .page-banner {
-    padding: 40px 0;
-  }
-
-  .page-banner h1 {
-    font-size: 2rem;
-  }
 
   .register-container {
     padding: 40px 0;

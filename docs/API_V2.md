@@ -50,7 +50,7 @@ try {
       // 自定义错误处理逻辑
       console.log('自定义处理:', error.message);
       // 可以选择不显示错误，或显示自定义消息
-      this.$errorHandler.showWarning('操作失败，请稍后重试', 'common.warning.retry');
+      this.$messageHandler.showWarning('操作失败，请稍后重试', 'common.warning.retry');
     },
     fallbackKey: 'operation.error.failed'
   });
@@ -128,7 +128,7 @@ try {
   // 成功处理
 } catch (error) {
   console.error('登录失败:', error);
-  this.$errorHandler.showError(error, 'login.error.loginFailed');
+  this.$messageHandler.showError(error, 'login.error.loginFailed');
 }
 ```
 

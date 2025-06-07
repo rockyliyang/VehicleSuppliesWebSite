@@ -101,6 +101,7 @@
 
 <script>
 import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown } from '@element-plus/icons-vue'
+import { ChatDotRound } from '@element-plus/icons-vue'
 
 export default {
   name: 'AdminPage',
@@ -112,12 +113,14 @@ export default {
     User,
     Setting,
     Fold,
-    ArrowDown
+    ArrowDown,
+    ChatDotRound
   },
   data() {
     return {
       activeMenu: '/admin/products',
-      currentPage: '产品管理'
+      currentPage: '产品管理',
+      tokenCheckTimer: null
     }
   },
   watch: {
@@ -150,17 +153,53 @@ export default {
       }
     }
   },
+  mounted() {
+    this.startTokenCheck()
+  },
+  beforeUnmount() {
+    if (this.tokenCheckTimer) {
+      clearInterval(this.tokenCheckTimer)
+    }
+  },
   methods: {
+    async checkTokenValidity() {
+      try {
+        const res = await this.$api.post('/users/check-token')
+        if (!res.success) throw new Error('Token invalid')
+      } catch (e) {
+        this.$store.commit('setUser', null)
+        // 检查当前路由是否需要认证
+        const requiresAuth = this.$route.meta.requiresAuth ?? true
+        if (requiresAuth) {
+          this.$messageHandler.showError(null, 'common.error.tokenExpired')
+          this.$router.push('/admin-login')
+        }
+      }
+    },
+    startTokenCheck() {
+      // 每5分钟检查一次token有效性
+      this.tokenCheckTimer = setInterval(() => {
+        this.checkTokenValidity()
+      }, 5 * 60 * 1000) // 5分钟
+    },
     logout() {
       this.$confirm('确定要退出登录吗?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        // 清除admin token
-        localStorage.removeItem('admin_token')
-        this.$store.commit('setUser', null)
-        this.$router.push({ path: '/admin-login', query: { redirect: '/admin' } })
+        // 调用后端登出接口清除cookie
+        this.$api.post('/users/logout')
+          .then(() => {
+            this.$store.commit('setUser', null)
+            this.$router.push({ path: '/admin-login', query: { redirect: '/admin' } })
+          })
+          .catch(error => {
+            console.error('登出失败:', error)
+            // 即使API调用失败，也清除前端状态并跳转
+            this.$store.commit('setUser', null)
+            this.$router.push({ path: '/admin-login', query: { redirect: '/admin' } })
+          })
       }).catch(() => {})
     }
   }

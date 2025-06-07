@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { getMessage } = require('../config/messages');
 
 // 验证JWT Token的中间件
 const verifyToken = (req, res, next) => {
@@ -16,7 +17,7 @@ const verifyToken = (req, res, next) => {
     if (!token) {
       return res.status(401).json({ 
         success: false, 
-        message: '未授权，请先登录', 
+        message: getMessage('AUTH.UNAUTHORIZED'), 
         data: null 
       });
     }
@@ -25,9 +26,9 @@ const verifyToken = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // 将解码后的用户信息添加到请求对象中
-    req.userId = decoded.id;
+    req.userId = decoded.userId;
     req.userEmail = decoded.email;
-    req.userRole = decoded.userRole;
+    req.userRole = decoded.role;
     
     // 添加token续期功能
     req.token = token;
@@ -39,14 +40,14 @@ const verifyToken = (req, res, next) => {
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ 
         success: false, 
-        message: '登录已过期，请重新登录', 
+        message: getMessage('AUTH.TOKEN_EXPIRED'), 
         data: null 
       });
     }
     
     return res.status(401).json({ 
       success: false, 
-      message: '无效的令牌，请重新登录', 
+      message: getMessage('AUTH.INVALID_TOKEN'), 
       data: null 
     });
   }
@@ -57,7 +58,7 @@ const isAdmin = (req, res, next) => {
   if (req.userRole !== 'admin') {
     return res.status(403).json({ 
       success: false, 
-      message: '需要管理员权限', 
+      message: getMessage('AUTH.ADMIN_REQUIRED'), 
       data: null 
     });
   }

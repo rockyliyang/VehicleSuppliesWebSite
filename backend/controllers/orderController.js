@@ -1,8 +1,9 @@
-const {pool} = require('../db/db');
+const { pool } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
 const AlipaySdk = require('alipay-sdk').default;
 const QRCode = require('qrcode');
 const { ALIPAY_APP_ID, ALIPAY_PRIVATE_KEY, ALIPAY_PUBLIC_KEY, ALIPAY_GATEWAY, WECHAT_APP_ID, WECHAT_MCH_ID, WECHAT_API_KEY, WECHAT_NOTIFY_URL } = require('../config/env');
+const { getMessage } = require('../config/messages');
 
 // 根据环境变量决定使用哪个支付网关
 const PAYMENT_GATEWAY = process.env.PAYMENT_GATEWAY || 'stripe';
@@ -45,7 +46,7 @@ exports.createOrder = async (req, res) => {
         connection.release();
         return res.status(400).json({
           success: false,
-          message: '购物车为空，无法创建订单'
+          message: getMessage('ORDER.CART_EMPTY')
         });
       }
 
@@ -108,7 +109,7 @@ exports.createOrder = async (req, res) => {
       // 7. 返回订单信息
       return res.status(200).json({
         success: true,
-        message: '订单创建成功',
+        message: getMessage('ORDER.CREATE_SUCCESS'),
         data: {
           orderId,
           orderGuid,
@@ -125,7 +126,7 @@ exports.createOrder = async (req, res) => {
     console.error('创建订单失败:', error);
     return res.status(500).json({
       success: false,
-      message: '创建订单失败',
+      message: getMessage('ORDER.CREATE_FAILED'),
       error: error.message
     });
   }
@@ -153,7 +154,7 @@ exports.processPayment = async (req, res) => {
     if (cartItems.length === 0) {
       return res.status(400).json({
         success: false,
-        message: '购物车为空，无法处理支付'
+        message: getMessage('ORDER.CART_EMPTY')
       });
     }
 
@@ -190,7 +191,7 @@ exports.processPayment = async (req, res) => {
         // 支付网关未正确配置
         return res.status(500).json({
           success: false,
-          message: '支付网关配置错误，无法处理信用卡支付',
+          message: getMessage('ORDER.PAYMENT_GATEWAY_ERROR'),
           error: `未正确配置支付网关: ${PAYMENT_GATEWAY}`
         });
       }
@@ -211,7 +212,7 @@ exports.processPayment = async (req, res) => {
     } else {
       return res.status(400).json({
         success: false,
-        message: '不支持的支付方式'
+        message: getMessage('ORDER.UNSUPPORTED_PAYMENT_METHOD')
       });
     }
 
@@ -271,7 +272,7 @@ exports.processPayment = async (req, res) => {
     // 7. 返回订单信息
     return res.status(200).json({
       success: true,
-      message: '支付成功',
+      message: getMessage('ORDER.PAYMENT_SUCCESS'),
       data: {
         orderId,
         orderGuid,
@@ -283,7 +284,7 @@ exports.processPayment = async (req, res) => {
     console.error('处理支付失败:', error);
     return res.status(500).json({
       success: false,
-      message: '处理支付失败',
+      message: getMessage('ORDER.PAYMENT_FAILED'),
       error: error.message
     });
   }
@@ -321,7 +322,7 @@ exports.getOrders = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: '获取订单列表成功',
+      message: getMessage('ORDER.LIST_SUCCESS'),
       data: {
         total,
         page,
@@ -333,7 +334,7 @@ exports.getOrders = async (req, res) => {
     console.error('获取订单列表失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取订单列表失败',
+      message: getMessage('ORDER.LIST_FAILED'),
       error: error.message
     });
   }
@@ -362,7 +363,7 @@ exports.getOrderDetail = async (req, res) => {
     if (orders.length === 0) {
       return res.status(404).json({
         success: false,
-        message: '订单不存在'
+        message: getMessage('ORDER.NOT_FOUND')
       });
     }
 
@@ -387,7 +388,7 @@ exports.getOrderDetail = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: '获取订单详情成功',
+      message: getMessage('ORDER.DETAIL_SUCCESS'),
       data: {
         order,
         items: orderItems,
@@ -398,7 +399,7 @@ exports.getOrderDetail = async (req, res) => {
     console.error('获取订单详情失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取订单详情失败',
+      message: getMessage('ORDER.DETAIL_FAILED'),
       error: error.message
     });
   }
@@ -420,13 +421,13 @@ exports.generateQrcode = async (req, res) => {
       // 这里应调用微信支付SDK生成支付链接
       payUrl = 'https://api.mch.weixin.qq.com/pay/unifiedorder?mock_wechat_qr';
     } else {
-      return res.status(400).json({ success: false, message: '不支持的支付方式' });
+      return res.status(400).json({ success: false, message: getMessage('ORDER.UNSUPPORTED_PAYMENT_METHOD') });
     }
     // 生成二维码图片
     const qrcodeDataUrl = await QRCode.toDataURL(payUrl);
-    return res.json({ success: true, message: '二维码生成成功', data: { qrcodeUrl: qrcodeDataUrl, payUrl } });
+    return res.json({ success: true, message: getMessage('ORDER.QRCODE_SUCCESS'), data: { qrcodeUrl: qrcodeDataUrl, payUrl } });
   } catch (error) {
-    return res.status(500).json({ success: false, message: '二维码生成失败', error: error.message });
+    return res.status(500).json({ success: false, message: getMessage('ORDER.QRCODE_FAILED'), error: error.message });
   }
 };
 
@@ -439,5 +440,5 @@ exports.checkPaymentStatus = async (req, res) => {
   const { orderId, paymentMethod } = req.body;
   // 实际应查询支付网关订单状态
   // 这里mock为已支付
-  return res.json({ success: true, message: '支付成功', data: { paid: true } });
+  return res.json({ success: true, message: getMessage('ORDER.PAYMENT_SUCCESS'), data: { paid: true } });
 };

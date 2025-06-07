@@ -1,3 +1,5 @@
+const { getMessage } = require('../config/messages');
+
 /**
  * 获取支付配置信息
  * 从环境变量中读取支付相关的配置参数，提供给前端使用
@@ -8,7 +10,7 @@ exports.getPaymentConfig = async (req, res) => {
     // 从环境变量中获取支付配置
     const paymentConfig = {
       success: true,
-      message: '获取支付配置成功',
+      message: getMessage('PAYMENT.GET_CONFIG_SUCCESS'),
       data: {
         stripeConfig: {
           publicKey: process.env.STRIPE_PUBLIC_KEY || 'pk_test_your_stripe_public_key',
@@ -36,7 +38,7 @@ exports.getPaymentConfig = async (req, res) => {
     console.error('获取支付配置失败:', error);
     return res.status(500).json({
       success: false,
-      message: '获取支付配置失败',
+      message: getMessage('PAYMENT.GET_CONFIG_FAILED'),
       error: error.message
     });
   }

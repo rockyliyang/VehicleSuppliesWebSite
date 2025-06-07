@@ -1,14 +1,7 @@
 <template>
   <div class="login-page">
     <!-- Page Banner -->
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1 class="banner-title">
-          {{ $t('login.title') || '用户登录' }}
-        </h1>
-        <div class="banner-divider"></div>
-      </div>
-    </div>
+    <PageBanner :title="$t('login.title') || '用户登录'" />
 
     <!-- Login Form Section -->
     <div class="login-container">
@@ -105,12 +98,14 @@
 import { ElMessage } from 'element-plus'
 import { User, Lock, PhoneFilled, Message } from '@element-plus/icons-vue'
 import FormInput from '@/components/common/FormInput.vue'
+import PageBanner from '@/components/common/PageBanner.vue'
 /* eslint-enable no-unused-vars */
 
 export default {
   name: 'UserLogin',
   components: {
-    FormInput
+    FormInput,
+    PageBanner
   },
   data() {
     return {
@@ -204,16 +199,14 @@ export default {
       codeSending: false,
       cooldown: 0,
       timer: null,
-      logoUrl: '/static/images/logo.png',
-      tokenCheckTimer: null
+      logoUrl: '/static/images/logo.png'
     }
   },
   created() {
     this.fetchCompanyLogo();
   },
   mounted() {
-    // 页面加载时检查登录状态
-    this.checkLocalStorage()
+    // 登录状态现在通过store初始化时自动恢复
   },
   methods: {
     async fetchCompanyLogo() {
@@ -235,15 +228,14 @@ export default {
               username: this.loginForm.username,
               password: this.loginForm.password
             })
-            // 登录成功，保存token和用户信息
-            const { token, user } = response.data
+            // 登录成功，保存用户信息（token已通过cookie设置）
+            const { user } = response.data
             this.$store.commit('setUser', user)
-            localStorage.setItem('user_token', token)
-            this.$errorHandler.showSuccess(response.message || this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
-            this.startTokenCheck()
+            this.$messageHandler.showSuccess(response.message || this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
+            // Header组件已经启动了全局token检查，这里不需要重复启动
             this.$router.push(this.$route.query.redirect || '/')
           } catch (error) {
-            this.$errorHandler.showError(error, 'login.error.loginFailed')
+            this.$messageHandler.showError(error, 'login.error.loginFailed')
           } finally {
             this.loading = false
           }
@@ -252,7 +244,7 @@ export default {
           // 显示第一个验证错误
           const firstErrorField = Object.keys(fields)[0]
           const firstError = fields[firstErrorField][0]
-          this.$errorHandler.showError(firstError.message, 'login.error.checkInput')
+          this.$messageHandler.showError(firstError.message, 'login.error.checkInput')
           return false
         }
       })
@@ -264,7 +256,7 @@ export default {
           this.loading = true
           setTimeout(() => {
             this.loading = false
-            this.$errorHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
+            this.$messageHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
             this.$router.push('/')
           }, 1500)
         } else {
@@ -272,7 +264,7 @@ export default {
           // 显示第一个验证错误
           const firstErrorField = Object.keys(fields)[0]
           const firstError = fields[firstErrorField][0]
-          this.$errorHandler.showError(firstError.message, 'login.error.checkInput')
+          this.$messageHandler.showError(firstError.message, 'login.error.checkInput')
           return false
         }
       })
@@ -284,11 +276,11 @@ export default {
           this.codeSending = true
           setTimeout(() => {
             this.codeSending = false
-            this.$errorHandler.showSuccess(this.$t('login.success.codeSent'), 'login.success.codeSent')
+            this.$messageHandler.showSuccess(this.$t('login.success.codeSent'), 'login.success.codeSent')
             this.startCooldown()
           }, 1000)
         } else {
-          this.$errorHandler.showError(errorMessage, 'login.error.phoneFormat')
+          this.$messageHandler.showError(errorMessage, 'login.error.phoneFormat')
         }
       })
     },
@@ -301,45 +293,8 @@ export default {
         }
       }, 1000)
     },
-    startTokenCheck() {
-      if (this.tokenCheckTimer) clearInterval(this.tokenCheckTimer)
-      this.tokenCheckTimer = setInterval(this.checkTokenValidity, 5 * 60 * 1000)
-    },
-    async checkTokenValidity() {
-      const token = localStorage.getItem('user_token')
-      if (!token) return
-      try {
-        const res = await this.$api.get('/users/check-token', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        if (!res.success) throw new Error('Token invalid')
-      } catch (e) {
-        localStorage.removeItem('user_token')
-        this.$store.commit('setUser', null)
-        this.$errorHandler.showError(e, 'login.error.tokenExpired')
-        this.$router.push('/login')
-      }
-    },
-    // 检查本地存储中的登录信息
-    checkLocalStorage() {
-      const token = localStorage.getItem('token')
-      if (token && !this.$store.state.isLoggedIn) {
-        // 如果有token但store中未登录，尝试获取用户信息
-        this.getUserInfo()
-      }
-    },
-    
-    // 获取用户信息
-    async getUserInfo() {
-      try {
-        const userRes = await this.$api.get('/users/profile')
-        if (userRes.success) {
-          this.$store.commit('setUser', userRes.data)
-        }
-      } catch (error) {
-        console.error('获取用户信息失败:', error)
-      }
-    }
+    // Token检查已移至Header组件统一处理
+
   },
   beforeUnmount() {
     if (this.timer) {
@@ -349,108 +304,76 @@ export default {
 }
 </script>
 
-<style scoped>
-/* Page Banner */
-.page-banner {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 60px 20px;
-  text-align: center;
-  width: 100%;
-}
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
 
-.banner-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.banner-title {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: white;
-  margin: 0 0 20px 0;
-}
-
-.banner-divider {
-  width: 60px;
-  height: 4px;
-  background-color: white;
-  margin: 0 auto;
-}
 
 /* Login Container */
 .login-page {
   min-height: 100vh;
-  background-color: #f8f9fa;
-  display: flex;
-  flex-direction: column;
+  background-color: $gray-100;
+  @include flex-column;
 }
 
 .login-container {
-  padding: 60px 20px;
-  background-color: #f8f9fa;
+  padding: $spacing-4xl $spacing-lg;
+  background-color: $gray-100;
   min-height: calc(100vh - 200px);
   width: 100%;
 }
 
 .form-wrapper {
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0 $spacing-lg;
+  @include flex-center;
 }
 
 .login-card {
-  max-width: 450px;
+  width: 100%;
+  max-width: 550px;
   margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  padding: 40px;
-  transition: all 0.3s ease;
-}
-
-.login-card:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  @include card-hover;
+  padding: $spacing-2xl;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: $spacing-xl;
 }
 
 .logo {
-  width: 200px;
+  width: 300px;
   height: auto;
   max-height: 100px;
-  margin: 0 auto 20px auto;
+  margin: 0 auto $spacing-lg auto;
   object-fit: contain;
   display: block;
 }
 
 .login-title {
   text-align: center;
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin: 0 0 10px 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: $font-size-4xl;
+  font-weight: $font-weight-bold;
+  margin: 0 0 $spacing-sm 0;
+
+  .highlight {
+    color: $primary-color;
+  }
 }
 
 .login-subtitle {
   text-align: center;
-  color: #7f8c8d;
-  margin: 0 0 30px 0;
-  font-size: 1rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: $text-secondary;
+  font-size: $font-size-xl;
+  margin: 0 0 $spacing-xl 0;
+  line-height: $line-height-relaxed;
 }
 
 /* Form Styles */
 .login-form {
-  margin-top: 20px;
+  margin-top: $spacing-lg;
   max-width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -458,7 +381,7 @@ export default {
 
 /* Element UI Overrides */
 .login-form :deep(.el-form-item) {
-  margin-bottom: 20px;
+  margin-bottom: $spacing-lg;
 }
 
 .login-form :deep(.el-form-item__content) {
@@ -467,13 +390,21 @@ export default {
   max-width: 100%;
 }
 
+.login-form :deep(.el-input__inner) {
+  font-size: $font-size-xl;
+}
+
+.login-form :deep(.el-form-item__label) {
+  font-size: $font-size-xl;
+}
+
 /* Tabs */
 .login-tabs {
-  margin-bottom: 20px;
+  margin-bottom: $spacing-lg;
 }
 
 .login-tabs :deep(.el-tabs__header) {
-  margin: 0 0 20px 0;
+  margin: 0 0 $spacing-lg 0;
 }
 
 .login-tabs :deep(.el-tabs__nav-wrap::after) {
@@ -481,60 +412,51 @@ export default {
 }
 
 .login-tabs :deep(.el-tabs__item) {
-  font-size: 16px;
-  font-weight: 500;
-  color: #7f8c8d;
-  padding: 0 20px;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $text-secondary;
+  padding: 0 $spacing-lg;
 }
 
 .login-tabs :deep(.el-tabs__item.is-active) {
-  color: #667eea;
-  font-weight: 600;
+  color: $primary-color;
+  font-weight: $font-weight-bold;
 }
 
 .login-tabs :deep(.el-tabs__active-bar) {
-  background-color: #667eea;
+  background-color: $primary-color;
 }
 
 .login-tabs :deep(.el-tabs__content) {
-  min-height: 280px;
+  min-height: 200px;
 }
 
 .login-tabs :deep(.el-tab-pane) {
-  min-height: 280px;
+  min-height: 200px;
 }
 
 /* Remember & Forgot */
 .remember-forgot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-  font-size: 14px;
+  @include flex-between;
+  margin-bottom: $spacing-lg;
+  font-size: $font-size-xl;
 }
 
 .remember-checkbox :deep(.el-checkbox__label) {
-  color: #7f8c8d;
-  font-size: 14px;
+  color: $text-secondary;
+  font-size: $font-size-xl;
 }
 
 .forgot-password {
-  color: #667eea;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.forgot-password:hover {
-  color: #5a6fd8;
-  text-decoration: underline;
+  @include link-base;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-medium;
 }
 
 /* Verification Code */
 .code-container {
   display: flex;
-  gap: 12px;
+  gap: $spacing-sm;
   width: 100%;
 }
 
@@ -543,28 +465,23 @@ export default {
 }
 
 .code-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  @include button-primary;
+  @include gradient-primary;
+  padding: $spacing-sm $spacing-lg;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
   white-space: nowrap;
   min-width: 120px;
-}
 
-.code-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-  transform: translateY(-1px);
-}
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
 
-.code-button:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-  transform: none;
+  &:disabled {
+    background: $gray-400;
+    cursor: not-allowed;
+    transform: none;
+  }
 }
 
 /* Login Button */
@@ -574,121 +491,98 @@ export default {
 
 .login-button {
   width: 100%;
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 10px;
-}
+  @include button-primary;
+  @include button-lg;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-sm;
 
-.login-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
-}
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba($primary-color, 0.3);
+  }
 
-.login-button:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+  &:disabled {
+    background: $gray-400;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
 }
 
 /* Footer */
 .login-footer {
   text-align: center;
-  margin-top: 30px;
+  margin-top: $spacing-lg;
 }
 
 .footer-text {
-  color: #7f8c8d;
-  margin: 10px 0;
-  font-size: 14px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: $text-secondary;
+  margin: $spacing-sm 0;
+  font-size: $font-size-lg;
+  line-height: $line-height-relaxed;
 }
 
 .footer-link {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 500;
-  margin-left: 5px;
-  transition: color 0.3s ease;
-}
-
-.footer-link:hover {
-  color: #5a6fd8;
-  text-decoration: underline;
+  @include link-base;
+  font-weight: $font-weight-medium;
+  margin-left: $spacing-xs;
 }
 
 .social-login {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
+  margin-top: $spacing-lg;
+  @include flex-center;
+  gap: $spacing-md;
 }
 
 .social-login i {
-  font-size: 24px;
-  color: #bdc3c7;
+  font-size: $font-size-2xl;
+  color: $gray-400;
   cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 8px;
-  border-radius: 50%;
-}
+  transition: $transition-base;
+  padding: $spacing-sm;
+  border-radius: $border-radius-full;
 
-.social-login i:hover {
-  color: #667eea;
-  background-color: rgba(102, 126, 234, 0.1);
-  transform: translateY(-2px);
+  &:hover {
+    color: $primary-color;
+    background-color: rgba($primary-color, 0.1);
+    transform: translateY(-2px);
+  }
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@include mobile {
   .banner-title {
-    font-size: 2rem;
+    font-size: $font-size-3xl;
   }
 
   .login-card {
-    margin: 20px;
-    padding: 30px 20px;
+    margin: $spacing-lg;
+    padding: $spacing-xl $spacing-lg;
   }
 
   .form-wrapper {
-    padding: 0 10px;
+    padding: 0 $spacing-sm;
   }
 
   .code-container {
     flex-direction: column;
-    gap: 10px;
+    gap: $spacing-sm;
   }
 
   .code-button {
     width: 100%;
     min-width: auto;
   }
-}
 
-@media (max-width: 480px) {
-  .page-banner {
-    padding: 40px 15px;
-  }
-
-  .banner-title {
-    font-size: 1.8rem;
-  }
 
   .login-container {
-    padding: 40px 15px;
+    padding: $spacing-2xl $spacing-md;
   }
 
   .login-card {
-    margin: 10px;
-    padding: 25px 15px;
+    margin: $spacing-sm;
+    padding: $spacing-lg $spacing-md;
   }
 }
 </style>

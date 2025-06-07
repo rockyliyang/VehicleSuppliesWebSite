@@ -11,14 +11,14 @@
     </div>
 
     <!-- Products Section -->
-    <section class="py-16 bg-white">
-      <div class="container mx-auto">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold mb-2">
-            Our <span class="text-red-600">Products</span>
+    <section class="products-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">
+            {{ $t('products.our')}} <span class="highlight">{{ $t('products.products')}}</span>
           </h2>
-          <div class="w-24 h-1 bg-red-600 mx-auto mb-6"></div>
-          <p class="text-gray-600 max-w-3xl mx-auto">
+          <div class="section-divider"></div>
+          <p class="section-description">
             {{ $t('products.description') || defaultProductDescription}}
           </p>
         </div>
@@ -27,79 +27,54 @@
         <div class="mb-10">
           <div class="flex flex-wrap justify-center gap-2 mb-8">
             <button v-for="category in categories" :key="category.id"
-              :class="activeCategory === category.id.toString() ? 'px-6 py-2 bg-red-600 text-white rounded-md !rounded-button whitespace-nowrap cursor-pointer' : 'px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 !rounded-button whitespace-nowrap cursor-pointer'"
+              :class="['category-button', { active: activeCategory === category.id.toString() }]"
               @click="activeCategory = category.id.toString()">
               {{ category.name }}
             </button>
-            <button
-              class="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 !rounded-button whitespace-nowrap cursor-pointer">
-              {{ $t('products.more') || 'More' }}
-            </button>
+            <router-link to="/products">
+              <button class="more-button">
+                {{ $t('products.more') || 'More' }}
+              </button>
+            </router-link>
           </div>
         </div>
 
         <!-- Product Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div v-for="product in displayProducts" :key="product.id"
-            class="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
-            <router-link :to="`/product/${product.id}`">
-              <div class="h-64 overflow-hidden">
-                <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
-                  class="w-full h-full object-cover object-center">
-              </div>
-              <div class="p-4">
-                <h3 class="text-lg font-semibold mb-2">{{ product.name }}</h3>
-                <p class="text-gray-600 text-sm mb-3">{{ product.description || 'Powerful suction with long batter life'
-                  }}</p>
-                <div class="flex justify-between items-center">
-                  <span class="text-red-600 font-bold">${{ product.price || '59.99' }}</span>
-                  <button class="text-red-600 hover:text-red-800 !rounded-button whitespace-nowrap cursor-pointer">
-                    <i class="fas fa-arrow-right"></i>
-                  </button>
-                </div>
-              </div>
-            </router-link>
-          </div>
+          <ProductCard v-for="product in displayProducts" :key="product.id" :product="product" :show-description="true"
+            :show-arrow="true" :default-description="'Powerful suction with long battery life'" card-style="home"
+            @card-click="handleProductClick" @title-click="handleProductClick" />
         </div>
 
-        <div class="text-center mt-12">
-          <router-link to="/products">
-            <button
-              class="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition duration-300 !rounded-button whitespace-nowrap cursor-pointer">
-              {{ $t('products.viewAll') || 'View All Products' }} <i class="fas fa-arrow-right ml-2"></i>
-            </button>
-          </router-link>
-        </div>
+
       </div>
     </section>
 
     <!-- About Us Section -->
-    <section class="py-16 bg-gray-100">
-      <div class="container mx-auto px-4">
-        <div class="flex flex-col md:flex-row items-center gap-12">
-          <div class="md:w-1/2">
-            <h2 class="text-3xl font-bold mb-2">
-              About <span class="text-red-600">Us</span>
+    <section class="about-section">
+      <div class="container">
+        <div class="about-content">
+          <div class="about-text">
+            <h2 class="section-title">
+              {{ $t('about.title.about') }} <span class="highlight">{{ $t('about.title.us') }}</span>
             </h2>
-            <div class="w-24 h-1 bg-red-600 mb-6"></div>
-            <p class="text-gray-700 mb-6">
+            <div class="section-divider"></div>
+            <p class="about-description">
               {{ $t('about.description1') ||
               '我们是一家专业的汽车电子产品制造商，致力于为客户提供高品质的汽车吸尘器、充气泵、启动电源等产品。我们拥有先进的生产设备和专业的技术团队，确保每一款产品都能满足客户的需求。' }}
             </p>
-            <p class="text-gray-700 mb-6">
+            <p class="about-description">
               {{ $t('about.description2') || '我们的产品以卓越的性能、可靠的品质和创新的设计而闻名，已经获得了众多客户的信赖和好评。我们不断追求技术创新和产品改进，为客户提供更好的产品和服务。'
               }}
             </p>
-            <router-link to="/about">
-              <button
-                class="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition duration-300 !rounded-button whitespace-nowrap cursor-pointer">
-                {{ $t('about.learnMore') || '了解更多' }} <i class="fas fa-arrow-right ml-2"></i>
+            <router-link to="/about" class="learn-more-link">
+              <button class="learn-more-button">
+                {{ $t('about.learnMore') || '了解更多' }} <i class="fas fa-arrow-right"></i>
               </button>
             </router-link>
           </div>
-          <div class="md:w-1/2">
-            <img src="https://via.placeholder.com/600x400/f3f4f6/6b7280?text=About+Us" alt="About Us"
-              class="rounded-lg shadow-lg w-full h-auto" />
+          <div class="about-image">
+            <img src="https://via.placeholder.com/600x400/f3f4f6/6b7280?text=About+Us" alt="About Us" />
           </div>
         </div>
       </div>
@@ -110,9 +85,13 @@
 <script>
 // import axios from 'axios';
 import { handleImageError } from '../utils/imageUtils';
+import ProductCard from '../components/common/ProductCard.vue';
 
 export default {
   name: 'HomePage',
+  components: {
+    ProductCard
+  },
   data() {
     return {
       activeCategory: '',
@@ -137,6 +116,10 @@ export default {
   },
   methods: {
     handleImageError,
+    handleProductClick(product) {
+      // 产品点击事件处理，可以在这里添加额外的逻辑
+      console.log('Product clicked:', product);
+    },
     async fetchCategories() {
       try {
         const res = await this.$api.get('categories')
@@ -160,8 +143,9 @@ export default {
 }
 </script>
 
-<style scoped>
-@import '../assets/styles/shared.css';
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
 
 /* Element UI 组件样式穿透 */
 :deep(.el-carousel__indicator) {
@@ -211,6 +195,11 @@ export default {
 .banner-container {
   width: 100%;
   height: 500px;
+  background: $gradient-primary;
+
+  :deep(.el-carousel) {
+    height: 100%;
+  }
 }
 
 .banner-item {
@@ -219,11 +208,12 @@ export default {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  transition: $transition-base;
 }
 
 /* 基础样式 */
 .container {
-  max-width: 100%;
+  @include container;
 }
 
 /* Grid 样式 */
@@ -236,17 +226,173 @@ export default {
 }
 
 .gap-8 {
-  gap: 2rem;
+  gap: $spacing-xl;
+}
+
+/* Products Section 样式 */
+.products-section {
+  padding: $spacing-4xl 0;
+  background-color: $white;
+
+  .section-header {
+    text-align: center;
+    margin-bottom: $spacing-2xl;
+
+    .section-title {
+      font-size: $font-size-4xl;
+      font-weight: $font-weight-bold;
+      margin-bottom: $spacing-sm;
+      text-align: center;
+
+      .highlight {
+        color: $primary-color;
+      }
+    }
+
+    .section-divider {
+      width: 96px;
+      height: 4px;
+      background-color: $primary-color;
+      margin: 0 auto $spacing-lg;
+    }
+
+    .section-description {
+      color: $text-secondary;
+      font-size: $font-size-xl;
+      max-width: 1000px;
+      margin: 0 auto;
+      line-height: $line-height-relaxed;
+    }
+  }
+}
+
+/* 产品分类按钮 */
+.category-button {
+  @include button-outline;
+  padding: $spacing-md $spacing-xl;
+  /* px-8 py-3 equivalent */
+  margin: 0 $spacing-xs;
+  white-space: nowrap;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+
+  &.active {
+    @include button-primary;
+    padding: $spacing-md $spacing-xl;
+    /* 保持一致的padding */
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+/* More按钮样式 - 与category-button保持一致 */
+.more-button {
+  @include button-base;
+  background-color: $gray-200;
+  color: $gray-700;
+  padding: $spacing-md $spacing-xl;
+  /* 与category-button一致 */
+  margin: 0 $spacing-xs;
+  white-space: nowrap;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+
+  &:hover:not(:disabled) {
+    background-color: $gray-300;
+  }
+}
+
+/* Home页面特定的产品卡片样式覆盖 */
+.home-style {
+  /* 这些样式会应用到ProductCard组件上 */
+}
+
+/* About Section 样式 */
+.about-section {
+  padding: $spacing-4xl 0;
+  background-color: $gray-50;
+
+  .about-content {
+    @include flex-column;
+    gap: $spacing-2xl;
+
+    @media (min-width: $breakpoint-tablet) {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .about-image {
+    @media (min-width: $breakpoint-tablet) {
+      width: 50%;
+    }
+
+    img {
+      width: 100%;
+      height: auto;
+      border-radius: $border-radius-lg;
+      box-shadow: $shadow-lg;
+      transition: $transition-base;
+
+      &:hover {
+        transform: scale(1.02);
+        box-shadow: $shadow-xl;
+      }
+    }
+  }
+
+  .about-text {
+    @media (min-width: $breakpoint-tablet) {
+      width: 50%;
+    }
+
+    .section-title {
+      font-size: $font-size-4xl;
+      font-weight: $font-weight-bold;
+      margin-bottom: $spacing-sm;
+      text-align: left;
+
+      .highlight {
+        color: $primary-color;
+      }
+    }
+
+    .section-divider {
+      width: 96px;
+      height: 4px;
+      background-color: $primary-color;
+      margin-bottom: $spacing-lg;
+      margin-left: 0;
+    }
+
+    .about-description {
+      color: $text-secondary;
+      font-size: $font-size-lg;
+      margin-bottom: $spacing-lg;
+      line-height: $line-height-relaxed;
+    }
+
+    .learn-more-button {
+      @include button-primary;
+      @include button-lg;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+
+      i {
+        margin-left: $spacing-sm;
+      }
+    }
+  }
 }
 
 /* 响应式网格 */
-@media (min-width: 640px) {
+@media (min-width: $breakpoint-tablet) {
   .sm\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: $breakpoint-desktop) {
   .lg\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

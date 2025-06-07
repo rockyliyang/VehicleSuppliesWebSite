@@ -208,7 +208,7 @@ export default {
       return typeMap[status] || 'info';
     },
     async fetchOrders() {
-      if (!localStorage.getItem('user_token')) {
+      if (!this.$store.getters.isLoggedIn) {
         this.$router.push('/login?redirect=/user/orders');
         return;
       }
@@ -227,7 +227,7 @@ export default {
         }
       } catch (error) {
         console.error('获取订单列表失败:', error);
-        this.$errorHandler.showError(error, 'order.error.fetchListFailed');
+        this.$messageHandler.showError(error, 'orders.error.fetchFailed');
       } finally {
         this.loading = false;
       }
@@ -257,23 +257,6 @@ export default {
   background-color: #f8f9fa;
 }
 
-.page-banner {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  color: white;
-  padding: 80px 0;
-  text-align: center;
-}
-
-.banner-content {
-  width: 90%;
-  max-width: 1200px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.banner-content h1 {
-  color: white;
-}
 
 .breadcrumb {
   margin-top: 20px;
