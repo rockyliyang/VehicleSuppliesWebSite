@@ -24,8 +24,8 @@
         </div>
 
         <!-- Product Categories Tabs -->
-        <div class="mb-10">
-          <div class="flex flex-wrap justify-center gap-2 mb-8">
+        <div class="category-tabs-container">
+          <div class="category-buttons-wrapper">
             <button v-for="category in categories" :key="category.id"
               :class="['category-button', { active: activeCategory === category.id.toString() }]"
               @click="activeCategory = category.id.toString()">
@@ -40,7 +40,7 @@
         </div>
 
         <!-- Product Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="product-grid">
           <ProductCard v-for="product in displayProducts" :key="product.id" :product="product" :show-description="true"
             :show-arrow="true" :default-description="'Powerful suction with long battery life'" card-style="home"
             @card-click="handleProductClick" @title-click="handleProductClick" />
@@ -398,267 +398,30 @@ export default {
   }
 }
 
-/* 其他必要样式 */
-.relative {
-  position: relative;
+/* 分类标签容器 */
+.category-tabs-container {
+  margin-bottom: $spacing-xl;
 }
 
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.flex-wrap {
+.category-buttons-wrapper {
+  @include flex-center;
   flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-lg;
 }
 
-.items-center {
-  align-items: center;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.gap-2 {
-  gap: 0.5rem;
-}
-
-.mb-2 {
-  margin-bottom: 0.5rem;
-}
-
-.mb-3 {
-  margin-bottom: 0.75rem;
-}
-
-.mb-6 {
-  margin-bottom: 1.5rem;
-}
-
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-.mb-10 {
-  margin-bottom: 2.5rem;
-}
-
-.mb-12 {
-  margin-bottom: 3rem;
-}
-
-.mt-12 {
-  margin-top: 3rem;
-}
-
-.ml-2 {
-  margin-left: 0.5rem;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.px-4 {
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-.px-6 {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-}
-
-.py-2 {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-}
-
-.py-3 {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
-}
-
-.py-16 {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.text-lg {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-}
-
-.text-3xl {
-  font-size: 1.875rem;
-  line-height: 2.25rem;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.font-semibold {
-  font-weight: 600;
-}
-
-.text-white {
-  color: #ffffff;
-}
-
-.text-gray-600 {
-  color: #6b7280;
-}
-
-.text-gray-700 {
-  color: #374151;
-}
-
-.text-red-600 {
-  color: #dc2626;
-}
-
-.bg-white {
-  background-color: #ffffff;
-}
-
-.bg-gray-100 {
-  background-color: #f3f4f6;
-}
-
-.bg-gray-200 {
-  background-color: #e5e7eb;
-}
-
-.bg-red-600 {
-  background-color: #dc2626;
-}
-
-.rounded-md {
-  border-radius: 0.375rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.overflow-hidden {
-  overflow: hidden;
-}
-
-.transition-transform {
-  transition-property: transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-.transition {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-.duration-300 {
-  transition-duration: 300ms;
-}
-
-.hover\:shadow-xl:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.hover\:-translate-y-1:hover {
-  transform: translateY(-0.25rem);
-}
-
-.hover\:bg-gray-300:hover {
-  background-color: #d1d5db;
-}
-
-.hover\:bg-red-700:hover {
-  background-color: #b91c1c;
-}
-
-.hover\:text-red-800:hover {
-  color: #991b1b;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-.mx-auto {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.max-w-3xl {
-  max-width: 48rem;
-}
-
-.w-24 {
-  width: 6rem;
-}
-
-.w-full {
-  width: 100%;
-}
-
-.h-1 {
-  height: 0.25rem;
-}
-
-.h-64 {
-  height: 16rem;
-}
-
-.h-full {
-  height: 100%;
-}
-
-.h-auto {
-  height: auto;
-}
-
-.object-cover {
-  object-fit: cover;
-}
-
-.object-center {
-  object-position: center;
-}
-
-@media (min-width: 768px) {
-  .md\:w-1\/2 {
-    width: 50%;
+/* 产品网格 */
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-lg;
+  
+  @include tablet {
+    grid-template-columns: repeat(2, 1fr);
   }
-
-  .md\:flex-row {
-    flex-direction: row;
+  
+  @include desktop {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 </style>
