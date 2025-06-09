@@ -130,7 +130,7 @@ const routes = [
     path: '/activate',
     name: 'Activate',
     component: () => import('../views/Activate.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: false }
   },
   {
     path: '/checkout-complete',

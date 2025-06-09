@@ -390,9 +390,7 @@ export default {
   max-width: 100%;
 }
 
-.login-form :deep(.el-input__inner) {
-  font-size: $font-size-xl;
-}
+
 
 .login-form :deep(.el-form-item__label) {
   font-size: $font-size-xl;

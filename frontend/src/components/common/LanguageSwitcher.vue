@@ -19,8 +19,6 @@
 </template>
 
 <script>
-import { computed } from 'vue'
-import { useStore } from 'vuex'
 import { ArrowDown } from '@element-plus/icons-vue'
 
 export default {
@@ -28,71 +26,74 @@ export default {
   components: {
     ArrowDown
   },
-  setup() {
-    const store = useStore()
-    
-    // 获取当前语言
-    const currentLanguage = computed(() => store.getters['language/currentLanguage'])
-    
-    // 获取支持的语言列表
-    const supportedLanguages = computed(() => store.getters['language/supportedLanguages'])
-    
-    // 获取当前语言显示名称
-    const currentLanguageDisplay = computed(() => getLanguageDisplay(currentLanguage.value))
-    
-    // 语言显示名称映射
-    const languageDisplayMap = {
-      'zh-CN': '中文',
-      'en': 'English'
-    }
-    
-    // 获取语言显示名称
-    const getLanguageDisplay = (lang) => {
-      return languageDisplayMap[lang] || lang
-    }
-    
-    // 处理语言切换
-    const handleLanguageChange = (lang) => {
-      if (lang !== currentLanguage.value) {
-        store.dispatch('language/changeLanguage', lang)
+  data() {
+    return {
+      // 语言显示名称映射
+      languageDisplayMap: {
+        'zh-CN': '中文',
+        'en': 'English'
       }
     }
+  },
+  computed: {
+    // 获取当前语言
+    currentLanguage() {
+      return this.$store.getters['language/currentLanguage']
+    },
     
-    return {
-      currentLanguage,
-      supportedLanguages,
-      currentLanguageDisplay,
-      getLanguageDisplay,
-      handleLanguageChange
+    // 获取支持的语言列表
+    supportedLanguages() {
+      return this.$store.getters['language/supportedLanguages']
+    },
+    
+    // 获取当前语言显示名称
+    currentLanguageDisplay() {
+      return this.getLanguageDisplay(this.currentLanguage)
+    }
+  },
+  methods: {
+    // 获取语言显示名称
+    getLanguageDisplay(lang) {
+      return this.languageDisplayMap[lang] || lang
+    },
+    
+    // 处理语言切换
+    handleLanguageChange(lang) {
+      if (lang !== this.currentLanguage) {
+        this.$store.dispatch('language/changeLanguage', lang)
+      }
     }
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+
 .language-switcher {
   display: inline-block;
-  margin-left: 15px;
+  margin-left: $spacing-md;
 }
 
 .language-btn {
   cursor: pointer;
   display: flex;
   align-items: center;
-  color: #6b7280;
-  font-size: 18px;
-}
+  color: $text-secondary;
+  font-size: $font-size-xl;
+  transition: color 0.3s ease;
 
-.language-btn:hover {
-  color: #dc2626;
+  &:hover {
+    color: $primary-color;
+  }
 }
 
 /* 下拉菜单项字体大小 - 与按钮字体大小保持一致 */
 :deep(.el-dropdown-menu) {
   .el-dropdown-menu__item {
-    font-size: 18px !important;
-    line-height: 1.5;
-    padding: 8px 16px;
+    font-size: $font-size-xl !important;
+    line-height: $line-height-relaxed;
+    padding: $spacing-xs $spacing-md;
   }
 }
 </style>

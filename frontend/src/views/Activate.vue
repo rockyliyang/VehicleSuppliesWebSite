@@ -15,11 +15,11 @@
           </div>
 
           <div class="activate-message">
-            <el-result :icon="resultIcon" :title="resultTitle" :sub-title="resultSubTitle">
+            <el-result :icon="resultIcon" :title="resultTitle">
               <template #extra>
-                <button @click="goHome" class="home-button">
-                  {{ $t('activate.goHome') || '返回首页' }}
-                </button>
+                <el-button type="primary" @click="goHome" class="home-button">
+                  {{ $t('activate.goHome', 'Go to Login') }}
+                </el-button>
               </template>
             </el-result>
           </div>
@@ -82,11 +82,14 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
+
 /* Activate Container */
 .activate-container {
-  padding: 80px 0;
-  background: #f8f9fa;
+  padding: $spacing-4xl 0;
+  background: $gray-100;
   min-height: calc(100vh - 200px);
   width: 100%;
 }
@@ -94,115 +97,107 @@ export default {
 .result-wrapper {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
-  display: flex;
-  justify-content: center;
+  padding: 0 $spacing-md;
+  @include flex-center;
 }
 
 .activate-card {
   max-width: 600px;
   margin: 0 auto;
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 40px;
-  transition: box-shadow 0.3s ease;
-}
-
-.activate-card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  @include card-hover;
+  padding: $spacing-2xl;
 }
 
 .activate-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: $spacing-xl;
 }
 
 .logo {
-  width: 200px;
+  width: 300px;
   height: auto;
   max-height: 100px;
-  margin: 0 auto 20px auto;
+  margin: 0 auto $spacing-lg auto;
   object-fit: contain;
   display: block;
 }
 
 .activate-title {
   text-align: center;
-  font-size: 1.875rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
+  font-size: $font-size-4xl;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  margin-bottom: $spacing-sm;
   font-family: Arial, sans-serif;
 }
 
 .activate-message {
-  margin-top: 20px;
+  margin-top: $spacing-lg;
 }
 
-/* Home Button */
+/* Home Button - 与Login.vue的login-button保持一致 */
 .home-button {
-  background-color: #dc2626;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 0.375rem;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: Arial, sans-serif;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  min-width: 120px;
-}
+  width: 100%;
+  @include button-primary;
+  @include button-lg;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-sm;
+  height: auto;
 
-.home-button:hover {
-  background-color: #b91c1c;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba($primary-color, 0.3);
+  }
+
+  &:disabled {
+    background: $gray-400;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
 }
 
 /* Element UI Result Component Overrides */
 :deep(.el-result__title) {
   font-family: Arial, sans-serif;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1f2937;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
 }
 
 :deep(.el-result__subtitle) {
   font-family: Arial, sans-serif;
-  font-size: 1rem;
-  color: #6b7280;
-  margin-top: 0.5rem;
+  font-size: $font-size-lg;
+  color: $text-secondary;
+  margin-top: $spacing-sm;
 }
 
 :deep(.el-result__icon .el-icon) {
-  font-size: 4rem;
+  font-size: 5rem;
 }
 
 :deep(.el-result__icon .el-icon.el-icon-success) {
-  color: #10b981;
+  color: $success-color;
 }
 
 :deep(.el-result__icon .el-icon.el-icon-error) {
-  color: #dc2626;
+  color: $error-color;
 }
 
 /* Responsive Design */
-@media (max-width: 640px) {
+@media (max-width: $breakpoint-mobile) {
   .activate-card {
-    margin: 0 1rem;
-    padding: 30px 20px;
+    margin: 0 $spacing-md;
+    padding: $spacing-xl $spacing-lg;
   }
 
-
   .activate-container {
-    padding: 40px 0;
+    padding: $spacing-2xl 0;
   }
 
   .activate-title {
-    font-size: 1.5rem;
+    font-size: $font-size-2xl;
   }
 }
 </style>

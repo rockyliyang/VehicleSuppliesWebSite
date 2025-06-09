@@ -160,14 +160,12 @@ export default {
             captcha: this.form.captcha
           });
           if (res.success) {
-            this.$alert(
+            this.$messageHandler.showSuccessAlert(
               this.$t('register.success.message'), 
               this.$t('register.success.title'), 
-              {
-                confirmButtonText: this.$t('register.success.goToLogin'),
-                callback: () => {
-                  this.$router.push('/login');
-                }
+              null,
+              () => {
+                this.$router.push('/login');
               }
             );
           } else {
@@ -361,9 +359,7 @@ export default {
   max-width: 100%;
 }
 
-.register-form :deep(.el-input__inner) {
-  font-size: $font-size-xl;
-}
+/* el-input styles moved to FormInput component */
 
 .register-form :deep(.el-form-item__label) {
   font-size: $font-size-xl;

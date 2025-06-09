@@ -994,3 +994,26 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'el.pagination.prev', 'zh-CN', '上一页'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'el.pagination.next', 'en', 'Next'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'el.pagination.next', 'zh-CN', '下一页');
+
+-- ... existing code ...
+(UNHEX(REPLACE(UUID(), '-', '')), 'el.pagination.next', 'zh-CN', '下一页'),
+
+-- ACTIVATE相关翻译
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.title', 'en', 'Account Activation'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.title', 'zh-CN', '账号激活'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.pageTitle', 'en', 'Account Activation Result'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.pageTitle', 'zh-CN', '账号激活结果'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.goHome', 'en', 'Go Home'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.goHome', 'zh-CN', '返回首页'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.success.title', 'en', 'Activation Successful'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.success.title', 'zh-CN', '激活成功'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.success.message', 'en', 'Your account has been successfully activated, redirecting to homepage...'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.success.message', 'zh-CN', '您的账号已成功激活，正在跳转首页...'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.title', 'en', 'Activation Failed'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.title', 'zh-CN', '激活失败'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.invalidToken', 'en', 'Invalid activation link, please check the link or contact administrator.'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.invalidToken', 'zh-CN', '激活链接无效，请检查链接或联系管理员。'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.failed', 'en', 'Activation failed, please check the link or contact administrator.'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.failed', 'zh-CN', '激活失败，请检查链接或联系管理员。'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.networkError', 'en', 'Activation request error, please try again later.'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.networkError', 'zh-CN', '激活请求出错，请稍后重试。');
