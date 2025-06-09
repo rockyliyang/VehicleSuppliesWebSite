@@ -386,10 +386,6 @@ export default {
   gap: $spacing-md;
 }
 
-/* Navigation Menu 高度调整 */
-:deep(.navigation-menu) {
-  padding: $spacing-md 0;
-}
 
 /* 按钮样式优化 - 与Home.vue保持一致，使用:deep()覆盖el-button样式 */
 :deep(.continue-shopping-btn) {

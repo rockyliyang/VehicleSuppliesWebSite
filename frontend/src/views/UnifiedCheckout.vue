@@ -3,20 +3,8 @@
     <!-- 页面横幅 -->
     <PageBanner :title="isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算页面')" />
 
-    <!-- 面包屑导航 -->
-    <div class="breadcrumb-section">
-      <div class="container mx-auto px-4 py-4">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') || '首页' }}</el-breadcrumb-item>
-          <el-breadcrumb-item v-if="!isOrderDetail" :to="{ path: '/cart' }">{{ $t('cart.title') || '购物车'
-            }}</el-breadcrumb-item>
-          <el-breadcrumb-item v-if="isOrderDetail" :to="{ path: '/user/orders' }">{{ $t('order.myOrders') || '我的订单'
-            }}</el-breadcrumb-item>
-          <el-breadcrumb-item>{{ isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算')
-            }}</el-breadcrumb-item>
-        </el-breadcrumb>
-      </div>
-    </div>
+    <!-- Navigation Menu -->
+    <NavigationMenu :breadcrumb-items="breadcrumbItems" />
 
     <div class="container mx-auto px-4">
       <div class="checkout-content">
@@ -250,11 +238,13 @@
 
 <script>
 import PageBanner from '@/components/common/PageBanner.vue';
+import NavigationMenu from '@/components/common/NavigationMenu.vue';
 
 export default {
   name: 'UnifiedCheckout',
   components: {
-    PageBanner
+    PageBanner,
+    NavigationMenu
   },
   props: {
     items: {
@@ -307,6 +297,19 @@ export default {
       autoRefreshTimer: null,
       currentPaymentMethod: ''
     };
+  },
+  computed: {
+    breadcrumbItems() {
+      const items = [];
+      if (this.isOrderDetail) {
+        items.push({ text: this.$t('order.myOrders') || '我的订单', to: '/user/orders' });
+        items.push({ text: this.$t('order.detail') || '订单详情' });
+      } else {
+        items.push({ text: this.$t('cart.title') || '购物车', to: '/cart' });
+        items.push({ text: this.$t('checkout.title') || '结算' });
+      }
+      return items;
+    }
   },
   created() {
     this.initOrderItems();
@@ -812,90 +815,92 @@ export default {
 };
 </script>
 
-<style scoped>
-.breadcrumb :deep(.el-breadcrumb__inner:hover) {
-  color: white;
-}
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
 
 /* 主容器 */
 .unified-checkout {
   min-height: 100vh;
-  background: #f8fafc;
+  background: $gray-50;
+}
+
+.container {
+  @include container;
 }
 
 .checkout-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-bottom: 40px;
+
+  padding-bottom: $spacing-2xl;
 }
 
 /* 通用区块样式 */
 .order-summary,
 .shipping-info,
 .payment-methods {
-  background: white;
-  margin-bottom: 30px;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
+  background: $white;
+  margin-bottom: $spacing-xl;
+  padding: $spacing-xl;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-sm;
+  border: 1px solid $gray-200;
+  transition: $transition-slow;
 }
 
 .order-summary:hover,
 .shipping-info:hover,
 .payment-methods:hover {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-lg;
   transform: translateY(-2px);
 }
 
 /* 区块标题 */
 .section-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 24px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e53e3e;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 2px solid $primary-color;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: $spacing-sm;
 }
 
 .section-title i {
-  color: #e53e3e;
-  font-size: 22px;
+  color: $primary-color;
+  font-size: $font-size-2xl;
 }
 
 /* 订单表格 */
 .order-table {
-  border-radius: 8px;
+  border-radius: $border-radius-md;
   overflow: hidden;
 }
 
 .order-table :deep(.el-table__header) {
-  background: #f7fafc;
+  background: $gray-50;
 }
 
 .order-table :deep(.el-table th) {
-  background: #f7fafc;
-  color: #4a5568;
-  font-weight: 600;
-  border-bottom: 2px solid #e2e8f0;
+  background: $gray-50;
+  color: $text-secondary;
+  font-weight: $font-weight-semibold;
+  border-bottom: 2px solid $gray-200;
 }
 
 .product-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: $spacing-md;
 }
 
 .product-image {
   width: 60px;
   height: 60px;
-  border-radius: 8px;
+  border-radius: $border-radius-md;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid $gray-200;
 }
 
 .product-image img {
@@ -909,61 +914,66 @@ export default {
 }
 
 .product-name {
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 4px;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+  margin-bottom: $spacing-xs;
 }
 
 .product-code {
-  font-size: 12px;
-  color: #718096;
+  font-size: $font-size-xs;
+  color: $text-secondary;
 }
 
 .subtotal-price {
-  font-weight: 600;
-  color: #e53e3e;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-normal;
+  color: $primary-color;
 }
 
 /* 订单总计 */
 .order-total {
   text-align: right;
-  font-size: 20px;
-  font-weight: 700;
-  margin-top: 20px;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #e53e3e, #c53030);
-  color: white;
-  border-radius: 8px;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  margin-top: $spacing-lg;
+  padding: $spacing-md $spacing-lg;
+  background: $gradient-primary;
+  color: $white;
+  border-radius: $border-radius-md;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .total-price {
-  font-size: 24px;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $white;
 }
 
 /* 表单样式 */
 .shipping-form {
-  margin-top: 20px;
+  margin-top: $spacing-lg;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  margin-bottom: 20px;
+  gap: $spacing-xl;
+  margin-bottom: $spacing-lg;
 }
 
 .shipping-form :deep(.el-form-item) {
-  margin-bottom: 20px;
+  margin-bottom: $spacing-lg;
 }
 
 .shipping-form :deep(.el-form-item__label) {
-  font-weight: 600;
-  color: #4a5568;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $text-primary;
   text-align: left;
-  padding-right: 16px;
+  padding-right: $spacing-md;
   line-height: 40px;
   width: 100px;
   display: flex;
@@ -1051,48 +1061,49 @@ export default {
 
 /* 支付方式标签页 */
 .payment-tabs :deep(.el-tabs__header) {
-  margin-bottom: 30px;
+  margin-bottom: $spacing-xl;
 }
 
 .payment-tabs :deep(.el-tabs__nav-wrap::after) {
-  background: #e2e8f0;
+  background: $gray-200;
 }
 
 .payment-tabs :deep(.el-tabs__item) {
-  font-weight: 600;
-  color: #718096;
-  padding: 0 30px;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $text-secondary;
+  padding: 0 $spacing-xl;
   height: 50px;
   line-height: 50px;
 }
 
 .payment-tabs :deep(.el-tabs__item.is-active) {
-  color: #e53e3e;
+  color: $primary-color;
 }
 
 .payment-tabs :deep(.el-tabs__active-bar) {
-  background: #e53e3e;
+  background: $primary-color;
   height: 3px;
 }
 
 /* PayPal容器 */
 .paypal-container {
-  padding: 20px;
-  background: #f7fafc;
-  border-radius: 8px;
-  border: 2px dashed #e2e8f0;
+  padding: $spacing-lg;
+  background: $gray-50;
+  border-radius: $border-radius-md;
+  border: 2px dashed $gray-200;
 }
 
 /* 二维码容器 */
 .qrcode-container {
-  padding: 30px;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  padding: $spacing-xl;
+  background: $gray-50;
+  border-radius: $border-radius-lg;
+  border: 1px solid $gray-200;
 }
 
 .qrcode-content {
-  margin-bottom: 24px;
+  margin-bottom: $spacing-lg;
 }
 
 .qrcode-display {
@@ -1100,58 +1111,60 @@ export default {
 }
 
 .qrcode-image {
-  margin: 20px 0;
+  margin: $spacing-lg 0;
   display: inline-block;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #e2e8f0;
+  padding: $spacing-lg;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-md;
+  border: 2px solid $gray-200;
 }
 
 .qrcode-image img {
   max-width: 200px;
-  border-radius: 8px;
+  border-radius: $border-radius-md;
   display: block;
 }
 
 .qrcode-actions {
-  margin-top: 16px;
+  margin-top: $spacing-md;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: $spacing-md;
 }
 
 .qrcode-placeholder {
   text-align: center;
-  padding: 60px 20px;
-  color: #a0aec0;
+  padding: 60px $spacing-lg;
+  color: $gray-400;
 }
 
 .qrcode-placeholder-icon {
   font-size: 48px;
-  margin-bottom: 16px;
+  margin-bottom: $spacing-md;
   display: block;
 }
 
 .qrcode-placeholder-text {
-  font-size: 16px;
+  font-size: $font-size-md;
+  color: $text-secondary;
   margin: 0;
 }
 
 .qrcode-controls {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: $spacing-lg;
 }
 
 .generate-qr-btn {
-  background: linear-gradient(135deg, #e53e3e, #c53030);
+  background: $gradient-primary;
   border: none;
-  padding: 12px 30px;
-  font-weight: 600;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  padding: $spacing-md $spacing-xl;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  border-radius: $border-radius-md;
+  transition: $transition-slow;
   min-width: 160px;
 }
 
@@ -1161,41 +1174,41 @@ export default {
 }
 
 .refresh-qr-btn {
-  background: #f7fafc;
-  border: 2px solid #e2e8f0;
-  color: #4a5568;
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  font-size: 14px;
+  background: $gray-50;
+  border: 2px solid $gray-200;
+  color: $text-secondary;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $border-radius-sm;
+  transition: $transition-slow;
+  font-size: $font-size-sm;
 }
 
 .refresh-qr-btn:hover {
-  border-color: #cbd5e0;
-  background: #edf2f7;
+  border-color: $gray-300;
+  background: $gray-100;
 }
 
 .refresh-qr-btn i {
-  margin-right: 4px;
+  margin-right: $spacing-xs;
 }
 
 .qrcode-timer {
-  font-size: 14px;
-  color: #718096;
-  background: #edf2f7;
-  padding: 8px 16px;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  background: $gray-100;
+  padding: $spacing-sm $spacing-md;
   border-radius: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid $gray-200;
 }
 
 .polling-status {
-  margin-top: 20px;
-  color: #718096;
-  font-weight: 500;
+  margin-top: $spacing-lg;
+  color: $text-secondary;
+  font-weight: $font-weight-medium;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: $spacing-sm;
 }
 
 .polling-status i {
@@ -1216,121 +1229,121 @@ export default {
 .success-dialog :deep(.el-dialog) {
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: $shadow-xl;
 }
 
 .success-dialog :deep(.el-dialog__header) {
-  background: linear-gradient(135deg, #48bb78, #38a169);
-  color: white;
-  padding: 24px 30px;
+  background: linear-gradient(135deg, $success-color, #38a169);
+  color: $white;
+  padding: $spacing-lg $spacing-xl;
   margin: 0;
   text-align: center;
 }
 
 .success-dialog :deep(.el-dialog__title) {
-  color: white;
-  font-weight: 700;
-  font-size: 20px;
+  color: $white;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-xl;
 }
 
 .success-content {
   text-align: center;
-  padding: 40px 30px 30px;
+  padding: $spacing-2xl $spacing-xl $spacing-xl;
 }
 
 .success-icon-wrapper {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #e60012, #c50010);
-  border-radius: 50%;
+  background: $gradient-primary;
+  border-radius: $border-radius-full;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px;
+  margin: 0 auto $spacing-lg;
   box-shadow: 0 8px 25px rgba(230, 0, 18, 0.3);
 }
 
 .success-icon {
   font-size: 40px;
-  color: white;
-  font-weight: bold;
+  color: $white;
+  font-weight: $font-weight-bold;
   line-height: 1;
 }
 
 .success-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #2d3748;
-  margin: 0 0 12px 0;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  margin: 0 0 $spacing-md 0;
 }
 
 .success-message {
-  font-size: 16px;
-  color: #718096;
-  margin: 0 0 24px 0;
-  line-height: 1.5;
+  font-size: $font-size-md;
+  color: $text-secondary;
+  margin: 0 0 $spacing-lg 0;
+  line-height: $line-height-normal;
 }
 
 .order-info {
-  background: #f7fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px 20px;
+  background: $gray-50;
+  border: 2px solid $gray-200;
+  border-radius: $border-radius-lg;
+  padding: $spacing-md $spacing-lg;
   margin: 0 auto;
   max-width: 300px;
 }
 
 .order-label {
-  font-size: 14px;
-  color: #718096;
-  font-weight: 500;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  font-weight: $font-weight-medium;
 }
 
 .order-id {
-  font-size: 16px;
-  color: #2d3748;
-  font-weight: 700;
-  font-family: 'Courier New', monospace;
+  font-size: $font-size-md;
+  color: $text-primary;
+  font-weight: $font-weight-bold;
+  font-family: $font-family-mono;
 }
 
 .dialog-footer {
   display: flex;
-  gap: 16px;
+  gap: $spacing-md;
   justify-content: center;
-  padding: 0 30px 30px;
+  padding: 0 $spacing-xl $spacing-xl;
 }
 
 .home-btn,
 .orders-btn {
-  padding: 12px 28px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  padding: $spacing-md $spacing-lg;
+  border-radius: $border-radius-lg;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  transition: $transition-slow;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: $spacing-sm;
   min-width: 140px;
   justify-content: center;
 }
 
 .home-btn {
-  background: #ffffff;
-  border: 2px solid #e2e8f0;
-  color: #4a5568;
+  background: $white;
+  border: 2px solid $gray-200;
+  color: $text-secondary;
 }
 
 .home-btn:hover {
-  background: #f7fafc;
-  border-color: #cbd5e0;
+  background: $gray-50;
+  border-color: $gray-300;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-md;
 }
 
 .orders-btn {
-  background: linear-gradient(135deg, #e60012, #c50010);
+  background: $gradient-primary;
   border: none;
-  color: white;
+  color: $white;
 }
 
 .orders-btn:hover {
@@ -1340,32 +1353,32 @@ export default {
 
 /* 订单状态样式 */
 .order-status {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  margin-bottom: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
+  background: $white;
+  border-radius: $border-radius-xl;
+  padding: $spacing-2xl;
+  margin-bottom: $spacing-2xl;
+  box-shadow: $shadow-lg;
+  border: 1px solid $gray-200;
 }
 
 .status-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid #e9ecef;
+  background: linear-gradient(135deg, $gray-50 0%, $white 100%);
+  border-radius: $border-radius-lg;
+  padding: $spacing-lg;
+  border: 1px solid $gray-200;
 }
 
 .status-info {
   display: grid;
-  gap: 16px;
+  gap: $spacing-md;
 }
 
 .status-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #f1f3f4;
+  padding: $spacing-md 0;
+  border-bottom: 1px solid $gray-200;
 }
 
 .status-item:last-child {
@@ -1373,24 +1386,24 @@ export default {
 }
 
 .status-label {
-  font-size: 14px;
-  color: #6c757d;
-  font-weight: 500;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  font-weight: $font-weight-medium;
 }
 
 .status-value {
-  font-size: 14px;
-  color: #2d3748;
-  font-weight: 600;
+  font-size: $font-size-sm;
+  color: $text-primary;
+  font-weight: $font-weight-semibold;
 }
 
 .status-value.paid {
-  color: #e60012;
-  background: linear-gradient(135deg, #e60012, #c50010);
+  color: $primary-color;
+  background: $gradient-primary;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-weight: 700;
+  font-weight: $font-weight-bold;
 }
 
 /* 现代消息样式 */
@@ -1416,37 +1429,35 @@ export default {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
-
-
+@media (max-width: $breakpoint-mobile) {
   .banner-content h1 {
-    font-size: 24px;
+    font-size: $font-size-2xl;
   }
 
   .checkout-content {
-    padding: 0 16px;
+    padding: 0 $spacing-md;
   }
 
   .order-summary,
   .shipping-info,
   .payment-methods {
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: $spacing-lg;
+    margin-bottom: $spacing-lg;
   }
 
   .form-row {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: $spacing-md;
   }
 
   .order-total {
-    font-size: 16px;
+    font-size: $font-size-lg;
     flex-direction: column;
-    gap: 8px;
+    gap: $spacing-sm;
   }
 
   .total-price {
-    font-size: 20px;
+    font-size: $font-size-xl;
   }
 
   .product-info {
@@ -1458,6 +1469,10 @@ export default {
     width: 80px;
     height: 80px;
     margin: 0 auto;
+  }
+
+  .section-title {
+    font-size: $font-size-xl;
   }
 }
 </style>

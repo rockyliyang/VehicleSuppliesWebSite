@@ -439,48 +439,6 @@ export default {
   color: $white;
 }
 
-/* 路径导航菜单样式 */
-.navigation-menu {
-  background: $white;
-  padding: $spacing-sm 0;
-  margin-top: $spacing-md;
-  margin-bottom: $spacing-md;
-}
-
-.nav-content {
-  padding: 0;
-}
-
-.nav-breadcrumb {
-  font-size: $font-size-lg;
-}
-
-:deep(.nav-breadcrumb .el-breadcrumb__inner) {
-  color: $text-secondary;
-  font-weight: $font-weight-normal;
-}
-
-:deep(.nav-breadcrumb .el-breadcrumb__inner a) {
-  color: $text-secondary;
-  text-decoration: none;
-  transition: $transition-base;
-}
-
-:deep(#product-breadcrumb-nav .el-breadcrumb__item .el-breadcrumb__inner.is-link:hover) {
-  color: $primary-color !important;
-  text-decoration: none !important;
-}
-
-:deep(.nav-breadcrumb .el-breadcrumb__item:last-child .el-breadcrumb__inner) {
-  color: $primary-color;
-  font-weight: $font-weight-medium;
-}
-
-:deep(.nav-breadcrumb .el-breadcrumb__separator) {
-  color: $text-muted;
-  margin: 0 $spacing-sm;
-}
-
 .container {
   @include container;
 

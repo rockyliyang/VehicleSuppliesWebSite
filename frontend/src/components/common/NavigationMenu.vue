@@ -3,8 +3,7 @@
     <div class="nav-content">
       <el-breadcrumb separator=">" class="nav-breadcrumb">
         <el-breadcrumb-item :to="{ path: '/' }">{{ $t('breadcrumb.home') || '首页' }}</el-breadcrumb-item>
-        <el-breadcrumb-item v-for="(item, index) in filteredBreadcrumbItems" :key="index" 
-          :to="item.to">
+        <el-breadcrumb-item v-for="(item, index) in filteredBreadcrumbItems" :key="index" :to="item.to">
           {{ item.text }}
         </el-breadcrumb-item>
       </el-breadcrumb>
@@ -35,7 +34,7 @@ export default {
 
 .navigation-menu {
   background-color: $white;
-  padding: $spacing-sm 0;
+  padding: $spacing-md 0;
   margin-bottom: $spacing-md;
 }
 
@@ -47,23 +46,23 @@ export default {
 .nav-breadcrumb {
   font-size: $font-size-md;
   text-align: left;
-  
+
   :deep(.el-breadcrumb__item) {
     .el-breadcrumb__inner {
       color: $text-secondary;
       font-weight: $font-weight-normal;
-      
+
       &:hover {
         color: $primary-color;
       }
     }
-    
+
     &:last-child .el-breadcrumb__inner {
       color: $text-primary;
       font-weight: $font-weight-medium;
     }
   }
-  
+
   :deep(.el-breadcrumb__separator) {
     color: $text-secondary;
     margin: 0 $spacing-xs;
