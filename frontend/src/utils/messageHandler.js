@@ -254,16 +254,38 @@ class MessageHandler {
    * 显示成功消息
    * @param {string} message 
    * @param {string} translationKey 
+   * @param {Function} callback 
    */
-  static showSuccess(message, translationKey = null) {
+  static showSuccess(message, translationKey = null, callback = null) {
     const displayMessage = translationKey ? getTranslation(translationKey) : message
     ElMessage({
       message: displayMessage,
       type: 'success',
       duration: 2000,
       showClose: true,
-      customClass: 'elegant-success-message'
+      customClass: 'elegant-success-message',
+      onClose: callback
     })
+  }
+
+  /**
+   * 显示成功对话框（类似Alert，用户必须点击OK）
+   * @param {string} message 
+   * @param {string} translationKey 
+   * @param {Function} callback 
+   */
+  static showSuccessAlert(message, titleKey = null, translationKey = null, callback = null) {
+    const displayMessage = translationKey ? getTranslation(translationKey) : message
+    return ElMessageBox.alert(
+      displayMessage,
+      getTranslation(titleKey || 'common.success.title') || '操作成功',
+      {
+        confirmButtonText: getTranslation('common.confirm.ok') || '确定',
+        type: 'success',
+        customClass: 'elegant-success-alert-dialog',
+        callback: callback
+      }
+    )
   }
   
   /**

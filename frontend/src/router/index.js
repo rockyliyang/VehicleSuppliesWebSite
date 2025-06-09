@@ -118,13 +118,13 @@ const routes = [
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: () => import('../views/ForgotPassword.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: false  }
   },
   {
     path: '/reset-password',
     name: 'ResetPassword',
     component: () => import('../views/ResetPassword.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: false }
   },
   {
     path: '/activate',

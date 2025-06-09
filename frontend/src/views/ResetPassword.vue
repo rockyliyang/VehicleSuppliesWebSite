@@ -118,16 +118,18 @@ export default {
             password: this.form.password
           });
           if (res.success) {
-            this.$alert(
+            this.$messageHandler.showSuccessAlert(
               this.$t('resetPassword.success.message') || '密码重置成功，请使用新密码登录！', 
-              this.$t('resetPassword.success.title') || '重置成功', 
-              {
-                confirmButtonText: this.$t('resetPassword.success.goToLogin') || '去登录',
-                callback: () => {
-                  this.$router.push('/login');
-                }
+              'resetPassword.success.title',
+              null,
+              () => {
+                this.$router.push('/login');
               }
             );
+            // 延迟跳转到登录页面
+            setTimeout(() => {
+              this.$router.push('/login');
+            }, 2000);
           } else {
             this.$messageHandler.showError(res.message, 'resetPassword.error.failed');
           }
@@ -141,101 +143,67 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-
-
-.banner-content {
-    position: relative;
-    z-index: 1;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-.banner-title {
-    font-size: 3rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    letter-spacing: -0.025em;
-}
-
-.banner-divider {
-    width: 80px;
-    height: 4px;
-    background: #ffffff;
-    margin: 20px auto 0;
-    border-radius: 2px;
-    opacity: 0.9;
-}
+e
+<style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
 
 /* Main Container */
+.reset-password-page {
+    min-height: 100vh;
+    background-color: $gray-100;
+}
+
 .reset-password-container {
-    background: #f9fafb;
+    background: $gray-50;
     min-height: calc(100vh - 200px);
-    padding: 80px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: $spacing-4xl 0;
+    @include flex-center;
 }
 
 .form-wrapper {
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 $spacing-lg;
 }
 
 .reset-password-card {
-    background: #ffffff;
-    border-radius: 1rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    padding: 50px 40px;
-    border: 1px solid #e5e7eb;
+    @include card;
+    padding: $spacing-2xl;
+    border: 1px solid $gray-200;
     position: relative;
     overflow: hidden;
-}
-
-.reset-password-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #dc2626, #b91c1c);
 }
 
 /* Header */
 .reset-password-header {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: $spacing-2xl;
 }
 
 .logo {
-    width: 80px;
-    height: 80px;
+    width: 300px;
+    height: auto;
+    max-height: 100px;
     object-fit: contain;
-    margin-bottom: 20px;
-    border-radius: 50%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin: 0 auto $spacing-lg auto;
+    display: block;
 }
 
 .reset-password-title {
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: #111827;
-    margin: 0 0 12px 0;
+    font-size: $font-size-4xl;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    margin: 0 0 $spacing-sm 0;
     letter-spacing: -0.025em;
 }
 
 .reset-password-subtitle {
-    color: #6b7280;
-    font-size: 1rem;
+    color: $text-secondary;
+    font-size: $font-size-xl;
     margin: 0;
-    line-height: 1.6;
+    line-height: $line-height-relaxed;
     max-width: 400px;
     margin-left: auto;
     margin-right: auto;
@@ -243,36 +211,34 @@ export default {
 
 /* Form */
 .reset-password-form {
-    margin-bottom: 30px;
+    margin-bottom: $spacing-xl;
 }
 
 /* Button */
 .reset-password-button {
+    @include button-primary;
+    @include button-lg;
     width: 100%;
     max-width: 400px;
     height: 48px;
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-    color: #ffffff;
-    border: none;
-    border-radius: 0.375rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    border-radius: $border-radius-md;
+    transition: $transition-slow;
+    box-shadow: $shadow-md;
     position: relative;
     overflow: hidden;
 }
 
 .reset-password-button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    background-color: $primary-dark;
+    box-shadow: $shadow-lg;
     transform: translateY(-1px);
 }
 
 .reset-password-button:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: $shadow-md;
 }
 
 .reset-password-button:disabled {
@@ -284,26 +250,30 @@ export default {
 /* Footer */
 .reset-password-footer {
     text-align: center;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 30px;
+    border-top: 1px solid $gray-200;
+    padding-top: $spacing-xl;
 }
 
 .footer-text {
-    color: #6b7280;
-    font-size: 0.875rem;
-    margin: 0;
-    line-height: 1.5;
+    color: $text-secondary;
+    font-size: $font-size-lg;
+    margin: 0 0 $spacing-sm 0;
+    line-height: $line-height-relaxed;
+}
+
+.footer-text:last-child {
+    margin-bottom: 0;
 }
 
 .footer-link {
-    color: #dc2626;
+    color: $primary-color;
     text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s ease;
+    font-weight: $font-weight-medium;
+    transition: $transition-base;
 }
 
 .footer-link:hover {
-    color: #b91c1c;
+    color: $primary-dark;
     text-decoration: underline;
 }
 
@@ -323,23 +293,23 @@ export default {
 :deep(.el-input__wrapper) {
     width: 100% !important;
     height: 48px;
-    border-radius: 0.375rem;
-    border: 1px solid #d1d5db;
-    background-color: #ffffff;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    border-radius: $border-radius-md;
+    border: 1px solid $gray-300;
+    background-color: $white;
+    transition: $transition-base;
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 $spacing-sm;
 }
 
 :deep(.el-input__wrapper:hover) {
-    border-color: #9ca3af;
+    border-color: $gray-400;
 }
 
 :deep(.el-input__wrapper.is-focus) {
-    border-color: #dc2626;
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
 }
 
 :deep(.el-input__inner) {
@@ -347,8 +317,8 @@ export default {
     height: 100%;
     border: none;
     border-radius: 0;
-    font-family: Arial, sans-serif;
-    font-size: 16px;
+    font-family: $font-family-base;
+    font-size: $font-size-xl;
     padding: 0 0px;
     background-color: transparent;
     transition: none;
@@ -369,17 +339,17 @@ export default {
 :deep(.el-input__inner:-webkit-autofill:hover),
 :deep(.el-input__inner:-webkit-autofill:focus),
 :deep(.el-input__inner:-webkit-autofill:active) {
-    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-    -webkit-text-fill-color: #374151 !important;
-    background-color: #ffffff !important;
+    -webkit-box-shadow: 0 0 0 1000px $white inset !important;
+    -webkit-text-fill-color: $text-primary !important;
+    background-color: $white !important;
     transition: background-color 5000s ease-in-out 0s;
 }
 
 :deep(.el-input__prefix) {
     position: relative;
     left: 0;
-    margin-right: 8px;
-    color: #6b7280;
+    margin-right: $spacing-xs;
+    color: $text-muted;
     height: 100%;
     display: inline-flex;
     align-items: center;
@@ -389,8 +359,8 @@ export default {
 :deep(.el-input__suffix) {
     position: relative;
     right: 0;
-    margin-left: 8px;
-    color: #6b7280;
+    margin-left: $spacing-xs;
+    color: $text-muted;
     height: 100%;
     display: inline-flex;
     align-items: center;
@@ -399,20 +369,20 @@ export default {
 
 :deep(.el-input__prefix .el-icon),
 :deep(.el-input__suffix .el-icon) {
-    font-size: 18px;
+    font-size: $font-size-lg;
 }
 
 :deep(.el-input__password) {
-    color: #6b7280;
+    color: $text-muted;
     cursor: pointer;
 }
 
 :deep(.el-input__password:hover) {
-    color: #dc2626;
+    color: $primary-color;
 }
 
 :deep(.el-form-item) {
-    margin-bottom: 1.5rem;
+    margin-bottom: $spacing-xl;
     display: flex;
     justify-content: center;
     width: 100%;
@@ -438,23 +408,21 @@ export default {
 }
 
 :deep(.el-form-item__error) {
-    color: #dc2626;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    margin-top: 5px;
+    color: $error-color;
+    font-family: $font-family-base;
+    font-size: $font-size-sm;
+    margin-top: $spacing-xs;
 }
 
 /* Responsive Design */
-@media (max-width: 640px) {
+@include mobile {
     .reset-password-card {
-        margin: 0 1rem;
-        padding: 30px 20px;
+        margin: $spacing-lg;
+        padding: $spacing-xl $spacing-lg;
     }
 
-
-
     .reset-password-container {
-        padding: 40px 0;
+        padding: $spacing-2xl $spacing-md;
     }
 }
 </style>
