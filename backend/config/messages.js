@@ -163,6 +163,40 @@ const MESSAGES = {
     DELETE_SUCCESS: 'Banner deleted successfully',
     DELETE_FAILED: 'Failed to delete banner',
     NOT_FOUND: 'Banner not found'
+  },
+
+  // 通用内容管理相关
+  COMMON_CONTENT: {
+    NAV_LIST_SUCCESS: 'Navigation list retrieved successfully',
+    NAV_LIST_FAILED: 'Failed to retrieve navigation list',
+    CONTENT_SUCCESS: 'Content retrieved successfully',
+    CONTENT_FAILED: 'Failed to retrieve content',
+    CONTENT_NOT_FOUND: 'Content not found',
+    NAME_KEY_REQUIRED: 'Name key is required',
+    NAV_CODE_REQUIRED: 'Navigation code is required',
+    NAV_ID_REQUIRED: 'Navigation ID is required',
+    ADMIN_NAV_LIST_SUCCESS: 'Admin navigation list retrieved successfully',
+    ADMIN_NAV_LIST_FAILED: 'Failed to retrieve admin navigation list',
+    NAME_KEY_EXISTS: 'Name key already exists',
+    NAV_CODE_EXISTS: 'Navigation code already exists',
+    NAV_ADD_SUCCESS: 'Navigation added successfully',
+    NAV_ADD_FAILED: 'Failed to add navigation',
+    NAV_NOT_FOUND: 'Navigation not found',
+    NAV_UPDATE_SUCCESS: 'Navigation updated successfully',
+    NAV_UPDATE_FAILED: 'Failed to update navigation',
+    NAV_DELETE_SUCCESS: 'Navigation deleted successfully',
+    NAV_DELETE_FAILED: 'Failed to delete navigation',
+    CONTENT_LIST_SUCCESS: 'Content list retrieved successfully',
+    CONTENT_LIST_FAILED: 'Failed to retrieve content list',
+    REQUIRED_FIELDS_MISSING: 'Required fields are missing',
+    CONTENT_LANGUAGE_EXISTS: 'Content already exists for this language under this navigation',
+    CONTENT_ADD_SUCCESS: 'Content added successfully',
+    CONTENT_ADD_FAILED: 'Failed to add content',
+    TITLE_CONTENT_REQUIRED: 'Title and content are required',
+    CONTENT_UPDATE_SUCCESS: 'Content updated successfully',
+    CONTENT_UPDATE_FAILED: 'Failed to update content',
+    CONTENT_DELETE_SUCCESS: 'Content deleted successfully',
+    CONTENT_DELETE_FAILED: 'Failed to delete content'
   }
 };
 

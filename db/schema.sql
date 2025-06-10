@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS products (
   short_description TEXT,
   full_description TEXT,
   price DECIMAL(10, 2) NOT NULL,
+  thumbnail_url varchar(255) DEFAULT NULL,
   stock INT NOT NULL,
   category_id BIGINT NOT NULL,
   product_type ENUM('physical', 'virtual', 'service') NOT NULL DEFAULT 'physical' COMMENT '产品类型：physical-实物商品，virtual-虚拟商品，service-服务',

@@ -19,6 +19,7 @@ const cartRoutes = require('./routes/cartRoutes');
 const paymentConfigRoutes = require('./routes/paymentConfigRoutes');
 const languageRoutes = require('./routes/languageRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const commonContentRoutes = require('./routes/CommonContentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,6 +49,7 @@ app.use('/api/orders2', require('./routes/orderRoutes3'));
 app.use('/api/payment', paymentRoutes);
 app.use('/api/payment-config', paymentConfigRoutes); // Register payment config routes
 app.use('/api/language', languageRoutes);
+app.use('/api/common-content', commonContentRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));

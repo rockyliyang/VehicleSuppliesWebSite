@@ -1,190 +1,53 @@
 <template>
   <div class="about-page">
-    <PageBanner title="关于我们" />
+    <PageBanner :title="$t('about')" />
 
     <!-- Breadcrumb Section -->
     <div class="breadcrumb-section">
       <div class="container">
         <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item>关于我们</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: '/' }">{{ $t('home') }}</el-breadcrumb-item>
+          <el-breadcrumb-item>{{ $t('about') }}</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
     </div>
 
     <div class="container">
-      <div class="about-section">
-        <div class="company-intro">
-          <div class="section-title">
-            <h2>公司简介</h2>
-            <div class="title-underline"></div>
+      <div class="about-layout">
+        <!-- 侧边导航 -->
+        <div class="sidebar-nav">
+          <div class="nav-title">
+            <h3>{{ $t('about') }}</h3>
           </div>
-
-          <div class="intro-content">
-            <div class="intro-image">
-              <img :src="aboutCompanyImage" alt="公司简介" @error="handleImageError">
-            </div>
-            <div class="intro-text">
-              <h3>AUTO EASE EXPERT CO., LTD</h3>
-              <p>我们是一家专业从事汽车用品研发、生产和销售的公司，拥有多年的行业经验和专业技术。我们致力于为客户提供高品质、高性能的汽车用品，包括汽车吸尘器、车载充电器和汽车应急启动电源等产品。</p>
-              <p>公司成立于2010年，总部位于中国深圳，拥有现代化的生产基地和专业的研发团队。我们的产品远销欧美、亚洲等多个国家和地区，深受客户好评。</p>
-              <p>我们秉承"品质至上、客户为先"的经营理念，不断追求技术创新和产品改进，为客户提供更好的产品和服务。我们相信，只有不断提高产品质量和服务水平，才能在激烈的市场竞争中立于不败之地。</p>
-            </div>
-          </div>
+          <ul class="nav-menu">
+            <li 
+              v-for="nav in navList" 
+              :key="nav.id"
+              :class="{ active: currentNavId === nav.id }"
+              @click="selectNav(nav.id)"
+            >
+              <a href="#" @click.prevent>{{ nav.nav_name }}</a>
+            </li>
+          </ul>
         </div>
 
-        <div class="company-values">
-          <div class="section-title">
-            <h2>企业文化</h2>
-            <div class="title-underline"></div>
+        <!-- 主内容区域 -->
+        <div class="main-content">
+          <div v-if="loading" class="loading-container">
+            <el-loading :loading="true" text="加载中..." />
           </div>
-
-          <div class="values-grid">
-            <div class="value-card">
-              <div class="value-icon">
-                <el-icon>
-                  <Flag />
-                </el-icon>
-              </div>
-              <h3>使命</h3>
-              <p>为全球消费者提供高品质、高性能的汽车用品，让汽车生活更便捷、更舒适。</p>
+          
+          <div v-else-if="currentContent" class="content-section">
+            <div class="content-header">
+              <h2>{{ currentContent.title || getCurrentNavName() }}</h2>
+              <div class="title-underline"></div>
             </div>
-
-            <div class="value-card">
-              <div class="value-icon">
-                <el-icon>
-                  <ViewIcon />
-                </el-icon>
-              </div>
-              <h3>愿景</h3>
-              <p>成为全球领先的汽车用品供应商，引领行业发展，创造卓越价值。</p>
-            </div>
-
-            <div class="value-card">
-              <div class="value-icon">
-                <el-icon>
-                  <Medal />
-                </el-icon>
-              </div>
-              <h3>价值观</h3>
-              <p>诚信、创新、品质、共赢。我们坚持诚信经营，不断创新，追求卓越品质，实现与客户、员工、合作伙伴的共同发展。</p>
-            </div>
-
-            <div class="value-card">
-              <div class="value-icon">
-                <el-icon>
-                  <Management />
-                </el-icon>
-              </div>
-              <h3>经营理念</h3>
-              <p>品质至上、客户为先。我们始终将产品品质放在首位，以客户需求为导向，不断提升产品和服务质量。</p>
-            </div>
+            
+            <div class="content-body" v-html="currentContent.content"></div>
           </div>
-        </div>
-
-        <div class="company-advantages">
-          <div class="section-title">
-            <h2>我们的优势</h2>
-            <div class="title-underline"></div>
-          </div>
-
-          <div class="advantages-list">
-            <div class="advantage-item">
-              <div class="advantage-icon">
-                <el-icon>
-                  <Opportunity />
-                </el-icon>
-              </div>
-              <div class="advantage-content">
-                <h3>专业研发团队</h3>
-                <p>拥有一支经验丰富的研发团队，不断推出创新产品，满足市场需求。</p>
-              </div>
-            </div>
-
-            <div class="advantage-item">
-              <div class="advantage-icon">
-                <el-icon>
-                  <Service />
-                </el-icon>
-              </div>
-              <div class="advantage-content">
-                <h3>严格质量控制</h3>
-                <p>建立完善的质量管理体系，从原材料采购到成品出厂，每个环节都严格把关。</p>
-              </div>
-            </div>
-
-            <div class="advantage-item">
-              <div class="advantage-icon">
-                <el-icon>
-                  <Shop />
-                </el-icon>
-              </div>
-              <div class="advantage-content">
-                <h3>现代化生产基地</h3>
-                <p>拥有现代化的生产基地和先进的生产设备，确保产品品质和生产效率。</p>
-              </div>
-            </div>
-
-            <div class="advantage-item">
-              <div class="advantage-icon">
-                <el-icon>
-                  <Trophy />
-                </el-icon>
-              </div>
-              <div class="advantage-content">
-                <h3>完善的售后服务</h3>
-                <p>提供专业的售后服务，及时解决客户问题，确保客户满意度。</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="company-certificates">
-          <div class="section-title">
-            <h2>荣誉资质</h2>
-            <div class="title-underline"></div>
-          </div>
-
-          <div class="certificates-grid">
-            <div class="certificate-card">
-              <div class="certificate-image">
-                <img :src="certificate1Image" alt="ISO9001认证" @error="handleImageError">
-              </div>
-              <div class="certificate-info">
-                <h3>ISO9001认证</h3>
-                <p>国际质量管理体系认证</p>
-              </div>
-            </div>
-
-            <div class="certificate-card">
-              <div class="certificate-image">
-                <img :src="certificate2Image" alt="CE认证" @error="handleImageError">
-              </div>
-              <div class="certificate-info">
-                <h3>CE认证</h3>
-                <p>欧盟安全认证</p>
-              </div>
-            </div>
-
-            <div class="certificate-card">
-              <div class="certificate-image">
-                <img :src="certificate3Image" alt="RoHS认证" @error="handleImageError">
-              </div>
-              <div class="certificate-info">
-                <h3>RoHS认证</h3>
-                <p>欧盟有害物质限制指令认证</p>
-              </div>
-            </div>
-
-            <div class="certificate-card">
-              <div class="certificate-image">
-                <img :src="certificate4Image" alt="FCC认证" @error="handleImageError">
-              </div>
-              <div class="certificate-info">
-                <h3>FCC认证</h3>
-                <p>美国联邦通信委员会认证</p>
-              </div>
-            </div>
+          
+          <div v-else class="no-content">
+            <el-empty description="暂无内容" />
           </div>
         </div>
       </div>
@@ -193,62 +56,118 @@
 </template>
 
 <script>
-import aboutCompanyImage from '../assets/images/about-company.jpg';
-import certificate1Image from '../assets/images/certificate1.jpg';
-import certificate2Image from '../assets/images/certificate2.jpg';
-import certificate3Image from '../assets/images/certificate3.jpg';
-import certificate4Image from '../assets/images/certificate4.jpg';
-import { Flag, Medal, Management, Opportunity, Service, Shop, Trophy } from '@element-plus/icons-vue';
-import { View as ViewIcon } from '@element-plus/icons-vue';
-import { handleImageError } from '../utils/imageUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 
 export default {
   name: 'AboutPage',
   components: {
-    Flag,
-    ViewIcon,
-    Medal,
-    Management,
-    Opportunity,
-    Service,
-    Shop,
-    Trophy,
     PageBanner
   },
   data() {
     return {
-      companyInfo: {},
-      aboutCompanyImage,
-      certificate1Image,
-      certificate2Image,
-      certificate3Image,
-      certificate4Image
+      navList: [],
+      currentNavId: null,
+      currentContent: null,
+      loading: false,
+      currentLanguage: 'zh-CN'
+    }
+  },
+  computed: {
+    // 获取当前语言
+    lang() {
+      return this.$i18n.locale || 'zh-CN';
     }
   },
   methods: {
-    async fetchCompanyInfo() {
+    // 获取导航菜单列表
+    async fetchNavList() {
       try {
-        const response = await this.$api.get('company')
-        // response已经是标准格式，直接使用response.data
-        this.companyInfo = response.data
+        const response = await this.$api.get(`common-content/nav/about?lang=${this.lang}`);
+        this.navList = response.data.navList || [];
+        
+        // 默认选择第一个导航
+        if (this.navList.length > 0 && !this.currentNavId) {
+          this.currentNavId = this.navList[0].id;
+          await this.fetchContent(this.navList[0].name_key);
+        }
       } catch (error) {
-        // 错误已在api.js中统一处理
-        console.error('获取公司信息失败')
+        console.error('获取导航菜单失败:', error);
+        this.$message.error('获取导航菜单失败');
       }
     },
-    handleImageError
-  },
-  created() {
-    this.fetchCompanyInfo()
-  }
 
+    // 获取指定导航的内容
+    async fetchContent(nameKey) {
+      if (!nameKey) return;
+      
+      this.loading = true;
+      try {
+        const response = await this.$api.get(`common-content/content/${nameKey}/${this.lang}`);
+        this.currentContent = response.data.content;
+      } catch (error) {
+        console.error('获取内容失败:', error);
+        this.currentContent = null;
+        if (error.response && error.response.status !== 404) {
+          this.$message.error('获取内容失败');
+        }
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 选择导航菜单
+    async selectNav(navId) {
+      if (this.currentNavId === navId) return;
+      
+      this.currentNavId = navId;
+      const selectedNav = this.navList.find(nav => nav.id === navId);
+      if (selectedNav) {
+        await this.fetchContent(selectedNav.name_key);
+      }
+      
+      // 滚动到内容顶部
+      this.$nextTick(() => {
+        const contentSection = document.querySelector('.main-content');
+        if (contentSection) {
+          contentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    },
+
+    // 获取当前导航名称
+    getCurrentNavName() {
+      const currentNav = this.navList.find(nav => nav.id === this.currentNavId);
+      return currentNav ? currentNav.nav_name : '';
+    },
+
+    // 监听语言变化
+    async onLanguageChange() {
+      this.currentLanguage = this.lang;
+      await this.fetchNavList();
+      if (this.currentNavId) {
+        const selectedNav = this.navList.find(nav => nav.id === this.currentNavId);
+        if (selectedNav) {
+          await this.fetchContent(selectedNav.name_key);
+        }
+      }
+    }
+  },
+  async created() {
+    await this.fetchNavList();
+  },
+  watch: {
+    // 监听语言变化
+    '$i18n.locale'() {
+      this.onLanguageChange();
+    }
+  }
 }
 </script>
 
 <style scoped>
 .about-page {
   min-height: 100vh;
+  background-color: #f8f9fa;
 }
 
 .container {
@@ -257,20 +176,114 @@ export default {
   padding: 0 15px;
 }
 
-.about-section>div {
-  margin-bottom: 60px;
+.breadcrumb-section {
+  background-color: #fff;
+  padding: 15px 0;
+  border-bottom: 1px solid #e9ecef;
 }
 
-.section-title {
+.about-layout {
+  display: flex;
+  gap: 30px;
+  padding: 30px 0;
+  min-height: 600px;
+}
+
+/* 侧边导航 */
+.sidebar-nav {
+  width: 280px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.nav-title {
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+  background-color: #409EFF;
+  color: white;
+  border-radius: 8px 8px 0 0;
+}
+
+.nav-title h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.nav-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-menu li {
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.nav-menu li:last-child {
+  border-bottom: none;
+}
+
+.nav-menu li a {
+  display: block;
+  padding: 15px 20px;
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.nav-menu li:hover {
+  background-color: #f8f9fa;
+}
+
+.nav-menu li:hover a {
+  color: #409EFF;
+  padding-left: 25px;
+}
+
+.nav-menu li.active {
+  background-color: #409EFF;
+}
+
+.nav-menu li.active a {
+  color: white;
+  font-weight: 600;
+}
+
+/* 主内容区域 */
+.main-content {
+  flex: 1;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  min-height: 500px;
+}
+
+.loading-container {
+  padding: 60px;
+  text-align: center;
+}
+
+.content-section {
+  padding: 30px;
+}
+
+.content-header {
   text-align: center;
   margin-bottom: 30px;
 }
 
-.section-title h2 {
+.content-header h2 {
   font-size: 28px;
-  margin-bottom: 10px;
-  position: relative;
-  display: inline-block;
+  color: #333;
+  margin-bottom: 15px;
+  font-weight: 600;
 }
 
 .title-underline {
@@ -278,179 +291,122 @@ export default {
   height: 3px;
   background-color: #409EFF;
   margin: 0 auto;
+  border-radius: 2px;
 }
 
-/* 公司简介 */
-.intro-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-  align-items: center;
+.content-body {
+  line-height: 1.8;
+  color: #555;
+  font-size: 16px;
 }
 
-.intro-image {
-  flex: 1;
-  min-width: 300px;
+.content-body :deep(h1),
+.content-body :deep(h2),
+.content-body :deep(h3),
+.content-body :deep(h4),
+.content-body :deep(h5),
+.content-body :deep(h6) {
+  color: #333;
+  margin: 20px 0 15px 0;
+  font-weight: 600;
 }
 
-.intro-image img {
-  width: 100%;
+.content-body :deep(p) {
+  margin-bottom: 15px;
+  text-align: justify;
+}
+
+.content-body :deep(img) {
+  max-width: 100%;
   height: auto;
   border-radius: 4px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  margin: 15px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.intro-text {
-  flex: 1;
-  min-width: 300px;
-}
-
-.intro-text h3 {
-  font-size: 22px;
-  margin-bottom: 15px;
-  color: #409EFF;
-}
-
-.intro-text p {
-  margin-bottom: 15px;
-  line-height: 1.8;
-  color: #666;
-}
-
-/* 企业文化 */
-.values-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 30px;
-}
-
-.value-card {
-  background-color: #f9f9f9;
-  padding: 30px 20px;
-  border-radius: 4px;
-  text-align: center;
-  transition: all 0.3s;
-}
-
-.value-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-
-.value-icon {
-  font-size: 40px;
-  color: #409EFF;
+.content-body :deep(ul),
+.content-body :deep(ol) {
+  padding-left: 20px;
   margin-bottom: 15px;
 }
 
-.value-card h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
+.content-body :deep(li) {
+  margin-bottom: 8px;
 }
 
-.value-card p {
+.content-body :deep(blockquote) {
+  border-left: 4px solid #409EFF;
+  padding-left: 15px;
+  margin: 20px 0;
   color: #666;
-  line-height: 1.6;
-}
-
-/* 我们的优势 */
-.advantages-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.advantage-item {
-  display: flex;
-  gap: 20px;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 4px;
-  transition: all 0.3s;
-}
-
-.advantage-item:hover {
-  background-color: #f0f9ff;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-}
-
-.advantage-icon {
-  font-size: 36px;
-  color: #409EFF;
-  flex-shrink: 0;
-}
-
-.advantage-content h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.advantage-content p {
-  color: #666;
-  line-height: 1.6;
-}
-
-/* 荣誉资质 */
-.certificates-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 30px;
-}
-
-.certificate-card {
-  border: 1px solid #eee;
-  border-radius: 4px;
-  overflow: hidden;
-  transition: all 0.3s;
-}
-
-.certificate-card:hover {
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  transform: translateY(-5px);
-}
-
-.certificate-image {
-  height: 200px;
-  overflow: hidden;
-}
-
-.certificate-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s;
-}
-
-.certificate-card:hover .certificate-image img {
-  transform: scale(1.05);
-}
-
-.certificate-info {
+  font-style: italic;
+  background-color: #f8f9fa;
   padding: 15px;
+  border-radius: 0 4px 4px 0;
+}
+
+.no-content {
+  padding: 60px;
   text-align: center;
 }
 
-.certificate-info h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.certificate-info p {
-  color: #666;
-  font-size: 14px;
-}
-
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .intro-content {
+  .about-layout {
     flex-direction: column;
+    gap: 20px;
   }
-
-  .values-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  
+  .sidebar-nav {
+    width: 100%;
+    position: static;
   }
+  
+  .nav-menu {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .nav-menu li {
+    flex-shrink: 0;
+    border-bottom: none;
+    border-right: 1px solid #f0f0f0;
+  }
+  
+  .nav-menu li:last-child {
+    border-right: none;
+  }
+  
+  .nav-menu li a {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  
+  .content-section {
+    padding: 20px;
+  }
+  
+  .content-header h2 {
+    font-size: 24px;
+  }
+}
 
-  .certificates-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+@media (max-width: 480px) {
+  .container {
+    padding: 0 10px;
+  }
+  
+  .about-layout {
+    padding: 20px 0;
+  }
+  
+  .content-section {
+    padding: 15px;
+  }
+  
+  .content-body {
+    font-size: 14px;
   }
 }
 </style>

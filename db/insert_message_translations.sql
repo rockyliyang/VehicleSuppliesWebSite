@@ -995,10 +995,9 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'el.pagination.next', 'en', 'Next'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'el.pagination.next', 'zh-CN', '下一页');
 
--- ... existing code ...
-(UNHEX(REPLACE(UUID(), '-', '')), 'el.pagination.next', 'zh-CN', '下一页'),
 
 -- ACTIVATE相关翻译
+INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'activate.title', 'en', 'Account Activation'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'activate.title', 'zh-CN', '账号激活'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'activate.pageTitle', 'en', 'Account Activation Result'),
