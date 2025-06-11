@@ -52,7 +52,7 @@ export default {
           if (res.success) {
             this.$messageHandler.showSuccess('登录成功', 'login.success.loginSuccess');
             const { user } = res.data
-            this.$store.commit('setAdmin', user)
+            this.$store.commit('setUser', user)
             this.$router.push(this.$route.query.redirect || '/admin')
           } else {
             this.$messageHandler.showError(res.message, 'admin.login.error.loginFailed');

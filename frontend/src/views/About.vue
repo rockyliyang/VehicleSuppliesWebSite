@@ -2,15 +2,8 @@
   <div class="about-page">
     <PageBanner :title="$t('about')" />
 
-    <!-- Breadcrumb Section -->
-    <div class="breadcrumb-section">
-      <div class="container">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/' }">{{ $t('home') }}</el-breadcrumb-item>
-          <el-breadcrumb-item>{{ $t('about') }}</el-breadcrumb-item>
-        </el-breadcrumb>
-      </div>
-    </div>
+    <!-- 路径导航菜单 -->
+    <NavigationMenu :breadcrumb-items="breadcrumbItems" />
 
     <div class="container">
       <div class="about-layout">
@@ -20,32 +13,28 @@
             <h3>{{ $t('about') }}</h3>
           </div>
           <ul class="nav-menu">
-            <li 
-              v-for="nav in navList" 
-              :key="nav.id"
-              :class="{ active: currentNavId === nav.id }"
-              @click="selectNav(nav.id)"
-            >
-              <a href="#" @click.prevent>{{ nav.nav_name }}</a>
+            <li v-for="nav in navList" :key="nav.id" :class="{ active: currentNavId === nav.id }"
+              @click="selectNav(nav.id)">
+              <a href="#" @click.prevent>{{ $t(nav.name_key) }}</a>
             </li>
           </ul>
         </div>
 
         <!-- 主内容区域 -->
         <div class="main-content">
-          <div v-if="loading" class="loading-container">
-            <el-loading :loading="true" text="加载中..." />
+          <div v-if="loading" class="loading-container" v-loading="loading" element-loading-text="加载中...">
+            <div style="height: 200px;"></div>
           </div>
-          
+
           <div v-else-if="currentContent" class="content-section">
             <div class="content-header">
               <h2>{{ currentContent.title || getCurrentNavName() }}</h2>
               <div class="title-underline"></div>
             </div>
-            
+
             <div class="content-body" v-html="currentContent.content"></div>
           </div>
-          
+
           <div v-else class="no-content">
             <el-empty description="暂无内容" />
           </div>
@@ -57,11 +46,13 @@
 
 <script>
 import PageBanner from '@/components/common/PageBanner.vue';
+import NavigationMenu from '@/components/common/NavigationMenu.vue';
 
 export default {
   name: 'AboutPage',
   components: {
-    PageBanner
+    PageBanner,
+    NavigationMenu
   },
   data() {
     return {
@@ -75,7 +66,17 @@ export default {
   computed: {
     // 获取当前语言
     lang() {
-      return this.$i18n.locale || 'zh-CN';
+      return this.$store.getters['language/currentLanguage'] || 'zh-CN';
+    },
+    
+    // 面包屑导航项
+    breadcrumbItems() {
+      return [
+        {
+          text: this.$t('about'),
+          to: null // 当前页面，不需要链接
+        }
+      ];
     }
   },
   methods: {
@@ -103,7 +104,14 @@ export default {
       this.loading = true;
       try {
         const response = await this.$api.get(`common-content/content/${nameKey}/${this.lang}`);
-        this.currentContent = response.data.content;
+        const { contentList } = response.data;
+        
+        // 从contentList中获取内容
+        if (contentList && contentList.length > 0) {
+          this.currentContent = contentList[0];
+        } else {
+          this.currentContent = null;
+        }
       } catch (error) {
         console.error('获取内容失败:', error);
         this.currentContent = null;
@@ -137,7 +145,7 @@ export default {
     // 获取当前导航名称
     getCurrentNavName() {
       const currentNav = this.navList.find(nav => nav.id === this.currentNavId);
-      return currentNav ? currentNav.nav_name : '';
+      return currentNav ? currentNav.title : '';
     },
 
     // 监听语言变化
@@ -154,33 +162,41 @@ export default {
   },
   async created() {
     await this.fetchNavList();
+    
+    // 监听全局语言切换事件
+    this.$bus.on('language-changed', this.onLanguageChange);
+  },
+  
+  beforeUnmount() {
+    // 清理事件监听器
+    this.$bus.off('language-changed', this.onLanguageChange);
   },
   watch: {
     // 监听语言变化
-    '$i18n.locale'() {
-      this.onLanguageChange();
+    '$store.getters["language/currentLanguage"]'(newLang, oldLang) {
+      // 只有当语言真正发生变化时才触发
+      if (newLang !== oldLang && newLang !== this.currentLanguage) {
+        this.onLanguageChange();
+      }
     }
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/assets/styles/variables';
+@import '@/assets/styles/_mixins.scss';
+
 .about-page {
   min-height: 100vh;
   background-color: #f8f9fa;
 }
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 15px;
+  @include container;
 }
 
-.breadcrumb-section {
-  background-color: #fff;
-  padding: 15px 0;
-  border-bottom: 1px solid #e9ecef;
-}
+
 
 .about-layout {
   display: flex;
@@ -203,7 +219,7 @@ export default {
 .nav-title {
   padding: 20px;
   border-bottom: 1px solid #e9ecef;
-  background-color: #409EFF;
+  background-color: $primary-color;
   color: white;
   border-radius: 8px 8px 0 0;
 }
@@ -239,21 +255,24 @@ export default {
 }
 
 .nav-menu li:hover {
-  background-color: #f8f9fa;
+  background-color: rgba($primary-light, 0.1);
 }
 
 .nav-menu li:hover a {
-  color: #409EFF;
+  color: $primary-color;
   padding-left: 25px;
+  font-weight: 500;
 }
 
 .nav-menu li.active {
-  background-color: #409EFF;
+  background-color: rgba($primary-color, 0.05);
+  border-left: 4px solid $primary-color;
 }
 
 .nav-menu li.active a {
-  color: white;
-  font-weight: 600;
+  color: $primary-color;
+  font-weight: 700;
+  text-shadow: 0 0 1px rgba($primary-color, 0.3);
 }
 
 /* 主内容区域 */
@@ -289,7 +308,7 @@ export default {
 .title-underline {
   width: 80px;
   height: 3px;
-  background-color: #409EFF;
+  background-color: $primary-color;
   margin: 0 auto;
   border-radius: 2px;
 }
@@ -335,7 +354,7 @@ export default {
 }
 
 .content-body :deep(blockquote) {
-  border-left: 4px solid #409EFF;
+  border-left: 4px solid $primary-color;
   padding-left: 15px;
   margin: 20px 0;
   color: #666;
@@ -356,37 +375,37 @@ export default {
     flex-direction: column;
     gap: 20px;
   }
-  
+
   .sidebar-nav {
     width: 100%;
     position: static;
   }
-  
+
   .nav-menu {
     display: flex;
     overflow-x: auto;
     white-space: nowrap;
   }
-  
+
   .nav-menu li {
     flex-shrink: 0;
     border-bottom: none;
     border-right: 1px solid #f0f0f0;
   }
-  
+
   .nav-menu li:last-child {
     border-right: none;
   }
-  
+
   .nav-menu li a {
     padding: 12px 16px;
     font-size: 13px;
   }
-  
+
   .content-section {
     padding: 20px;
   }
-  
+
   .content-header h2 {
     font-size: 24px;
   }
@@ -396,15 +415,15 @@ export default {
   .container {
     padding: 0 10px;
   }
-  
+
   .about-layout {
     padding: 20px 0;
   }
-  
+
   .content-section {
     padding: 15px;
   }
-  
+
   .content-body {
     font-size: 14px;
   }

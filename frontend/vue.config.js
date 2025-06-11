@@ -18,6 +18,10 @@ module.exports = defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true
       },
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
       '/product-images/upload': {
         target: 'http://localhost:3000',
         changeOrigin: true

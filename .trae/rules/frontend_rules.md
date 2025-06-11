@@ -352,7 +352,7 @@ async saveUserData(userData) {
     const response = await this.$api.postWithErrorHandler('/api/users', userData, {
       fallbackKey: 'user.saveError'
     });
-    this.$message.success(this.$t('user.saveSuccess'));
+    this.$messageHandler.showSuccess(this.$t('user.saveSuccess'), 'user.saveSuccess');
     return response.data;
   } catch (error) {
     // 错误已经被统一处理
@@ -365,7 +365,7 @@ const response = await this.$api.postWithErrorHandler('/api/users', userData, {
   errorHandler: (error, fallbackKey) => {
     // 自定义错误处理逻辑
     console.error('Custom error handling:', error);
-    this.$message.error('操作失败，请重试');
+    this.$messageHandler.showError('操作失败，请重试', 'common.error.operationFailed');
   }
 });
 // PUT 请求
@@ -374,7 +374,7 @@ async updateUserData(userId, userData) {
     const response = await this.$api.putWithErrorHandler(`/api/users/${userId}`, userData, {
       fallbackKey: 'user.updateError'
     });
-    this.$message.success(this.$t('user.updateSuccess'));
+    this.$messageHandler.showSuccess(this.$t('user.updateSuccess'), 'user.updateSuccess');
     return response.data;
   } catch (error) {
     return null;
@@ -387,7 +387,7 @@ async deleteUser(userId) {
     await this.$api.deleteWithErrorHandler(`/api/users/${userId}`, {
       fallbackKey: 'user.deleteError'
     });
-    this.$message.success(this.$t('user.deleteSuccess'));
+    this.$messageHandler.showSuccess(this.$t('user.deleteSuccess'), 'user.deleteSuccess');
     return true;
   } catch (error) {
     return false;
@@ -427,56 +427,55 @@ async fetchData() {
 
 ### Message 使用规范
 
-所有组件和工具函数应使用 `$message` 进行消息提示：
+所有组件和工具函数应使用 `$messageHandler` 进行消息提示：
 
 **在 Vue 组件中使用：**
 ```javascript
 // 显示成功消息
-this.$message.success('操作成功')
+this.$messageHandler.showSuccess('操作成功', 'common.success.operationSuccess')
 
 // 显示错误消息
-this.$message.error('操作失败')
+this.$messageHandler.showError(error, 'common.error.operationFailed')
 
 // 显示警告消息
-this.$message.warning('请注意')
+this.$messageHandler.showWarning('请注意', 'common.warning.attention')
+
+// 显示信息消息
+this.$messageHandler.showInfo('提示信息', 'common.info.message')
 
 // 确认对话框
-this.$message.confirm('确认执行此操作？', '提示', {
-  confirmButtonText: '确定',
-  cancelButtonText: '取消',
-  type: 'warning'
-})
-
-// 在工具函数中使用（需要传递 $message）
-import { someUtilFunction } from '@/utils/someUtil'
-
-export default {
-  methods: {
-    async handleAction() {
-      await someUtilFunction({
-        $message: this.$message,
-        // 其他参数
-      })
-    }
-  }
+try {
+  await this.$messageHandler.confirm({
+    message: '确认执行此操作？',
+    translationKey: 'common.confirm.executeOperation'
+  })
+  // 用户确认后的操作
+} catch {
+  // 用户取消
 }
+
+// 成功对话框（用户必须点击确定）
+this.$messageHandler.showSuccessAlert(
+  '操作成功完成',
+  'common.success.title',
+  'common.success.operationCompleted'
+)
 ```
 
 **在工具函数中使用：**
 ```javascript
 // utils/someUtil.js
 export const someUtilFunction = async (context) => {
-  const { $message } = context
+  const { messageHandler } = context
   
   try {
-    await $message.confirm('确认执行此操作？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
+    await messageHandler.confirm({
+      message: '确认执行此操作？',
+      translationKey: 'common.confirm.executeOperation'
     })
     
     // 执行操作
-    $message.success('操作成功')
+    messageHandler.showSuccess('操作成功', 'common.success.operationSuccess')
   } catch {
     // 用户取消
   }
@@ -496,7 +495,7 @@ export default {
         router: this.$router,
         api: this.$api,
         $t: this.$t,
-        $message: this.$message,
+        messageHandler: this.$messageHandler,
         $bus: this.$bus
       })
     }
@@ -504,10 +503,12 @@ export default {
 }
 ```
 
-**使用 Message 的优势：**
-- 简单直接的消息处理
-- Element UI 原生支持
-- 统一的用户体验
+**MessageHandler 的优势：**
+- 统一的错误消息映射和国际化支持
+- 自动错误消息翻译和回退机制
+- 支持多种消息类型（成功、错误、警告、信息、确认）
+- 提供成功对话框和确认对话框
+- 与项目的国际化系统完全集成
 - 易于理解和维护
 
 
@@ -635,10 +636,10 @@ export default {
   methods: {
     showMessage() {
       // 在JavaScript中使用
-      this.$message.success(this.$t('common.saveSuccess'));
+      this.$messageHandler.showSuccess(this.$t('common.saveSuccess'), 'common.saveSuccess');
       
       // 错误消息
-      this.$message.error(this.$t('common.networkError'));
+      this.$messageHandler.showError(this.$t('common.networkError'), 'common.networkError');
     }
   }
 };
@@ -743,7 +744,7 @@ export default {
         await this.$api.postWithErrorHandler('/api/users', this.userForm, {
           fallbackKey: 'user.saveError'
         });
-        this.$message.success(this.$t('user.saveSuccess'));
+        this.$messageHandler.showSuccess(this.$t('user.saveSuccess'), 'user.saveSuccess');
       } catch (error) {
         // 错误已被统一处理
       }
@@ -892,7 +893,7 @@ export default {
           fallbackKey: 'user.deleteError'
         });
         
-        this.$message.success(this.$t('user.deleteSuccess'));
+        this.$messageHandler.showSuccess(this.$t('user.deleteSuccess'), 'user.deleteSuccess');
         this.fetchUsers();
       } catch (error) {
         // 用户取消或删除失败
@@ -1661,7 +1662,7 @@ export default {
     async saveData() {
       try {
         await this.apiCall();
-        this.$message.success(this.$t('message.save.success'));
+        this.$messageHandler.showSuccess(this.$t('message.save.success'), 'message.save.success');
       } catch (error) {
         // 使用showError处理API错误
         this.showError(error, {
@@ -1673,7 +1674,7 @@ export default {
     
     validateForm() {
       if (!this.email) {
-        this.$message.error(this.$t('form.validation.email.required'));
+        this.$messageHandler.showError(this.$t('form.validation.email.required'), 'form.validation.email.required');
         return false;
       }
       return true;
@@ -1688,7 +1689,7 @@ export default {
 async callApi() {
   try {
     const response = await this.$api.post('/users', userData);
-    this.$message.success(this.$t('user.create.success'));
+    this.$messageHandler.showSuccess(this.$t('user.create.success'), 'user.create.success');
   } catch (error) {
     // 优先使用后端返回的消息键
     this.showError(error, {

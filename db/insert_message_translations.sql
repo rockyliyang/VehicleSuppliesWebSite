@@ -1016,3 +1016,20 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.failed', 'zh-CN', '激活失败，请检查链接或联系管理员。'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.networkError', 'en', 'Activation request error, please try again later.'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'activate.error.networkError', 'zh-CN', '激活请求出错，请稍后重试。');
+
+
+-- 插入导航翻译数据到 language_translations 表
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+(UNHEX(REPLACE(UUID(), '-', '')), 'about.company', 'zh-CN', '公司简介'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'about.company', 'en', 'Our Company'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'about.culture', 'zh-CN', '企业文化'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'about.culture', 'en', 'Culture'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'about.certificate', 'zh-CN', '资质证书'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'about.certificate', 'en', 'Certificate'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'about.honors', 'zh-CN', '荣誉资质'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'about.honors', 'en', 'Honors and Qualification'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'news.industry', 'zh-CN', '行业新闻'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'news.industry', 'en', 'Industry News'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'news.company', 'zh-CN', '公司新闻'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'news.company', 'en', 'Company News')
+ON DUPLICATE KEY UPDATE value = VALUES(value);

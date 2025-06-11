@@ -8,7 +8,13 @@ CREATE TABLE IF NOT EXISTS language_translations (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
-  UNIQUE KEY unique_code_lang_not_deleted (code, lang, deleted)
+  active_unique_key VARCHAR(255) AS (
+    CASE 
+      WHEN deleted = 0 THEN CONCAT(code, '|', lang)
+      ELSE NULL 
+    END
+  ) VIRTUAL,
+  UNIQUE KEY unique_active_code_lang (active_unique_key)
 );
 
 -- 插入一些默认的翻译数据

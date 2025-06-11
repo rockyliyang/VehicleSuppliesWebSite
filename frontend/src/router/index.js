@@ -78,6 +78,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'common-content',
+        name: 'AdminCommonContent',
+        component: () => import('../views/admin/CommonContent.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'language',
         name: 'AdminLanguage',
         component: () => import('../views/admin/LanguageManagement.vue'),

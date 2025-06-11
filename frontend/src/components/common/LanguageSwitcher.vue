@@ -61,6 +61,8 @@ export default {
     handleLanguageChange(lang) {
       if (lang !== this.currentLanguage) {
         this.$store.dispatch('language/changeLanguage', lang)
+        // 触发全局语言切换事件
+        this.$bus.emit('language-changed', lang)
       }
     }
   }

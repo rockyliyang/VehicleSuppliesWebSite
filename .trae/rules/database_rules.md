@@ -38,6 +38,35 @@ alwaysApply: true
    UPDATE users SET deleted = 1, updated_at = NOW() WHERE id = ?;
    ```
 
+4. **软删除与唯一索引**
+   - **问题**: 直接在业务字段上建唯一索引会导致软删除记录被判断为重复
+   - **解决方案**: 使用虚拟列建唯一索引，只对未删除记录生效
+   
+   ```sql
+   -- 添加虚拟列：当未删除时生成唯一标识
+   active_unique_key VARCHAR(255) GENERATED ALWAYS AS (
+     IF(deleted = 0, CONCAT(field1, '-', field2), NULL)
+   ) STORED,
+   
+   -- 对虚拟列创建唯一索引
+   UNIQUE KEY uk_active_unique (active_unique_key)
+   ```
+   
+   **示例应用**:
+   ```sql
+   -- 购物车表：同一用户同一商品只能有一条未删除记录
+   active_unique_key VARCHAR(255) GENERATED ALWAYS AS (
+     IF(deleted = 0, CONCAT(user_id, '-', product_id), NULL)
+   ) STORED,
+   UNIQUE KEY unique_active_user_product (active_unique_key)
+   
+   -- 内容表：同一导航同一语言只能有一条未删除记录
+   active_unique_key VARCHAR(255) GENERATED ALWAYS AS (
+     IF(deleted = 0, CONCAT(nav_id, '-', language_code), NULL)
+   ) STORED,
+   UNIQUE KEY uk_active_nav_lang (active_unique_key)
+   ```
+
 ### 字段类型规范
 
 #### 字符串类型长度

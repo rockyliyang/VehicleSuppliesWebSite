@@ -59,14 +59,18 @@
               {{ $t('about.title.about') }} <span class="highlight">{{ $t('about.title.us') }}</span>
             </h2>
             <div class="section-divider"></div>
-            <p class="about-description">
-              {{ $t('about.description1') ||
-              '我们是一家专业的汽车电子产品制造商，致力于为客户提供高品质的汽车吸尘器、充气泵、启动电源等产品。我们拥有先进的生产设备和专业的技术团队，确保每一款产品都能满足客户的需求。' }}
-            </p>
-            <p class="about-description">
-              {{ $t('about.description2') || '我们的产品以卓越的性能、可靠的品质和创新的设计而闻名，已经获得了众多客户的信赖和好评。我们不断追求技术创新和产品改进，为客户提供更好的产品和服务。'
-              }}
-            </p>
+            <div v-if="aboutContent" class="about-description" v-html="aboutContent.content"></div>
+            <div v-else>
+              <p class="about-description">
+                {{ $t('about.description1') ||
+                '我们是一家专业的汽车电子产品制造商，致力于为客户提供高品质的汽车吸尘器、充气泵、启动电源等产品。我们拥有先进的生产设备和专业的技术团队，确保每一款产品都能满足客户的需求。' }}
+              </p>
+              <p class="about-description">
+                {{ $t('about.description2') ||
+                '我们的产品以卓越的性能、可靠的品质和创新的设计而闻名，已经获得了众多客户的信赖和好评。我们不断追求技术创新和产品改进，为客户提供更好的产品和服务。'
+                }}
+              </p>
+            </div>
             <router-link to="/about" class="learn-more-link">
               <button class="learn-more-button">
                 {{ $t('about.learnMore') || '了解更多' }} <i class="fas fa-arrow-right"></i>
@@ -74,7 +78,8 @@
             </router-link>
           </div>
           <div class="about-image">
-            <img src="https://via.placeholder.com/600x400/f3f4f6/6b7280?text=About+Us" alt="About Us" />
+            <img :src="aboutImageUrl || 'https://via.placeholder.com/600x400/f3f4f6/6b7280?text=About+Us'"
+              alt="About Us" @error="handleImageError" />
           </div>
         </div>
       </div>
@@ -102,17 +107,31 @@ export default {
       ],
       categories: [],
       products: [],
+      aboutContent: null,
+      aboutImageUrl: null,
       defaultProductDescription: 'We offer the best selection of automotive electronic products. Our            high-quality car vacuum cleaners, tire inflators, and jump starters are designed for maximum performance and reliability.',
     }
   },
   computed: {
     displayProducts() {
       return this.products.filter(product => product.category_id && product.category_id.toString() === this.activeCategory)
+    },
+    lang() {
+      return this.$store.getters['language/currentLanguage'];
     }
   },
   mounted() {
     this.fetchCategories()
     this.fetchProducts()
+    this.fetchAboutContent()
+    
+    // 监听语言切换事件
+    this.$bus.on('language-changed', this.onLanguageChange);
+  },
+  
+  beforeUnmount() {
+    // 清理事件监听器
+    this.$bus.off('language-changed', this.onLanguageChange);
   },
   methods: {
     handleImageError,
@@ -138,7 +157,30 @@ export default {
       } catch (e) {
         this.products = []
       }
-    }
+    },
+    
+    // 获取About Us内容
+    async fetchAboutContent() {
+      try {
+        const response = await this.$api.get(`common-content/content/home.about_us/${this.lang}`);
+        const { contentList } = response.data;
+        
+        if (contentList && contentList.length > 0) {
+          this.aboutContent = contentList[0];
+          // 直接从接口返回的数据中获取主图
+          this.aboutImageUrl = contentList[0].main_image || null;
+        }
+      } catch (error) {
+        console.error('获取About Us内容失败:', error);
+        this.aboutContent = null;
+        this.aboutImageUrl = null;
+      }
+    },
+     
+     // 语言切换处理
+     onLanguageChange() {
+       this.fetchAboutContent();
+     }
   }
 }
 </script>
@@ -415,11 +457,11 @@ export default {
   display: grid;
   grid-template-columns: 1fr;
   gap: $spacing-lg;
-  
+
   @include tablet {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   @include desktop {
     grid-template-columns: repeat(4, 1fr);
   }

@@ -135,9 +135,7 @@ export default {
 
 /* Footer 包装器 */
 .footer-wrapper {
-  max-width: $container-max-width;
-  margin: 0 auto;
-  padding: 0 $container-padding;
+  @include container;
 }
 
 /* Footer 网格布局 */
@@ -153,6 +151,16 @@ export default {
 
   @media (min-width: $breakpoint-desktop) {
     grid-template-columns: repeat(4, 1fr);
+    gap: $spacing-2xl; /* 增加列间距从32px到48px */
+  }
+
+  /* 为每列添加一致的内边距 */
+  > div {
+    padding-right: $spacing-md;
+    
+    &:last-child {
+      padding-right: 0;
+    }
   }
 }
 

@@ -22,8 +22,20 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
-  UNIQUE KEY (username),
-  UNIQUE KEY (email)
+  active_unique_username VARCHAR(255) AS (
+    CASE 
+      WHEN deleted = 0 THEN username
+      ELSE NULL 
+    END
+  ) VIRTUAL,
+  active_unique_email VARCHAR(255) AS (
+    CASE 
+      WHEN deleted = 0 THEN email
+      ELSE NULL 
+    END
+  ) VIRTUAL,
+  UNIQUE KEY unique_active_username (active_unique_username),
+  UNIQUE KEY unique_active_email (active_unique_email)
 );
 
 -- 产品分类表
@@ -38,7 +50,13 @@ CREATE TABLE IF NOT EXISTS product_categories (
   deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_code_not_deleted (code, deleted)
+  active_unique_key VARCHAR(255) AS (
+    CASE 
+      WHEN deleted = 0 THEN code
+      ELSE NULL 
+    END
+  ) VIRTUAL,
+  UNIQUE KEY unique_active_code (active_unique_key)
 );
 
 -- 产品表
@@ -58,8 +76,14 @@ CREATE TABLE IF NOT EXISTS products (
   deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  active_unique_key VARCHAR(255) AS (
+    CASE 
+      WHEN deleted = 0 THEN product_code
+      ELSE NULL 
+    END
+  ) VIRTUAL,
   FOREIGN KEY (category_id) REFERENCES product_categories(id),
-  UNIQUE KEY unique_product_code_not_deleted (product_code, deleted)
+  UNIQUE KEY unique_active_product_code (active_unique_key)
 );
 
 -- 产品图片表
@@ -142,7 +166,13 @@ CREATE TABLE IF NOT EXISTS site_settings (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
-  UNIQUE KEY (setting_key)
+  active_unique_key VARCHAR(255) AS (
+    CASE 
+      WHEN deleted = 0 THEN setting_key
+      ELSE NULL 
+    END
+  ) VIRTUAL,
+  UNIQUE KEY unique_active_setting_key (active_unique_key)
 );
 
 -- 公司信息表

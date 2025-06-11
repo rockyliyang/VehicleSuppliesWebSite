@@ -58,7 +58,7 @@
   cursor: pointer;
   transition: $transition-base;
   text-decoration: none;
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -69,7 +69,7 @@
   @include button-base;
   background-color: $primary-color;
   color: $white;
-  
+
   &:hover:not(:disabled) {
     background-color: $primary-dark;
   }
@@ -79,7 +79,7 @@
   @include button-base;
   background-color: $gray-100;
   color: $text-primary;
-  
+
   &:hover:not(:disabled) {
     background-color: $gray-200;
   }
@@ -90,7 +90,7 @@
   background-color: transparent;
   color: $primary-color;
   border: 1px solid $primary-color;
-  
+
   &:hover:not(:disabled) {
     background-color: $primary-color;
     color: $white;
@@ -118,7 +118,7 @@
 @mixin card-hover {
   @include card;
   transition: $transition-base;
-  
+
   &:hover {
     box-shadow: $shadow-xl;
     transform: translateY(-2px);
@@ -127,8 +127,7 @@
 
 // 容器混入
 @mixin container {
-  width: 100%;
-  max-width: $container-max-width;
+  width: 95%;
   margin: 0 auto;
   padding: 0 $container-padding;
 }
@@ -179,7 +178,7 @@
 @mixin hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  
+
   &::-webkit-scrollbar {
     display: none;
   }
@@ -198,13 +197,13 @@
   border-radius: $border-radius-md;
   font-size: $font-size-sm;
   transition: $transition-base;
-  
+
   &:focus {
     outline: none;
     border-color: $primary-color;
     box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
   }
-  
+
   &:disabled {
     background-color: $gray-100;
     color: $text-disabled;
@@ -217,7 +216,7 @@
   color: $primary-color;
   text-decoration: none;
   transition: $transition-base;
-  
+
   &:hover {
     color: $primary-dark;
     text-decoration: underline;

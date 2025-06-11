@@ -36,6 +36,12 @@
             </el-icon>
             <span>公司信息</span>
           </el-menu-item>
+          <el-menu-item index="/admin/common-content">
+            <el-icon>
+              <Document />
+            </el-icon>
+            <span>内容管理</span>
+          </el-menu-item>
           <el-menu-item index="/admin/language">
             <el-icon>
               <ChatDotRound />
@@ -100,7 +106,7 @@
 </template>
 
 <script>
-import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown } from '@element-plus/icons-vue'
+import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown, Document } from '@element-plus/icons-vue'
 import { ChatDotRound } from '@element-plus/icons-vue'
 
 export default {
@@ -114,7 +120,8 @@ export default {
     Setting,
     Fold,
     ArrowDown,
-    ChatDotRound
+    ChatDotRound,
+    Document
   },
   data() {
     return {
