@@ -83,7 +83,7 @@ export default {
     // 获取导航菜单列表
     async fetchNavList() {
       try {
-        const response = await this.$api.get(`common-content/nav/about?lang=${this.lang}`);
+        const response = await this.$api.get(`common-content/nav/about_us?lang=${this.lang}`);
         this.navList = response.data.navList || [];
         
         // 默认选择第一个导航

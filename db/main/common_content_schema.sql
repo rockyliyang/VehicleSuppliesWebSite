@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS common_content_nav (
   INDEX idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通用内容导航菜单主表';
 
--- 创建通用内容表
+-- 创建通用内容表（去除UNIQUE约束）
 CREATE TABLE IF NOT EXISTS common_content (
   id INT PRIMARY KEY AUTO_INCREMENT,
   nav_id INT NOT NULL COMMENT '关联导航菜单ID',
@@ -34,13 +34,8 @@ CREATE TABLE IF NOT EXISTS common_content (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0 COMMENT '软删除标记：0-未删除，1-已删除',
-  -- 添加虚拟列：当未删除时生成唯一标识
-  active_unique_key VARCHAR(255) GENERATED ALWAYS AS (
-    IF(deleted = 0, CONCAT(nav_id, '-', language_code), NULL)
-  ) STORED,
   FOREIGN KEY (nav_id) REFERENCES common_content_nav(id) ON DELETE CASCADE,
-  -- 对虚拟列创建唯一索引
-  UNIQUE KEY uk_active_nav_lang (active_unique_key),
+  INDEX idx_nav_id (nav_id),
   INDEX idx_language_code (language_code),
   INDEX idx_status (status),
   INDEX idx_deleted (deleted)

@@ -61,7 +61,7 @@
     </div>
 
     <!-- 内容管理模态框 -->
-    <div v-if="showContentModal" class="modal-overlay" @click="closeContentModal">
+    <div v-if="showContentModal" class="modal-overlay">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3>管理内容 - {{ selectedNav?.name }}</h3>
@@ -99,7 +99,7 @@
     </div>
 
     <!-- 添加/编辑导航模态框 -->
-    <div v-if="showAddNavModal || showEditNavModal" class="modal-overlay" @click="closeNavModal">
+    <div v-if="showAddNavModal || showEditNavModal" class="modal-overlay">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3>{{ showAddNavModal ? '添加导航' : '编辑导航' }}</h3>
@@ -163,7 +163,7 @@
     </div>
 
     <!-- 添加/编辑内容模态框 -->
-    <div v-if="showAddContentModal || showEditContentModal" class="modal-overlay" @click="closeContentModal">
+    <div v-if="showAddContentModal || showEditContentModal" class="modal-overlay">
       <div class="modal-content large" @click.stop>
         <div class="modal-header">
           <h3>{{ showAddContentModal ? '添加内容' : '编辑内容' }}</h3>

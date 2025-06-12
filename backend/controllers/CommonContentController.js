@@ -8,8 +8,9 @@ const fs = require('fs');
 // 获取前端导航菜单列表
 exports.getNavList = async (req, res) => {
     try {
-      const { language = 'zh-CN', contentType = 'about_us' } = req.query;
-      
+      const { language = 'zh-CN' } = req.query;
+      const { contentType = 'about_us' } = req.params;
+
       const [navList] = await pool.query(`
         SELECT 
           n.id,

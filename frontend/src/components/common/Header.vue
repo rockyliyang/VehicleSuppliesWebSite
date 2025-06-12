@@ -199,7 +199,7 @@ export default {
         if (!res.success) throw new Error('Token invalid')
       } catch (e) {
         this.$store.commit('setUser', null)
-        this.$messageHandler.showError(null, 'common.error.tokenExpired')
+        //this.$messageHandler.showError(null, 'common.error.tokenExpired')
         
         // 只有当前页面需要认证时才跳转到登录页面
         const currentRoute = this.$route
@@ -285,9 +285,12 @@ export default {
   min-width: 180px;
   max-width: 260px;
   height: 40px;
-  display: flex; /* 使用flex布局 */
-  align-items: center; /* 垂直居中 */
-  justify-content: flex-start; /* 水平向左对齐 */
+  display: flex;
+  /* 使用flex布局 */
+  align-items: center;
+  /* 垂直居中 */
+  justify-content: flex-start;
+  /* 水平向左对齐 */
 }
 
 .logo img {

@@ -3,6 +3,7 @@ node_modules/
 /dist
 /build
 dist/
+public/
 
 # 环境变量文件
 .env
