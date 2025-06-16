@@ -160,8 +160,9 @@ exports.capturePayPalPayment = async (req, res) => {
     const [orderResult] = await db.query(
       `INSERT INTO orders 
        (user_id, total_amount, status, payment_method, payment_id, order_guid, 
-        shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
+        created_by, updated_by) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         totalAmount,
@@ -173,7 +174,9 @@ exports.capturePayPalPayment = async (req, res) => {
         shippingInfo.phone,
         shippingInfo.email,
         `${shippingInfo.region.join(',')} ${shippingInfo.address}`,
-        shippingInfo.zipCode
+        shippingInfo.zipCode,
+        userId,
+        userId
       ]
     );
 
@@ -183,29 +186,31 @@ exports.capturePayPalPayment = async (req, res) => {
     for (const item of cartItems) {
       await db.query(
         `INSERT INTO order_items 
-         (order_id, product_id, quantity, price, product_name, product_code) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
+         (order_id, product_id, quantity, price, product_name, product_code, created_by, updated_by) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           orderId,
           item.product_id,
           item.quantity,
           item.price,
           item.name,
-          item.product_code
+          item.product_code,
+          userId,
+          userId
         ]
       );
 
       // 更新产品库存
       await db.query(
-        `UPDATE products SET stock = stock - ? WHERE id = ? AND deleted = 0`,
-        [item.quantity, item.product_id]
+        `UPDATE products SET stock = stock - ?, updated_by = ? WHERE id = ? AND deleted = 0`,
+        [item.quantity, userId, item.product_id]
       );
     }
 
     // 清空购物车
     await db.query(
-      `UPDATE cart_items SET deleted = 1 WHERE user_id = ? AND deleted = 0`,
-      [userId]
+      `UPDATE cart_items SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0`,
+      [userId, userId]
     );
 
     // 返回订单信息

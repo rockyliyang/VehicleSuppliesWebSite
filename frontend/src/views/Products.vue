@@ -2,7 +2,7 @@
   <div class="products-page">
     <!-- Modern Banner Section -->
     <PageBanner :title="$t('products.title') || '产品中心'" />
-
+    <NavigationMenu :breadcrumb-items="breadcrumbItems" />
     <!-- Category Navigation -->
     <div class="category-navigation-wrapper py-8">
       <div class="container mx-auto">
@@ -30,17 +30,10 @@
 
           <!-- Modern Products Grid -->
           <div class="products-grid">
-            <ProductCard 
-              v-for="product in paginatedProducts" 
-              :key="product.id" 
-              :product="product"
-              :show-description="true"
-              :show-arrow="true"
-              :default-description="'Powerful suction with long battery life'"
-              card-style="products"
-              @card-click="handleProductClick"
-              @title-click="handleProductClick"
-            />
+            <ProductCard v-for="product in paginatedProducts" :key="product.id" :product="product"
+              :show-description="true" :show-arrow="true"
+              :default-description="'Powerful suction with long battery life'" card-style="products"
+              @card-click="handleProductClick" @title-click="handleProductClick" />
           </div>
 
           <!-- No Products Message -->
@@ -68,12 +61,14 @@ import { formatPrice } from '../utils/format';
 import { addToCart } from '../utils/cartUtils';
 import ProductCard from '../components/common/ProductCard.vue';
 import PageBanner from '../components/common/PageBanner.vue';
+import NavigationMenu from '@/components/common/NavigationMenu.vue';
 
 export default {
   name: 'ProductsPage',
   components: {
     ProductCard,
-    PageBanner
+    PageBanner,
+    NavigationMenu
   },
   data() {
     return {
@@ -86,6 +81,11 @@ export default {
     }
   },
   computed: {
+    breadcrumbItems() {
+      return [
+        { text: this.$t('products.title') || '产品中心' }
+      ];
+    },
     filteredProducts() {
       if (!this.selectedCategory) {
         return this.products
@@ -143,7 +143,7 @@ export default {
         this.loading = true
         const response = await this.$api.get('products')
         this.products = (response.data && response.data.items) ? response.data.items : []
-        this.$messageHandler.showSuccess(response.message || '获取产品成功', 'product.success.fetchSuccess')
+        //this.$messageHandler.showSuccess(response.message || '获取产品成功', 'product.success.fetchSuccess')
       } catch (error) {
         console.error('获取产品失败:', error)
         this.$messageHandler.showError(error, 'products.error.fetchFailed')

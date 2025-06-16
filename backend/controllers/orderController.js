@@ -58,13 +58,16 @@ exports.createOrder = async (req, res) => {
 
       // 3. 创建订单记录
       const orderGuid = uuidv4();
+      const orderNumber = `ORD${Date.now()}`;
       const [orderResult] = await connection.query(
         `INSERT INTO orders 
-         (user_id, total_amount, status, payment_method, order_guid, 
-          shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (user_id, order_number, total_amount, status, payment_method, order_guid, 
+          shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
+          created_by, updated_by) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
+          orderNumber,
           totalAmount,
           'pending', // 初始状态为待支付
           paymentMethod,
@@ -73,7 +76,9 @@ exports.createOrder = async (req, res) => {
           shippingInfo.phone,
           shippingInfo.email,
           `${shippingInfo.region.join(',')} ${shippingInfo.address}`,
-          shippingInfo.zipCode
+          shippingInfo.zipCode,
+          userId,
+          userId
         ]
       );
 
@@ -97,8 +102,8 @@ exports.createOrder = async (req, res) => {
 
         // 5. 更新产品库存
         await connection.query(
-          `UPDATE products SET stock = stock - ? WHERE id = ? AND deleted = 0`,
-          [item.quantity, item.product_id]
+          `UPDATE products SET stock = stock - ?, updated_by = ? WHERE id = ? AND deleted = 0`,
+          [item.quantity, req.userId, item.product_id]
         );
       }
 
@@ -221,8 +226,9 @@ exports.processPayment = async (req, res) => {
     const [orderResult] = await pool.query(
       `INSERT INTO orders 
        (user_id, total_amount, status, payment_method, payment_id, order_guid, 
-        shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
+        created_by, updated_by) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         totalAmount,
@@ -234,7 +240,9 @@ exports.processPayment = async (req, res) => {
         shippingInfo.phone,
         shippingInfo.email,
         `${shippingInfo.region.join(',')} ${shippingInfo.address}`,
-        shippingInfo.zipCode
+        shippingInfo.zipCode,
+        userId,
+        userId
       ]
     );
 
@@ -244,29 +252,31 @@ exports.processPayment = async (req, res) => {
     for (const item of cartItems) {
       await pool.query(
         `INSERT INTO order_items 
-         (order_id, product_id, quantity, price, product_name, product_code) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
+         (order_id, product_id, quantity, price, product_name, product_code, created_by, updated_by) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           orderId,
           item.product_id,
           item.quantity,
           item.price,
           item.name,
-          item.product_code
+          item.product_code,
+          userId,
+          userId
         ]
       );
 
       // 更新产品库存
       await pool.query(
-        `UPDATE products SET stock = stock - ? WHERE id = ? AND deleted = 0`,
-        [item.quantity, item.product_id]
+        `UPDATE products SET stock = stock - ?, updated_by = ? WHERE id = ? AND deleted = 0`,
+        [item.quantity, userId, item.product_id]
       );
     }
 
     // 6. 清空购物车
     await pool.query(
-      `UPDATE cart_items SET deleted = 1 WHERE user_id = ? AND deleted = 0`,
-      [userId]
+      `UPDATE cart_items SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0`,
+      [userId, userId]
     );
 
     // 7. 返回订单信息

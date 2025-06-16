@@ -188,13 +188,7 @@ export default {
         try {
           const response = await this.$api.delete('/cart/clear');
           if (response.success) {
-            this.$message({
-              message: this.$t('cart.clearSuccess') || '购物车已清空',
-              type: 'success',
-              customClass: 'modern-message',
-              duration: 3000,
-              showClose: true
-            });
+            this.$messageHandler.showSuccess(this.$t('cart.clearSuccess') || '购物车已清空', 'cart.success.clearSuccess');
             this.cartItems = [];
             this.totalPrice = 0;
             // 触发购物车更新事件
@@ -202,13 +196,7 @@ export default {
           }
         } catch (error) {
           console.error('清空购物车失败:', error);
-          this.$message({
-            message: error.response?.data?.message || this.$t('cart.clearError') || '清空购物车失败',
-            type: 'error',
-            customClass: 'modern-message',
-            duration: 4000,
-            showClose: true
-          });
+          this.$messageHandler.showError(error.response?.data?.message || this.$t('cart.clearError') || '清空购物车失败', 'cart.error.clearFailed');
         }
       }).catch(() => {
         // 用户取消操作
@@ -232,13 +220,7 @@ export default {
     },
     checkout4() {
       if (!this.selectedItems.length) {
-        this.$message({
-          message: this.$t('cart.selectItemsFirst') || '请先选择要结算的商品',
-          type: 'warning',
-          customClass: 'modern-message',
-          duration: 3000,
-          showClose: true
-        });
+        this.$messageHandler.showWarning(this.$t('cart.selectItemsFirst') || '请先选择要结算的商品', 'cart.warning.selectItemsFirst');
         return;
       }
       // 将选中的商品数据存储到sessionStorage

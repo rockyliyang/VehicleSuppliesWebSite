@@ -812,6 +812,82 @@ res.status(400).json({
 });
 ```
 
+## GUID 字段处理规范
+
+### GUID 插入规则
+
+**重要：所有包含 GUID 字段的表在插入数据时，必须使用以下统一方法：**
+
+#### 1. 使用 UUID 工具函数（推荐）
+```javascript
+// 引入 UUID 工具
+const { uuidToBinary } = require('../utils/uuid');
+const { v4: uuidv4 } = require('uuid');
+
+// 生成 GUID
+const guid = uuidToBinary(uuidv4());
+
+// 插入数据
+const [result] = await pool.query(
+  'INSERT INTO table_name (guid, field1, field2) VALUES (?, ?, ?)',
+  [guid, value1, value2]
+);
+```
+
+#### 2. 使用 MySQL 函数（备选）
+```javascript
+// 直接在 SQL 中使用 UUID_TO_BIN(UUID())
+const [result] = await pool.query(
+  'INSERT INTO table_name (guid, field1, field2) VALUES (UUID_TO_BIN(UUID()), ?, ?)',
+  [value1, value2]
+);
+```
+
+#### 3. 使用 UNHEX(REPLACE(UUID(), '-', ''))（兼容旧代码）
+```javascript
+// 用于兼容现有的翻译数据插入
+const [result] = await pool.query(
+  'INSERT INTO language_translations (guid, code, lang, value) VALUES (UNHEX(REPLACE(UUID(), \'-\', \'\')), ?, ?, ?)',
+  [code, lang, value]
+);
+```
+
+### GUID 字段规范要求
+
+1. **所有表必须包含 GUID 字段**：
+   - 字段名：`guid`
+   - 类型：`BINARY(16)`
+   - 约束：`NOT NULL UNIQUE`
+
+2. **插入数据时必须提供 GUID 值**：
+   - 不能依赖数据库默认值
+   - 必须使用上述三种方法之一
+
+3. **GUID 生成方法选择**：
+   - **新代码**：优先使用方法1（UUID工具函数）
+   - **数据库脚本**：使用方法2（MySQL函数）
+   - **翻译数据**：使用方法3（兼容现有格式）
+
+### 常见错误及解决方案
+
+#### 错误：Field 'guid' doesn't have a default value
+```javascript
+// ❌ 错误：缺少 GUID 字段
+INSERT INTO user_business_groups (user_id, business_group_id, assigned_by)
+VALUES (?, ?, ?)
+
+// ✅ 正确：包含 GUID 字段
+const guid = uuidToBinary(uuidv4());
+INSERT INTO user_business_groups (guid, user_id, business_group_id, assigned_by)
+VALUES (?, ?, ?, ?)
+```
+
+#### 修复步骤
+1. 引入 UUID 工具：`const { uuidToBinary } = require('../utils/uuid');`
+2. 引入 UUID 生成器：`const { v4: uuidv4 } = require('uuid');`
+3. 在插入前生成 GUID：`const guid = uuidToBinary(uuidv4());`
+4. 在 INSERT 语句中包含 GUID 字段和值
+
 ---
 
-> 📝 **注意**: 所有后端API开发都应遵循以上规范，确保接口的一致性、安全性和可维护性。特别注意多语言支持的规范，每次添加新的消息键都必须同时更新翻译数据。
+> 📝 **注意**: 所有后端API开发都应遵循以上规范，确保接口的一致性、安全性和可维护性。特别注意多语言支持的规范，每次添加新的消息键都必须同时更新翻译数据。GUID字段处理必须严格按照规范执行，避免数据库插入错误。

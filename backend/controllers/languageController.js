@@ -3,8 +3,70 @@ const { v4: uuidv4 } = require('uuid');
 const { Buffer } = require('buffer');
 const { getMessage } = require('../config/messages');
 
+
 /**
- * 获取所有语言翻译
+ * 获取所有语言翻译（管理员用，支持分页和过滤）
+ */
+exports.getAdminTranslations = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10, lang, search } = req.query;
+    const offset = (page - 1) * pageSize;
+    const limit = parseInt(pageSize);
+    
+    // 构建查询条件
+    let whereConditions = ['deleted = 0'];
+    let queryParams = [];
+    
+    // 语言过滤
+    if (lang && lang !== '') {
+      whereConditions.push('lang = ?');
+      queryParams.push(lang);
+    }
+    
+    // 搜索过滤（搜索翻译键或翻译内容）
+    if (search && search.trim() !== '') {
+      whereConditions.push('(code LIKE ? OR value LIKE ?)');
+      const searchPattern = `%${search.trim()}%`;
+      queryParams.push(searchPattern, searchPattern);
+    }
+    
+    const whereClause = whereConditions.join(' AND ');
+    
+    // 获取总数
+    const [countResult] = await pool.query(
+      `SELECT COUNT(*) as total FROM language_translations WHERE ${whereClause}`,
+      queryParams
+    );
+    const total = countResult[0].total;
+    
+    // 获取分页数据
+    const [rows] = await pool.query(
+      `SELECT id, BIN_TO_UUID(guid) as guid, code, lang, value FROM language_translations WHERE ${whereClause} ORDER BY id DESC LIMIT ? OFFSET ?`,
+      [...queryParams, limit, offset]
+    );
+    
+    return res.json({
+      success: true,
+      message: getMessage('LANGUAGE.GET_SUCCESS'),
+      data: {
+        translations: rows,
+        total: total,
+        page: parseInt(page),
+        pageSize: limit
+      }
+    });
+  } catch (error) {
+    console.error('获取翻译失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('LANGUAGE.GET_FAILED'),
+      data: null
+    });
+  }
+};
+
+/**
+ * 获取所有语言翻译（原方法保留）
  */
 exports.getAllTranslations = async (req, res) => {
   try {
@@ -93,8 +155,8 @@ exports.addTranslation = async (req, res) => {
     const guidBuffer = Buffer.from(uuid.replace(/-/g, ''), 'hex');
     
     await pool.query(
-      'INSERT INTO language_translations (guid, code, lang, value) VALUES (?, ?, ?, ?)',
-      [guidBuffer, code, lang, value]
+      'INSERT INTO language_translations (guid, code, lang, value, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)',
+      [guidBuffer, code, lang, value, req.userId, req.userId]
     );
     
     return res.status(201).json({
@@ -129,8 +191,8 @@ exports.updateTranslation = async (req, res) => {
     }
     
     const [result] = await pool.query(
-      'UPDATE language_translations SET value = ? WHERE id = ? AND deleted = 0',
-      [value, id]
+      'UPDATE language_translations SET value = ?, updated_by = ? WHERE id = ? AND deleted = 0',
+      [value, req.userId, id]
     );
     
     if (result.affectedRows === 0) {
@@ -164,8 +226,8 @@ exports.deleteTranslation = async (req, res) => {
     const { id } = req.params;
     
     const [result] = await pool.query(
-      'UPDATE language_translations SET deleted = 1 WHERE id = ?',
-      [id]
+      'UPDATE language_translations SET deleted = 1, updated_by = ? WHERE id = ?',
+      [req.userId, id]
     );
     
     if (result.affectedRows === 0) {

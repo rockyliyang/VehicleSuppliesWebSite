@@ -72,7 +72,7 @@ exports.uploadProductImages = async (req, res) => {
           session_id || null
         ]);
         await connection.query(
-          'INSERT INTO product_images (guid, product_id, image_url, image_type, sort_order, session_id) VALUES ?',[imageValues]
+          'INSERT INTO product_images (guid, product_id, image_url, image_type, sort_order, session_id, created_by, updated_by) VALUES ?',[imageValues.map(values => [...values, req.userId, req.userId])]
         );
         await connection.commit();
         res.json({
@@ -141,8 +141,8 @@ exports.deleteProductImage = async (req, res) => {
 
       // 软删除图片记录
       await connection.query(
-        'UPDATE product_images SET deleted = 1 WHERE id = ?',
-        [id]
+        'UPDATE product_images SET deleted = 1, updated_by = ? WHERE id = ?',
+        [req.userId, id]
       );
 
       // 删除物理文件
@@ -183,8 +183,8 @@ exports.updateImageOrder = async (req, res) => {
     try {
       for (const image of images) {
         await connection.query(
-          'UPDATE product_images SET sort_order = ? WHERE id = ? AND deleted = 0',
-          [image.sort_order, image.id]
+          'UPDATE product_images SET sort_order = ?, updated_by = ? WHERE id = ? AND deleted = 0',
+          [image.sort_order, req.userId, image.id]
         );
       }
 

@@ -48,12 +48,24 @@
             </el-icon>
             <span>语言管理</span>
           </el-menu-item>
-          <el-menu-item index="/admin/users">
+          <el-menu-item index="/admin/contact-messages">
             <el-icon>
-              <User />
+              <Message />
             </el-icon>
-            <span>用户管理</span>
+            <span>联系消息</span>
           </el-menu-item>
+          <el-sub-menu index="user-management">
+            <template #title>
+              <el-icon>
+                <User />
+              </el-icon>
+              <span>用户管理</span>
+            </template>
+            <el-menu-item index="/admin/regular-users">普通用户</el-menu-item>
+            <el-menu-item index="/admin/sales-users">业务员</el-menu-item>
+            <el-menu-item index="/admin/admin-users">管理员</el-menu-item>
+            <el-menu-item index="/admin/business-groups">业务组管理</el-menu-item>
+          </el-sub-menu>
           <el-menu-item index="/admin/settings">
             <el-icon>
               <Setting />
@@ -106,7 +118,7 @@
 </template>
 
 <script>
-import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown, Document } from '@element-plus/icons-vue'
+import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown, Document, Message } from '@element-plus/icons-vue'
 import { ChatDotRound } from '@element-plus/icons-vue'
 
 export default {
@@ -121,7 +133,8 @@ export default {
     Fold,
     ArrowDown,
     ChatDotRound,
-    Document
+    Document,
+    Message
   },
   data() {
     return {
@@ -148,12 +161,24 @@ export default {
       } else if (to.path.includes('/admin/company')) {
         this.activeMenu = '/admin/company'
         this.currentPage = '公司信息'
-      } else if (to.path.includes('/admin/users')) {
-        this.activeMenu = '/admin/users'
-        this.currentPage = '用户管理'
       } else if (to.path.includes('/admin/language')) {
         this.activeMenu = '/admin/language'
         this.currentPage = '语言管理'
+      } else if (to.path.includes('/admin/contact-messages')) {
+        this.activeMenu = '/admin/contact-messages'
+        this.currentPage = '联系消息'
+      } else if (to.path.includes('/admin/regular-users')) {
+        this.activeMenu = '/admin/regular-users'
+        this.currentPage = '普通用户列表'
+      } else if (to.path.includes('/admin/sales-users')) {
+        this.activeMenu = '/admin/sales-users'
+        this.currentPage = '业务员列表'
+      } else if (to.path.includes('/admin/admin-users')) {
+        this.activeMenu = '/admin/admin-users'
+        this.currentPage = '管理员列表'
+      } else if (to.path.includes('/admin/business-groups')) {
+        this.activeMenu = '/admin/business-groups'
+        this.currentPage = '业务组管理'
       } else if (to.path.includes('/admin/settings')) {
         this.activeMenu = '/admin/settings'
         this.currentPage = '系统设置'

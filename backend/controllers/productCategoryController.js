@@ -35,9 +35,10 @@ exports.createCategory = async (req, res) => {
       });
     }
 
+    const currentUserId = req.userId; // 从JWT中获取当前用户ID
     const [result] = await connection.query(
-      'INSERT INTO product_categories (name, code, sort_order, status, description, guid, deleted) VALUES (?, ?, ?, ?, ?, ?, 0)',
-      [name, code, sort_order, status, description, guid]
+      'INSERT INTO product_categories (name, code, sort_order, status, description, guid, deleted, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)',
+      [name, code, sort_order, status, description, guid, currentUserId, currentUserId]
     );
 
     await connection.commit();
@@ -163,8 +164,8 @@ exports.updateCategory = async (req, res) => {
     }
 
     await connection.query(
-      'UPDATE product_categories SET name = ?, code = ?, sort_order = ?, status = ?, description = ? WHERE id = ?',
-      [name, code, sort_order, status, description, id]
+      'UPDATE product_categories SET name = ?, code = ?, sort_order = ?, status = ?, description = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [name, code, sort_order, status, description, req.userId, id]
     );
 
     await connection.commit();
@@ -216,8 +217,8 @@ exports.deleteCategory = async (req, res) => {
 
     // 软删除分类
     await connection.query(
-      'UPDATE product_categories SET deleted = 1 WHERE id = ?',
-      [id]
+      'UPDATE product_categories SET deleted = 1, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [req.userId, id]
     );
 
     await connection.commit();

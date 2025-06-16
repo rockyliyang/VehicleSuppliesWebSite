@@ -96,6 +96,36 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'contact-messages',
+        name: 'AdminContactMessages',
+        component: () => import('../views/admin/ContactMessages.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'regular-users',
+        name: 'AdminRegularUsers',
+        component: () => import('../views/admin/RegularUserList.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'sales-users',
+        name: 'AdminSalesUsers',
+        component: () => import('../views/admin/SalesUserList.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'admin-users',
+        name: 'AdminAdminUsers',
+        component: () => import('../views/admin/AdminUserList.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'business-groups',
+        name: 'AdminBusinessGroups',
+        component: () => import('../views/admin/BusinessGroups.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: '',
         redirect: '/admin/dashboard',
         meta: { requiresAuth: true }

@@ -131,11 +131,11 @@ api.interceptors.response.use(
       
       // 尝试从响应中获取错误消息
       if (error.response.data && error.response.data.message) {
-        message = error.response.data.message;
+        message = null;
+        fallbackKey = error.response.data.message; //backend return the message code for thranslation
       }
     } else if (error.request) {
       // 请求已发送但没有收到响应
-      message = '服务器无响应';
       fallbackKey = 'common.error.network';
       showError = false;
     } else {
@@ -168,6 +168,7 @@ api.postWithErrorHandler = function(url, data, options = {}) {
     }
     
     console.error('error:', error);
+    throw error;
   });
 };
 
@@ -184,6 +185,7 @@ api.getWithErrorHandler = function(url, options = {}) {
     }
     
     console.error('error:', error);
+    throw error;
   });
 };
 
@@ -200,6 +202,24 @@ api.putWithErrorHandler = function(url, data, options = {}) {
     }
     
     console.error('error:', error);
+    throw error;
+  });
+};
+
+api.patchWithErrorHandler = function(url, data, options = {}) {
+  const { errorHandler, fallbackKey, ...axiosOptions } = options;
+  
+  return this.patch(url, data, axiosOptions).catch(error => {
+    // 如果提供了自定义错误处理函数，使用它
+    if (typeof errorHandler === 'function') {
+      errorHandler(error, fallbackKey);
+    } else if (error.showError) {
+      // 使用默认错误处理函数
+      defaultErrorHandler(error, fallbackKey || error.fallbackKey);
+    }
+    
+    console.error('error:', error);
+    throw error;
   });
 };
 
@@ -216,6 +236,7 @@ api.deleteWithErrorHandler = function(url, options = {}) {
     }
     
     console.error('error:', error);
+    throw error;
   });
 };
 

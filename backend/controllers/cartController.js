@@ -86,8 +86,8 @@ exports.addToCart = async (req, res) => {
       // 更新数量
       const newQuantity = existingItem[0].quantity + quantity;
       await pool.query(
-        'UPDATE cart_items SET quantity = ?, updated_at = NOW() WHERE id = ?',
-        [newQuantity, existingItem[0].id]
+        'UPDATE cart_items SET quantity = ?, updated_by = ?, updated_at = NOW() WHERE id = ?',
+        [newQuantity, userId, existingItem[0].id]
       );
       
       return res.json({
@@ -99,8 +99,8 @@ exports.addToCart = async (req, res) => {
       // 添加新商品到购物车
       const guid = uuidToBinary(uuidv4());
       const [result] = await pool.query(
-        'INSERT INTO cart_items (guid, user_id, product_id, quantity) VALUES (?, ?, ?, ?)',
-        [guid, userId, productId, quantity]
+        'INSERT INTO cart_items (guid, user_id, product_id, quantity, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)',
+        [guid, userId, productId, quantity, userId, userId]
       );
       
       return res.json({
@@ -158,8 +158,8 @@ exports.updateCartItem = async (req, res) => {
     
     // 更新数量
     await pool.query(
-      'UPDATE cart_items SET quantity = ?, updated_at = NOW() WHERE id = ?',
-      [quantity, cartItemId]
+      'UPDATE cart_items SET quantity = ?, updated_by = ?, updated_at = NOW() WHERE id = ?',
+      [quantity, userId, cartItemId]
     );
     
     return res.json({
@@ -197,8 +197,8 @@ exports.removeFromCart = async (req, res) => {
     
     // 软删除购物车项
     await pool.query(
-      'UPDATE cart_items SET deleted = 1, updated_at = NOW() WHERE id = ?',
-      [cartItemId]
+      'UPDATE cart_items SET deleted = 1, updated_by = ?, updated_at = NOW() WHERE id = ?',
+      [userId, cartItemId]
     );
     
     return res.json({
@@ -221,8 +221,8 @@ exports.clearCart = async (req, res) => {
     
     // 软删除用户的所有购物车项
     await pool.query(
-      'UPDATE cart_items SET deleted = 1, updated_at = NOW() WHERE user_id = ? AND deleted = 0',
-      [userId]
+      'UPDATE cart_items SET deleted = 1, updated_by = ?, updated_at = NOW() WHERE user_id = ? AND deleted = 0',
+      [userId, userId]
     );
     
     return res.json({

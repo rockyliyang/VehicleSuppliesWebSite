@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS common_content_nav (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0 COMMENT '软删除标记：0-未删除，1-已删除',
+  created_by BIGINT DEFAULT NULL COMMENT '创建者用户ID',
+  updated_by BIGINT DEFAULT NULL COMMENT '最后更新者用户ID',
   -- 添加虚拟列：当未删除时生成唯一标识
   active_unique_key VARCHAR(255) GENERATED ALWAYS AS (
     IF(deleted = 0, CONCAT(name_key, '-', content_type), NULL)
@@ -20,7 +22,11 @@ CREATE TABLE IF NOT EXISTS common_content_nav (
   INDEX idx_content_type (content_type),
   INDEX idx_sort_order (sort_order),
   INDEX idx_status (status),
-  INDEX idx_deleted (deleted)
+  INDEX idx_deleted (deleted),
+  INDEX idx_created_by (created_by),
+  INDEX idx_updated_by (updated_by),
+  CONSTRAINT fk_common_content_nav_created_by FOREIGN KEY (created_by) REFERENCES users(id),
+  CONSTRAINT fk_common_content_nav_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通用内容导航菜单主表';
 
 -- 创建通用内容表（去除UNIQUE约束）
@@ -34,11 +40,17 @@ CREATE TABLE IF NOT EXISTS common_content (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0 COMMENT '软删除标记：0-未删除，1-已删除',
+  created_by BIGINT DEFAULT NULL COMMENT '创建者用户ID',
+  updated_by BIGINT DEFAULT NULL COMMENT '最后更新者用户ID',
   FOREIGN KEY (nav_id) REFERENCES common_content_nav(id) ON DELETE CASCADE,
   INDEX idx_nav_id (nav_id),
   INDEX idx_language_code (language_code),
   INDEX idx_status (status),
-  INDEX idx_deleted (deleted)
+  INDEX idx_deleted (deleted),
+  INDEX idx_created_by (created_by),
+  INDEX idx_updated_by (updated_by),
+  CONSTRAINT fk_common_content_created_by FOREIGN KEY (created_by) REFERENCES users(id),
+  CONSTRAINT fk_common_content_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通用内容表';
 
 -- 创建通用内容图片表
@@ -54,6 +66,8 @@ CREATE TABLE `common_content_images` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` tinyint(1) DEFAULT '0' COMMENT '软删除标记：0-未删除，1-已删除',
+  `created_by` BIGINT DEFAULT NULL COMMENT '创建者用户ID',
+  `updated_by` BIGINT DEFAULT NULL COMMENT '最后更新者用户ID',
   PRIMARY KEY (`id`),
   KEY `idx_nav_id` (`nav_id`),
   KEY `idx_image_type` (`image_type`),
@@ -61,8 +75,12 @@ CREATE TABLE `common_content_images` (
   KEY `idx_status` (`status`),
   KEY `idx_deleted` (`deleted`),
   KEY `idx_content_id` (`content_id`),
+  KEY `idx_created_by` (`created_by`),
+  KEY `idx_updated_by` (`updated_by`),
   CONSTRAINT `common_content_images_ibfk_1` FOREIGN KEY (`nav_id`) REFERENCES `common_content_nav` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_content_images_content_id` FOREIGN KEY (`content_id`) REFERENCES `common_content` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_content_images_content_id` FOREIGN KEY (`content_id`) REFERENCES `common_content` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_common_content_images_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_common_content_images_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='通用内容图片表'
 
 -- 插入默认导航菜单

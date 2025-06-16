@@ -181,9 +181,9 @@ exports.addNav = async (req, res) => {
 
         // 插入导航菜单
         const [result] = await connection.query(
-            `INSERT INTO common_content_nav (name_key, content_type, sort_order, status) 
-             VALUES (?, ?, ?, ?)`,
-            [name_key, content_type, sort_order, status]
+            `INSERT INTO common_content_nav (name_key, content_type, sort_order, status, created_by, updated_by) 
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [name_key, content_type, sort_order, status, req.userId, req.userId]
         );
 
         await connection.commit();
@@ -277,6 +277,8 @@ exports.updateNav = async (req, res) => {
         }
 
         updateFields.push('updated_at = NOW()');
+        updateFields.push('updated_by = ?');
+        updateValues.push(req.userId);
         updateValues.push(id);
 
         await connection.query(
@@ -327,14 +329,14 @@ exports.deleteNav = async (req, res) => {
 
         // 软删除导航菜单
         await connection.query(
-            'UPDATE common_content_nav SET deleted = 1, updated_at = NOW() WHERE id = ?',
-            [id]
+            'UPDATE common_content_nav SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE id = ?',
+            [req.userId, id]
         );
 
         // 同时软删除该导航下的所有内容
         await connection.query(
-            'UPDATE common_content SET deleted = 1, updated_at = NOW() WHERE nav_id = ?',
-            [id]
+            'UPDATE common_content SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE nav_id = ?',
+            [req.userId, id]
         );
 
         await connection.commit();
@@ -448,9 +450,9 @@ exports.addContent = async (req, res) => {
 
         // 插入内容
         const [result] = await connection.query(
-            `INSERT INTO common_content (nav_id, language_code, title, content, status) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [nav_id, language_code, title, content, status]
+            `INSERT INTO common_content (nav_id, language_code, title, content, status, created_by, updated_by) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [nav_id, language_code, title, content, status, req.userId, req.userId]
         );
 
         await connection.commit();
@@ -534,6 +536,8 @@ exports.updateContent = async (req, res) => {
         }
 
         updateFields.push('updated_at = NOW()');
+        updateFields.push('updated_by = ?');
+        updateValues.push(req.userId);
         updateValues.push(id);
 
         await connection.query(
@@ -584,8 +588,8 @@ exports.deleteContent = async (req, res) => {
 
         // 软删除内容
         await connection.query(
-            'UPDATE common_content SET deleted = 1, updated_at = NOW() WHERE id = ?',
-            [id]
+            'UPDATE common_content SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE id = ?',
+            [req.userId, id]
         );
 
         await connection.commit();
@@ -649,8 +653,8 @@ exports.uploadImages = async (req, res) => {
 
             // 软删除数据库中的主图记录
             await connection.query(
-                'UPDATE common_content_images SET deleted = 1, updated_at = NOW() WHERE content_id = ? AND image_type = "main" AND deleted = 0',
-                [content_id]
+                'UPDATE common_content_images SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE content_id = ? AND image_type = "main" AND deleted = 0',
+                [req.userId, content_id]
             );
 
             // 删除物理文件
@@ -679,9 +683,9 @@ exports.uploadImages = async (req, res) => {
             // 插入数据库记录
             const [result] = await connection.query(
                 `INSERT INTO common_content_images 
-                 (nav_id, content_id, image_type, image_url, alt_text, sort_order, status) 
-                 VALUES (?, ?, ?, ?, ?, 0, 1)`,
-                [nav_id || null, content_id || null, image_type, relativePath, file.originalname]
+                 (nav_id, content_id, image_type, image_url, alt_text, sort_order, status, created_by, updated_by) 
+                 VALUES (?, ?, ?, ?, ?, 0, 1, ?, ?)`,
+                [nav_id || null, content_id || null, image_type, relativePath, file.originalname, req.userId, req.userId]
             );
 
             uploadedImages.push({
@@ -813,8 +817,8 @@ exports.deleteImage = async (req, res) => {
 
         // 软删除图片记录
         await connection.query(
-            'UPDATE common_content_images SET deleted = 1, updated_at = NOW() WHERE id = ?',
-            [id]
+            'UPDATE common_content_images SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE id = ?',
+            [req.userId, id]
         );
 
         // 删除物理文件

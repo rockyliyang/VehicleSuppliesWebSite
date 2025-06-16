@@ -23,6 +23,10 @@ app.config.globalProperties.$t = (key) => {
 
 // 全局注册消息处理器
 app.config.globalProperties.$messageHandler = MessageHandler
+window.addEventListener('error', (e) => {
+  console.error("捕获到全局错误:", e.message, e.error);
+});
+
 
 // 创建事件总线用于组件间通信
 const emitter = mitt()

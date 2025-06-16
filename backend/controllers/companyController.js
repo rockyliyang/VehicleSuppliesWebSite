@@ -37,8 +37,8 @@ exports.updateCompanyInfo = async (req, res) => {
     }
     const id = rows[0].id;
     await pool.query(
-      `UPDATE company_info SET company_name=?, contact_name=?, address=?, phone=?, email=?, description=?, logo_url=?, wechat_qrcode=?, updated_at=NOW() WHERE id=?`,
-      [company_name, contact_name, address, phone, email, description, logo_url, wechat_qrcode, id]
+      `UPDATE company_info SET company_name=?, contact_name=?, address=?, phone=?, email=?, description=?, logo_url=?, wechat_qrcode=?, updated_by=?, updated_at=NOW() WHERE id=?`,
+      [company_name, contact_name, address, phone, email, description, logo_url, wechat_qrcode, req.userId, id]
     );
     res.json({ success: true, message: getMessage('COMPANY.UPDATE_SUCCESS'), data: null });
   } catch (error) {

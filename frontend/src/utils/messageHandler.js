@@ -107,7 +107,7 @@ const ERROR_MAPPINGS = {
 }
 
 // HTTP状态码映射
-const HTTP_STATUS_MAPPINGS = {
+/*const HTTP_STATUS_MAPPINGS = {
   400: 'common.error.badRequest',
   401: 'common.error.unauthorized',
   403: 'common.error.forbidden',
@@ -119,7 +119,7 @@ const HTTP_STATUS_MAPPINGS = {
   502: 'common.error.badGateway',
   503: 'common.error.serviceUnavailable',
   504: 'common.error.gatewayTimeout'
-}
+}*/
 
 /**
  * 检查字符串是否包含中文
@@ -147,25 +147,28 @@ function getTranslation(key, defaultValue = key) {
  * @returns {string}
  */
 function translateErrorMessage(message, fallbackKey) {
-  if (!message) {
-    return getTranslation(fallbackKey)
+  if (typeof message === 'string') {
+  // 尝试精确匹配
+    for (const [key, translationKey] of Object.entries(ERROR_MAPPINGS)) {
+      if (message.includes(key)) {
+        const translated = getTranslation(translationKey)
+        if (translated !== translationKey) {
+          return translated
+        }
+      }
+    }    
+    return message
   }
-  
-  if (!fallbackKey) {
+    
+  if (!fallbackKey) { //if fallbackKey is not provided, use the message as the default
     fallbackKey = message
   }
-
-  // 尝试精确匹配
-  for (const [key, translationKey] of Object.entries(ERROR_MAPPINGS)) {
-    if (message.includes(key)) {
-      const translated = getTranslation(translationKey)
-      if (translated !== translationKey) {
-        return translated
-      }
-    }
+ 
+  if (fallbackKey) { 
+    return getTranslation(fallbackKey)
+  } else {
+    return  null;
   }
-  
-  return getTranslation(fallbackKey)
 }
 
 /**
@@ -178,39 +181,11 @@ function extractErrorMessage(error) {
     return error
   }
   
-  if (error && error.response) {
-    const response = error.response
-    
-    // 检查HTTP状态码
-    if (response.status && HTTP_STATUS_MAPPINGS[response.status]) {
-      const statusTranslation = HTTP_STATUS_MAPPINGS[response.status];
-      return statusTranslation
-    }
-    
-    // 检查响应数据中的错误信息
-    if (response.data) {
-      if (response.data.message) {
-        return response.data.message
-      }
-      if (response.data.error) {
-        return response.data.error
-      }
-      if (response.data.msg) {
-        return response.data.msg
-      }
-    }
-    
-    // 检查响应状态文本
-    if (response.statusText) {
-      return response.statusText
-    }
-  }
-  
   if (error && error.message) {
     return error.message
   }
   
-  return ''
+  return null
 }
 
 /**

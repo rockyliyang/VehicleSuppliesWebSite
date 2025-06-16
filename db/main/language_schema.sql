@@ -3,18 +3,24 @@ CREATE TABLE IF NOT EXISTS language_translations (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   guid BINARY(16) NOT NULL,
   code VARCHAR(64) NOT NULL COMMENT '翻译键名',
-  lang VARCHAR(16) NOT NULL COMMENT '语言代码，如en, zh-CN, ja',
+  lang VARCHAR(16) NOT NULL COMMENT '语言代码，如en, zh-CN',
   value TEXT NOT NULL COMMENT '翻译内容',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT(1) DEFAULT 0,
+  created_by BIGINT DEFAULT NULL COMMENT '创建者用户ID',
+  updated_by BIGINT DEFAULT NULL COMMENT '最后更新者用户ID',
   active_unique_key VARCHAR(255) AS (
     CASE 
       WHEN deleted = 0 THEN CONCAT(code, '|', lang)
       ELSE NULL 
     END
   ) VIRTUAL,
-  UNIQUE KEY unique_active_code_lang (active_unique_key)
+  UNIQUE KEY unique_active_code_lang (active_unique_key),
+  INDEX idx_created_by (created_by),
+  INDEX idx_updated_by (updated_by),
+  CONSTRAINT fk_language_translations_created_by FOREIGN KEY (created_by) REFERENCES users(id),
+  CONSTRAINT fk_language_translations_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 );
 
 -- 插入一些默认的翻译数据

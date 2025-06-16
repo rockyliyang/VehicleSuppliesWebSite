@@ -34,8 +34,9 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, connect
   const [orderResult] = await connection.query(
     `INSERT INTO orders 
      (user_id, total_amount, status, payment_method, order_guid, 
-      shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
+      created_by, updated_by) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       totalAmount,
@@ -46,24 +47,26 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, connect
       shippingInfo.phone,
       shippingInfo.email,
       shippingInfo.shipping_address || shippingInfo.detail,
-      shippingInfo.shipping_zip_code || shippingInfo.zipCode || ''
+      shippingInfo.shipping_zip_code || shippingInfo.zipCode || '',
+      userId,
+      userId
     ]
   );
   const orderId = orderResult.insertId;
   for (const item of cartItems) {
     await connection.query(
       `INSERT INTO order_items 
-       (order_id, product_id, quantity, price, product_name, product_code) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [orderId, item.product_id, item.quantity, item.price, item.product_name || item.name, item.product_code]
+       (order_id, product_id, quantity, price, product_name, product_code, created_by, updated_by) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [orderId, item.product_id, item.quantity, item.price, item.product_name || item.name, item.product_code, userId, userId]
     );
     await connection.query(
-      `UPDATE products SET stock = stock - ? WHERE id = ? AND deleted = 0`,
-      [item.quantity, item.product_id]
+      `UPDATE products SET stock = stock - ?, updated_by = ? WHERE id = ? AND deleted = 0`,
+      [item.quantity, userId, item.product_id]
     );
     await connection.query(
-      `UPDATE cart_items SET deleted = 1 WHERE user_id = ? AND deleted = 0 and product_id =?`,
-      [userId, item.product_id]
+      `UPDATE cart_items SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0 and product_id =?`,
+      [userId, userId, item.product_id]
     );
   }
   return { orderId, orderGuid, totalAmount };
@@ -115,8 +118,8 @@ exports.createPayPalOrder = async (req, res) => {
       const { body } = await ordersController.createOrder(request);
       const paypalOrderData = JSON.parse(body);
       await connection.query(
-        `UPDATE orders SET payment_id = ? WHERE id = ?`,
-        [paypalOrderData.id, orderId]
+        `UPDATE orders SET payment_id = ?, updated_by = ? WHERE id = ?`,
+        [paypalOrderData.id, req.userId, orderId]
       );
       await connection.commit();
       connection.release();
@@ -153,8 +156,8 @@ exports.capturePayPalPayment = async (req, res) => {
     const { body } = await ordersController.captureOrder(request);
     const captureData = JSON.parse(body);
     await pool.query(
-      `UPDATE orders SET status = ? WHERE id = ?`,
-      ['paid',  orderId]
+      `UPDATE orders SET status = ?, updated_by = ? WHERE id = ?`,
+      ['paid', req.userId, orderId]
     );
     return res.json({ success: true, message: getMessage('PAYMENT.PAYPAL_CAPTURE_SUCCESS'), data: { orderId, paymentId: captureData.id } });
   } catch (error) {
@@ -215,8 +218,8 @@ exports.repayPayPalOrder = async (req, res) => {
     
     // 更新订单的PayPal订单ID
     await pool.query(
-      `UPDATE orders SET payment_id = ? WHERE id = ?`,
-      [paypalOrderData.id, orderId]
+      `UPDATE orders SET payment_id = ?, updated_by = ? WHERE id = ?`,
+      [paypalOrderData.id, req.userId, orderId]
     );
     
     return res.status(200).json({
@@ -274,8 +277,8 @@ exports.createCommonOrder = async (req, res) => {
       // 如果是从购物车创建的订单，清空购物车
       if (!orderItems || orderItems.length === 0) {
         await pool.query(
-          `UPDATE cart_items SET deleted = 1 WHERE user_id = ? AND deleted = 0`,
-          [userId]
+          `UPDATE cart_items SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0`,
+          [userId, userId]
         );
       }
       

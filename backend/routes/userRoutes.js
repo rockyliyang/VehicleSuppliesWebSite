@@ -5,6 +5,55 @@ const crypto = require('crypto');
 const svgCaptcha = require('svg-captcha');
 const { pool } = require('../db/db');
 const { sendMail } = require('../utils/email');
+
+// 获取邮件翻译
+async function getEmailTranslations(language = 'zh-CN') {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT translation_key, translation_value FROM translations WHERE language = ? AND translation_key LIKE "EMAIL_TEMPLATE.%"',
+      [language]
+    );
+    
+    const translations = {};
+    rows.forEach(row => {
+      translations[row.translation_key] = row.translation_value;
+    });
+    
+    return translations;
+  } catch (error) {
+    console.error('获取邮件翻译失败:', error);
+    // 返回默认中文翻译
+    return {
+      'EMAIL_TEMPLATE.ACTIVATION_SUBJECT': '激活您的账号',
+      'EMAIL_TEMPLATE.ACTIVATION_CONTENT': '请点击以下链接激活账号：',
+      'EMAIL_TEMPLATE.RESET_PASSWORD_SUBJECT': '重置密码',
+      'EMAIL_TEMPLATE.RESET_PASSWORD_CONTENT': '请点击以下链接重置密码（30分钟内有效）：'
+    };
+  }
+}
+
+// 邮件模板函数
+async function getEmailContent(type, language, data) {
+  const translations = await getEmailTranslations(language);
+  
+  switch (type) {
+    case 'activation':
+      return {
+        subject: translations['EMAIL_TEMPLATE.ACTIVATION_SUBJECT'] || 'Activate Your Account',
+        html: `<p>${translations['EMAIL_TEMPLATE.ACTIVATION_CONTENT'] || 'Please click the following link to activate your account:'} <a href="${data.link}">${data.link}</a></p>`
+      };
+    case 'resetPassword':
+      return {
+        subject: translations['EMAIL_TEMPLATE.RESET_PASSWORD_SUBJECT'] || 'Reset Password',
+        html: `<p>${translations['EMAIL_TEMPLATE.RESET_PASSWORD_CONTENT'] || 'Please click the following link to reset your password (valid for 30 minutes):'} <a href="${data.link}">${data.link}</a></p>`
+      };
+    default:
+      return {
+        subject: 'Notification',
+        html: '<p>Notification</p>'
+      };
+  }
+}
 const { verifyToken, isAdmin } = require('../middleware/jwt');
 const { getMessage } = require('../config/messages');
 const { v4: uuidv4 } = require('uuid');
@@ -15,7 +64,23 @@ const router = express.Router();
 router.post('/register', async (req, res) => {
   try {
     const { email, password, captcha } = req.body;
-    // TODO: 校验验证码
+    
+    // 校验验证码
+    if (!captcha) {
+      return res.status(400).json({ success: false, message: getMessage('USER.CAPTCHA_REQUIRED'), data: null });
+    }
+    
+    if (!req.session || !req.session.captcha) {
+      return res.status(400).json({ success: false, message: getMessage('USER.CAPTCHA_EXPIRED'), data: null });
+    }
+    
+    if (req.session.captcha.toLowerCase() !== captcha.toLowerCase()) {
+      return res.status(400).json({ success: false, message: getMessage('USER.CAPTCHA_INVALID'), data: null });
+    }
+    
+    // 验证码使用后立即清除
+    delete req.session.captcha;
+    
     if (!email || !password) {
       return res.status(400).json({ success: false, message: getMessage('USER.EMAIL_PASSWORD_REQUIRED'), data: null });
     }
@@ -30,13 +95,20 @@ router.post('/register', async (req, res) => {
     const username = email.split('@')[0];
     const activation_token = crypto.randomBytes(32).toString('hex');
     
+    // 获取默认业务组ID
+    const [defaultGroupRows] = await pool.query(
+      'SELECT id FROM business_groups WHERE is_default = 1 AND deleted = 0 LIMIT 1'
+    );
+    const defaultBusinessGroupId = defaultGroupRows.length > 0 ? defaultGroupRows[0].id : null;
+    
     await pool.query(
-      'INSERT INTO users (guid, username, email, password, is_active, activation_token, user_role) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, 0, ?, "user")',
-      [username, email, hashedPassword, activation_token]
+      'INSERT INTO users (guid, username, email, password, is_active, activation_token, user_role, business_group_id, created_by, updated_by) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, 0, ?, "user", ?, ?, ?)',
+      [username, email, hashedPassword, activation_token, defaultBusinessGroupId, null, null]
     );
     
     const link = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/activate?token=${activation_token}`;
-    await sendMail(email, '激活您的账号', `<p>请点击以下链接激活账号：<a href="${link}">${link}</a></p>`);
+    const emailContent = await getEmailContent('activation', 'en', { link }); // 默认使用英文
+    await sendMail(email, emailContent.subject, emailContent.html);
     
     res.status(201).json({ success: true, message: getMessage('USER.REGISTER_SUCCESS'), data: null });
   } catch (error) {
@@ -53,7 +125,7 @@ router.get('/activate', async (req, res) => {
   const [users] = await pool.query('SELECT * FROM users WHERE activation_token = ?', [token]);
   if (users.length === 0) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_ACTIVATION_CODE'), data: null });
   
-  await pool.query('UPDATE users SET is_active=1, activation_token=NULL WHERE id=?', [users[0].id]);
+  await pool.query('UPDATE users SET is_active=1, activation_token=NULL, updated_by=? WHERE id=?', [users[0].id, users[0].id]);
   res.json({ success: true, message: getMessage('USER.ACTIVATION_SUCCESS'), data: null });
 });
 
@@ -62,15 +134,17 @@ router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ success: false, message: getMessage('USER.EMAIL_REQUIRED'), data: null });
   
-  const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+  const [users] = await pool.query('SELECT id, language FROM users WHERE email = ?', [email]);
   if (users.length === 0) return res.status(400).json({ success: false, message: getMessage('USER.NOT_FOUND'), data: null });
   
   const reset_token = crypto.randomBytes(32).toString('hex');
   const expire = new Date(Date.now() + 1000 * 60 * 30); // 30分钟有效
-  await pool.query('UPDATE users SET reset_token=?, reset_token_expire=? WHERE id=?', [reset_token, expire, users[0].id]);
+  await pool.query('UPDATE users SET reset_token=?, reset_token_expire=?, updated_by=? WHERE id=?', [reset_token, expire, users[0].id, users[0].id]);
   
   const link = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${reset_token}`;
-  await sendMail(email, '重置密码', `<p>请点击以下链接重置密码（30分钟内有效）：<a href="${link}">${link}</a></p>`);
+  const userLanguage = users[0].language || 'en'; // 如果language为空，默认使用英文
+  const emailContent = await getEmailContent('resetPassword', userLanguage, { link });
+  await sendMail(email, emailContent.subject, emailContent.html);
   
   res.json({ success: true, message: getMessage('USER.RESET_EMAIL_SENT'), data: null });
 });
@@ -85,7 +159,7 @@ router.post('/reset-password', async (req, res) => {
   if (new Date(users[0].reset_token_expire) < new Date()) return res.status(400).json({ success: false, message: getMessage('USER.RESET_CODE_EXPIRED'), data: null });
   
   const hashedPassword = await bcrypt.hash(password, 10);
-  await pool.query('UPDATE users SET password=?, reset_token=NULL, reset_token_expire=NULL WHERE id=?', [hashedPassword, users[0].id]);
+  await pool.query('UPDATE users SET password=?, reset_token=NULL, reset_token_expire=NULL, updated_by=? WHERE id=?', [hashedPassword, users[0].id, users[0].id]);
   
   res.json({ success: true, message: getMessage('USER.PASSWORD_RESET_SUCCESS'), data: null });
 });
@@ -266,8 +340,8 @@ router.post('/admin/create', verifyToken, isAdmin, async (req, res) => {
 
     // 创建新管理员
     const [result] = await pool.query(
-      'INSERT INTO users (guid, username, email, password, user_role) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, "admin")',
-      [username, email, hashedPassword]
+      'INSERT INTO users (guid, username, email, password, user_role, created_by, updated_by) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, "admin", ?, ?)',
+      [username, email, hashedPassword, req.userId, req.userId]
     );
     
     res.status(201).json({

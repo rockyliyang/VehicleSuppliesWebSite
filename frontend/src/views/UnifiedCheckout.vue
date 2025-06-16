@@ -365,20 +365,12 @@ export default {
           this.calculateTotal();
           return;
         } catch (e) {
-          this.$message({
-            message: this.$t('checkout.parseError') || '订单数据解析失败',
-            type: 'error',
-            customClass: 'modern-message'
-          });
+          this.$messageHandler.showError('订单数据解析失败', 'checkout.error.parseError');
         }
       }
       
       // 如果没有找到任何订单数据，显示警告并跳转回购物车
-      this.$message({
-        message: this.$t('checkout.noOrderData') || '没有找到订单数据',
-        type: 'warning',
-        customClass: 'modern-message'
-      });
+      this.$messageHandler.showWarning('没有找到订单数据', 'checkout.warning.noOrderData');
       this.$router.push('/cart');
     },
     calculateTotal() {
@@ -458,11 +450,7 @@ export default {
             };
           }
         } else {
-          this.$message({
-            message: this.$t('order.fetchFailed') || '获取订单详情失败',
-            type: 'error',
-            customClass: 'modern-message'
-          });
+          this.$messageHandler.showError('获取订单详情失败', 'order.error.fetchFailed');
           this.$router.push('/user/orders');
         }
       } catch (error) {
@@ -488,7 +476,7 @@ export default {
     loadPayPalSDK() {
       if (!this.paypalConfig || !this.paypalConfig.clientId || this.paypalConfig.clientId === 'test') {
         console.warn('PayPal配置无效，请检查环境变量');
-        this.$message.warning('PayPal配置无效，请联系管理员');
+        this.$messageHandler.showWarning('PayPal配置无效，请联系管理员', 'checkout.warning.paypalConfigInvalid');
         return;
       }
       
@@ -574,11 +562,7 @@ export default {
               throw new Error(response.message || '创建订单失败');
             }
           } catch (error) {
-            this.$message({
-              message: error.message || this.$t('checkout.paymentError') || '支付过程中出现错误',
-              type: 'error',
-              customClass: 'modern-message'
-            });
+            this.$messageHandler.showError(error.message || '支付过程中出现错误', 'checkout.error.paymentError');
             throw error;
           }
         },
@@ -608,7 +592,7 @@ export default {
           this.$messageHandler.showError('PayPal支付失败: ' + (err.message || '未知错误'), 'payment.error.paypalFailed');
         },
         onCancel: () => {
-          this.$message.info('支付已取消');
+          this.$messageHandler.showInfo('支付已取消', 'checkout.info.paymentCancelled');
         }
       }).render('#paypal-button-container').catch(err => {
         console.error('PayPal按钮渲染失败:', err);
@@ -661,32 +645,16 @@ export default {
             this.startQrcodeTimer();
             this.startAutoRefresh(paymentMethod);
             
-            this.$message({
-              message: this.$t('checkout.qrcodeGenerated') || '二维码生成成功，请扫码支付',
-              type: 'success',
-              customClass: 'modern-message'
-            });
+            this.$messageHandler.showSuccess('二维码生成成功，请扫码支付', 'checkout.success.qrcodeGenerated');
           } else {
-            this.$message({
-              message: this.$t('checkout.qrcodeGenerateFailed') || '生成二维码失败: ' + qrRes.message,
-              type: 'error',
-              customClass: 'modern-message'
-            });
+            this.$messageHandler.showError('生成二维码失败: ' + qrRes.message, 'checkout.error.qrcodeGenerateFailed');
           }
         } else {
-          this.$message({
-            message: this.$t('checkout.createOrderFailed') || '创建订单失败: ' + orderRes.message,
-            type: 'error',
-            customClass: 'modern-message'
-          });
+          this.$messageHandler.showError('创建订单失败: ' + orderRes.message, 'checkout.error.createOrderFailed');
         }
       } catch (error) {
         console.error('Error generating QR code:', error);
-        this.$message({
-          message: this.$t('checkout.qrcodeGenerateFailed') || '生成二维码失败',
-          type: 'error',
-          customClass: 'modern-message'
-        });
+        this.$messageHandler.showError('生成二维码失败', 'checkout.error.qrcodeGenerateFailed');
       } finally {
         this.generating = false;
       }
@@ -714,11 +682,7 @@ export default {
     },
     async refreshQrcode(paymentMethod) {
       if (!this.orderId) {
-        this.$message({
-          message: this.$t('checkout.noOrderToRefresh') || '没有订单可以刷新',
-          type: 'warning',
-          customClass: 'modern-message'
-        });
+        this.$messageHandler.showWarning('没有订单可以刷新', 'checkout.warning.noOrderToRefresh');
         return;
       }
       
@@ -736,25 +700,13 @@ export default {
           this.startQrcodeTimer();
           this.startAutoRefresh(paymentMethod);
           
-          this.$message({
-            message: this.$t('checkout.qrcodeRefreshed') || '二维码已刷新',
-            type: 'success',
-            customClass: 'modern-message'
-          });
+          this.$messageHandler.showSuccess('二维码已刷新', 'checkout.success.qrcodeRefreshed');
         } else {
-          this.$message({
-            message: this.$t('checkout.qrcodeRefreshFailed') || '刷新二维码失败: ' + qrRes.message,
-            type: 'error',
-            customClass: 'modern-message'
-          });
+          this.$messageHandler.showError('刷新二维码失败: ' + qrRes.message, 'checkout.error.qrcodeRefreshFailed');
         }
       } catch (error) {
         console.error('Error refreshing QR code:', error);
-        this.$message({
-          message: this.$t('checkout.qrcodeRefreshFailed') || '刷新二维码失败',
-          type: 'error',
-          customClass: 'modern-message'
-        });
+        this.$messageHandler.showError('刷新二维码失败', 'checkout.error.qrcodeRefreshFailed');
       } finally {
         this.refreshing = false;
       }
@@ -765,11 +717,7 @@ export default {
         this.qrcodeTimer--;
         if (this.qrcodeTimer <= 0) {
           this.clearQrcodeTimers();
-          this.$message({
-            message: this.$t('checkout.qrcodeExpired') || '二维码已过期，请重新生成',
-            type: 'warning',
-            customClass: 'modern-message'
-          });
+          this.$messageHandler.showWarning('二维码已过期，请重新生成', 'checkout.warning.qrcodeExpired');
         }
       }, 1000);
     },
@@ -803,11 +751,7 @@ export default {
         await this.$refs.shippingForm.validate();
         return true;
       } catch (error) {
-        this.$message({
-          message: this.$t('checkout.shippingInfoInvalid') || '请完善收货信息',
-          type: 'warning',
-          customClass: 'modern-message'
-        });
+        this.$messageHandler.showWarning('请完善收货信息', 'checkout.warning.shippingInfoInvalid');
         return false;
       }
     }

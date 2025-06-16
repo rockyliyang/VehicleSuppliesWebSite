@@ -1,119 +1,155 @@
 <template>
   <div class="contact-page">
-    <PageBanner title="联系我们" />
-    
-    <!-- Breadcrumb Section -->
-    <div class="breadcrumb-section">
-      <div class="container">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item>联系我们</el-breadcrumb-item>
-        </el-breadcrumb>
-      </div>
-    </div>
+    <PageBanner :title="$t('contact.page.title')" />
+    <NavigationMenu :breadcrumb-items="breadcrumbItems" />
 
     <div class="container">
-      <div class="contact-section">
+      <!-- Contact Information 区域 -->
+      <div class="contact-info-section">
         <div class="section-title">
-          <h2>联系方式</h2>
+          <h2>{{ $t('contact.contactInfo') }}</h2>
           <div class="title-underline"></div>
         </div>
 
-        <div class="contact-content">
-          <div class="contact-info">
-            <div class="info-item">
-              <div class="info-icon">
-                <i class="el-icon-location-information"></i>
+        <div class="contact-info-main">
+          <!-- 左侧：公司信息和关注我们 -->
+          <div class="company-details">
+            <!-- 公司信息 -->
+            <div class="company-info">
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="el-icon-location-information"></i>
+                </div>
+                <div class="info-content">
+                  <h3>{{ $t('contact.address') }}</h3>
+                  <p>{{ companyInfo.address || '123 Auto Street, Vehicle City' }}</p>
+                </div>
               </div>
-              <div class="info-content">
-                <h3>公司地址</h3>
-                <p>{{ companyInfo.address || '123 Auto Street, Vehicle City' }}</p>
+
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="el-icon-phone"></i>
+                </div>
+                <div class="info-content">
+                  <h3>{{ $t('contact.phone') }}</h3>
+                  <p>{{ companyInfo.phone || '+86 123 4567 8910' }}</p>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="el-icon-message"></i>
+                </div>
+                <div class="info-content">
+                  <h3>{{ $t('contact.email') }}</h3>
+                  <p>{{ companyInfo.email || 'contact@autoease.com' }}</p>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="el-icon-time"></i>
+                </div>
+                <div class="info-content">
+                  <h3>{{ $t('contact.businessHours') }}</h3>
+                  <p>{{ companyInfo.business_hours || '周一至周五: 9:00 - 18:00' }}</p>
+                </div>
               </div>
             </div>
 
-            <div class="info-item">
-              <div class="info-icon">
-                <i class="el-icon-phone"></i>
-              </div>
-              <div class="info-content">
-                <h3>联系电话</h3>
-                <p>{{ companyInfo.phone || '+86 123 4567 8910' }}</p>
-              </div>
-            </div>
-
-            <div class="info-item">
-              <div class="info-icon">
-                <i class="el-icon-message"></i>
-              </div>
-              <div class="info-content">
-                <h3>电子邮箱</h3>
-                <p>{{ companyInfo.email || 'contact@autoease.com' }}</p>
-              </div>
-            </div>
-
-            <div class="info-item">
-              <div class="info-icon">
-                <i class="el-icon-time"></i>
-              </div>
-              <div class="info-content">
-                <h3>营业时间</h3>
-                <p>{{ companyInfo.business_hours || '周一至周五: 9:00 - 18:00' }}</p>
+            <!-- 关注我们 -->
+            <div class="follow-us">
+              <h3>{{ $t('contact.followUs') }}</h3>
+              <div class="qrcode-container">
+                <div class="qrcode-item">
+                  <div class="qrcode-image">
+                    <img :src="companyInfo.wechat_qr_code || '../assets/images/qrcode.png'"
+                      :alt="$t('contact.wechatQrCode')" @error="handleImageError">
+                  </div>
+                  <p>{{ $t('contact.scanQrCode') }}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="contact-form-container">
-            <h3>给我们留言</h3>
-            <el-form :model="contactForm" :rules="contactRules" ref="contactForm" label-width="80px">
-              <el-form-item label="姓名" prop="name">
-                <el-input v-model="contactForm.name"></el-input>
-              </el-form-item>
-              <el-form-item label="邮箱" prop="email">
-                <el-input v-model="contactForm.email"></el-input>
-              </el-form-item>
-              <el-form-item label="电话" prop="phone">
-                <el-input v-model="contactForm.phone"></el-input>
-              </el-form-item>
-              <el-form-item label="主题" prop="subject">
-                <el-input v-model="contactForm.subject"></el-input>
-              </el-form-item>
-              <el-form-item label="留言" prop="message">
-                <el-input type="textarea" v-model="contactForm.message" rows="5"></el-input>
+          <!-- 右侧：公司位置 -->
+          <div class="company-location">
+            <h3>{{ $t('contact.companyLocation') }}</h3>
+            <div class="map-container">
+              <img src="../assets/images/map.jpg" :alt="$t('contact.companyMap')" @error="handleImageError">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message Board 区域 -->
+      <div class="message-board-section">
+        <!-- 联系表单 -->
+        <div class="contact-form-card">
+          <div class="section-title">
+            <h2>{{ $t('contact.messageBoard') }}</h2>
+            <div class="title-underline"></div>
+          </div>
+
+          <!-- 显示当前用户信息（如果已登录） -->
+          <div v-if="isLoggedIn" class="user-info">
+            <el-tag type="info">{{ $t('contact.currentUser') }}: {{ userInfo.username }} ({{ userInfo.email
+              }})</el-tag>
+          </div>
+
+          <div class="contact-form">
+            <el-form ref="contactFormRef" :model="contactForm" :rules="contactRules" label-width="80px"
+              @submit.prevent="submitForm">
+              <div class="form-row">
+                <div class="form-col">
+                  <el-form-item :label="$t('contact.name')" prop="name">
+                    <FormInput v-model="contactForm.name" :placeholder="$t('contact.name.placeholder')"
+                      :disabled="isLoggedIn" maxlength="50" show-word-limit />
+                  </el-form-item>
+                </div>
+                <div class="form-col">
+                  <el-form-item :label="$t('contact.email')" prop="email">
+                    <FormInput v-model="contactForm.email" :placeholder="$t('contact.email.placeholder')"
+                      :disabled="isLoggedIn" maxlength="100" />
+                  </el-form-item>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-col">
+                  <el-form-item :label="$t('contact.phone')" prop="phone">
+                    <FormInput v-model="contactForm.phone" :placeholder="$t('contact.phone.placeholder')"
+                      :disabled="isLoggedIn" maxlength="20" />
+                  </el-form-item>
+                </div>
+                <div class="form-col">
+                  <el-form-item :label="$t('contact.captcha')" prop="captcha">
+                    <div class="captcha-container">
+                      <FormInput v-model="contactForm.captcha" :placeholder="$t('contact.captcha.placeholder')"
+                        class="captcha-input" />
+                      <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img"
+                        :alt="$t('contact.captcha.alt')" :title="$t('contact.captcha.refresh')" />
+                    </div>
+                  </el-form-item>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-col-full">
+                  <el-form-item :label="$t('contact.subject')" prop="subject">
+                    <FormInput v-model="contactForm.subject" :placeholder="$t('contact.subject.placeholder')"
+                      maxlength="128" show-word-limit />
+                  </el-form-item>
+                </div>
+              </div>
+              <el-form-item :label="$t('contact.message')" prop="message">
+                <FormInput v-model="contactForm.message" type="textarea" :rows="6"
+                  :placeholder="$t('contact.message.placeholder')" maxlength="2000" show-word-limit />
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" @click="submitForm">提交留言</el-button>
-                <el-button @click="resetForm">重置</el-button>
+                <el-button type="primary" @click="submitForm" :loading="isSubmitting" class="submit-btn">
+                  {{ isSubmitting ? $t('contact.submitting') : $t('contact.submit.message') }}
+                </el-button>
               </el-form-item>
             </el-form>
-          </div>
-        </div>
-      </div>
-
-      <div class="map-section">
-        <div class="section-title">
-          <h2>公司位置</h2>
-          <div class="title-underline"></div>
-        </div>
-
-        <div class="map-container">
-          <!-- 实际项目中会使用地图API，这里用图片代替 -->
-          <img src="../assets/images/map.jpg" alt="公司地图" @error="handleImageError">
-        </div>
-      </div>
-
-      <div class="qrcode-section">
-        <div class="section-title">
-          <h2>关注我们</h2>
-          <div class="title-underline"></div>
-        </div>
-
-        <div class="qrcode-container">
-          <div class="qrcode-item">
-            <div class="qrcode-image">
-              <img :src="companyInfo.wechat_qrcode || '../assets/images/qrcode.png'" alt="微信二维码"
-                @error="handleImageError">
-            </div>
-            <p>扫描二维码关注我们的微信公众号</p>
           </div>
         </div>
       </div>
@@ -124,45 +160,96 @@
 <script>
 import { handleImageError } from '../utils/imageUtils'
 import PageBanner from '@/components/common/PageBanner.vue'
+import NavigationMenu from '@/components/common/NavigationMenu.vue'
+import FormInput from '@/components/common/FormInput.vue'
 
 export default {
   name: 'ContactPage',
   components: {
-    PageBanner
+    PageBanner,
+    NavigationMenu,
+    FormInput
   },
   data() {
     return {
       companyInfo: {},
+      isSubmitting: false,
+      captchaUrl: '/api/users/captcha?' + Date.now(),
       contactForm: {
         name: '',
         email: '',
         phone: '',
         subject: '',
-        message: ''
+        message: '',
+        captcha: ''
       },
       contactRules: {
         name: [
-          { required: true, message: '请输入您的姓名', trigger: 'blur' }
+          { required: true, message: this.$t('contact.name.required'), trigger: 'blur' },
+          { max: 50, message: this.$t('contact.name.tooLong'), trigger: 'blur' }
         ],
         email: [
-          { required: true, message: '请输入您的邮箱', trigger: 'blur' },
-          { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+          { required: true, message: this.$t('contact.email.required'), trigger: 'blur' },
+          { type: 'email', message: this.$t('contact.email.invalid'), trigger: 'blur' },
+          { max: 100, message: this.$t('contact.email.tooLong'), trigger: 'blur' }
         ],
         phone: [
-          { required: true, message: '请输入您的电话', trigger: 'blur' }
+          { required: true, message: this.$t('contact.phone.required'), trigger: 'blur' },
+          { pattern: /^[\d\s\-+()]+$/, message: this.$t('contact.phone.invalid'), trigger: 'blur' },
+          { max: 20, message: this.$t('contact.phone.tooLong'), trigger: 'blur' }
         ],
         subject: [
-          { required: true, message: '请输入留言主题', trigger: 'blur' }
+          { required: true, message: this.$t('contact.subject.required'), trigger: 'blur' },
+          { max: 128, message: this.$t('contact.subject.tooLong'), trigger: 'blur' }
         ],
         message: [
-          { required: true, message: '请输入留言内容', trigger: 'blur' }
+          { required: true, message: this.$t('contact.message.required'), trigger: 'blur' },
+          { max: 2000, message: this.$t('contact.message.tooLong'), trigger: 'blur' }
+        ],
+        captcha: [
+          { required: true, message: this.$t('contact.captcha.required'), trigger: 'blur' }
         ]
       }
     }
   },
-  created() {
-    this.fetchCompanyInfo()
+  computed: {
+    breadcrumbItems() {
+      return [
+        { text: this.$t('contact.page.title') }
+      ];
+    },
+    isLoggedIn() {
+      return this.$store.getters['auth/isAuthenticated'];
+    },
+    userInfo() {
+      return this.$store.getters['auth/userInfo'] || {};
+    }
   },
+  watch: {
+    isLoggedIn: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal && this.userInfo) {
+          this.fillUserInfo();
+        } else if (!newVal) {
+          this.clearUserInfo();
+        }
+      }
+    },
+    userInfo: {
+      immediate: true,
+      handler(newVal) {
+        if (this.isLoggedIn && newVal) {
+          this.fillUserInfo();
+        }
+      }
+    }
+  },
+  created() {
+    this.fetchCompanyInfo();
+    this.refreshCaptcha();
+  },
+
   methods: {
     handleImageError,
     async fetchCompanyInfo() {
@@ -172,162 +259,594 @@ export default {
         this.companyInfo = response.data
       } catch (error) {
         // 错误已在api.js中统一处理
-        console.error('获取公司信息失败')
+        console.error('Failed to fetch company info')
       }
     },
-    submitForm() {
-      this.$refs.contactForm.validate(valid => {
+    fillUserInfo() {
+      if (this.userInfo) {
+        this.contactForm.name = this.userInfo.name || '';
+        this.contactForm.email = this.userInfo.email || '';
+        this.contactForm.phone = this.userInfo.phone || '';
+      }
+    },
+    
+    clearUserInfo() {
+      this.contactForm.name = '';
+      this.contactForm.email = '';
+      this.contactForm.phone = '';
+    },
+    
+    refreshCaptcha() {
+      this.captchaUrl = '/api/users/captcha?' + Date.now();
+      this.contactForm.captcha = ''; // 清空验证码输入框
+    },
+    
+    async submitForm() {
+      this.$refs.contactFormRef.validate(async (valid) => {
         if (valid) {
-          // 实际项目中会发送到后端API
-          this.$messageHandler.showSuccess('留言已提交，我们会尽快与您联系', 'contact.success.messageSubmitted')
-          this.resetForm()
+          this.isSubmitting = true;
+          try {
+            const submitData = {
+              name: this.contactForm.name,
+              email: this.contactForm.email,
+              phone: this.contactForm.phone,
+              subject: this.contactForm.subject,
+              message: this.contactForm.message,
+              captcha: this.contactForm.captcha
+            };
+            await this.$api.postWithErrorHandler('contact/messages', submitData);
+            
+            
+            this.$messageHandler.showSuccess(
+              this.$t('contact.success.messageSubmitted'), 
+              'contact.success.messageSubmitted'
+            );
+            // 重置表单，但保留用户信息（如果已登录）
+            this.contactForm.subject = '';
+            this.contactForm.message = '';
+            this.contactForm.captcha = '';
+            this.refreshCaptcha(); // 重置后刷新验证码
+            if (!this.isLoggedIn) {
+              this.clearUserInfo();
+            }
+            this.$refs.contactFormRef.clearValidate();
+          
+          } catch (error) {
+            // postWithErrorHandler 已经处理了错误显示，这里只需要处理一些特殊逻辑
+            console.error('Submit contact form error:', error);
+          } finally {
+            this.isSubmitting = false;
+          }
+        } else {
+          this.$messageHandler.showError(
+            this.$t('contact.error.formIncomplete'), 
+            'contact.error.formIncomplete'
+          );
         }
-      })
+      });
     },
     resetForm() {
-      this.$refs.contactForm.resetFields()
+      this.$refs.contactFormRef.resetFields()
     }
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/assets/styles/variables';
+@import '@/assets/styles/mixins';
+
 .contact-page {
   min-height: 100vh;
+  background: linear-gradient(135deg, $background-light 0%, $background-secondary 100%);
+  padding: $spacing-lg 0;
 }
-
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 15px;
+  @include container;
+  padding: 0 $spacing-lg;
 }
 
-.contact-section,
-.map-section,
-.qrcode-section {
-  margin-bottom: 60px;
+.contact-info-section {
+  margin-bottom: $spacing-xl;
+
+  .contact-info-main {
+    @include flex-start;
+    gap: $spacing-xl;
+    align-items: flex-start;
+  }
+}
+
+.company-details {
+  flex: 1;
+  max-width: 45%;
+}
+
+.company-location {
+  flex: 1;
+  max-width: 50%;
+}
+
+.message-board-section {
+  width: 100%;
+}
+
+.contact-info-section,
+.contact-form-card {
+  @include card;
+  margin-bottom: $spacing-lg;
+  padding: $spacing-lg;
 }
 
 .section-title {
   text-align: center;
-  margin-bottom: 30px;
-}
+  margin-bottom: $spacing-md;
 
-.section-title h2 {
-  font-size: 28px;
-  margin-bottom: 10px;
-  position: relative;
-  display: inline-block;
+  h2 {
+    color: $text-primary;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-sm;
+  }
 }
 
 .title-underline {
-  width: 80px;
-  height: 3px;
-  background-color: #409EFF;
-  margin: 0 auto;
-}
-
-.contact-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-}
-
-.contact-info {
-  flex: 1;
-  min-width: 300px;
-}
-
-.info-item {
-  display: flex;
-  margin-bottom: 25px;
-}
-
-.info-icon {
-  font-size: 24px;
-  color: #409EFF;
-  margin-right: 15px;
   width: 40px;
-  height: 40px;
-  background-color: #ecf5ff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  height: 2px;
+  background: linear-gradient(90deg, $primary-color, $secondary-color);
+  margin: 0 auto;
+  border-radius: 2px;
 }
 
-.info-content h3 {
-  font-size: 18px;
-  margin-bottom: 5px;
+// 公司信息样式
+.company-info {
+  margin-bottom: $spacing-lg;
+
+  .info-item {
+    @include flex-start;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+    padding: $spacing-sm;
+    background: $background-light;
+    border-radius: $border-radius-md;
+    border-left: 3px solid $primary-color;
+    transition: all $transition-base;
+
+    &:hover {
+      @include card-hover;
+      transform: translateX(3px);
+    }
+  }
 }
 
-.info-content p {
-  color: #666;
-  line-height: 1.6;
+// 关注我们样式
+.follow-us {
+  h3 {
+    color: $text-primary;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-sm;
+  }
+
+  .qrcode-container {
+    @include flex-center;
+
+    .qrcode-item {
+      text-align: center;
+
+      .qrcode-image {
+        width: 120px;
+        height: 120px;
+        margin-bottom: $spacing-xs;
+
+        img {
+          width: 100%;
+          height: 100%;
+          border-radius: $border-radius-sm;
+          box-shadow: $shadow-sm;
+        }
+      }
+
+      p {
+        color: $text-secondary;
+        font-size: $font-size-sm;
+        margin: 0;
+      }
+    }
+  }
 }
 
-.contact-form-container {
-  flex: 1;
-  min-width: 300px;
-  background-color: #f9f9f9;
-  padding: 25px;
-  border-radius: 4px;
-}
-
-.contact-form-container h3 {
-  font-size: 20px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.map-container {
-  height: 400px;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.map-container img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.qrcode-container {
-  display: flex;
-  justify-content: center;
-}
-
-.qrcode-item {
-  text-align: center;
-  max-width: 200px;
-}
-
-.qrcode-image {
-  width: 200px;
-  height: 200px;
-  margin-bottom: 10px;
-}
-
-.qrcode-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.qrcode-item p {
-  color: #666;
-}
-
-@media (max-width: 768px) {
-  .contact-content {
-    flex-direction: column;
+// 公司位置样式
+.company-location {
+  h3 {
+    color: $text-primary;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-sm;
   }
 
   .map-container {
-    height: 300px;
+    width: 100%;
+    height: 350px;
+    border-radius: $border-radius-md;
+    overflow: hidden;
+    box-shadow: $shadow-sm;
+    background: $background-light;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}
+
+.info-icon {
+  @include flex-center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, $primary-color, $secondary-color);
+  border-radius: 50%;
+  color: $white;
+  font-size: $font-size-lg;
+  flex-shrink: 0;
+}
+
+.info-content {
+  flex: 1;
+
+  h3 {
+    color: $text-primary;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-xs;
+  }
+
+  p {
+    color: $text-secondary;
+    font-size: $font-size-sm;
+    line-height: $line-height-normal;
+    margin: 0;
+  }
+}
+
+.contact-form {
+  .form-row {
+    display: flex;
+    gap: $spacing-md;
+    margin-bottom: $spacing-md;
+
+    .form-col {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .form-col-full {
+      width: 100%;
+    }
+  }
+
+  .verification-input {
+    display: flex;
+    gap: $spacing-xs;
+    align-items: flex-start;
+
+    /* Captcha Container */
+    .captcha-container {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      width: 100%;
+    }
+
+    .captcha-input {
+      flex: 1;
+    }
+
+    .captcha-img {
+      height: 48px;
+      width: 120px;
+      cursor: pointer;
+      border-radius: 0.375rem;
+      border: 1px solid #d1d5db;
+      transition: border-color 0.3s ease;
+      background-color: #ffffff;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .captcha-img:hover {
+      border-color: #dc2626;
+    }
+
+    .verification-code-input {
+      flex: 1;
+    }
+
+    .get-code-btn {
+      flex-shrink: 0;
+      min-width: 100px;
+      height: 40px;
+      font-size: $font-size-sm;
+
+      &:disabled {
+        background-color: $background-secondary;
+        color: $text-muted;
+        border-color: $border-light;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  :deep(.el-form) {
+    .el-form-item {
+      margin-bottom: $spacing-md;
+
+      .el-form-item__label {
+        color: $text-primary;
+        font-weight: $font-weight-medium;
+        font-size: $font-size-sm;
+      }
+    }
+
+
+    .el-textarea {
+      .el-textarea__inner {
+        @include input-base;
+        border: 1px solid $border-light;
+        border-radius: $border-radius-sm;
+        padding: $spacing-xs $spacing-sm;
+        font-size: $font-size-sm;
+        transition: all $transition-base;
+
+        &:focus {
+          border-color: $primary-color;
+          box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+        }
+
+        &::placeholder {
+          color: $text-muted;
+        }
+      }
+    }
+
+    .el-button {
+      @include button-primary;
+      width: 100%;
+      padding: $spacing-sm $spacing-lg;
+      font-size: $font-size-base;
+      font-weight: $font-weight-medium;
+      border-radius: $border-radius-sm;
+      margin-top: $spacing-sm;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: $shadow-md;
+      }
+    }
+  }
+}
+
+.login-actions {
+  margin-top: $spacing-lg;
+  display: flex;
+  gap: $spacing-md;
+  justify-content: center;
+}
+
+.user-info {
+  margin-bottom: $spacing-md;
+  padding: $spacing-sm;
+  background-color: #f5f7fa;
+  border-radius: $border-radius-sm;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 48px;
+  font-size: $font-size-base;
+  font-weight: 600;
+  border-radius: $border-radius-md;
+}
+
+
+// 地图和二维码区域
+.map-qr-section {
+  @include flex-start;
+  gap: $spacing-lg;
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: 1px solid $border-light;
+}
+
+.map-area {
+  flex: 2;
+
+  h3 {
+    color: $text-primary;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.qr-area {
+  flex: 1;
+
+  h3 {
+    color: $text-primary;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.map-container {
+  width: 100%;
+  height: 150px;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  background: $background-light;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform $transition-base;
+
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+}
+
+.qrcode-container {
+  @include flex-center;
+}
+
+.qrcode-item {
+  @include flex-column;
+  @include flex-center;
+  text-align: center;
+
+  .qrcode-image {
+    width: 100px;
+    height: 100px;
+    margin-bottom: $spacing-sm;
+    border-radius: $border-radius-md;
+    overflow: hidden;
+    box-shadow: $shadow-sm;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  p {
+    color: $text-secondary;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    margin: 0;
+  }
+}
+
+// 响应式设计
+@include mobile {
+  .container {
+    padding: 0 $spacing-sm;
+  }
+
+  .contact-info-main {
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  .company-details,
+  .company-location {
+    max-width: 100%;
+  }
+
+  .contact-info-section,
+  .contact-form-card {
+    margin-bottom: $spacing-md;
+    padding: $spacing-md;
+  }
+
+  .section-title {
+    margin-bottom: $spacing-lg;
+
+    h2 {
+      font-size: $font-size-lg;
+    }
+  }
+
+  .company-info {
+    .info-item {
+      padding: $spacing-md;
+      margin-bottom: $spacing-lg;
+
+      .info-icon {
+        width: 32px;
+        height: 32px;
+        font-size: $font-size-base;
+      }
+
+      .info-content {
+        h3 {
+          font-size: $font-size-md;
+        }
+
+        p {
+          font-size: $font-size-sm;
+        }
+      }
+    }
+  }
+
+  .follow-us {
+    .qrcode-image {
+      width: 100px;
+      height: 100px;
+    }
+  }
+
+  .company-location {
+    .map-container {
+      height: 150px;
+    }
+  }
+
+  .contact-form {
+    .form-row {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    h2 {
+      font-size: $font-size-xl;
+    }
+  }
+}
+
+@include tablet {
+  .contact-info-main {
+    gap: $spacing-lg;
+  }
+
+  .company-details {
+    max-width: 55%;
+  }
+
+  .company-location {
+    max-width: 40%;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: $spacing-md;
+  }
+
+  .section-title {
+    h2 {
+      font-size: $font-size-lg;
+    }
+  }
+
+  .follow-us {
+    .qrcode-image {
+      width: 80px;
+      height: 80px;
+    }
+  }
+
+  .company-location {
+    .map-container {
+      height: 120px;
+    }
   }
 }
 </style>

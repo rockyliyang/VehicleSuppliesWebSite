@@ -334,7 +334,7 @@ export default {
     // 生成产品编号
     async generateProductCode() {
       if (!this.productForm.category_id) {
-        this.$message.warning('请先选择产品分类')
+        this.$messageHandler.showWarning('请先选择产品分类', 'admin.products.warning.selectCategoryFirst')
         return
       }
       

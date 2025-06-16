@@ -28,6 +28,11 @@ $gray-800: #1a202c;
 $gray-900: #171923;
 $black: #000000;
 
+// 背景色
+$background-light: $gray-50;
+$background-secondary: $gray-100;
+$border-light: $gray-200;
+
 // 文本颜色
 $text-primary: $gray-900;
 $text-secondary: $gray-600;
@@ -48,6 +53,7 @@ $spacing-4xl: 80px;
 // 字体大小
 $font-size-xs: 12px;
 $font-size-sm: 14px;
+$font-size-base: 16px;
 $font-size-md: 16px;
 $font-size-lg: 18px;
 $font-size-xl: 20px;

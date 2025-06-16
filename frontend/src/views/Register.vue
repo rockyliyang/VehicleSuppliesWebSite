@@ -172,11 +172,12 @@ export default {
             this.$messageHandler.showError(res.message, 'register.error.failed');
             this.refreshCaptcha();
           }
-        } catch (e) {
-          this.$messageHandler.showError(e, 'register.error.failed');
+        } catch (error) {
+          console.error('注册失败:', error);
+          this.$message.error(error.response?.data?.message || this.$t('register.registerFailed'));
           this.refreshCaptcha();
         } finally {
-          this.loading = false;
+          this.isSubmitting = false;
         }
       });
     }

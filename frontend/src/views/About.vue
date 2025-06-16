@@ -93,7 +93,7 @@ export default {
         }
       } catch (error) {
         console.error('获取导航菜单失败:', error);
-        this.$message.error('获取导航菜单失败');
+        this.$messageHandler.showError(this.$t('about.error.fetchNavFailed'), 'about.error.fetchNavFailed');
       }
     },
 
@@ -116,7 +116,7 @@ export default {
         console.error('获取内容失败:', error);
         this.currentContent = null;
         if (error.response && error.response.status !== 404) {
-          this.$message.error('获取内容失败');
+          this.$messageHandler.showError(this.$t('about.error.fetchContentFailed'), 'about.error.fetchContentFailed');
         }
       } finally {
         this.loading = false;

@@ -47,13 +47,8 @@
 
             <!-- 分页 -->
             <div class="pagination-container">
-              <el-pagination
-                background
-                layout="prev, pager, next"
-                :total="contentList.length"
-                :page-size="pageSize"
-                :current-page="currentPage"
-                @current-change="handlePageChange">
+              <el-pagination background layout="total, prev, pager, next, jumper" :total="contentList.length"
+                :page-size="pageSize" :current-page="currentPage" @current-change="handlePageChange">
               </el-pagination>
             </div>
           </div>
@@ -131,7 +126,7 @@ export default {
         }
       } catch (error) {
         console.error('获取导航菜单失败:', error);
-        this.$message.error('获取导航菜单失败');
+        this.$messageHandler.showError('获取导航菜单失败', 'news.error.fetchNavFailed');
       }
     },
 
@@ -150,7 +145,7 @@ export default {
         console.error('获取内容列表失败:', error);
         this.contentList = [];
         if (error.response && error.response.status !== 404) {
-          this.$message.error('获取内容列表失败');
+          this.$messageHandler.showError('获取内容列表失败', 'news.error.fetchContentFailed');
         }
       } finally {
         this.loading = false;
@@ -366,10 +361,13 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(-50%) scale(1);
     opacity: 1;
   }
+
   50% {
     transform: translateY(-50%) scale(1.2);
     opacity: 0.8;
@@ -507,7 +505,7 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 
   &:hover {
     color: $news-primary-dark;
-    
+
     i {
       transform: translateX(3px);
     }
@@ -526,22 +524,22 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 
     .el-pager li {
-       &.active {
-         background-color: $news-primary;
-         border-color: $news-primary;
-       }
+      &.active {
+        background-color: $news-primary;
+        border-color: $news-primary;
+      }
 
-       &:hover {
-         color: $news-primary;
-       }
-     }
+      &:hover {
+        color: $news-primary;
+      }
+    }
 
-     .btn-prev,
-     .btn-next {
-       &:hover {
-         color: $news-primary;
-       }
-     }
+    .btn-prev,
+    .btn-next {
+      &:hover {
+        color: $news-primary;
+      }
+    }
   }
 }
 
@@ -571,17 +569,17 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
     flex-direction: column;
     gap: 20px;
   }
-  
+
   .sidebar-nav {
     width: 100%;
     position: static;
   }
-  
+
   .news-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .news-section {
     padding: 20px;
   }
@@ -599,7 +597,7 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
   .news-content {
     padding: 18px;
   }
-  
+
   .nav-title {
     padding: 15px;
 

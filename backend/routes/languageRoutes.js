@@ -14,8 +14,8 @@ router.get('/supported', languageController.getSupportedLanguages);
 router.get('/detect', languageController.getLanguageByIp);
 
 // 管理员API - 需要JWT验证
-// 获取所有翻译
-router.get('/admin/translations', jwtMiddleware.verifyToken, jwtMiddleware.isAdmin, languageController.getAllTranslations);
+// 获取所有翻译（支持分页和过滤）
+router.get('/admin/translations', jwtMiddleware.verifyToken, jwtMiddleware.isAdmin, languageController.getAdminTranslations);
 
 // 添加翻译
 router.post('/admin/translations', jwtMiddleware.verifyToken, jwtMiddleware.isAdmin, languageController.addTranslation);

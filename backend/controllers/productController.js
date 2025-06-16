@@ -87,11 +87,12 @@ exports.createProduct = async (req, res) => {
 
     const guid = uuidToBinary(uuidv4());
 
+    const currentUserId = req.userId; // 从JWT中获取当前用户ID
     const [result] = await connection.query(
       `INSERT INTO products (
         name, product_code, category_id, price, stock, status, product_type,
-        thumbnail_url, short_description, full_description, guid, deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        thumbnail_url, short_description, full_description, guid, deleted, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
       [
         name,
         product_code,
@@ -103,7 +104,9 @@ exports.createProduct = async (req, res) => {
         thumbnail_url,
         short_description,
         full_description,
-        guid
+        guid,
+        currentUserId,
+        currentUserId
       ]
     );
 
@@ -332,7 +335,9 @@ exports.updateProduct = async (req, res) => {
         product_type = ?,
         thumbnail_url = ?, 
         short_description = ?, 
-        full_description = ? 
+        full_description = ?,
+        updated_by = ?,
+        updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
       [
         name,
@@ -345,6 +350,7 @@ exports.updateProduct = async (req, res) => {
         thumbnail_url,
         short_description,
         full_description,
+        req.userId,
         id
       ]
     );
@@ -403,8 +409,8 @@ exports.deleteProduct = async (req, res) => {
 
     // 软删除产品
     await connection.query(
-      'UPDATE products SET deleted = 1 WHERE id = ?',
-      [id]
+      'UPDATE products SET deleted = 1, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [req.userId, id]
     );
 
     await connection.commit();

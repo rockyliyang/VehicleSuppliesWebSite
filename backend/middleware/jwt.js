@@ -65,7 +65,23 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
+// 检查用户角色的中间件
+const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.userRole || !roles.includes(req.userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: getMessage('AUTH.INSUFFICIENT_PERMISSIONS'),
+        data: null
+      });
+    }
+    next();
+  };
+};
+
 module.exports = {
   verifyToken,
-  isAdmin
+  isAdmin,
+  requireRole,
+  authenticateToken: verifyToken // 添加别名以保持兼容性
 };

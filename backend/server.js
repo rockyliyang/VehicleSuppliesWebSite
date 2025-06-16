@@ -5,6 +5,7 @@ const { getMessage } = require('./config/messages');
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 const path = require('path');
 
 // 路由导入
@@ -20,6 +21,9 @@ const paymentConfigRoutes = require('./routes/paymentConfigRoutes');
 const languageRoutes = require('./routes/languageRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const commonContentRoutes = require('./routes/CommonContentRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const businessGroupRoutes = require('./routes/businessGroupRoutes');
+const userManagementRoutes = require('./routes/userManagementRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +32,17 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Session 配置
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-here',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // 在开发环境中设为 false，生产环境中如果使用 HTTPS 则设为 true
+    maxAge: 24 * 60 * 60 * 1000 // 24小时
+  }
+}));
 
 // 静态文件服务
 app.use('/static', express.static(path.join(__dirname, 'public', 'static')));
@@ -50,6 +65,9 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/payment-config', paymentConfigRoutes); // Register payment config routes
 app.use('/api/language', languageRoutes);
 app.use('/api/common-content', commonContentRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/admin/business-groups', businessGroupRoutes);
+app.use('/api/admin/users', userManagementRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));

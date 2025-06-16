@@ -361,11 +361,11 @@ async saveUserData(userData) {
 }
 //post 如果需要自定义错误处理
 const response = await this.$api.postWithErrorHandler('/api/users', userData, {
-  fallbackKey: 'USER.CREATE.FAILED',
+  fallbackKey: 'user.created.fail',
   errorHandler: (error, fallbackKey) => {
     // 自定义错误处理逻辑
     console.error('Custom error handling:', error);
-    this.$messageHandler.showError('操作失败，请重试', 'common.error.operationFailed');
+    this.$messageHandler.showError(this.$t(fallbackKey), fallbackKey);
   }
 });
 // PUT 请求

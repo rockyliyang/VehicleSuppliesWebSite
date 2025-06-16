@@ -53,7 +53,7 @@ module.exports = defineConfig({
     
     // 配置页面标题
     config.plugin('html').tap(args => {
-      args[0].title = '汽车用品供应商'
+      args[0].title = '汽车用品供应商' //set web title
       return args
     })
     

@@ -18,6 +18,8 @@
 
         <el-input v-model="searchKeyword" placeholder="搜索翻译键或内容" clearable style="width: 300px; margin-left: 10px"
           @input="handleFilterChange" />
+        
+        <el-button @click="clearFilters" style="margin-left: 10px">清除筛选</el-button>
       </div>
 
       <!-- 翻译列表 -->
@@ -47,7 +49,7 @@
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper" :total="filteredTranslations.length"
+          layout="total, sizes, prev, pager, next, jumper" :total="total"
           @size-change="handleSizeChange" @current-change="handleCurrentChange" />
       </div>
     </el-card>
@@ -127,6 +129,7 @@ export default {
       // 分页
       currentPage: 1,
       pageSize: 10,
+      total: 0, // 总记录数
       
       // 添加翻译对话框
       addDialogVisible: false,
@@ -155,32 +158,9 @@ export default {
     }
   },
   computed: {
-    // 筛选后的翻译列表
+    // 直接使用翻译列表，因为后端已经处理了分页和过滤
     filteredTranslations() {
-      let result = this.translations
-      
-      // 按语言筛选
-      if (this.filterLang) {
-        result = result.filter(item => item.lang === this.filterLang)
-      }
-      
-      // 按关键词搜索
-      if (this.searchKeyword) {
-        const keyword = this.searchKeyword.toLowerCase()
-        result = result.filter(item => 
-          item.code.toLowerCase().includes(keyword) || 
-          item.value.toLowerCase().includes(keyword)
-        )
-      }
-      
-      return result
-    },
-    
-    // 分页后的翻译列表
-    paginatedTranslations() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.filteredTranslations.slice(start, end)
+      return this.translations
     }
   },
   created() {
@@ -197,9 +177,31 @@ export default {
     async loadTranslations() {
       this.loading = true
       try {
-        const response = await this.$api.get('/language/admin/translations')
+        // 构建查询参数
+        const params = {
+          page: this.currentPage,
+          pageSize: this.pageSize
+        }
+        
+        // 添加过滤条件
+        if (this.filterLang) {
+          params.lang = this.filterLang
+        }
+        if (this.searchKeyword) {
+          params.search = this.searchKeyword
+        }
+        
+        const response = await this.$api.get('/language/admin/translations', { params })
         if (response.success) {
-          this.translations = response.data
+          // 处理新的数据结构
+          if (response.data.translations) {
+            this.translations = response.data.translations
+            this.total = response.data.total
+          } else {
+            // 兼容旧的数据结构
+            this.translations = response.data.items || response.data
+            this.total = response.data.total || this.translations.length
+          }
         } else {
           this.$messageHandler.showError(response.message, 'admin.language.error.loadFailed')
         }
@@ -327,17 +329,28 @@ export default {
     // 处理筛选条件变化
     handleFilterChange() {
       this.currentPage = 1 // 重置到第一页
+      this.loadTranslations() // 重新加载数据
     },
     
     // 处理每页显示数量变化
     handleSizeChange(val) {
       this.pageSize = val
       this.currentPage = 1 // 重置到第一页
+      this.loadTranslations() // 重新加载数据
     },
     
     // 处理页码变化
     handleCurrentChange(val) {
       this.currentPage = val
+      this.loadTranslations() // 重新加载数据
+    },
+    
+    // 清除所有筛选条件
+    clearFilters() {
+      this.filterLang = ''
+      this.searchKeyword = ''
+      this.currentPage = 1
+      this.loadTranslations()
     }
   }
 }

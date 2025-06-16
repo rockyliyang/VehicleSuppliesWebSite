@@ -147,7 +147,7 @@ export default {
       // 检查是否有子分类
       const hasChildren = this.categoryList.some(item => item.parent_id === row.id)
       if (hasChildren) {
-        this.$message.warning('该分类下有子分类，无法删除')
+        this.$messageHandler.showWarning('该分类下有子分类，无法删除', 'admin.categories.warning.hasChildren')
         return
       }
       

@@ -344,11 +344,6 @@ export default {
   }
 }
 
-/* Home页面特定的产品卡片样式覆盖 */
-.home-style {
-  /* 这些样式会应用到ProductCard组件上 */
-}
-
 /* About Section 样式 */
 .about-section {
   padding: $spacing-4xl 0;
