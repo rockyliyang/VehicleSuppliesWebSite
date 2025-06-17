@@ -26,6 +26,7 @@ const mutations = {
 const actions = {
   // 初始化语言设置
   async initLanguage({ commit, dispatch }) {
+    console.log('initLanguage start' );
     // 尝试从本地存储获取语言设置
     const savedLang = localStorage.getItem('app_language');
     
@@ -40,6 +41,7 @@ const actions = {
     
     // 加载支持的语言列表
     dispatch('loadSupportedLanguages');
+    console.log('initLanguage end' );
   },
   
   // 根据IP地址检测默认语言

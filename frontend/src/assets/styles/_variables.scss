@@ -3,6 +3,7 @@
 $primary-color: #e53e3e; // 红色主色调
 $primary-light: #fc8181; // 浅红色
 $primary-dark: #c53030; // 深红色
+$primary-darker: #9c1c1c; // 更深红色
 
 // 渐变色
 $gradient-primary: linear-gradient(to right, $primary-light, $primary-dark);
@@ -10,9 +11,17 @@ $gradient-primary: linear-gradient(to right, $primary-light, $primary-dark);
 // 辅助色
 $secondary-color: #4a5568; // 灰色
 $success-color: #38a169; // 成功绿色
+$success-light: #c6f6d5; // 浅成功绿色
+$success-dark: #2f855a; // 深成功绿色
 $warning-color: #d69e2e; // 警告黄色
+$warning-light: #faf089; // 浅警告黄色
+$warning-dark: #b7791f; // 深警告黄色
 $error-color: #e53e3e; // 错误红色
+$error-light: #fed7d7; // 浅错误红色
+$error-dark: #c53030; // 深错误红色
 $info-color: #3182ce; // 信息蓝色
+$info-light: #bee3f8; // 浅信息蓝色
+$info-dark: #2c5282; // 深信息蓝色
 
 // 中性色
 $white: #ffffff;
@@ -49,6 +58,10 @@ $spacing-xl: 32px;
 $spacing-2xl: 48px;
 $spacing-3xl: 64px;
 $spacing-4xl: 80px;
+$spacing-5xl: 120px;
+$spacing-6xl: 200px;
+$spacing-7xl: 280px;
+$spacing-8xl: 320px;
 
 // 字体大小
 $font-size-xs: 12px;
@@ -60,6 +73,7 @@ $font-size-xl: 20px;
 $font-size-2xl: 24px;
 $font-size-3xl: 30px;
 $font-size-4xl: 36px;
+$font-size-5xl: 48px;
 
 // 字体族
 $font-family-base: 'Microsoft YaHei', Avenir, Helvetica, Arial, sans-serif;
@@ -82,6 +96,10 @@ $border-radius-md: 8px;
 $border-radius-lg: 12px;
 $border-radius-xl: 16px;
 $border-radius-full: 50%;
+
+// 边框宽度
+$border-width-thin: 1px;
+$border-width-thick: 3px;
 
 // 阴影
 $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -109,7 +127,22 @@ $breakpoint-tablet: 768px;
 $breakpoint-desktop: 1024px;
 $breakpoint-large: 1200px;
 
+// 移动端特定变量
+$mobile-nav-overlay-opacity: 0.5;
+$mobile-footer-max-height: 500px;
+$mobile-icon-margin: 2px;
+$mobile-logo-height: 40px;
+$mobile-cart-badge-size: 18px;
+$mobile-submit-button-height: 40px;
+
 //banner
 $banner-height: 500px;
 $banner-bg: $primary-color;
 $banner-text-color: $white;
+
+// 模态框变量
+$modal-max-height: 70vh;
+
+// 颜色别名（兼容旧代码）
+$red-600: #e53e3e;
+$red-700: $primary-dark;

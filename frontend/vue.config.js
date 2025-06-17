@@ -4,7 +4,7 @@ const path = require('path')
 module.exports = defineConfig({
   devServer: {
     port: process.env.VUE_APP_PORT || 8080,
-    host: 'localhost',
+    host: '0.0.0.0',
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

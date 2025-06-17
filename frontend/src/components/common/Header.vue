@@ -1,6 +1,7 @@
 <template>
   <header class="bg-white shadow-md">
-    <div class="container mx-auto px-4 flex items-center justify-between">
+    <!-- Desktop Header -->
+    <div class="container mx-auto px-4 flex items-center justify-between desktop-header">
       <!-- Logo -->
       <div class="logo">
         <router-link to="/">
@@ -8,6 +9,7 @@
             @error="handleImageError" />
         </router-link>
       </div>
+
       <!-- Navigation -->
       <nav class="main-nav">
         <router-link to="/" exact-active-class="nav-active">{{$t('home')}}</router-link>
@@ -16,6 +18,7 @@
         <router-link to="/news" active-class="nav-active">{{$t('news')}}</router-link>
         <router-link to="/contact" active-class="nav-active">{{$t('contact')}}</router-link>
       </nav>
+
       <!-- Actions -->
       <div class="user-actions">
         <!-- Language Switcher -->
@@ -25,7 +28,7 @@
           <span class="material-icons icon-md">shopping_cart</span>
           <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
         </a>
-        <!-- User Dropdown -->
+        <!-- Desktop User Dropdown -->
         <el-dropdown trigger="hover" @command="handleUserMenu">
           <span class="action-btn user-btn">
             <span class="material-icons icon-md">person</span>
@@ -41,6 +44,58 @@
         </el-dropdown>
       </div>
     </div>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+      <!-- First Row: Logo, Language, Cart, User -->
+      <div class="mobile-header-row">
+        <div class="logo">
+          <router-link to="/">
+            <img :src="companyInfo.logo_url || logoImage" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'"
+              @error="handleImageError" />
+          </router-link>
+        </div>
+
+        <div class="mobile-actions">
+          <!-- Language Selector -->
+          <div class="language-selector">
+            <select v-model="currentLanguage" @change="handleLanguageChange($event.target.value)" class="language-select">
+              <option v-for="lang in supportedLanguages" :key="lang" :value="lang">
+                {{ getLanguageDisplay(lang) }}
+              </option>
+            </select>
+          </div>
+          <!-- Cart Button -->
+          <a href="#" @click.prevent="handleCartClick" class="action-btn cart-button">
+            <span class="material-icons icon-md">shopping_cart</span>
+            <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
+          </a>
+          <!-- Mobile User Button -->
+          <button @click="showLoginDialog = true" class="mobile-user-btn" :class="{ 'user-logged-in': isLoggedIn }">
+            <i class="fas fa-user"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Second Row: Navigation Menu -->
+      <div class="mobile-nav-row">
+        <div class="mobile-nav-buttons">
+          <router-link to="/" class="mobile-nav-btn"
+            :class="{ 'nav-active': $route.path === '/' }">{{$t('home')}}</router-link>
+          <router-link to="/about" class="mobile-nav-btn"
+            :class="{ 'nav-active': $route.path === '/about' }">{{$t('about')}}</router-link>
+          <router-link to="/products" class="mobile-nav-btn"
+            :class="{ 'nav-active': $route.path === '/products' }">{{$t('products')}}</router-link>
+          <router-link to="/news" class="mobile-nav-btn"
+            :class="{ 'nav-active': $route.path === '/news' }">{{$t('news')}}</router-link>
+          <router-link to="/contact" class="mobile-nav-btn"
+            :class="{ 'nav-active': $route.path === '/contact' }">{{$t('contact')}}</router-link>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" v-show="mobileMenuOpen" @click="closeMobileMenu"></div>
     <!-- 登录对话框 -->
     <el-dialog title="用户登录" v-model="loginDialogVisible" width="400px" center class="login-dialog">
       <el-form :model="loginForm" :rules="loginRules" ref="loginForm">
@@ -91,8 +146,16 @@ export default {
   },
   data() {
     return {
-      loginDialogVisible: false,
-      loginForm: {
+        loginDialogVisible: false,
+        // 移动端状态
+        isMobile: false,
+        mobileUserMenuOpen: false,
+        // 语言显示名称映射
+        languageDisplayMap: {
+          'zh-CN': '中文',
+          'en': 'English'
+        },
+        loginForm: {
         username: '',
         password: ''
       },
@@ -114,6 +177,31 @@ export default {
     isLoggedIn() {
       // 只使用store状态判断登录状态
       return this.$store.getters.isLoggedIn;
+    },
+    
+    // 获取当前语言
+    currentLanguage: {
+      get() {
+    try {
+      const lang = this.$store.getters['language/currentLanguage'];
+      console.log('Getting current language:', lang);
+      return lang || 'en'; // 提供默认值
+    } catch (error) {
+      console.error('Error getting current language:', error);
+      return 'en';
+    }
+  },
+      set(value) {
+        // setter用于v-model双向绑定
+        console.log('set current language:', value);
+        this.handleLanguageChange(value);
+      }
+    },
+    
+    // 获取支持的语言列表
+    supportedLanguages() {
+      console.log('Getting supported languages:', this.$store.getters['language/supportedLanguages']);
+      return this.$store.getters['language/supportedLanguages'];
     }
   },
   watch: {
@@ -128,10 +216,15 @@ export default {
   created() {
     this.fetchCompanyInfo();
     this.startTokenCheck();
-
     this.fetchCartCount();
     // 监听购物车更新事件
     this.$bus && this.$bus.on('cart-updated', this.fetchCartCount);
+  },
+  mounted() {
+    this.checkMobile();
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', this.checkMobile);
   },
   beforeUnmount() {
     // 清理事件监听
@@ -240,6 +333,46 @@ export default {
         this.$router.push('/login');
       }
     },
+    
+    // 移动端检测
+    checkMobile() {
+      this.isMobile = window.innerWidth <= 900;
+      if (!this.isMobile) {
+        this.mobileMenuOpen = false;
+      }
+    },
+    
+
+    
+    // 移动端用户按钮点击
+    handleMobileUserClick() {
+      if (this.isLoggedIn) {
+        this.$router.push('/user/orders');
+      } else {
+        this.$router.push('/login');
+      }
+    },
+    
+    // 获取语言显示名称
+    getLanguageDisplay(lang) {
+      return this.languageDisplayMap[lang] || lang;
+    },
+    
+    // 处理语言切换（移动端）
+    handleLanguageChange(lang) {
+      console.log('handleLanguageChange received:', lang, typeof lang);
+      // 如果传入的是event对象，获取其target.value
+      if (lang && typeof lang === 'object' && lang.target) {
+        lang = lang.target.value;
+      }
+      console.log('handleLanguageChange processed lang:', lang);
+      if (lang !== this.$store.getters['language/currentLanguage']) {
+        this.$store.dispatch('language/changeLanguage', lang);
+        console.log('handleLanguageChange current language:', lang);
+        // 触发全局语言切换事件，与桌面端保持一致
+        this.$bus.emit('language-changed', lang);
+      }
+    }
   },
 
   
@@ -282,15 +415,18 @@ export default {
 /* Logo */
 .logo {
   flex: 0 0 auto;
-  min-width: 180px;
-  max-width: 260px;
+  min-width: 120px;
+  max-width: 200px;
   height: 40px;
   display: flex;
-  /* 使用flex布局 */
   align-items: center;
-  /* 垂直居中 */
   justify-content: flex-start;
-  /* 水平向左对齐 */
+
+  @include mobile {
+    min-width: 100px;
+    max-width: 140px;
+    height: 32px;
+  }
 }
 
 .logo img {
@@ -300,44 +436,280 @@ export default {
   object-fit: contain;
 }
 
-/* Navigation */
+/* Desktop/Mobile Header Display */
+.desktop-header {
+  @media (max-width: 900px) {
+    display: none;
+  }
+}
+
+.mobile-header {
+  display: none;
+
+  @media (max-width: 900px) {
+    display: block;
+
+  }
+}
+
+/* Mobile Header Rows */
+.mobile-header-row {
+  @include flex-between;
+  align-items: center;
+  padding: $spacing-sm $spacing-sm;
+  margin-bottom: 0;
+}
+
+.mobile-actions {
+  @include flex-center;
+  gap: $spacing-sm;
+}
+
+.mobile-nav-row {
+  background: $white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.mobile-nav-buttons {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  padding: 0;
+  justify-content: space-around;
+  min-height: 60px;
+  align-items: stretch;
+  width: 100%;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  @include mobile {
+    justify-content: space-around;
+    gap: 0;
+    padding: 0;
+    min-height: 60px;
+  }
+}
+
+.mobile-nav-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-xs;
+  background: transparent;
+  color: $text-secondary;
+  text-decoration: none;
+  border-radius: 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  transition: $transition-base;
+  white-space: nowrap;
+  position: relative;
+  min-height: 60px;
+  text-align: center;
+  border: none;
+
+  &:hover {
+    color: $primary-color;
+    background: rgba($primary-color, 0.05);
+  }
+
+  &.nav-active {
+    color: $primary-color;
+    font-weight: $font-weight-semibold;
+    background: rgba($primary-color, 0.08);
+  }
+
+  @include mobile {
+    flex: 1;
+    min-width: auto;
+    font-size: $font-size-sm;
+    padding: $spacing-sm $spacing-xs;
+    min-height: 60px;
+  }
+}
+
+/* Language Selector */
+.language-selector {
+  .language-select {
+    padding: $spacing-xs $spacing-sm;
+    border: 1px solid $gray-300;
+    border-radius: $border-radius-sm;
+    background: $white;
+    color: $text-primary;
+    font-size: $font-size-sm;
+    cursor: pointer;
+    transition: $transition-base;
+
+    &:hover {
+      border-color: $primary-color;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+    }
+  }
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+  @include flex-center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  background: none;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius-md;
+  color: $text-primary;
+  cursor: pointer;
+  transition: $transition-base;
+  font-size: $font-size-sm;
+
+  &:hover {
+    color: $primary-color;
+    border-color: $primary-color;
+  }
+
+  .menu-text {
+    font-weight: $font-weight-medium;
+  }
+}
+
+/* Navigation Styles - 导航样式合并 */
+/* Desktop Navigation */
 .main-nav {
   flex: 1;
   @include flex-center;
   gap: $spacing-xl;
   min-width: 0;
   margin: 0 $spacing-lg;
+
+  /* Desktop Navigation Links */
+  a {
+    color: #6b7280;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    text-decoration: none;
+    padding: $spacing-xs 0;
+    position: relative;
+    transition: $transition-base;
+    white-space: nowrap;
+
+    &:hover {
+      color: $primary-color;
+    }
+
+    &.nav-active {
+      color: $primary-color;
+      font-weight: $font-weight-semibold;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: $primary-color;
+        border-radius: $border-radius-sm;
+      }
+    }
+  }
+
+  /* Responsive behavior */
+  @include tablet {
+    gap: $spacing-lg;
+  }
+
+  @media (max-width: $breakpoint-desktop) {
+    display: none;
+  }
 }
 
-.main-nav a {
-  color: #6b7280;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
-  text-decoration: none;
-  padding: $spacing-xs 0;
-  position: relative;
-  transition: $transition-base;
-  white-space: nowrap;
-}
-
-.main-nav a:hover {
-  color: $primary-color;
-}
-
-.main-nav .nav-active {
-  color: $primary-color;
-  font-weight: $font-weight-semibold;
-}
-
-.main-nav .nav-active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
+/* Mobile Navigation */
+.mobile-nav {
+  position: fixed;
+  top: 0;
   left: 0;
-  width: 100%;
-  height: 2px;
-  background: $primary-color;
-  border-radius: $border-radius-sm;
+  right: 0;
+  bottom: 0;
+  background: $white;
+  @include flex-column;
+  justify-content: center;
+  align-items: center;
+  gap: $spacing-xl;
+  padding: $spacing-lg;
+  box-shadow: $shadow-lg;
+  transform: translateY(-100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+
+  &.mobile-nav-open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Mobile Navigation Links */
+  a {
+    color: $text-primary;
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    text-decoration: none;
+    padding: $spacing-md 0;
+    transition: $transition-base;
+    text-align: center;
+
+    &:hover {
+      color: $primary-color;
+    }
+
+    &.nav-active {
+      color: $primary-color;
+      font-weight: $font-weight-bold;
+    }
+  }
+}
+
+/* Mobile Navigation Overlay */
+.mobile-nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, $mobile-nav-overlay-opacity);
+  z-index: 999;
+
+  @media (min-width: $breakpoint-desktop + 1px) {
+    display: none;
+  }
+}
+
+/* Responsive Display Classes */
+.desktop-only {
+  @media (max-width: $breakpoint-desktop) {
+    display: none !important;
+  }
+}
+
+.mobile-only {
+  display: none;
+
+  @media (max-width: $breakpoint-desktop) {
+    display: flex !important;
+  }
 }
 
 /* User Actions */
@@ -346,6 +718,26 @@ export default {
   min-width: 140px;
   @include flex-center;
   gap: $spacing-md;
+
+  @include mobile {
+    min-width: auto;
+    gap: $spacing-sm;
+  }
+}
+
+/* Mobile User Button */
+.mobile-user-btn {
+  @include flex-center;
+  padding: $spacing-xs;
+  background: none;
+  border: none;
+  color: $text-primary;
+  cursor: pointer;
+  transition: $transition-base;
+
+  &:hover {
+    color: $primary-color;
+  }
 }
 
 /* User Dropdown Menu */
@@ -379,14 +771,14 @@ export default {
   position: absolute;
   top: -$spacing-xs;
   right: -$spacing-xs;
-  min-width: 18px;
-  height: 18px;
+  min-width: $mobile-cart-badge-size;
+  height: $mobile-cart-badge-size;
   padding: 0 $spacing-xs;
   background: $primary-color;
   color: $white;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
-  line-height: 18px;
+  line-height: $mobile-cart-badge-size;
   text-align: center;
   border-radius: $border-radius-full;
   box-shadow: 0 2px 4px rgba($primary-color, 0.2);
@@ -409,7 +801,7 @@ export default {
 .submit-btn {
   @include button-primary;
   width: 100%;
-  height: 40px;
+  height: $mobile-submit-button-height;
   margin-top: $spacing-sm;
 }
 
@@ -440,26 +832,18 @@ export default {
     gap: $spacing-lg;
   }
 
-  .main-nav {
-    gap: $spacing-lg;
-  }
-
   .logo {
     min-width: 160px;
   }
 }
 
-@media (max-width: 900px) {
-  .main-nav {
-    display: none;
-  }
-
+@media (max-width: $breakpoint-desktop) {
   .container {
     justify-content: space-between;
   }
 
   .logo {
-    min-width: 140px;
+    min-width: $spacing-8xl - $spacing-2xl;
   }
 }
 
@@ -469,7 +853,7 @@ export default {
   }
 
   .logo img {
-    height: 40px;
+    height: $mobile-logo-height;
   }
 
   .user-actions {

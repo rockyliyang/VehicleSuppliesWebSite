@@ -344,7 +344,7 @@ export default {
   margin-bottom: $spacing-lg;
   border: 2px solid $primary-color;
   box-shadow: 0 4px 15px rgba($primary-color, 0.1);
-  transition: all 0.3s ease;
+  transition: $transition-slow;
   font-size: $font-size-lg;
   font-weight: $font-weight-semibold;
   color: $text-primary;
@@ -381,7 +381,7 @@ export default {
   font-weight: $font-weight-semibold !important;
   border: none !important;
   border-radius: $border-radius-md !important;
-  transition: all 0.3s ease;
+  transition: $transition-slow;
   height: auto !important;
   min-height: auto !important;
 
@@ -408,10 +408,10 @@ export default {
   margin: 0 $spacing-xs;
   border: none !important;
   border-radius: $border-radius-md !important;
-  transition: all 0.3s ease;
+  transition: $transition-slow;
 
   &:hover:not(:disabled) {
-    background-color: darken($primary-color, 10%) !important;
+    background-color: $primary-dark !important;
     border-color: transparent !important;
   }
 
@@ -434,7 +434,7 @@ export default {
   border-radius: $border-radius-md !important;
   background-color: $primary-color !important;
   color: $white !important;
-  transition: all 0.3s ease;
+  transition: $transition-slow;
 
   &:hover:not(:disabled) {
     background-color: $primary-dark !important;
@@ -460,7 +460,7 @@ export default {
   border: none !important;
   border-radius: $border-radius-md !important;
   padding: $spacing-md $spacing-lg !important;
-  transition: all 0.3s ease;
+  transition: $transition-slow;
 
   &:hover:not(:disabled) {
     background-color: $primary-dark !important;
@@ -476,7 +476,7 @@ export default {
 .go-shopping-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba($primary-color, 0.4);
-  background: linear-gradient(135deg, $primary-dark 0%, darken($primary-dark, 10%) 100%);
+  background: linear-gradient(135deg, $primary-dark 0%, $primary-darker 100%);
 }
 
 .empty-cart {
@@ -523,8 +523,8 @@ export default {
 }
 
 :deep(.el-button--danger:hover) {
-  background-color: darken($error-color, 10%);
-  border-color: darken($error-color, 10%);
+  background-color: $error-dark;
+  border-color: $error-dark;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba($error-color, 0.3);
 }

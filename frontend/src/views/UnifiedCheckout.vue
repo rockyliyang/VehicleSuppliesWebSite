@@ -935,20 +935,20 @@ export default {
 }
 
 .shipping-form :deep(.el-input__wrapper) {
-  border-radius: 8px;
-  border: 2px solid #e2e8f0;
-  transition: all 0.3s ease;
+  border-radius: $border-radius-sm;
+  border: 2px solid $gray-200;
+  transition: $transition-slow;
   box-shadow: none;
-  padding: 8px 12px;
+  padding: $spacing-sm $spacing-md;
 }
 
 .shipping-form :deep(.el-input__wrapper:hover) {
-  border-color: #cbd5e0;
+  border-color: $gray-300;
 }
 
 .shipping-form :deep(.el-input__wrapper.is-focus) {
-  border-color: #e53e3e;
-  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+  border-color: $primary-color;
+  box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
 }
 
 .shipping-form :deep(.el-input__inner) {
@@ -964,20 +964,20 @@ export default {
 }
 
 .shipping-form :deep(.el-textarea__inner) {
-  border-radius: 8px;
-  border: 2px solid #e2e8f0;
-  transition: all 0.3s ease;
-  padding: 12px;
+  border-radius: $border-radius-sm;
+  border: 2px solid $gray-200;
+  transition: $transition-slow;
+  padding: $spacing-md;
   resize: vertical;
 }
 
 .shipping-form :deep(.el-textarea__inner:hover) {
-  border-color: #cbd5e0;
+  border-color: $gray-300;
 }
 
 .shipping-form :deep(.el-textarea__inner:focus) {
-  border-color: #e53e3e;
-  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+  border-color: $primary-color;
+  box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
   outline: none;
 }
 
@@ -985,7 +985,7 @@ export default {
 .shipping-form :deep(.el-form-item) {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 20px;
+  margin-bottom: $spacing-lg;
 }
 
 .shipping-form :deep(.el-form-item__label) {
@@ -1000,7 +1000,7 @@ export default {
 
 /* 确保必填星号对齐 */
 .shipping-form :deep(.el-form-item.is-required .el-form-item__label::before) {
-  margin-right: 4px;
+  margin-right: $spacing-xs;
 }
 
 /* 支付方式标签页 */
@@ -1017,8 +1017,8 @@ export default {
   font-weight: $font-weight-semibold;
   color: $text-secondary;
   padding: 0 $spacing-xl;
-  height: 50px;
-  line-height: 50px;
+  height: $spacing-4xl;
+  line-height: $spacing-4xl;
 }
 
 .payment-tabs :deep(.el-tabs__item.is-active) {
@@ -1027,7 +1027,7 @@ export default {
 
 .payment-tabs :deep(.el-tabs__active-bar) {
   background: $primary-color;
-  height: 3px;
+  height: $border-width-thick;
 }
 
 /* PayPal容器 */
@@ -1065,7 +1065,7 @@ export default {
 }
 
 .qrcode-image img {
-  max-width: 200px;
+  max-width: $spacing-6xl;
   border-radius: $border-radius-md;
   display: block;
 }
@@ -1080,12 +1080,12 @@ export default {
 
 .qrcode-placeholder {
   text-align: center;
-  padding: 60px $spacing-lg;
+  padding: $spacing-5xl $spacing-lg;
   color: $gray-400;
 }
 
 .qrcode-placeholder-icon {
-  font-size: 48px;
+  font-size: $font-size-5xl;
   margin-bottom: $spacing-md;
   display: block;
 }
@@ -1109,12 +1109,12 @@ export default {
   font-weight: $font-weight-semibold;
   border-radius: $border-radius-md;
   transition: $transition-slow;
-  min-width: 160px;
+  min-width: $spacing-6xl;
 }
 
 .generate-qr-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(229, 62, 62, 0.3);
+  box-shadow: 0 8px 20px rgba($primary-color, 0.3);
 }
 
 .refresh-qr-btn {
@@ -1141,7 +1141,7 @@ export default {
   color: $text-secondary;
   background: $gray-100;
   padding: $spacing-sm $spacing-md;
-  border-radius: 20px;
+  border-radius: $border-radius-full;
   border: 1px solid $gray-200;
 }
 
@@ -1171,13 +1171,13 @@ export default {
 
 /* 支付成功对话框 */
 .success-dialog :deep(.el-dialog) {
-  border-radius: 20px;
+  border-radius: $border-radius-xl;
   overflow: hidden;
   box-shadow: $shadow-xl;
 }
 
 .success-dialog :deep(.el-dialog__header) {
-  background: linear-gradient(135deg, $success-color, #38a169);
+  background: linear-gradient(135deg, $success-color, $success-dark);
   color: $white;
   padding: $spacing-lg $spacing-xl;
   margin: 0;
@@ -1196,19 +1196,19 @@ export default {
 }
 
 .success-icon-wrapper {
-  width: 80px;
-  height: 80px;
+  width: $spacing-7xl;
+  height: $spacing-7xl;
   background: $gradient-primary;
   border-radius: $border-radius-full;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto $spacing-lg;
-  box-shadow: 0 8px 25px rgba(230, 0, 18, 0.3);
+  box-shadow: 0 8px 25px rgba($primary-color, 0.3);
 }
 
 .success-icon {
-  font-size: 40px;
+  font-size: $font-size-4xl;
   color: $white;
   font-weight: $font-weight-bold;
   line-height: 1;
@@ -1234,7 +1234,7 @@ export default {
   border-radius: $border-radius-lg;
   padding: $spacing-md $spacing-lg;
   margin: 0 auto;
-  max-width: 300px;
+  max-width: $spacing-8xl;
 }
 
 .order-label {
@@ -1267,7 +1267,7 @@ export default {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  min-width: 140px;
+  min-width: $spacing-5xl;
   justify-content: center;
 }
 
@@ -1292,7 +1292,7 @@ export default {
 
 .orders-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(230, 0, 18, 0.4);
+  box-shadow: 0 6px 20px rgba($primary-color, 0.4);
 }
 
 /* 订单状态样式 */
@@ -1352,24 +1352,24 @@ export default {
 
 /* 现代消息样式 */
 :deep(.modern-message) {
-  border-radius: 8px;
+  border-radius: $border-radius-sm;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: none;
 }
 
 :deep(.modern-message.el-message--success) {
-  background: linear-gradient(135deg, #e60012, #c50010);
-  color: white;
+  background: linear-gradient(135deg, $primary-color, $primary-dark);
+  color: $white;
 }
 
 :deep(.modern-message.el-message--error) {
-  background: linear-gradient(135deg, #f56565, #e53e3e);
-  color: white;
+  background: linear-gradient(135deg, $error-light, $error-color);
+  color: $white;
 }
 
 :deep(.modern-message.el-message--warning) {
-  background: linear-gradient(135deg, #ed8936, #dd6b20);
-  color: white;
+  background: linear-gradient(135deg, $warning-light, $warning-color);
+  color: $white;
 }
 
 /* 响应式设计 */

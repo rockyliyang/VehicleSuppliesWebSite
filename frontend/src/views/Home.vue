@@ -2,7 +2,7 @@
   <div class="home">
     <!-- Banner轮播图 -->
     <div class="banner-container">
-      <el-carousel height="500px" indicator-position="inside">
+      <el-carousel :height="bannerHeight" indicator-position="inside">
         <el-carousel-item v-for="(item, index) in banners" :key="index">
           <div class="banner-item" :style="{ backgroundImage: `url(${item.image_url})` }">
           </div>
@@ -71,16 +71,26 @@
                 }}
               </p>
             </div>
-            <router-link to="/about" class="learn-more-link">
-              <button class="learn-more-button">
-                {{ $t('about.learnMore') || '了解更多' }} <i class="fas fa-arrow-right"></i>
-              </button>
-            </router-link>
+            <!-- 电脑端More按钮 -->
+            <div class="desktop-button">
+              <router-link to="/about" class="learn-more-link">
+                <button class="learn-more-button">
+                  {{ $t('about.learnMore') || '了解更多' }} <i class="fas fa-arrow-right"></i>
+                </button>
+              </router-link>
+            </div>
           </div>
           <div class="about-image">
             <img :src="aboutImageUrl || 'https://via.placeholder.com/600x400/f3f4f6/6b7280?text=About+Us'"
               alt="About Us" @error="handleImageError" />
           </div>
+        </div>
+        <div class="about-button-row">
+          <router-link to="/about" class="learn-more-link">
+            <button class="learn-more-button">
+              {{ $t('about.learnMore') || '了解更多' }} <i class="fas fa-arrow-right"></i>
+            </button>
+          </router-link>
         </div>
       </div>
     </section>
@@ -109,6 +119,7 @@ export default {
       products: [],
       aboutContent: null,
       aboutImageUrl: null,
+      bannerHeight: '500px',
       defaultProductDescription: 'We offer the best selection of automotive electronic products. Our            high-quality car vacuum cleaners, tire inflators, and jump starters are designed for maximum performance and reliability.',
     }
   },
@@ -124,14 +135,18 @@ export default {
     this.fetchCategories()
     this.fetchProducts()
     this.fetchAboutContent()
+    this.updateBannerHeight();
+    window.addEventListener('resize', this.updateBannerHeight);
     
     // 监听语言切换事件
     this.$bus.on('language-changed', this.onLanguageChange);
   },
   
+  
   beforeUnmount() {
     // 清理事件监听器
     this.$bus.off('language-changed', this.onLanguageChange);
+    window.removeEventListener('resize', this.updateBannerHeight);
   },
   methods: {
     handleImageError,
@@ -180,7 +195,18 @@ export default {
      // 语言切换处理
      onLanguageChange() {
        this.fetchAboutContent();
-     }
+     },
+
+    // 更新Banner高度
+    updateBannerHeight() {
+      if (window.innerWidth <= 768) {
+        this.bannerHeight = '250px';
+      } else if (window.innerWidth <= 1024) {
+        this.bannerHeight = '350px';
+      } else {
+        this.bannerHeight = '500px';
+      }
+    }
   }
 }
 </script>
@@ -236,8 +262,16 @@ export default {
 /* Banner轮播图样式 */
 .banner-container {
   width: 100%;
-  height: 500px;
+  height: 400px;
   background: $gradient-primary;
+
+  @media (max-width: 768px) {
+    height: 280px;
+  }
+
+  @media (max-width: 480px) {
+    height: 220px;
+  }
 
   :deep(.el-carousel) {
     height: 100%;
@@ -273,18 +307,28 @@ export default {
 
 /* Products Section 样式 */
 .products-section {
-  padding: $spacing-4xl 0;
-  background-color: $white;
+  padding: $spacing-3xl 0;
+  background: $gray-50;
+
+  @include mobile {
+    padding: $spacing-xl 0;
+  }
 
   .section-header {
     text-align: center;
     margin-bottom: $spacing-2xl;
 
     .section-title {
-      font-size: $font-size-4xl;
+      font-size: $font-size-3xl;
       font-weight: $font-weight-bold;
       margin-bottom: $spacing-sm;
       text-align: center;
+      color: $text-primary;
+
+      @include mobile {
+        font-size: $font-size-2xl;
+        margin-bottom: $spacing-xl;
+      }
 
       .highlight {
         color: $primary-color;
@@ -311,19 +355,36 @@ export default {
 /* 产品分类按钮 */
 .category-button {
   @include button-outline;
-  padding: $spacing-md $spacing-xl;
-  /* px-8 py-3 equivalent */
+  padding: $spacing-sm $spacing-lg;
   margin: 0 $spacing-xs;
   white-space: nowrap;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  border-radius: $border-radius-md;
+  min-height: $spacing-3xl;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  @include mobile {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    min-height: $spacing-2xl;
+    margin: 0 $spacing-xs/2;
+  }
 
   &.active {
     @include button-primary;
-    padding: $spacing-md $spacing-xl;
-    /* 保持一致的padding */
-    font-size: $font-size-lg;
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-base;
     font-weight: $font-weight-semibold;
+    min-height: $spacing-3xl;
+
+    @include mobile {
+      padding: $spacing-xs $spacing-sm;
+      font-size: $font-size-sm;
+      min-height: $spacing-2xl;
+    }
   }
 }
 
@@ -332,12 +393,23 @@ export default {
   @include button-base;
   background-color: $gray-200;
   color: $gray-700;
-  padding: $spacing-md $spacing-xl;
-  /* 与category-button一致 */
+  padding: $spacing-sm $spacing-lg;
   margin: 0 $spacing-xs;
   white-space: nowrap;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  border-radius: $border-radius-md;
+  min-height: $spacing-3xl;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  @include mobile {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    min-height: $spacing-2xl;
+    margin: 0 $spacing-xs/2;
+  }
 
   &:hover:not(:disabled) {
     background-color: $gray-300;
@@ -409,6 +481,44 @@ export default {
       line-height: $line-height-relaxed;
     }
 
+    // 电脑端：More按钮在文本区域内
+    .desktop-button {
+      display: none;
+
+      @include tablet {
+        display: block;
+      }
+
+      .learn-more-button {
+        @include button-primary;
+        @include button-lg;
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+
+        i {
+          margin-left: $spacing-sm;
+        }
+      }
+    }
+  }
+
+  .about-button-row {
+    margin-top: $spacing-xl;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    // 移动端：显示按钮
+    @include mobile {
+      margin-top: $spacing-lg;
+      display: flex;
+    }
+
+    // 电脑端：隐藏按钮
+    @include tablet {
+      display: none;
+    }
+
     .learn-more-button {
       @include button-primary;
       @include button-lg;
@@ -422,7 +532,69 @@ export default {
   }
 }
 
-/* 响应式网格 */
+/* 产品分类和网格布局 - 合并相关样式 */
+/* 分类标签容器 */
+.category-tabs-container {
+  margin-bottom: $spacing-xl;
+
+  .category-buttons-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-lg;
+    overflow-x: auto;
+    padding: $spacing-xs 0;
+    
+    /* 隐藏滚动条但保持滚动功能 */
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    @include mobile {
+      justify-content: flex-start;
+      gap: $spacing-xs;
+      margin-bottom: $spacing-lg;
+      padding: $spacing-xs $spacing-sm;
+    }
+    
+    @include desktop {
+      flex-wrap: wrap;
+      overflow-x: visible;
+    }
+  }
+}
+
+/* 产品网格和响应式布局 */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-lg;
+
+  @include tablet {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @include desktop {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  @include mobile {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-sm;
+    margin-top: $spacing-lg;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-xs;
+  }
+}
+
+/* 响应式网格工具类 */
 @media (min-width: $breakpoint-tablet) {
   .sm\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -432,33 +604,6 @@ export default {
 @media (min-width: $breakpoint-desktop) {
   .lg\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-/* 分类标签容器 */
-.category-tabs-container {
-  margin-bottom: $spacing-xl;
-}
-
-.category-buttons-wrapper {
-  @include flex-center;
-  flex-wrap: wrap;
-  gap: $spacing-xs;
-  margin-bottom: $spacing-lg;
-}
-
-/* 产品网格 */
-.product-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: $spacing-lg;
-
-  @include tablet {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @include desktop {
-    grid-template-columns: repeat(4, 1fr);
   }
 }
 </style>

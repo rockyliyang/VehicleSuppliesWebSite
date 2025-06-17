@@ -279,40 +279,34 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 
 .news-layout {
   display: flex;
-  gap: 30px;
-  padding: 30px 0;
+  gap: $spacing-xl;
+  padding: $spacing-xl 0;
   min-height: 600px;
 }
 
 /* 侧边导航 */
 .sidebar-nav {
   width: 280px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background-color: $white;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-lg;
   height: fit-content;
   position: sticky;
-  top: 20px;
+  top: $spacing-lg;
 }
 
 .nav-title {
-  padding: 20px;
-  border-bottom: 1px solid #e9ecef;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $border-light;
   background-color: $news-primary;
-  color: white;
-  border-radius: 8px 8px 0 0;
+  color: $white;
+  border-radius: $border-radius-md $border-radius-md 0 0;
 }
 
 .nav-title h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.nav-title h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
 }
 
 .nav-menu {
@@ -322,8 +316,8 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 }
 
 .nav-menu li {
-  border-bottom: 1px solid #f0f0f0;
-  transition: all 0.3s ease;
+  border-bottom: 1px solid $gray-200;
+  transition: $transition-slow;
 }
 
 .nav-menu li:last-child {
@@ -332,11 +326,11 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 
 .nav-menu li a {
   display: block;
-  padding: 15px 20px;
-  color: #333;
+  padding: $spacing-md $spacing-lg;
+  color: $text-primary;
   text-decoration: none;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  font-size: $font-size-sm;
+  transition: $transition-slow;
 }
 
 .nav-menu li:hover {
@@ -346,7 +340,7 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 .nav-menu li:hover a {
   color: $news-primary;
   padding-left: 25px;
-  font-weight: 500;
+  font-weight: $font-weight-medium;
 }
 
 .nav-menu li.active {
@@ -356,7 +350,7 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 
 .nav-menu li.active a {
   color: $news-primary;
-  font-weight: 700;
+  font-weight: $font-weight-bold;
   text-shadow: 0 0 1px rgba($news-primary, 0.3);
 }
 
@@ -383,35 +377,35 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
   display: flex;
   justify-content: center;
   align-items: center;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background: $white;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-lg;
 }
 
 .news-section {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 30px;
+  background: $white;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-lg;
+  padding: $spacing-xl;
 }
 
 .news-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); // 改回每行3个的布局
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 25px;
-  margin-bottom: 40px;
-  min-height: 600px; // 适当减少最小高度
-  align-content: start; // 内容从顶部开始排列
+  margin-bottom: $spacing-2xl;
+  min-height: 600px;
+  align-content: start;
 }
 
 .news-card {
-  background: white;
+  background: $white;
   border: 1px solid $gray-200;
-  border-radius: 16px;
+  border-radius: $border-radius-xl;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: $transition-slow;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: $shadow-md;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -441,20 +435,20 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: $transition-slow;
   }
 }
 
 .news-content {
-  padding: 24px;
+  padding: $spacing-lg;
 }
 
 .news-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
   color: $text-primary;
-  line-height: 1.4;
-  margin-bottom: 12px;
+  line-height: $line-height-tight;
+  margin-bottom: $spacing-sm;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -469,9 +463,9 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 .news-meta {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 12px;
-  font-size: 14px;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+  font-size: $font-size-sm;
   color: $text-secondary;
 
   i {
@@ -481,9 +475,9 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 
 .news-summary {
   color: $text-secondary;
-  line-height: 1.6;
-  font-size: 14px;
-  margin-bottom: 18px;
+  line-height: $line-height-relaxed;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-lg;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -492,15 +486,15 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 
 .read-more {
   color: $news-primary;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
   display: flex;
   align-items: center;
-  gap: 6px;
-  transition: all 0.3s ease;
+  gap: $spacing-xs;
+  transition: $transition-slow;
 
   i {
-    transition: transform 0.3s ease;
+    transition: $transition-slow;
   }
 
   &:hover {
@@ -515,13 +509,13 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 .pagination-container {
   display: flex;
   justify-content: center;
-  margin-top: 40px;
+  margin-top: $spacing-2xl;
 
   :deep(.el-pagination) {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    background: $white;
+    padding: $spacing-lg;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-lg;
 
     .el-pager li {
       &.active {
@@ -544,10 +538,10 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 }
 
 .no-content {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 80px 20px;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+  padding: 80px $spacing-lg;
   text-align: center;
 }
 
@@ -567,60 +561,116 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 @media (max-width: 768px) {
   .news-layout {
     flex-direction: column;
-    gap: 20px;
+    gap: $spacing-lg;
+    padding: $spacing-lg 0;
   }
 
   .sidebar-nav {
     width: 100%;
     position: static;
+    margin-top: $spacing-xl;
+    order: 2;
+  }
+
+  .main-content {
+    order: 1;
+  }
+
+  .nav-menu {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .nav-menu li {
+    flex-shrink: 0;
+    border-bottom: none;
+    border-right: 1px solid $gray-200;
+  }
+
+  .nav-menu li:last-child {
+    border-right: none;
+  }
+
+  .nav-menu li a {
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-xs;
+  }
+
+  .news-section {
+    padding: $spacing-md;
   }
 
   .news-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: $spacing-md;
   }
 
-  .news-section {
-    padding: 20px;
+  .news-content {
+    padding: $spacing-lg;
+  }
+
+  .news-title {
+    font-size: $font-size-sm;
+  }
+
+  .news-summary {
+    font-size: $font-size-xs;
   }
 
   .pagination-container {
-    margin-top: 30px;
+    margin-top: $spacing-xl;
 
     :deep(.el-pagination) {
-      padding: 15px;
+      padding: $spacing-md;
     }
   }
 }
 
 @media (max-width: 480px) {
+  .container {
+    padding: 0 $spacing-sm;
+  }
+
+  .news-layout {
+    gap: $spacing-md;
+  }
+
+  .news-section {
+    padding: $spacing-sm;
+  }
+
   .news-content {
-    padding: 18px;
+    padding: $spacing-md;
   }
 
   .nav-title {
-    padding: 15px;
+    padding: $spacing-md;
 
     h3 {
-      font-size: 16px;
+      font-size: $font-size-base;
     }
   }
 
   .nav-menu li a {
-    padding: 12px 15px;
-    font-size: 13px;
-  }
-
-  .news-section {
-    padding: 15px;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-xs;
   }
 
   .news-title {
-    font-size: 15px;
+    font-size: $font-size-sm;
+  }
+
+  .news-summary {
+    font-size: $font-size-xs;
   }
 
   .news-grid {
-    gap: 15px;
+    gap: $spacing-md;
+  }
+
+  .no-content {
+    padding: $spacing-2xl $spacing-md;
   }
 }
 </style>

@@ -452,17 +452,17 @@ export default {
 
 .side-categories {
   width: 220px;
-  background: #f8f8f8;
-  border-radius: 4px;
-  padding: 20px 0 20px 0;
+  background: $gray-100;
+  border-radius: $border-radius-sm;
+  padding: $spacing-lg 0;
   min-height: 400px;
 }
 
 .side-categories h3 {
-  font-size: 18px;
-  font-weight: bold;
-  color: #b00;
-  margin-bottom: 20px;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $red-700;
+  margin-bottom: $spacing-lg;
   text-align: center;
 }
 
@@ -473,19 +473,19 @@ export default {
 }
 
 .side-categories li {
-  padding: 12px 30px;
+  padding: $spacing-sm $spacing-xl;
   cursor: pointer;
-  color: #222;
-  font-size: 16px;
+  color: $gray-800;
+  font-size: $font-size-base;
   border-left: 4px solid transparent;
-  transition: all 0.2s;
+  transition: $transition-base;
 }
 
 .side-categories li.active,
 .side-categories li:hover {
-  background: #fff;
-  color: #e60012;
-  border-left: 4px solid #e60012;
+  background: $white;
+  color: $primary-color;
+  border-left: 4px solid $primary-color;
 }
 
 .product-detail-content {
@@ -888,14 +888,14 @@ export default {
 }
 
 .product-detail-extra {
-  margin: 40px 0;
+  margin: $spacing-2xl 0;
 }
 
 .detail-images-block {
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  margin-bottom: 30px;
+  gap: $spacing-xl;
+  margin-bottom: $spacing-xl;
 }
 
 .detail-image-row {
@@ -905,16 +905,16 @@ export default {
 
 .detail-image-row img {
   max-width: 100%;
-  border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: $border-radius-sm;
+  box-shadow: $shadow-md;
 }
 
 .specification-html-block {
-  margin: 30px 0;
-  background: #fff;
-  border-radius: 6px;
-  padding: 30px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  margin: $spacing-xl 0;
+  background: $white;
+  border-radius: $border-radius-sm;
+  padding: $spacing-xl;
+  box-shadow: $shadow-sm;
 }
 
 .related-title {
@@ -939,7 +939,7 @@ export default {
 .zoom-lens {
   position: absolute;
   border: 2px solid $primary-color;
-  background: rgba(229, 62, 62, 0.08);
+  background: rgba($primary-color, 0.08);
   pointer-events: none;
   z-index: 2;
 }
@@ -984,9 +984,9 @@ export default {
   /* Adjust if content makes it too tall */
   line-height: normal;
   /* Reset line-height if custom font size causes issues */
-  padding-top: 10px;
+  padding-top: $spacing-sm;
   /* Example padding */
-  padding-bottom: 10px;
+  padding-bottom: $spacing-sm;
   /* Example padding */
 }
 

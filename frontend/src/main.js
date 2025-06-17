@@ -16,9 +16,10 @@ const app = createApp(App)
 app.config.globalProperties.$api = api
 app.config.globalProperties.$axios = api
 
-// 添加翻译函数
-app.config.globalProperties.$t = (key) => {
-  return store.getters['language/translate'](key)
+// 添加翻译函数 - 使用响应式实现
+app.config.globalProperties.$t = function(key, defaultValue = key) {
+  // 通过this访问当前组件实例，确保响应式更新
+  return this.$store.getters['language/translate'](key) || defaultValue
 }
 
 // 全局注册消息处理器

@@ -200,34 +200,34 @@ export default {
 
 .about-layout {
   display: flex;
-  gap: 30px;
-  padding: 30px 0;
+  gap: $spacing-xl;
+  padding: $spacing-xl 0;
   min-height: 600px;
 }
 
 /* 侧边导航 */
 .sidebar-nav {
   width: 280px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background-color: $white;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-lg;
   height: fit-content;
   position: sticky;
-  top: 20px;
+  top: $spacing-lg;
 }
 
 .nav-title {
-  padding: 20px;
-  border-bottom: 1px solid #e9ecef;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $border-light;
   background-color: $primary-color;
-  color: white;
-  border-radius: 8px 8px 0 0;
+  color: $white;
+  border-radius: $border-radius-md $border-radius-md 0 0;
 }
 
 .nav-title h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
 }
 
 .nav-menu {
@@ -237,8 +237,8 @@ export default {
 }
 
 .nav-menu li {
-  border-bottom: 1px solid #f0f0f0;
-  transition: all 0.3s ease;
+  border-bottom: 1px solid $gray-200;
+  transition: $transition-slow;
 }
 
 .nav-menu li:last-child {
@@ -247,11 +247,11 @@ export default {
 
 .nav-menu li a {
   display: block;
-  padding: 15px 20px;
-  color: #333;
+  padding: $spacing-md $spacing-lg;
+  color: $text-primary;
   text-decoration: none;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  font-size: $font-size-sm;
+  transition: $transition-slow;
 }
 
 .nav-menu li:hover {
@@ -261,7 +261,7 @@ export default {
 .nav-menu li:hover a {
   color: $primary-color;
   padding-left: 25px;
-  font-weight: 500;
+  font-weight: $font-weight-medium;
 }
 
 .nav-menu li.active {
@@ -271,38 +271,38 @@ export default {
 
 .nav-menu li.active a {
   color: $primary-color;
-  font-weight: 700;
+  font-weight: $font-weight-bold;
   text-shadow: 0 0 1px rgba($primary-color, 0.3);
 }
 
 /* 主内容区域 */
 .main-content {
   flex: 1;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background-color: $white;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-lg;
   min-height: 500px;
 }
 
 .loading-container {
-  padding: 60px;
+  padding: $spacing-4xl;
   text-align: center;
 }
 
 .content-section {
-  padding: 30px;
+  padding: $spacing-xl;
 }
 
 .content-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: $spacing-xl;
 }
 
 .content-header h2 {
-  font-size: 28px;
-  color: #333;
-  margin-bottom: 15px;
-  font-weight: 600;
+  font-size: $font-size-3xl;
+  color: $text-primary;
+  margin-bottom: $spacing-md;
+  font-weight: $font-weight-semibold;
 }
 
 .title-underline {
@@ -310,13 +310,13 @@ export default {
   height: 3px;
   background-color: $primary-color;
   margin: 0 auto;
-  border-radius: 2px;
+  border-radius: $border-radius-sm;
 }
 
 .content-body {
-  line-height: 1.8;
-  color: #555;
-  font-size: 16px;
+  line-height: $line-height-relaxed;
+  color: $text-secondary;
+  font-size: $font-size-base;
 }
 
 .content-body :deep(h1),
@@ -325,47 +325,47 @@ export default {
 .content-body :deep(h4),
 .content-body :deep(h5),
 .content-body :deep(h6) {
-  color: #333;
-  margin: 20px 0 15px 0;
-  font-weight: 600;
+  color: $text-primary;
+  margin: $spacing-lg 0 $spacing-md 0;
+  font-weight: $font-weight-semibold;
 }
 
 .content-body :deep(p) {
-  margin-bottom: 15px;
+  margin-bottom: $spacing-md;
   text-align: justify;
 }
 
 .content-body :deep(img) {
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
-  margin: 15px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: $border-radius-sm;
+  margin: $spacing-md 0;
+  box-shadow: $shadow-md;
 }
 
 .content-body :deep(ul),
 .content-body :deep(ol) {
-  padding-left: 20px;
-  margin-bottom: 15px;
+  padding-left: $spacing-lg;
+  margin-bottom: $spacing-md;
 }
 
 .content-body :deep(li) {
-  margin-bottom: 8px;
+  margin-bottom: $spacing-sm;
 }
 
 .content-body :deep(blockquote) {
   border-left: 4px solid $primary-color;
-  padding-left: 15px;
-  margin: 20px 0;
-  color: #666;
+  padding-left: $spacing-md;
+  margin: $spacing-lg 0;
+  color: $text-secondary;
   font-style: italic;
-  background-color: #f8f9fa;
-  padding: 15px;
-  border-radius: 0 4px 4px 0;
+  background-color: $background-light;
+  padding: $spacing-md;
+  border-radius: 0 $border-radius-sm $border-radius-sm 0;
 }
 
 .no-content {
-  padding: 60px;
+  padding: $spacing-4xl;
   text-align: center;
 }
 
@@ -373,7 +373,7 @@ export default {
 @media (max-width: 768px) {
   .about-layout {
     flex-direction: column;
-    gap: 20px;
+    gap: $spacing-lg;
   }
 
   .sidebar-nav {
@@ -390,7 +390,7 @@ export default {
   .nav-menu li {
     flex-shrink: 0;
     border-bottom: none;
-    border-right: 1px solid #f0f0f0;
+    border-right: 1px solid $gray-200;
   }
 
   .nav-menu li:last-child {
@@ -398,34 +398,34 @@ export default {
   }
 
   .nav-menu li a {
-    padding: 12px 16px;
-    font-size: 13px;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-xs;
   }
 
   .content-section {
-    padding: 20px;
+    padding: $spacing-lg;
   }
 
   .content-header h2 {
-    font-size: 24px;
+    font-size: $font-size-2xl;
   }
 }
 
 @media (max-width: 480px) {
   .container {
-    padding: 0 10px;
+    padding: 0 $spacing-sm;
   }
 
   .about-layout {
-    padding: 20px 0;
+    padding: $spacing-lg 0;
   }
 
   .content-section {
-    padding: 15px;
+    padding: $spacing-md;
   }
 
   .content-body {
-    font-size: 14px;
+    font-size: $font-size-sm;
   }
 }
 </style>

@@ -98,34 +98,34 @@
           </div>
 
           <div class="contact-form">
-            <el-form ref="contactFormRef" :model="contactForm" :rules="contactRules" label-width="80px"
+            <el-form ref="contactFormRef" :model="contactForm" :rules="contactRules" label-width="0px"
               @submit.prevent="submitForm">
               <div class="form-row">
                 <div class="form-col">
-                  <el-form-item :label="$t('contact.name')" prop="name">
-                    <FormInput v-model="contactForm.name" :placeholder="$t('contact.name.placeholder')"
+                  <el-form-item prop="name">
+                    <FormInput v-model="contactForm.name" :placeholder="getPlaceholderWithRequired('contact.name')"
                       :disabled="isLoggedIn" maxlength="50" show-word-limit />
                   </el-form-item>
                 </div>
                 <div class="form-col">
-                  <el-form-item :label="$t('contact.email')" prop="email">
-                    <FormInput v-model="contactForm.email" :placeholder="$t('contact.email.placeholder')"
+                  <el-form-item prop="email">
+                    <FormInput v-model="contactForm.email" :placeholder="getPlaceholderWithRequired('contact.email')"
                       :disabled="isLoggedIn" maxlength="100" />
                   </el-form-item>
                 </div>
               </div>
               <div class="form-row">
                 <div class="form-col">
-                  <el-form-item :label="$t('contact.phone')" prop="phone">
-                    <FormInput v-model="contactForm.phone" :placeholder="$t('contact.phone.placeholder')"
+                  <el-form-item prop="phone">
+                    <FormInput v-model="contactForm.phone" :placeholder="getPlaceholderWithRequired('contact.phone')"
                       :disabled="isLoggedIn" maxlength="20" />
                   </el-form-item>
                 </div>
                 <div class="form-col">
-                  <el-form-item :label="$t('contact.captcha')" prop="captcha">
+                  <el-form-item prop="captcha">
                     <div class="captcha-container">
-                      <FormInput v-model="contactForm.captcha" :placeholder="$t('contact.captcha.placeholder')"
-                        class="captcha-input" />
+                      <FormInput v-model="contactForm.captcha"
+                        :placeholder="getPlaceholderWithRequired('contact.captcha')" class="captcha-input" />
                       <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img"
                         :alt="$t('contact.captcha.alt')" :title="$t('contact.captcha.refresh')" />
                     </div>
@@ -134,15 +134,15 @@
               </div>
               <div class="form-row">
                 <div class="form-col-full">
-                  <el-form-item :label="$t('contact.subject')" prop="subject">
-                    <FormInput v-model="contactForm.subject" :placeholder="$t('contact.subject.placeholder')"
-                      maxlength="128" show-word-limit />
+                  <el-form-item prop="subject">
+                    <FormInput v-model="contactForm.subject"
+                      :placeholder="getPlaceholderWithRequired('contact.subject')" maxlength="128" show-word-limit />
                   </el-form-item>
                 </div>
               </div>
-              <el-form-item :label="$t('contact.message')" prop="message">
+              <el-form-item prop="message">
                 <FormInput v-model="contactForm.message" type="textarea" :rows="6"
-                  :placeholder="$t('contact.message.placeholder')" maxlength="2000" show-word-limit />
+                  :placeholder="getPlaceholderWithRequired('contact.message')" maxlength="2000" show-word-limit />
               </el-form-item>
               <el-form-item>
                 <el-button type="primary" @click="submitForm" :loading="isSubmitting" class="submit-btn">
@@ -252,6 +252,16 @@ export default {
 
   methods: {
     handleImageError,
+    getPlaceholderWithRequired(key) {
+      // 获取字段名（去掉contact.前缀）
+      const fieldName = key.replace('contact.', '');
+      // 检查该字段是否在验证规则中标记为必填
+      const isRequired = this.contactRules[fieldName] && 
+        this.contactRules[fieldName].some(rule => rule.required === true);
+      
+      const fieldText = this.$t(key);
+      return isRequired ? `* ${fieldText}` : fieldText;
+    },
     async fetchCompanyInfo() {
       try {
         const response = await this.$api.get('company')
@@ -514,7 +524,7 @@ export default {
   .form-row {
     display: flex;
     gap: $spacing-md;
-    margin-bottom: $spacing-md;
+
 
     .form-col {
       flex: 1;
@@ -526,106 +536,158 @@ export default {
     }
   }
 
-  .verification-input {
+  .el-form-item {
+    margin-bottom: $spacing-md;
+  }
+
+  /* Captcha Container */
+  .captcha-container {
     display: flex;
-    gap: $spacing-xs;
-    align-items: flex-start;
+    gap: $spacing-sm;
+    align-items: center;
+    width: 100%;
+    height: 48px;
+    flex-wrap: nowrap;
+  }
 
-    /* Captcha Container */
-    .captcha-container {
-      display: flex;
-      gap: 12px;
-      align-items: stretch;
-      width: 100%;
-    }
+  .captcha-input {
+    flex: 1;
+    height: 48px;
 
-    .captcha-input {
-      flex: 1;
-    }
-
-    .captcha-img {
+    :deep(.el-input__inner) {
       height: 48px;
-      width: 120px;
-      cursor: pointer;
-      border-radius: 0.375rem;
-      border: 1px solid #d1d5db;
-      transition: border-color 0.3s ease;
-      background-color: #ffffff;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-
-    .captcha-img:hover {
-      border-color: #dc2626;
-    }
-
-    .verification-code-input {
-      flex: 1;
-    }
-
-    .get-code-btn {
-      flex-shrink: 0;
-      min-width: 100px;
-      height: 40px;
-      font-size: $font-size-sm;
-
-      &:disabled {
-        background-color: $background-secondary;
-        color: $text-muted;
-        border-color: $border-light;
-        cursor: not-allowed;
-      }
+      line-height: 48px;
     }
   }
 
-  :deep(.el-form) {
-    .el-form-item {
-      margin-bottom: $spacing-md;
+  .captcha-img {
+    height: 48px;
+    width: 120px;
+    cursor: pointer;
+    border-radius: $border-radius-sm;
+    border: 1px solid $border-light;
+    transition: all $transition-base;
+    background-color: $white;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: block;
+  }
 
-      .el-form-item__label {
-        color: $text-primary;
-        font-weight: $font-weight-medium;
-        font-size: $font-size-sm;
+  .captcha-img:hover {
+    border-color: $primary-color;
+    transform: scale(1.02);
+  }
+
+  .el-input__inner,
+  .el-textarea__inner {
+    &::placeholder {
+      color: $text-secondary;
+      font-weight: $font-weight-normal;
+    }
+  }
+
+  // 必填字段placeholder样式 - 红色星号
+  :deep(.el-input__inner::placeholder),
+  :deep(.el-textarea__inner::placeholder) {
+    color: $text-secondary;
+
+    // 如果placeholder以*开头，将星号设为红色
+    &[placeholder^="*"] {
+      color: $text-secondary;
+    }
+  }
+
+  // 为包含星号的placeholder添加特殊样式
+  :deep(.el-input__inner),
+  :deep(.el-textarea__inner) {
+    &::placeholder {
+      // 使用CSS来处理星号颜色
+      background: linear-gradient(to right, #ef4444 0%, #ef4444 8px, $text-secondary 8px);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+
+      // 回退方案
+      @supports not (-webkit-background-clip: text) {
+        color: $text-secondary;
       }
     }
 
-
-    .el-textarea {
-      .el-textarea__inner {
-        @include input-base;
-        border: 1px solid $border-light;
-        border-radius: $border-radius-sm;
-        padding: $spacing-xs $spacing-sm;
-        font-size: $font-size-sm;
-        transition: all $transition-base;
-
-        &:focus {
-          border-color: $primary-color;
-          box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
-        }
-
-        &::placeholder {
-          color: $text-muted;
-        }
-      }
+    // 对于不以*开头的placeholder，使用正常颜色
+    &[placeholder]:not([placeholder^="*"])::placeholder {
+      background: none;
+      -webkit-text-fill-color: $text-secondary;
+      color: $text-secondary;
     }
+  }
 
-    .el-button {
-      @include button-primary;
-      width: 100%;
-      padding: $spacing-sm $spacing-lg;
-      font-size: $font-size-base;
-      font-weight: $font-weight-medium;
-      border-radius: $border-radius-sm;
-      margin-top: $spacing-sm;
+  .verification-code-input {
+    flex: 1;
+  }
 
-      &:hover {
-        transform: translateY(-1px);
-        box-shadow: $shadow-md;
-      }
+  .get-code-btn {
+    flex-shrink: 0;
+    min-width: 100px;
+    height: 40px;
+    font-size: $font-size-sm;
+
+    &:disabled {
+      background-color: $background-secondary;
+      color: $text-muted;
+      border-color: $border-light;
+      cursor: not-allowed;
     }
   }
 }
+
+:deep(.el-form) {
+  .el-form-item {
+    margin-bottom: $spacing-md;
+
+    .el-form-item__label {
+      color: $text-primary;
+      font-weight: $font-weight-medium;
+      font-size: $font-size-sm;
+    }
+  }
+
+
+  .el-textarea {
+    .el-textarea__inner {
+      @include input-base;
+      border: 1px solid $border-light;
+      border-radius: $border-radius-sm;
+      padding: $spacing-xs $spacing-sm;
+      font-size: $font-size-sm;
+      transition: all $transition-base;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+      }
+
+      &::placeholder {
+        color: $text-muted;
+      }
+    }
+  }
+
+  .el-button {
+    @include button-primary;
+    width: 100%;
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    border-radius: $border-radius-sm;
+    margin-top: $spacing-sm;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: $shadow-md;
+    }
+  }
+}
+
 
 .login-actions {
   margin-top: $spacing-lg;
@@ -732,6 +794,8 @@ export default {
     margin: 0;
   }
 }
+
+
 
 // 响应式设计
 @include mobile {

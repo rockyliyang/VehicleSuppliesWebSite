@@ -712,8 +712,8 @@ class ContactController {
   async sendNotificationEmails(contactData, businessGroup, userLanguage = 'en') {
     try {
       // 获取邮件翻译（一次性加载，避免重复查询）
-      const adminLanguage = 'zh-CN';
-      const userEmailLanguage = userLanguage === 'zh' ? 'zh-CN' : 'en-US';
+      const adminLanguage = 'en';
+      const userEmailLanguage = userLanguage === 'zh' ? 'zh-CN' : 'en';
       
       const [adminTranslations, userTranslations] = await Promise.all([
         this.getEmailTranslations(adminLanguage),

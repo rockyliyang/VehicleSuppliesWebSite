@@ -251,136 +251,137 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '../assets/styles/variables';
+
 .orders-page {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: $gray-50;
 }
 
-
 .breadcrumb {
-  margin-top: 20px;
+  margin-top: $spacing-lg;
 }
 
 .container {
   width: 90%;
-  max-width: 1200px;
+  max-width: $container-max-width;
   margin: 0 auto;
-  padding: 20px 0 50px;
+  padding: $spacing-lg 0 $spacing-4xl;
 }
 
 .orders-content {
-  background: white;
-  border-radius: 12px;
-  padding: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  margin-top: 40px;
+  background: $white;
+  border-radius: $border-radius-lg;
+  padding: $spacing-2xl;
+  box-shadow: $shadow-lg;
+  margin-top: $spacing-2xl;
 }
 
 .pagination-container {
-  margin-top: 32px;
+  margin-top: $spacing-2xl;
   text-align: center;
 }
 
 .order-detail {
-  max-height: 70vh;
+  max-height: $modal-max-height;
   overflow-y: auto;
 }
 
 .detail-section {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e5e7eb;
-}
+  margin-bottom: $spacing-2xl;
+  padding-bottom: $spacing-xl;
+  border-bottom: 1px solid $gray-200;
 
-.detail-section:last-child {
-  border-bottom: none;
-}
+  &:last-child {
+    border-bottom: none;
+  }
 
-.detail-section h3 {
-  color: #1f2937;
-  margin-bottom: 20px;
-  font-size: 1.25rem;
-  font-weight: 600;
+  h3 {
+    color: $gray-800;
+    margin-bottom: $spacing-lg;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+  }
 }
 
 .detail-item {
   display: flex;
-  margin-bottom: 16px;
+  margin-bottom: $spacing-md;
   align-items: center;
-}
 
-.detail-item .label {
-  width: 120px;
-  color: #6b7280;
-  font-weight: 500;
-  flex-shrink: 0;
-}
+  .label {
+    width: $spacing-5xl;
+    color: $gray-500;
+    font-weight: $font-weight-medium;
+    flex-shrink: 0;
+  }
 
-.detail-item .value {
-  color: #1f2937;
-  flex: 1;
-}
+  .value {
+    color: $gray-800;
+    flex: 1;
 
-.detail-item .value.price {
-  color: #dc2626;
-  font-weight: 700;
-  font-size: 1.125rem;
+    &.price {
+      color: $red-600;
+      font-weight: $font-weight-bold;
+      font-size: $font-size-lg;
+    }
+  }
 }
 
 .logistics-location {
-  color: #9ca3af;
-  font-size: 0.875rem;
-  margin-top: 4px;
+  color: $gray-400;
+  font-size: $font-size-sm;
+  margin-top: $spacing-xs;
 }
 
 .empty-orders {
-  padding: 60px 0;
+  padding: $spacing-5xl 0;
 }
 
 /* 表格样式优化 */
 :deep(.el-table) {
-  border-radius: 8px;
+  border-radius: $border-radius-md;
   overflow: hidden;
 }
 
 :deep(.el-table th) {
-  background-color: #f9fafb;
-  color: #374151;
-  font-weight: 600;
+  background-color: $gray-50;
+  color: $gray-700;
+  font-weight: $font-weight-semibold;
 }
 
 :deep(.el-button--primary) {
-  background-color: #dc2626;
-  border-color: #dc2626;
-}
+  background-color: $primary-color;
+  border-color: $primary-color;
 
-:deep(.el-button--primary:hover) {
-  background-color: #b91c1c;
-  border-color: #b91c1c;
+  &:hover {
+    background-color: $primary-dark;
+    border-color: $primary-dark;
+  }
 }
 
 :deep(.el-tag--success) {
-  background-color: #dcfce7;
-  color: #166534;
-  border-color: #bbf7d0;
+  background-color: $success-light;
+  color: $success-dark;
+  border-color: $success-color;
 }
 
 :deep(.el-tag--warning) {
-  background-color: #fef3c7;
-  color: #92400e;
-  border-color: #fde68a;
+  background-color: $warning-light;
+  color: $warning-dark;
+  border-color: $warning-color;
 }
 
 :deep(.el-tag--danger) {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border-color: #fecaca;
+  background-color: $error-light;
+  color: $error-dark;
+  border-color: $error-color;
 }
 
 :deep(.el-tag--info) {
-  background-color: #e0f2fe;
-  color: #0c4a6e;
-  border-color: #bae6fd;
+  background-color: $info-light;
+  color: $info-dark;
+  border-color: $info-color;
 }
 </style>
