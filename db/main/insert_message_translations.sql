@@ -857,7 +857,7 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'orders.logisticsInfo', 'zh-CN', '物流信息'),
 
 -- 订单状态
-(UNHEX(REPLACE(UUID(), '-', '')), 'orders.status.pending', 'en', 'Pending Payment'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.status.pending', 'en', 'Pending'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'orders.status.pending', 'zh-CN', '待付款'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'orders.status.paid', 'en', 'Paid'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'orders.status.paid', 'zh-CN', '已付款'),
@@ -961,6 +961,18 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'orders.error.fetchFailed', 'zh-CN', '获取订单失败'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'orders.error.detailFailed', 'en', 'Failed to fetch order details'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'orders.error.detailFailed', 'zh-CN', '获取订单详情失败'),
+
+-- 补充缺失的订单相关翻译键
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.orderDate', 'en', 'Order Date'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.orderDate', 'zh-CN', '下单时间'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.totalAmount', 'en', 'Total Amount'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.totalAmount', 'zh-CN', '订单金额'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.status', 'en', 'Status'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.status', 'zh-CN', '订单状态'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.actions', 'en', 'Actions'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.actions', 'zh-CN', '操作'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.viewDetail', 'en', 'View Details'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'orders.viewDetail', 'zh-CN', '查看详情'),
 
 -- UnifiedCheckout.vue 错误处理相关
 (UNHEX(REPLACE(UUID(), '-', '')), 'checkout.error.createOrderFailed', 'en', 'Failed to create order'),

@@ -1,5 +1,6 @@
 const { pool } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
+const { binaryToUuid } = require('../utils/uuid');
 const AlipaySdk = require('alipay-sdk').default;
 const QRCode = require('qrcode');
 const { ALIPAY_APP_ID, ALIPAY_PRIVATE_KEY, ALIPAY_PUBLIC_KEY, ALIPAY_GATEWAY, WECHAT_APP_ID, WECHAT_MCH_ID, WECHAT_API_KEY, WECHAT_NOTIFY_URL } = require('../config/env');
@@ -330,6 +331,13 @@ exports.getOrders = async (req, res) => {
       [userId, pageSize, offset]
     );
 
+    // 转换order_guid为可读格式并添加order_number
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      order_number: binaryToUuid(order.order_guid),
+      order_guid: binaryToUuid(order.order_guid)
+    }));
+
     return res.status(200).json({
       success: true,
       message: getMessage('ORDER.LIST_SUCCESS'),
@@ -337,7 +345,7 @@ exports.getOrders = async (req, res) => {
         total,
         page,
         pageSize,
-        list: orders
+        list: formattedOrders
       }
     });
   } catch (error) {

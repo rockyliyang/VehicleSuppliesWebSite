@@ -401,11 +401,11 @@ export default {
 }
 
 .title-underline {
-  width: 40px;
-  height: 2px;
+  width: $contact-title-underline-width;
+  height: $contact-title-underline-height;
   background: linear-gradient(90deg, $primary-color, $secondary-color);
   margin: 0 auto;
-  border-radius: 2px;
+  border-radius: $contact-title-underline-height;
 }
 
 // 公司信息样式
@@ -419,12 +419,12 @@ export default {
     padding: $spacing-sm;
     background: $background-light;
     border-radius: $border-radius-md;
-    border-left: 3px solid $primary-color;
+    border-left: $border-width-lg solid $primary-color;
     transition: all $transition-base;
 
     &:hover {
       @include card-hover;
-      transform: translateX(3px);
+      transform: translateX($contact-transform-hover);
     }
   }
 }
@@ -445,8 +445,8 @@ export default {
       text-align: center;
 
       .qrcode-image {
-        width: 120px;
-        height: 120px;
+        width: $contact-qrcode-width;
+        height: $contact-qrcode-height;
         margin-bottom: $spacing-xs;
 
         img {
@@ -477,7 +477,7 @@ export default {
 
   .map-container {
     width: 100%;
-    height: 350px;
+    height: $contact-map-height;
     border-radius: $border-radius-md;
     overflow: hidden;
     box-shadow: $shadow-sm;
@@ -493,8 +493,8 @@ export default {
 
 .info-icon {
   @include flex-center;
-  width: 36px;
-  height: 36px;
+  width: $contact-info-icon-width;
+  height: $contact-info-icon-height;
   background: linear-gradient(135deg, $primary-color, $secondary-color);
   border-radius: 50%;
   color: $white;
@@ -546,23 +546,23 @@ export default {
     gap: $spacing-sm;
     align-items: center;
     width: 100%;
-    height: 48px;
+    height: $contact-captcha-height;
     flex-wrap: nowrap;
   }
 
   .captcha-input {
     flex: 1;
-    height: 48px;
+    height: $contact-captcha-height;
 
     :deep(.el-input__inner) {
-      height: 48px;
-      line-height: 48px;
+      height: $contact-captcha-height;
+      line-height: $contact-captcha-height;
     }
   }
 
   .captcha-img {
-    height: 48px;
-    width: 120px;
+    height: $contact-captcha-height;
+    width: $contact-captcha-width;
     cursor: pointer;
     border-radius: $border-radius-sm;
     border: 1px solid $border-light;
@@ -705,7 +705,7 @@ export default {
 
 .submit-btn {
   width: 100%;
-  height: 48px;
+  height: $contact-form-button-height;
   font-size: $font-size-base;
   font-weight: 600;
   border-radius: $border-radius-md;
@@ -718,7 +718,7 @@ export default {
   gap: $spacing-lg;
   margin-top: $spacing-lg;
   padding-top: $spacing-lg;
-  border-top: 1px solid $border-light;
+  border-top: $border-width-sm solid $border-light;
 }
 
 .map-area {
@@ -744,12 +744,12 @@ export default {
 }
 
 .map-container {
-  width: 100%;
-  height: 150px;
-  border-radius: $border-radius-md;
-  overflow: hidden;
-  box-shadow: $shadow-sm;
-  background: $background-light;
+    width: 100%;
+    height: $contact-map-mobile-height;
+    border-radius: $border-radius-md;
+    overflow: hidden;
+    box-shadow: $shadow-sm;
+    background: $background-light;
 
   img {
     width: 100%;
@@ -833,8 +833,8 @@ export default {
       margin-bottom: $spacing-lg;
 
       .info-icon {
-        width: 32px;
-        height: 32px;
+        width: $contact-info-icon-mobile-width;
+        height: $contact-info-icon-mobile-height;
         font-size: $font-size-base;
       }
 
@@ -852,14 +852,14 @@ export default {
 
   .follow-us {
     .qrcode-image {
-      width: 100px;
-      height: 100px;
+      width: $contact-qrcode-mobile-width;
+      height: $contact-qrcode-mobile-height;
     }
   }
 
   .company-location {
     .map-container {
-      height: 150px;
+      height: $contact-map-mobile-height;
     }
   }
 
@@ -902,14 +902,14 @@ export default {
 
   .follow-us {
     .qrcode-image {
-      width: 80px;
-      height: 80px;
+      width: $contact-qrcode-small-width;
+      height: $contact-qrcode-small-height;
     }
   }
 
   .company-location {
     .map-container {
-      height: 120px;
+      height: $contact-map-small-height;
     }
   }
 }

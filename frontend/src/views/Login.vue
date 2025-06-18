@@ -311,22 +311,22 @@ export default {
 
 /* Login Container */
 .login-page {
-  min-height: 100vh;
+  min-height: $auth-page-min-height;
   background-color: $gray-100;
   @include flex-column;
 }
 
 .login-container {
-  padding: $spacing-4xl $spacing-lg;
+  padding: $auth-container-padding;
   background-color: $gray-100;
-  min-height: calc(100vh - 200px);
+  min-height: $auth-container-min-height;
   width: 100%;
 }
 
 .form-wrapper {
-  max-width: 600px;
+  max-width: $auth-form-max-width;
   margin: 0 auto;
-  padding: 0 $spacing-lg;
+  padding: $auth-form-padding;
   @include flex-center;
 }
 
@@ -336,27 +336,30 @@ export default {
   margin: 0 auto;
   @include card-hover;
   padding: $spacing-2xl;
+  border: $auth-card-border;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: $spacing-xl;
+  margin-bottom: $auth-header-margin-bottom;
 }
 
 .logo {
-  width: 300px;
+  width: $auth-logo-width;
   height: auto;
-  max-height: 100px;
-  margin: 0 auto $spacing-lg auto;
+  max-height: $auth-logo-max-height;
+  margin: $auth-logo-margin;
   object-fit: contain;
   display: block;
 }
 
 .login-title {
   text-align: center;
-  font-size: $font-size-4xl;
+  font-size: $auth-title-font-size;
   font-weight: $font-weight-bold;
-  margin: 0 0 $spacing-sm 0;
+  color: $auth-title-color;
+  margin: $auth-title-margin;
+  letter-spacing: $auth-title-letter-spacing;
 
   .highlight {
     color: $primary-color;
@@ -381,7 +384,7 @@ export default {
 
 /* Element UI Overrides */
 .login-form :deep(.el-form-item) {
-  margin-bottom: $spacing-lg;
+  margin-bottom: $auth-form-item-margin;
 }
 
 .login-form :deep(.el-form-item__content) {
@@ -426,11 +429,11 @@ export default {
 }
 
 .login-tabs :deep(.el-tabs__content) {
-  min-height: 200px;
+  min-height: $auth-tabs-min-height;
 }
 
 .login-tabs :deep(.el-tab-pane) {
-  min-height: 200px;
+  min-height: $auth-tabs-min-height;
 }
 
 /* Remember & Forgot */
@@ -467,9 +470,10 @@ export default {
   @include gradient-primary;
   padding: $spacing-sm $spacing-lg;
   font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
+  font-weight: $auth-button-font-weight;
   white-space: nowrap;
   min-width: 120px;
+  height: $auth-button-height;
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -492,8 +496,9 @@ export default {
   @include button-primary;
   @include button-lg;
   font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
+  font-weight: $auth-button-font-weight;
   margin-top: $spacing-sm;
+  height: $auth-button-height;
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);

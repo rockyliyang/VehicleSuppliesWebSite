@@ -188,46 +188,44 @@ export default {
 @import '@/assets/styles/_mixins.scss';
 
 .about-page {
-  min-height: 100vh;
-  background-color: #f8f9fa;
+  min-height: $content-page-min-height;
+  background-color: $content-page-background;
 }
 
 .container {
   @include container;
 }
 
-
-
 .about-layout {
   display: flex;
-  gap: $spacing-xl;
-  padding: $spacing-xl 0;
-  min-height: 600px;
+  gap: $content-layout-gap;
+  padding: $content-layout-padding;
+  min-height: $content-layout-min-height;
 }
 
 /* 侧边导航 */
 .sidebar-nav {
-  width: 280px;
-  background-color: $white;
-  border-radius: $border-radius-md;
-  box-shadow: $shadow-lg;
+  width: $sidebar-nav-width;
+  background-color: $sidebar-nav-background;
+  border-radius: $sidebar-nav-border-radius;
+  box-shadow: $sidebar-nav-shadow;
   height: fit-content;
   position: sticky;
-  top: $spacing-lg;
+  top: $sidebar-nav-sticky-top;
 }
 
 .nav-title {
-  padding: $spacing-lg;
-  border-bottom: 1px solid $border-light;
+  padding: $nav-title-padding;
+  border-bottom: $nav-title-border-bottom;
   background-color: $primary-color;
-  color: $white;
-  border-radius: $border-radius-md $border-radius-md 0 0;
+  color: $nav-title-color;
+  border-radius: $nav-title-border-radius;
 }
 
 .nav-title h3 {
-  margin: 0;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
+  margin: $nav-title-margin;
+  font-size: $nav-title-font-size;
+  font-weight: $nav-title-font-weight;
 }
 
 .nav-menu {
@@ -237,8 +235,8 @@ export default {
 }
 
 .nav-menu li {
-  border-bottom: 1px solid $gray-200;
-  transition: $transition-slow;
+  border-bottom: $nav-menu-border-bottom;
+  transition: $nav-menu-transition;
 }
 
 .nav-menu li:last-child {
@@ -247,11 +245,11 @@ export default {
 
 .nav-menu li a {
   display: block;
-  padding: $spacing-md $spacing-lg;
-  color: $text-primary;
+  padding: $nav-menu-item-padding;
+  color: $nav-menu-item-color;
   text-decoration: none;
-  font-size: $font-size-sm;
-  transition: $transition-slow;
+  font-size: $nav-menu-item-font-size;
+  transition: $nav-menu-transition;
 }
 
 .nav-menu li:hover {
@@ -260,63 +258,63 @@ export default {
 
 .nav-menu li:hover a {
   color: $primary-color;
-  padding-left: 25px;
-  font-weight: $font-weight-medium;
+  padding-left: $nav-menu-hover-padding-left;
+  font-weight: $nav-menu-hover-font-weight;
 }
 
 .nav-menu li.active {
   background-color: rgba($primary-color, 0.05);
-  border-left: 4px solid $primary-color;
+  border-left: $nav-menu-active-border-left solid $primary-color;
 }
 
 .nav-menu li.active a {
   color: $primary-color;
-  font-weight: $font-weight-bold;
+  font-weight: $nav-menu-active-font-weight;
   text-shadow: 0 0 1px rgba($primary-color, 0.3);
 }
 
 /* 主内容区域 */
 .main-content {
   flex: 1;
-  background-color: $white;
-  border-radius: $border-radius-md;
-  box-shadow: $shadow-lg;
-  min-height: 500px;
+  background-color: $main-content-background;
+  border-radius: $main-content-border-radius;
+  box-shadow: $main-content-shadow;
+  min-height: $main-content-min-height;
 }
 
 .loading-container {
-  padding: $spacing-4xl;
-  text-align: center;
+  padding: $loading-container-padding;
+  text-align: $loading-container-text-align;
 }
 
 .content-section {
-  padding: $spacing-xl;
+  padding: $content-section-padding;
 }
 
 .content-header {
-  text-align: center;
-  margin-bottom: $spacing-xl;
+  text-align: $content-header-text-align;
+  margin-bottom: $content-header-margin-bottom;
 }
 
 .content-header h2 {
-  font-size: $font-size-3xl;
-  color: $text-primary;
-  margin-bottom: $spacing-md;
-  font-weight: $font-weight-semibold;
+  font-size: $content-header-title-font-size;
+  color: $content-header-title-color;
+  margin-bottom: $content-header-title-margin-bottom;
+  font-weight: $content-header-title-font-weight;
 }
 
 .title-underline {
-  width: 80px;
-  height: 3px;
+  width: $title-underline-width;
+  height: $title-underline-height;
   background-color: $primary-color;
-  margin: 0 auto;
-  border-radius: $border-radius-sm;
+  margin: $title-underline-margin;
+  border-radius: $title-underline-border-radius;
 }
 
 .content-body {
-  line-height: $line-height-relaxed;
-  color: $text-secondary;
-  font-size: $font-size-base;
+  line-height: $content-body-line-height;
+  color: $content-body-color;
+  font-size: $content-body-font-size;
 }
 
 .content-body :deep(h1),
@@ -325,55 +323,55 @@ export default {
 .content-body :deep(h4),
 .content-body :deep(h5),
 .content-body :deep(h6) {
-  color: $text-primary;
-  margin: $spacing-lg 0 $spacing-md 0;
-  font-weight: $font-weight-semibold;
+  color: $content-body-heading-color;
+  margin: $content-body-heading-margin;
+  font-weight: $content-body-heading-font-weight;
 }
 
 .content-body :deep(p) {
-  margin-bottom: $spacing-md;
+  margin-bottom: $content-body-paragraph-margin-bottom;
   text-align: justify;
 }
 
 .content-body :deep(img) {
   max-width: 100%;
   height: auto;
-  border-radius: $border-radius-sm;
-  margin: $spacing-md 0;
-  box-shadow: $shadow-md;
+  border-radius: $content-body-image-border-radius;
+  margin: $content-body-image-margin;
+  box-shadow: $content-body-image-shadow;
 }
 
 .content-body :deep(ul),
 .content-body :deep(ol) {
-  padding-left: $spacing-lg;
-  margin-bottom: $spacing-md;
+  padding-left: $content-body-list-padding-left;
+  margin-bottom: $content-body-list-margin-bottom;
 }
 
 .content-body :deep(li) {
-  margin-bottom: $spacing-sm;
+  margin-bottom: $content-body-list-item-margin-bottom;
 }
 
 .content-body :deep(blockquote) {
-  border-left: 4px solid $primary-color;
-  padding-left: $spacing-md;
-  margin: $spacing-lg 0;
-  color: $text-secondary;
+  border-left: $content-body-blockquote-border-left solid $primary-color;
+  padding-left: $content-body-blockquote-padding-left;
+  margin: $content-body-blockquote-margin;
+  color: $content-body-blockquote-color;
   font-style: italic;
-  background-color: $background-light;
-  padding: $spacing-md;
-  border-radius: 0 $border-radius-sm $border-radius-sm 0;
+  background-color: $content-body-blockquote-background;
+  padding: $content-body-blockquote-padding;
+  border-radius: $content-body-blockquote-border-radius;
 }
 
 .no-content {
-  padding: $spacing-4xl;
-  text-align: center;
+  padding: $no-content-padding;
+  text-align: $no-content-text-align;
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@media (max-width: $content-mobile-breakpoint) {
   .about-layout {
     flex-direction: column;
-    gap: $spacing-lg;
+    gap: $content-mobile-layout-gap;
   }
 
   .sidebar-nav {
@@ -390,7 +388,7 @@ export default {
   .nav-menu li {
     flex-shrink: 0;
     border-bottom: none;
-    border-right: 1px solid $gray-200;
+    border-right: $nav-menu-border-bottom;
   }
 
   .nav-menu li:last-child {
@@ -398,34 +396,34 @@ export default {
   }
 
   .nav-menu li a {
-    padding: $spacing-sm $spacing-md;
-    font-size: $font-size-xs;
+    padding: $content-mobile-nav-menu-padding;
+    font-size: $content-mobile-nav-menu-font-size;
   }
 
   .content-section {
-    padding: $spacing-lg;
+    padding: $content-mobile-section-padding;
   }
 
   .content-header h2 {
-    font-size: $font-size-2xl;
+    font-size: $content-mobile-header-title-font-size;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: $content-small-mobile-breakpoint) {
   .container {
-    padding: 0 $spacing-sm;
+    padding: $content-small-mobile-container-padding;
   }
 
   .about-layout {
-    padding: $spacing-lg 0;
+    padding: $content-small-mobile-layout-padding;
   }
 
   .content-section {
-    padding: $spacing-md;
+    padding: $content-small-mobile-section-padding;
   }
 
   .content-body {
-    font-size: $font-size-sm;
+    font-size: $content-small-mobile-body-font-size;
   }
 }
 </style>

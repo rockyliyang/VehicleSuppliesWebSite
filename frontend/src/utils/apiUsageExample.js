@@ -3,6 +3,8 @@
  * 本文件展示如何在组件中使用统一的API工具
  */
 
+import api from './api';
+
 // 在Vue组件中使用
 export const apiUsageInComponent = {
   // 获取产品列表示例

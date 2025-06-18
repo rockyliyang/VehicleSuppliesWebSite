@@ -150,28 +150,28 @@ e
 
 /* Main Container */
 .reset-password-page {
-    min-height: 100vh;
+    min-height: $auth-page-min-height;
     background-color: $gray-100;
 }
 
 .reset-password-container {
     background: $gray-50;
-    min-height: calc(100vh - 200px);
-    padding: $spacing-4xl 0;
+    min-height: $auth-container-min-height;
+    padding: $auth-container-padding;
     @include flex-center;
 }
 
 .form-wrapper {
     width: 100%;
-    max-width: 600px;
+    max-width: $auth-form-max-width;
     margin: 0 auto;
-    padding: 0 $spacing-lg;
+    padding: $auth-form-padding;
 }
 
 .reset-password-card {
     @include card;
     padding: $spacing-2xl;
-    border: 1px solid $gray-200;
+    border: $auth-card-border;
     position: relative;
     overflow: hidden;
 }
@@ -179,24 +179,24 @@ e
 /* Header */
 .reset-password-header {
     text-align: center;
-    margin-bottom: $spacing-2xl;
+    margin-bottom: $auth-header-margin-bottom;
 }
 
 .logo {
-    width: 300px;
+    width: $auth-logo-width-large;
     height: auto;
-    max-height: 100px;
+    max-height: $auth-logo-max-height;
     object-fit: contain;
-    margin: 0 auto $spacing-lg auto;
+    margin: $auth-logo-margin;
     display: block;
 }
 
 .reset-password-title {
-    font-size: $font-size-4xl;
+    font-size: $auth-title-font-size;
     font-weight: $font-weight-bold;
-    color: $text-primary;
-    margin: 0 0 $spacing-sm 0;
-    letter-spacing: -0.025em;
+    color: $auth-title-color;
+    margin: $auth-title-margin;
+    letter-spacing: $auth-title-letter-spacing;
 }
 
 .reset-password-subtitle {
@@ -220,9 +220,9 @@ e
     @include button-lg;
     width: 100%;
     max-width: 400px;
-    height: 48px;
+    height: $auth-button-height;
     font-size: $font-size-lg;
-    font-weight: $font-weight-semibold;
+    font-weight: $auth-button-font-weight;
     border-radius: $border-radius-md;
     transition: $transition-slow;
     box-shadow: $shadow-md;

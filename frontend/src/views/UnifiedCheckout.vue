@@ -51,7 +51,7 @@
             {{ $t('checkout.shippingInfo') || '收货信息' }}
           </h2>
           <el-form :model="shippingInfo" :rules="isOrderDetail ? {} : shippingRules" ref="shippingForm"
-            label-width="100px" class="shipping-form">
+            :label-width="$form-label-width" class="shipping-form">
             <div class="form-row">
               <el-form-item :label="$t('checkout.name') || '姓名'" prop="name">
                 <el-input v-model="shippingInfo.name" :placeholder="$t('checkout.namePlaceholder') || '请输入收货人姓名'"
@@ -207,7 +207,7 @@
     </div>
 
     <!-- 支付成功对话框 -->
-    <el-dialog v-model="paySuccess" :title="$t('checkout.paymentSuccess') || '支付成功'" width="500px"
+    <el-dialog v-model="paySuccess" :title="$t('checkout.paymentSuccess') || '支付成功'" :width="$dialog-width-md"
       class="success-dialog" center>
       <div class="success-content">
         <div class="success-icon-wrapper">
@@ -727,7 +727,7 @@ export default {
         if (this.qrcodeUrl && !this.paySuccess) {
           this.refreshQrcode(paymentMethod);
         }
-      }, 240000);
+      }, 240000); // 4分钟后自动刷新
     },
     clearQrcodeTimers() {
       if (this.qrcodeTimerInterval) {
@@ -795,7 +795,7 @@ export default {
 .shipping-info:hover,
 .payment-methods:hover {
   box-shadow: $shadow-lg;
-  transform: translateY(-2px);
+  transform: translateY($hover-transform-md);
 }
 
 /* 区块标题 */
@@ -805,7 +805,7 @@ export default {
   color: $text-primary;
   margin-bottom: $spacing-lg;
   padding-bottom: $spacing-md;
-  border-bottom: 2px solid $primary-color;
+  border-bottom: $table-header-border-width solid $primary-color;
   display: flex;
   align-items: center;
   gap: $spacing-sm;
@@ -840,8 +840,8 @@ export default {
 }
 
 .product-image {
-  width: 60px;
-  height: 60px;
+  width: $product-image-size-sm;
+  height: $product-image-size-sm;
   border-radius: $border-radius-md;
   overflow: hidden;
   border: 1px solid $gray-200;
@@ -918,15 +918,15 @@ export default {
   color: $text-primary;
   text-align: left;
   padding-right: $spacing-md;
-  line-height: 40px;
-  width: 100px;
+  line-height: $form-input-height;
+      width: $form-label-width;
   display: flex;
   align-items: center;
   justify-content: flex-start;
 }
 
 .shipping-form :deep(.el-form-item__content) {
-  line-height: 40px;
+  line-height: $form-input-height;
   flex: 1;
 }
 
@@ -936,7 +936,7 @@ export default {
 
 .shipping-form :deep(.el-input__wrapper) {
   border-radius: $border-radius-sm;
-  border: 2px solid $gray-200;
+  border: $form-border-width solid $gray-200;
   transition: $transition-slow;
   box-shadow: none;
   padding: $spacing-sm $spacing-md;
@@ -965,7 +965,7 @@ export default {
 
 .shipping-form :deep(.el-textarea__inner) {
   border-radius: $border-radius-sm;
-  border: 2px solid $gray-200;
+  border: $form-border-width solid $gray-200;
   transition: $transition-slow;
   padding: $spacing-md;
   resize: vertical;
@@ -1065,7 +1065,7 @@ export default {
 }
 
 .qrcode-image img {
-  max-width: $spacing-6xl;
+  max-width: $product-qrcode-max-width;
   border-radius: $border-radius-md;
   display: block;
 }
@@ -1109,7 +1109,7 @@ export default {
   font-weight: $font-weight-semibold;
   border-radius: $border-radius-md;
   transition: $transition-slow;
-  min-width: $spacing-6xl;
+  min-width: $product-qrcode-min-width;
 }
 
 .generate-qr-btn:hover {
@@ -1410,8 +1410,8 @@ export default {
   }
 
   .product-image {
-    width: 80px;
-    height: 80px;
+    width: $success-icon-size;
+      height: $success-icon-size;
     margin: 0 auto;
   }
 

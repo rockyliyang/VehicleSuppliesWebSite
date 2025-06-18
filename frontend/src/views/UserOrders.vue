@@ -1,45 +1,45 @@
 <template>
-  <div class="orders-page">
-    <div class="page-banner">
-      <div class="banner-content">
-        <h1 class="text-3xl font-bold mb-2">
-          {{ $t('orders.title') || '我的订单' }}
-        </h1>
-        <div class="w-24 h-1 bg-red-600 mx-auto mb-6"></div>
-        <div class="breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') || '首页' }}</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ $t('orders.title') || '我的订单' }}</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-      </div>
-    </div>
+  把 <div class="orders-page">
+    <PageBanner :title="$t('orders.title') || '我的订单'" />
+
+    <!-- Navigation Menu -->
+    <NavigationMenu :breadcrumb-items="breadcrumbItems" />
 
     <div class="container mx-auto px-4">
       <div class="orders-content" v-loading="loading">
         <div v-if="orders.length > 0" class="orders-list">
-          <el-table :data="orders" style="width: 100%" @row-dblclick="handleRowDoubleClick">
-            <el-table-column :label="$t('orders.orderNumber') || '订单号'" prop="order_guid" width="220"></el-table-column>
-            <el-table-column :label="$t('orders.orderTime') || '下单时间'" width="180">
-              <template #default="{row}">
-                {{ formatDate(row.created_at) }}
+          <el-table :data="orders" style="width: 100%" v-loading="loading" @row-click="handleRowClick"
+            class="clickable-table">
+            <el-table-column prop="id" :label="$t('orders.orderNumber') || 'Order Number'" width="200">
+              <template #default="scope">
+                <span class="order-number">{{ scope.row.id }}</span>
               </template>
             </el-table-column>
-            <el-table-column :label="$t('orders.orderAmount') || '订单金额'" width="120">
-              <template #default="{row}">¥{{ formatPrice(row.total_amount) }}</template>
-            </el-table-column>
-            <el-table-column :label="$t('orders.orderStatus') || '订单状态'" width="120">
+            <el-table-column :label="$t('orders.orderDate') || '下单时间'" width="260">
               <template #default="{row}">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+                <span class="order-date">{{ formatDate(row.created_at) }}</span>
               </template>
             </el-table-column>
-            <el-table-column :label="$t('orders.recipient') || '收货人'" prop="shipping_name"
-              width="120"></el-table-column>
+            <el-table-column :label="$t('orders.totalAmount') || '订单金额'" width="220">
+              <template #default="{row}">
+                <span class="order-amount">¥{{ formatPrice(row.total_amount) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="$t('orders.status') || '订单状态'" width="200">
+              <template #default="{row}">
+                <el-tag :type="getStatusType(row.status)" class="status-tag">{{ getStatusText(row.status) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column :label="$t('orders.paymentMethod') || '支付方式'">
+              <template #default="{row}">
+                <span class="payment-method">{{ getPaymentMethodText(row.payment_method) }}</span>
+              </template>
+            </el-table-column>
           </el-table>
 
           <div class="pagination-container">
-            <el-pagination background layout="prev, pager, next" :total="total" :page-size="pageSize"
-              v-model:current-page="currentPage" @current-change="handlePageChange">
+            <el-pagination @current-change="handlePageChange" :current-page="currentPage" :page-size="pageSize"
+              layout="total, prev, pager, next, jumper" :total="total" class="modern-pagination">
             </el-pagination>
           </div>
         </div>
@@ -53,106 +53,36 @@
       </div>
     </div>
 
-    <!-- 订单详情对话框 -->
-    <el-dialog :title="$t('orders.orderDetail') || '订单详情'" v-model="dialogVisible" width="70%">
-      <div v-if="orderDetail" class="order-detail">
-        <div class="detail-section">
-          <h3>{{ $t('orders.orderInfo') || '订单信息' }}</h3>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.orderNumber') || '订单号' }}:</span>
-            <span class="value">{{ orderDetail.order.order_guid }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.orderTime') || '下单时间' }}:</span>
-            <span class="value">{{ formatDate(orderDetail.order.created_at) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.orderStatus') || '订单状态' }}:</span>
-            <span class="value">
-              <el-tag :type="getStatusType(orderDetail.order.status)">{{ getStatusText(orderDetail.order.status)
-                }}</el-tag>
-            </span>
-          </div>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.paymentMethod') || '支付方式' }}:</span>
-            <span class="value">{{ getPaymentMethodText(orderDetail.order.payment_method) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.orderAmount') || '订单金额' }}:</span>
-            <span class="value price">¥{{ formatPrice(orderDetail.order.total_amount) }}</span>
-          </div>
-        </div>
 
-        <div class="detail-section">
-          <h3>{{ $t('orders.shippingInfo') || '收货信息' }}</h3>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.recipient') || '收货人' }}:</span>
-            <span class="value">{{ orderDetail.order.shipping_name }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.phone') || '联系电话' }}:</span>
-            <span class="value">{{ orderDetail.order.shipping_phone }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.email') || '邮箱地址' }}:</span>
-            <span class="value">{{ orderDetail.order.shipping_email }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.address') || '收货地址' }}:</span>
-            <span class="value">{{ orderDetail.order.shipping_address }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">{{ $t('orders.zipCode') || '邮政编码' }}:</span>
-            <span class="value">{{ orderDetail.order.shipping_zip_code }}</span>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <h3>{{ $t('orders.productInfo') || '商品信息' }}</h3>
-          <el-table :data="orderDetail.items" style="width: 100%">
-            <el-table-column :label="$t('orders.productName') || '商品名称'" prop="product_name"></el-table-column>
-            <el-table-column :label="$t('orders.productCode') || '商品编号'" prop="product_code"
-              width="180"></el-table-column>
-            <el-table-column :label="$t('orders.unitPrice') || '单价'" width="120">
-              <template #default="{row}">¥{{ formatPrice(row.price) }}</template>
-            </el-table-column>
-            <el-table-column :label="$t('orders.quantity') || '数量'" prop="quantity" width="80"></el-table-column>
-            <el-table-column :label="$t('orders.subtotal') || '小计'" width="120">
-              <template #default="{row}">¥{{ formatPrice(row.price * row.quantity) }}</template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <div v-if="orderDetail.logistics && orderDetail.logistics.length > 0" class="detail-section">
-          <h3>{{ $t('orders.logisticsInfo') || '物流信息' }}</h3>
-          <el-timeline>
-            <el-timeline-item v-for="(activity, index) in orderDetail.logistics" :key="index"
-              :timestamp="formatDate(activity.created_at)" :type="getLogisticsIconType(activity.status)">
-              {{ activity.description }}
-              <div v-if="activity.location" class="logistics-location">{{ activity.location }}</div>
-            </el-timeline-item>
-          </el-timeline>
-        </div>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script>
 import { formatPrice } from '../utils/format';
+import PageBanner from '@/components/common/PageBanner.vue';
+import NavigationMenu from '@/components/common/NavigationMenu.vue';
 
 export default {
   name: 'UserOrdersPage',
+  components: {
+    PageBanner,
+    NavigationMenu
+  },
   data() {
     return {
       loading: false,
       orders: [],
       total: 0,
       currentPage: 1,
-      pageSize: 10,
-      dialogVisible: false,
-      orderDetail: null
+      pageSize: 10
     };
+  },
+  computed: {
+    breadcrumbItems() {
+      return [
+        { text: this.$t('orders.title') || '我的订单' }
+      ];
+    }
   },
   created() {
     this.fetchOrders();
@@ -236,16 +166,12 @@ export default {
       this.currentPage = page;
       this.fetchOrders();
     },
-    async viewOrderDetail(orderId) {
-      // 跳转到UnifiedCheckout页面查看订单详情
+    handleRowClick(row) {
+      // 点击行时查看订单详情
       this.$router.push({
         path: '/checkout-unified',
-        query: { orderId: orderId }
+        query: { orderId: row.id }
       });
-    },
-    handleRowDoubleClick(row) {
-      // 双击行时查看订单详情
-      this.viewOrderDetail(row.id);
     }
   }
 };
@@ -253,34 +179,79 @@ export default {
 
 <style lang="scss" scoped>
 @import '../assets/styles/variables';
+@import '../assets/styles/mixins';
 
 .orders-page {
   min-height: 100vh;
-  background-color: $gray-50;
-}
-
-.breadcrumb {
-  margin-top: $spacing-lg;
+  background-color: $gray-100;
 }
 
 .container {
-  width: 90%;
-  max-width: $container-max-width;
-  margin: 0 auto;
-  padding: $spacing-lg 0 $spacing-4xl;
+  @include container;
 }
 
 .orders-content {
-  background: $white;
-  border-radius: $border-radius-lg;
-  padding: $spacing-2xl;
-  box-shadow: $shadow-lg;
-  margin-top: $spacing-2xl;
+  @include card;
+  border: 1px solid $gray-200;
 }
 
 .pagination-container {
   margin-top: $spacing-2xl;
   text-align: center;
+}
+
+/* 表格内容样式 */
+.order-number {
+  font-weight: $font-weight-semibold;
+  color: $primary-color;
+  font-size: $font-size-md;
+}
+
+.order-date {
+  color: $text-secondary;
+  font-size: $font-size-md;
+}
+
+.order-amount {
+  font-weight: $font-weight-semibold;
+  color: $success-color;
+  font-size: $font-size-md;
+}
+
+.payment-method {
+  color: $text-primary;
+  font-size: $font-size-md;
+}
+
+.status-tag {
+  font-weight: $font-weight-medium;
+  font-size: $font-size-sm;
+}
+
+/* 可点击表格样式 */
+.clickable-table {
+  :deep(.el-table__row) {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    height: 48px; // 减少行高
+
+    &:hover {
+      background-color: $gray-50 !important;
+    }
+  }
+
+  :deep(.el-table__cell) {
+    padding: $spacing-sm $spacing-md; // 减少单元格内边距
+  }
+
+  :deep(.el-table__header) {
+    .el-table__cell {
+      background-color: $gray-50;
+      font-weight: $font-weight-semibold;
+      color: $text-primary;
+      padding: $spacing-sm $spacing-md;
+    }
+  }
 }
 
 .order-detail {
@@ -339,25 +310,158 @@ export default {
   padding: $spacing-5xl 0;
 }
 
-/* 表格样式优化 */
+/* 响应式设计 */
+@include mobile {
+  .container {
+    padding: $spacing-xl $spacing-sm;
+  }
+
+  .orders-content {
+    padding: $spacing-xl;
+    border-radius: $border-radius-md;
+  }
+
+  .pagination-container {
+    margin-top: $spacing-xl;
+  }
+
+  :deep(.el-table) {
+    font-size: $font-size-sm;
+  }
+
+  :deep(.el-table th) {
+    padding: $spacing-md $spacing-sm;
+    font-size: $font-size-md;
+  }
+
+  :deep(.el-table td) {
+    padding: $spacing-md $spacing-sm;
+    font-size: $font-size-sm;
+  }
+
+  .order-number,
+  .order-date,
+  .order-amount,
+  .payment-method {
+    font-size: $font-size-sm;
+  }
+
+  .action-btn {
+    font-size: $font-size-xs;
+    padding: $spacing-xs $spacing-sm;
+  }
+
+  :deep(.modern-pagination) {
+
+    .el-pagination__total,
+    .el-pagination__jump {
+      font-size: $font-size-sm;
+    }
+  }
+}
+
+/* Element UI 表格样式优化 */
 :deep(.el-table) {
   border-radius: $border-radius-md;
   overflow: hidden;
+  box-shadow: $shadow-sm;
 }
 
 :deep(.el-table th) {
-  background-color: $gray-50;
-  color: $gray-700;
+  background-color: $gray-100;
+  color: $text-primary;
   font-weight: $font-weight-semibold;
+  border-bottom: $table-header-border-width solid $primary-color;
+  font-size: $font-size-lg;
+  padding: $spacing-lg $spacing-md;
+}
+
+:deep(.el-table td) {
+  border-bottom: $table-border-width solid $gray-200;
+  padding: $spacing-lg $spacing-md;
+  font-size: $font-size-md;
+}
+
+:deep(.el-table tr:hover > td) {
+  background-color: $gray-50;
 }
 
 :deep(.el-button--primary) {
   background-color: $primary-color;
   border-color: $primary-color;
+  font-size: $font-size-md;
+  padding: $spacing-md $spacing-lg;
+  font-weight: $font-weight-medium;
+  border-radius: $border-radius-md;
+  transition: $transition-base;
 
   &:hover {
     background-color: $primary-dark;
     border-color: $primary-dark;
+    transform: translateY($hover-transform-sm);
+    box-shadow: 0 2px 8px rgba($primary-color, 0.3);
+  }
+}
+
+/* 现代化分页样式 */
+:deep(.modern-pagination) {
+  .el-pagination__total {
+    color: $text-secondary;
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+  }
+
+  .el-pager li {
+    background-color: $white;
+    border: 1px solid $gray-300;
+    color: $text-primary;
+    font-weight: $font-weight-medium;
+    margin: 0 2px;
+    border-radius: $border-radius-sm;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: $primary-light;
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+
+    &.is-active {
+      background-color: $primary-color;
+      border-color: $primary-color;
+      color: $white;
+    }
+  }
+
+  .btn-prev,
+  .btn-next {
+    background-color: $white;
+    border: 1px solid $gray-300;
+    color: $text-primary;
+    border-radius: $border-radius-sm;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: $primary-light;
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+  }
+
+  .el-pagination__jump {
+    color: $text-secondary;
+    font-size: $font-size-md;
+
+    .el-input__inner {
+      border-radius: $border-radius-sm;
+      border-color: $gray-300;
+      transition: $transition-base;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+      }
+    }
   }
 }
 

@@ -390,7 +390,7 @@ export default {
   height: 200px;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: $news-detail-box-shadow;
   font-size: 16px;
   color: #6c757d;
 }
@@ -403,35 +403,35 @@ export default {
 }
 
 .news-header {
-  padding: 30px 30px 20px;
-  border-bottom: 1px solid #e9ecef;
+  padding: $news-header-padding-top $news-header-padding-horizontal $news-header-padding-bottom;
+  border-bottom: $border-width-sm solid #e9ecef;
 }
 
 .news-title {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: $news-title-font-size;
+  font-weight: $news-title-font-weight;
   color: #333;
   line-height: 1.4;
-  margin-bottom: 20px;
+  margin-bottom: $news-title-margin-bottom;
 }
 
 .news-meta {
   display: flex;
   align-items: center;
-  gap: 20px;
-  font-size: 14px;
+  gap: $news-meta-gap;
+  font-size: $news-meta-font-size;
   color: #6c757d;
 }
 
 .news-meta span {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: $news-meta-icon-gap;
 }
 
 .news-image {
   width: 100%;
-  max-height: 400px;
+  max-height: $news-image-max-height;
   overflow: hidden;
 }
 
@@ -442,9 +442,9 @@ export default {
 }
 
 .news-content {
-  padding: 30px;
-  line-height: 1.8;
-  font-size: 16px;
+  padding: $news-content-padding;
+  line-height: $news-content-line-height;
+  font-size: $news-content-font-size;
   color: #333;
 }
 
@@ -454,13 +454,13 @@ export default {
 .news-content :deep(h4),
 .news-content :deep(h5),
 .news-content :deep(h6) {
-  margin: 20px 0 15px;
+  margin: $news-content-heading-margin-top 0 $news-content-heading-margin-bottom;
   color: #333;
   font-weight: 600;
 }
 
 .news-content :deep(p) {
-  margin-bottom: 15px;
+  margin-bottom: $news-content-p-margin-bottom;
   text-align: justify;
 }
 
@@ -468,35 +468,35 @@ export default {
   max-width: 100%;
   height: auto;
   border-radius: 4px;
-  margin: 15px 0;
+  margin: $news-content-img-margin 0;
 }
 
 .news-content :deep(blockquote) {
-  border-left: 4px solid #007bff;
-  padding-left: 15px;
-  margin: 20px 0;
+  border-left: $news-content-blockquote-border-width solid #007bff;
+  padding-left: $news-content-blockquote-padding;
+  margin: $news-content-blockquote-margin 0;
   color: #6c757d;
   font-style: italic;
 }
 
 .news-content :deep(ul),
 .news-content :deep(ol) {
-  padding-left: 20px;
-  margin-bottom: 15px;
+  padding-left: $news-content-list-padding;
+  margin-bottom: $news-content-list-margin;
 }
 
 .news-content :deep(li) {
-  margin-bottom: 5px;
+  margin-bottom: $news-content-li-margin;
 }
 
 .news-navigation {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 30px;
-  border-top: 1px solid #e9ecef;
+  padding: $news-navigation-padding;
+  border-top: $border-width-sm solid #e9ecef;
   background: #f8f9fa;
-  gap: 20px;
+  gap: $news-navigation-gap;
   position: relative;
 }
 
@@ -505,10 +505,10 @@ export default {
   padding: $spacing-md $spacing-xl !important;
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
-  min-width: 120px !important;
+  min-width: $news-nav-button-min-width !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px;
+  gap: $news-nav-button-gap;
   white-space: nowrap !important;
   height: auto !important;
   min-height: auto !important;
@@ -518,7 +518,7 @@ export default {
 
 .prev-button {
   position: absolute;
-  left: 30px;
+  left: $news-nav-button-side-position;
 }
 
 :deep(.prev-button.el-button) {
@@ -548,7 +548,7 @@ export default {
 
 .next-button {
   position: absolute;
-  right: 30px;
+  right: $news-nav-button-side-position;
 }
 
 :deep(.next-button.el-button) {
@@ -598,50 +598,50 @@ export default {
 .no-content {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 60px 30px;
+  box-shadow: $news-detail-box-shadow;
+  padding: $news-no-content-padding-vertical $news-no-content-padding-horizontal;
   text-align: center;
 }
 
 .empty-icon {
-  font-size: 48px;
+  font-size: $news-empty-icon-size;
   color: #d1d5db;
-  margin-bottom: 20px;
+  margin-bottom: $news-empty-icon-margin;
 }
 
 .no-content h3 {
-  font-size: 20px;
+  font-size: $news-no-content-title-size;
   color: #374151;
-  margin-bottom: 10px;
+  margin-bottom: $news-no-content-title-margin;
 }
 
 .no-content p {
   color: #6b7280;
-  margin-bottom: 20px;
+  margin-bottom: $news-no-content-desc-margin;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .news-detail-container {
-    padding: 20px 15px;
+    padding: $news-mobile-container-padding $news-mobile-container-padding-sm;
   }
 
   .news-header {
-    padding: 20px;
+    padding: $news-mobile-header-padding;
   }
 
   .news-title {
-    font-size: 24px;
+    font-size: $news-mobile-title-size;
   }
 
   .news-content {
-    padding: 20px;
+    padding: $news-mobile-content-padding;
   }
 
   .news-navigation {
     flex-direction: column;
-    gap: 15px;
-    padding: 20px;
+    gap: $news-mobile-navigation-gap;
+    padding: $news-mobile-navigation-padding;
   }
 
   .nav-button {
@@ -659,26 +659,26 @@ export default {
 
 @media (max-width: 480px) {
   .news-detail-container {
-    padding: 15px;
+    padding: $news-mobile-container-padding-sm;
   }
 
   .news-header {
-    padding: 15px;
+    padding: $news-mobile-header-padding-sm;
   }
 
   .news-title {
-    font-size: 20px;
+    font-size: $news-mobile-title-size-sm;
   }
 
   .news-content {
-    padding: 15px;
-    font-size: 14px;
+    padding: $news-mobile-content-padding-sm;
+    font-size: $news-mobile-content-font-size;
   }
 
   .news-meta {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: $news-mobile-meta-gap;
   }
 }
 </style>

@@ -44,7 +44,7 @@ export default {
 }
 
 .nav-breadcrumb {
-  font-size: $font-size-md;
+  font-size: $font-size-lg;
   text-align: left;
 
   :deep(.el-breadcrumb__item) {

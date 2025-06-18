@@ -59,7 +59,8 @@
         <div class="mobile-actions">
           <!-- Language Selector -->
           <div class="language-selector">
-            <select v-model="currentLanguage" @change="handleLanguageChange($event.target.value)" class="language-select">
+            <select v-model="currentLanguage" @change="handleLanguageChange($event.target.value)"
+              class="language-select">
               <option v-for="lang in supportedLanguages" :key="lang" :value="lang">
                 {{ getLanguageDisplay(lang) }}
               </option>
@@ -595,7 +596,7 @@ export default {
 
   /* Desktop Navigation Links */
   a {
-    color: #6b7280;
+    color: $nav-link-color;
     font-size: $font-size-lg;
     font-weight: $font-weight-semibold;
     text-decoration: none;
@@ -615,10 +616,10 @@ export default {
       &::after {
         content: '';
         position: absolute;
-        bottom: -2px;
+        bottom: -$spacing-xs;
         left: 0;
         width: 100%;
-        height: 2px;
+        height: $spacing-xs;
         background: $primary-color;
         border-radius: $border-radius-sm;
       }
@@ -652,8 +653,8 @@ export default {
   transform: translateY(-100%);
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s ease;
-  z-index: 1000;
+  transition: $transition-carousel;
+  z-index: $z-index-mobile-nav;
 
   &.mobile-nav-open {
     transform: translateY(0);
@@ -690,9 +691,9 @@ export default {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, $mobile-nav-overlay-opacity);
-  z-index: 999;
+  z-index: $z-index-mobile-overlay;
 
-  @media (min-width: $breakpoint-desktop + 1px) {
+  @media (min-width: ($breakpoint-desktop + 1px)) {
     display: none;
   }
 }
@@ -743,7 +744,7 @@ export default {
 /* User Dropdown Menu */
 .user-actions :deep(.el-dropdown-menu) {
   .el-dropdown-menu__item {
-    font-size: 18px;
+    font-size: $font-size-lg;
   }
 }
 
@@ -790,7 +791,7 @@ export default {
 
 .user-btn .el-icon-arrow-down {
   font-size: $font-size-xs;
-  margin-top: 2px;
+  margin-top: $spacing-xs;
 }
 
 /* Login Dialog */

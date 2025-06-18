@@ -450,43 +450,7 @@ export default {
   margin-bottom: $spacing-4xl;
 }
 
-.side-categories {
-  width: 220px;
-  background: $gray-100;
-  border-radius: $border-radius-sm;
-  padding: $spacing-lg 0;
-  min-height: 400px;
-}
 
-.side-categories h3 {
-  font-size: $font-size-lg;
-  font-weight: $font-weight-bold;
-  color: $red-700;
-  margin-bottom: $spacing-lg;
-  text-align: center;
-}
-
-.side-categories ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.side-categories li {
-  padding: $spacing-sm $spacing-xl;
-  cursor: pointer;
-  color: $gray-800;
-  font-size: $font-size-base;
-  border-left: 4px solid transparent;
-  transition: $transition-base;
-}
-
-.side-categories li.active,
-.side-categories li:hover {
-  background: $white;
-  color: $primary-color;
-  border-left: 4px solid $primary-color;
-}
 
 .product-detail-content {
   flex: 1;
@@ -496,7 +460,7 @@ export default {
 }
 
 .product-gallery-block {
-  width: 480px;
+  width: $product-gallery-width;
   /* 增加宽度从350px到480px */
   position: relative;
   flex-shrink: 0;
@@ -505,7 +469,7 @@ export default {
 
 .main-image {
   width: 100%;
-  height: 480px;
+  height: $product-main-image-height;
   position: relative;
   background: $gray-100;
   border: 1px solid $gray-200;
@@ -530,8 +494,8 @@ export default {
 }
 
 .thumbnail {
-  width: 70px;
-  height: 70px;
+  width: $product-thumbnail-size;
+  height: $product-thumbnail-size;
   background: $white;
   border: 1px solid $gray-200;
   border-radius: $border-radius-sm;
@@ -641,7 +605,7 @@ export default {
     font-size: $font-size-lg;
     font-weight: $font-weight-medium;
     color: $text-primary;
-    min-width: 60px;
+    min-width: $quantity-min-width;
   }
 }
 
@@ -694,7 +658,7 @@ export default {
 }
 
 :deep(.el-input-number) {
-  width: 120px;
+  width: $product-quantity-width;
 }
 
 :deep(.el-input-number .el-input__inner) {
@@ -712,7 +676,7 @@ export default {
   gap: $spacing-sm;
   margin-top: $spacing-lg;
   padding-top: $spacing-lg;
-  border-top: 1px solid $gray-200;
+  border-top: $table-border-width solid $gray-200;
   font-size: $font-size-sm;
   color: $text-secondary;
 }
@@ -755,18 +719,18 @@ export default {
   width: 100%;
   border-collapse: collapse;
   font-size: $font-size-lg;
-  margin-top: 1rem;
+  margin-top: $spacing-lg;
 }
 
 .specs-table th,
 .specs-table td {
-  padding: 0.875rem 1rem;
+  padding: $spacing-md $spacing-lg;
   text-align: left;
-  border: 1px solid $gray-200;
+  border: $table-border-width solid $gray-200;
 }
 
 .specs-table th {
-  width: 200px;
+  width: $product-specs-table-width;
   background-color: $gray-50;
   font-weight: $font-weight-normal;
   color: $text-secondary;
@@ -780,12 +744,12 @@ export default {
 .related-products {
   margin-top: $spacing-4xl;
   padding-top: $spacing-xl;
-  border-top: 1px solid $gray-200;
+  border-top: $table-border-width solid $gray-200;
 }
 
 .related-products-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax($related-product-min-width, 1fr));
   gap: $spacing-lg;
 }
 
@@ -796,7 +760,7 @@ export default {
 }
 
 .related-product-card:hover {
-  transform: translateY(-4px);
+  transform: translateY($hover-transform-lg);
 }
 
 .related-product-image {
@@ -824,7 +788,7 @@ export default {
   color: $text-secondary;
   font-weight: $font-weight-normal;
   line-height: $line-height-normal;
-  height: 2.8em;
+  height: $product-title-height;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -841,9 +805,9 @@ export default {
 
 .inquiry-form {
   background-color: $gray-50;
-  padding: 2rem;
+  padding: $spacing-2xl;
   border-radius: $border-radius-lg;
-  margin-bottom: 2.5rem;
+  margin-bottom: $spacing-3xl;
   box-shadow: $shadow-sm;
 }
 
@@ -851,7 +815,7 @@ export default {
   font-size: $font-size-2xl;
   font-weight: $font-weight-bold;
   color: $text-primary;
-  margin-bottom: 1.5rem;
+  margin-bottom: $spacing-xl;
   text-align: center;
 }
 
@@ -929,8 +893,8 @@ export default {
 }
 
 .section-divider {
-  width: 96px;
-  height: 4px;
+  width: $divider-width;
+  height: $divider-height;
   background-color: $primary-color;
   margin-bottom: $spacing-lg;
   margin-left: 0;

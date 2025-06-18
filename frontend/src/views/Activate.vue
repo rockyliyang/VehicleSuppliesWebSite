@@ -88,9 +88,9 @@ export default {
 
 /* Activate Container */
 .activate-container {
-  padding: $spacing-4xl 0;
+  padding: $auth-container-padding;
   background: $gray-100;
-  min-height: calc(100vh - 200px);
+  min-height: $auth-container-min-height;
   width: 100%;
 }
 
@@ -102,7 +102,7 @@ export default {
 }
 
 .activate-card {
-  max-width: 600px;
+  max-width: $auth-form-max-width;
   margin: 0 auto;
   @include card-hover;
   padding: $spacing-2xl;
@@ -110,24 +110,25 @@ export default {
 
 .activate-header {
   text-align: center;
-  margin-bottom: $spacing-xl;
+  margin-bottom: $auth-header-margin-bottom;
 }
 
 .logo {
-  width: 300px;
+  width: $auth-logo-width;
   height: auto;
-  max-height: 100px;
-  margin: 0 auto $spacing-lg auto;
+  max-height: $auth-logo-max-height;
+  margin: $auth-logo-margin;
   object-fit: contain;
   display: block;
 }
 
 .activate-title {
   text-align: center;
-  font-size: $font-size-4xl;
+  font-size: $auth-title-font-size;
   font-weight: $font-weight-bold;
-  color: $text-primary;
-  margin-bottom: $spacing-sm;
+  color: $auth-title-color;
+  margin: $auth-title-margin;
+  letter-spacing: $auth-title-letter-spacing;
   font-family: Arial, sans-serif;
 }
 

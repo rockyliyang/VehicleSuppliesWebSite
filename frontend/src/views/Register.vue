@@ -191,16 +191,16 @@ export default {
 
 /* Register Container */
 .register-container {
-  padding: 80px 0;
+  padding: $auth-container-padding;
   background: #f8f9fa;
-  min-height: calc(100vh - 200px);
+  min-height: $auth-container-min-height;
   width: 100%;
 }
 
 .form-wrapper {
-  max-width: 1200px;
+  max-width: $auth-form-max-width;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: $auth-form-padding;
   display: flex;
   justify-content: center;
 }
@@ -211,6 +211,7 @@ export default {
   margin: 0 auto;
   @include card-hover;
   padding: $spacing-2xl;
+  border: $auth-card-border;
 }
 
 .register-card:hover {
@@ -219,24 +220,25 @@ export default {
 
 .register-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: $auth-header-margin-bottom;
 }
 
 .logo {
-  width: 200px;
+  width: $auth-logo-width;
   height: auto;
-  max-height: 100px;
-  margin: 0 auto 20px auto;
+  max-height: $auth-logo-max-height;
+  margin: $auth-logo-margin;
   object-fit: contain;
   display: block;
 }
 
 .register-title {
   text-align: center;
-  font-size: 1.875rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
+  font-size: $auth-title-font-size;
+  font-weight: $font-weight-bold;
+  color: $auth-title-color;
+  margin: $auth-title-margin;
+  letter-spacing: $auth-title-letter-spacing;
   font-family: Arial, sans-serif;
 }
 
@@ -257,20 +259,20 @@ export default {
 }
 
 .register-form .el-form-item {
-  margin-bottom: 1.5rem;
+  margin-bottom: $auth-form-item-margin;
   display: flex;
   align-items: center;
 }
 
 .form-input {
   font-family: Arial, sans-serif;
-  font-size: 16px;
+  font-size: $auth-form-input-font-size;
 }
 
 /* Captcha Container */
 .captcha-container {
   display: flex;
-  gap: 12px;
+  gap: $captcha-container-gap;
   align-items: stretch;
   width: 100%;
 }
@@ -280,13 +282,13 @@ export default {
 }
 
 .captcha-img {
-  height: 48px;
-  width: 120px;
+  height: $captcha-img-height;
+  width: $captcha-img-width;
   cursor: pointer;
-  border-radius: 0.375rem;
-  border: 1px solid #d1d5db;
-  transition: border-color 0.3s ease;
-  background-color: #ffffff;
+  border-radius: $captcha-img-border-radius;
+  border: $captcha-img-border;
+  transition: $transition-base;
+  background-color: $captcha-img-bg;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -306,8 +308,8 @@ export default {
   line-height: $line-height-relaxed;
   font-size: $font-size-lg !important;
   color: $text-secondary;
-  margin-left: 0;
-  padding-left: 0;
+  margin-left: $agreement-checkbox-margin;
+  padding-left: $agreement-checkbox-padding;
 }
 
 /* 确保Element UI checkbox组件的字体大小 */
@@ -316,7 +318,7 @@ export default {
 }
 
 .agreement-link {
-  color: #dc2626;
+  color: $agreement-link-color;
   text-decoration: none;
   transition: color 0.3s ease;
 }
@@ -331,16 +333,16 @@ export default {
 /* Footer */
 .register-footer {
   text-align: center;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: $auth-footer-margin-top;
+  padding-top: $auth-footer-padding-top;
+  border-top: $auth-footer-border-top;
 }
 
 
 .footer-link {
-  color: #dc2626;
+  color: $auth-footer-link-color;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: $auth-footer-link-font-weight;
   transition: color 0.3s ease;
 }
 
@@ -391,8 +393,8 @@ export default {
 }
 
 .captcha-img:hover {
-  border-color: #9ca3af;
-  background-color: #f3f4f6;
+  border-color: $captcha-img-hover-border;
+  background-color: $captcha-img-hover-bg;
 }
 
 /* Agreement Link */
@@ -477,20 +479,20 @@ export default {
 :deep(.el-form-item__error) {
   color: #dc2626;
   font-family: Arial, sans-serif;
-  font-size: 12px;
-  margin-top: 5px;
+  font-size: $auth-form-error-font-size;
+  margin-top: $auth-form-error-margin-top;
 }
 
 /* Responsive Design */
 @media (max-width: 640px) {
   .register-card {
-    margin: 0 1rem;
-    padding: 30px 20px;
+    margin: $auth-mobile-card-margin;
+    padding: $auth-mobile-card-padding;
   }
 
 
   .register-container {
-    padding: 40px 0;
+    padding: $auth-mobile-container-padding;
   }
 }
 </style>

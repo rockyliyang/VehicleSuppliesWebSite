@@ -217,26 +217,26 @@ export default {
 
 /* Element UI 组件样式穿透 */
 :deep(.el-carousel__indicator) {
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: $carousel-indicator-bg;
   border: none;
   border-radius: 50%;
-  width: 8px;
-  height: 8px;
-  margin: 0 4px;
+  width: $carousel-indicator-size;
+  height: $carousel-indicator-size;
+  margin: 0 $carousel-indicator-margin;
   padding: 0;
-  transition: all 0.3s ease;
+  transition: $transition-carousel;
   outline: none;
   box-shadow: none;
 }
 
 :deep(.el-carousel__indicator.is-active) {
-  background-color: #dc2626;
-  transform: scale(1.3);
+  background-color: $carousel-indicator-active-bg;
+  transform: scale($carousel-indicator-scale-active);
 }
 
 :deep(.el-carousel__indicator:hover) {
-  background-color: rgba(255, 255, 255, 0.7);
-  transform: scale(1.1);
+  background-color: $carousel-indicator-hover-bg;
+  transform: scale($carousel-indicator-scale-hover);
 }
 
 :deep(.el-carousel__indicator button) {
@@ -251,26 +251,26 @@ export default {
 }
 
 :deep(.el-carousel__arrow) {
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
+  background-color: $carousel-arrow-bg;
+  color: $white;
 }
 
 :deep(.el-carousel__arrow:hover) {
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: $carousel-arrow-hover-bg;
 }
 
 /* Banner轮播图样式 */
 .banner-container {
   width: 100%;
-  height: 400px;
+  height: $banner-height-desktop;
   background: $gradient-primary;
 
-  @media (max-width: 768px) {
-    height: 280px;
+  @media (max-width: $mobile-breakpoint-md) {
+    height: $mobile-banner-height-md;
   }
 
-  @media (max-width: 480px) {
-    height: 220px;
+  @media (max-width: $mobile-breakpoint-sm) {
+    height: $mobile-banner-height-sm;
   }
 
   :deep(.el-carousel) {
@@ -336,8 +336,8 @@ export default {
     }
 
     .section-divider {
-      width: 96px;
-      height: 4px;
+      width: $spacing-6xl / 2 - $spacing-sm;
+      height: $spacing-xs;
       background-color: $primary-color;
       margin: 0 auto $spacing-lg;
     }
@@ -345,7 +345,7 @@ export default {
     .section-description {
       color: $text-secondary;
       font-size: $font-size-xl;
-      max-width: 1000px;
+      max-width: $container-max-width - $spacing-8xl + $spacing-6xl;
       margin: 0 auto;
       line-height: $line-height-relaxed;
     }

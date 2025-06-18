@@ -244,16 +244,7 @@ export default {
 
 
 
-.banner-content {
-  @include container;
-  text-align: center;
-}
 
-.banner-content h1 {
-  @include heading-1;
-  margin-bottom: $spacing-md;
-  color: $white;
-}
 
 
 
@@ -297,7 +288,7 @@ export default {
   color: $text-primary;
   margin-bottom: $spacing-sm;
   line-height: $line-height-tight;
-  letter-spacing: 0.3px;
+  letter-spacing: $letter-spacing-sm;
   text-decoration: none;
   display: block;
   transition: $transition-base;
@@ -318,7 +309,7 @@ export default {
   font-size: $font-size-xl;
   font-weight: $font-weight-semibold;
   color: $primary-color;
-  letter-spacing: 0.5px;
+  letter-spacing: $letter-spacing-md;
 }
 
 .subtotal {
@@ -331,7 +322,7 @@ export default {
 .cart-summary {
   margin-top: $spacing-2xl;
   padding-top: $spacing-xl;
-  border-top: 2px solid $gray-200;
+  border-top: $table-header-border-width solid $gray-200;
   @include flex-between;
 }
 
@@ -351,7 +342,7 @@ export default {
 }
 
 .cart-total:hover {
-  transform: translateY(-2px);
+  transform: translateY($hover-transform-md);
   box-shadow: 0 6px 20px rgba($primary-color, 0.15);
 }
 
@@ -359,7 +350,7 @@ export default {
   font-size: $font-size-xl;
   font-weight: $font-weight-bold;
   color: $primary-color;
-  letter-spacing: 0.25px;
+  letter-spacing: $letter-spacing-xs;
   margin-left: $spacing-sm;
 }
 
@@ -495,13 +486,13 @@ export default {
   background-color: $gray-100;
   color: $text-primary;
   font-weight: $font-weight-semibold;
-  border-bottom: 2px solid $primary-color;
+  border-bottom: $table-header-border-width solid $primary-color;
   font-size: $font-size-lg;
   padding: $spacing-lg $spacing-md;
 }
 
 :deep(.el-table td) {
-  border-bottom: 1px solid $gray-200;
+  border-bottom: $table-border-width solid $gray-200;
   padding: $spacing-lg $spacing-md;
   font-size: $font-size-md;
 }
@@ -511,7 +502,7 @@ export default {
 }
 
 :deep(.el-input-number) {
-  width: 120px;
+  width: $product-quantity-width;
 }
 
 :deep(.el-button--danger) {
@@ -525,7 +516,7 @@ export default {
 :deep(.el-button--danger:hover) {
   background-color: $error-dark;
   border-color: $error-dark;
-  transform: translateY(-1px);
+  transform: translateY($hover-transform-sm);
   box-shadow: 0 2px 8px rgba($error-color, 0.3);
 }
 
@@ -676,7 +667,7 @@ export default {
   box-shadow: $shadow-lg;
   border: none;
   padding: $spacing-md $spacing-md;
-  min-width: 300px;
+  min-width: $dialog-min-width;
 }
 
 :deep(.modern-message.el-message--success) {
@@ -718,7 +709,7 @@ export default {
 
 /* 动画效果 */
 :deep(.modern-confirm-dialog) {
-  animation: modernDialogFadeIn 0.3s ease-out;
+  animation: modernDialogFadeIn $animation-duration-fast ease-out;
 }
 
 @keyframes modernDialogFadeIn {
@@ -734,7 +725,7 @@ export default {
 }
 
 :deep(.modern-message) {
-  animation: modernMessageSlideIn 0.4s ease-out;
+  animation: modernMessageSlideIn $animation-duration-normal ease-out;
 }
 
 @keyframes modernMessageSlideIn {

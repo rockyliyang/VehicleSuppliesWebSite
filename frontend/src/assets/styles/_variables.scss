@@ -98,6 +98,82 @@ $border-radius-xl: 16px;
 $border-radius-full: 50%;
 
 // 边框宽度
+$border-width-sm: 1px;
+$border-width-md: 2px;
+$border-width-lg: 3px;
+
+// Contact页面特定变量
+$contact-title-underline-width: 40px;
+$contact-title-underline-height: 2px;
+$contact-info-icon-width: 36px;
+$contact-info-icon-height: 36px;
+$contact-qrcode-width: 120px;
+$contact-qrcode-height: 120px;
+$contact-qrcode-mobile-width: 100px;
+$contact-qrcode-mobile-height: 100px;
+$contact-qrcode-small-width: 80px;
+$contact-qrcode-small-height: 80px;
+$contact-map-height: 350px;
+$contact-map-mobile-height: 150px;
+$contact-map-small-height: 120px;
+$contact-captcha-height: 48px;
+$contact-captcha-width: 120px;
+$contact-form-button-height: 48px;
+$contact-info-icon-mobile-width: 32px;
+$contact-info-icon-mobile-height: 32px;
+$contact-transform-hover: 3px;
+
+// NewsDetail页面特定变量
+$news-detail-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+$news-header-padding-top: 30px;
+$news-header-padding-horizontal: 30px;
+$news-header-padding-bottom: 20px;
+$news-title-font-size: 28px;
+$news-title-font-weight: 700;
+$news-title-margin-bottom: 20px;
+$news-meta-gap: 20px;
+$news-meta-font-size: 14px;
+$news-meta-icon-gap: 5px;
+$news-image-max-height: 400px;
+$news-content-padding: 30px;
+$news-content-line-height: 1.8;
+$news-content-font-size: 16px;
+$news-content-heading-margin-top: 20px;
+$news-content-heading-margin-bottom: 15px;
+$news-content-p-margin-bottom: 15px;
+$news-content-img-margin: 15px;
+$news-content-blockquote-border-width: 4px;
+$news-content-blockquote-padding: 15px;
+$news-content-blockquote-margin: 20px;
+$news-content-list-padding: 20px;
+$news-content-list-margin: 15px;
+$news-content-li-margin: 5px;
+$news-navigation-padding: 30px;
+$news-navigation-gap: 20px;
+$news-nav-button-min-width: 120px;
+$news-nav-button-gap: 8px;
+$news-nav-button-side-position: 30px;
+$news-no-content-padding-vertical: 60px;
+$news-no-content-padding-horizontal: 30px;
+$news-empty-icon-size: 48px;
+$news-empty-icon-margin: 20px;
+$news-no-content-title-size: 20px;
+$news-no-content-title-margin: 10px;
+$news-no-content-desc-margin: 20px;
+
+// 响应式断点变量
+$news-mobile-container-padding: 20px;
+$news-mobile-container-padding-sm: 15px;
+$news-mobile-header-padding: 20px;
+$news-mobile-header-padding-sm: 15px;
+$news-mobile-title-size: 24px;
+$news-mobile-title-size-sm: 20px;
+$news-mobile-content-padding: 20px;
+$news-mobile-content-padding-sm: 15px;
+$news-mobile-content-font-size: 14px;
+$news-mobile-navigation-padding: 20px;
+$news-mobile-navigation-gap: 15px;
+$news-mobile-meta-gap: 10px;
 $border-width-thin: 1px;
 $border-width-thick: 3px;
 
@@ -135,6 +211,79 @@ $mobile-logo-height: 40px;
 $mobile-cart-badge-size: 18px;
 $mobile-submit-button-height: 40px;
 
+// 导航链接颜色
+$nav-link-color: #6b7280;
+
+// Banner高度变量
+$banner-height-mobile: 220px;
+$banner-height-tablet: 280px;
+$banner-height-desktop: 500px;
+$banner-height-large: 600px;
+
+// 轮播图指示器变量
+$carousel-indicator-size: 8px;
+$carousel-indicator-margin: 4px;
+$carousel-indicator-bg: rgba(255, 255, 255, 0.4);
+$carousel-indicator-active-bg: #dc2626;
+$carousel-indicator-hover-bg: rgba(255, 255, 255, 0.7);
+$carousel-indicator-scale-active: 1.3;
+$carousel-indicator-scale-hover: 1.1;
+
+// 轮播图箭头变量
+$carousel-arrow-bg: rgba(0, 0, 0, 0.5);
+$carousel-arrow-hover-bg: rgba(0, 0, 0, 0.7);
+
+// 移动端断点值
+$mobile-breakpoint-sm: 480px;
+$mobile-breakpoint-md: 768px;
+$mobile-breakpoint-lg: 1024px;
+
+// 移动端Banner高度
+$mobile-banner-height-sm: 220px;
+$mobile-banner-height-md: 280px;
+
+// 过渡动画时间
+$transition-carousel: all 0.3s ease;
+
+// z-index层级
+$z-index-mobile-nav: 1000;
+$z-index-mobile-overlay: 999;
+
+// 移动端悬停背景
+$mobile-hover-bg: rgba(0, 0, 0, 0.05);
+
+// 产品详情页相关变量
+$product-gallery-width: 480px;
+$product-main-image-height: 480px;
+$product-thumbnail-size: 70px;
+$product-border-left-width: 4px;
+$product-image-size-sm: 60px;
+$product-image-size-md: $spacing-4xl;
+$product-quantity-width: 120px;
+$product-specs-table-width: 200px;
+$product-qrcode-max-width: $spacing-6xl;
+$product-qrcode-min-width: $spacing-6xl;
+
+// 边框宽度变量
+$border-width-thin: 1px;
+$border-width-normal: 2px;
+$border-width-thick: 3px;
+$border-width-extra-thick: 4px;
+
+// 鼠标移动缩放倍数
+$zoom-factor: 2;
+
+// 表格和边框相关
+$table-border-width: 1px;
+$table-header-border-width: 2px;
+$form-border-width: 2px;
+$order-border-width: 2px;
+
+// 悬停变换距离
+$hover-transform-sm: -1px;
+$hover-transform-md: -2px;
+$hover-transform-lg: -4px;
+
 //banner
 $banner-height: 500px;
 $banner-bg: $primary-color;
@@ -146,3 +295,290 @@ $modal-max-height: 70vh;
 // 颜色别名（兼容旧代码）
 $red-600: #e53e3e;
 $red-700: $primary-dark;
+
+// 新增的尺寸变量
+$divider-width: 96px;
+$divider-height: 4px;
+$quantity-min-width: 60px;
+$related-product-min-width: 180px;
+$product-title-height: 2.8em;
+
+// 字符间距变量
+$letter-spacing-xs: 0.25px;
+$letter-spacing-sm: 0.3px;
+$letter-spacing-md: 0.5px;
+
+// 对话框变量
+$dialog-min-width: 300px;
+$dialog-width-md: 500px;
+$form-label-width: 100px;
+$form-input-height: 40px;
+$success-icon-size: 80px;
+
+// 动画时长变量
+$animation-duration-fast: 0.3s;
+$animation-duration-normal: 0.4s;
+
+// 二维码相关变量
+$qrcode-timer-duration: 300; // 5分钟倒计时
+$auto-refresh-delay: 240000; // 4分钟后自动刷新
+
+// 认证页面公共变量
+// 页面布局
+$auth-page-min-height: 100vh;
+$auth-container-min-height: calc(100vh - 200px);
+$auth-container-padding: $spacing-4xl 0;
+$auth-form-max-width: 600px;
+$auth-form-padding: 0 $spacing-lg;
+$auth-card-border: 1px solid $gray-200;
+$auth-header-margin-bottom: $spacing-2xl;
+
+// Logo相关
+$auth-logo-width: 200px;
+$auth-logo-width-large: 300px;
+$auth-logo-max-height: 100px;
+$auth-logo-margin: 0 auto $spacing-lg auto;
+
+// 标题相关
+$auth-title-font-size: $font-size-4xl;
+$auth-title-margin: 0 0 $spacing-sm 0;
+$auth-title-letter-spacing: -0.025em;
+$auth-title-color: #1f2937;
+$auth-subtitle-max-width: 400px;
+
+// 表单相关
+$auth-form-item-margin: 1.5rem;
+$auth-form-input-font-size: 16px;
+$auth-form-label-font-size: $font-size-xl;
+$auth-form-error-font-size: 12px;
+$auth-form-error-margin-top: 5px;
+
+// 验证码相关
+$captcha-container-gap: 12px;
+$captcha-img-height: 48px;
+$captcha-img-width: 120px;
+$captcha-img-border-radius: 0.375rem;
+$captcha-img-border: 1px solid #d1d5db;
+$captcha-img-bg: #ffffff;
+$captcha-img-hover-border: #9ca3af;
+$captcha-img-hover-bg: #f3f4f6;
+
+// 按钮相关
+$auth-button-height: 48px;
+$auth-button-font-weight: 500;
+
+// 页脚相关
+$auth-footer-margin-top: 2rem;
+$auth-footer-padding-top: 1.5rem;
+$auth-footer-border-top: 1px solid #e5e7eb;
+$auth-footer-link-color: #dc2626;
+$auth-footer-link-font-weight: 500;
+
+// 协议相关
+$agreement-checkbox-margin: 0;
+$agreement-checkbox-padding: 0;
+$agreement-link-color: #dc2626;
+
+// 标签页相关
+$auth-tabs-min-height: 200px;
+
+// 响应式相关
+$auth-mobile-card-margin: 0 1rem;
+$auth-mobile-card-padding: 30px 20px;
+$auth-mobile-container-padding: 40px 0;
+
+// ===== 二维码相关变量 =====
+$qr-code-size: 120px;
+$qr-code-border-radius: 8px;
+$qr-code-border: 1px solid #ddd;
+$qr-code-background: #fff;
+$qr-code-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+// ===== About & News 页面公共变量 =====
+// 页面布局
+$content-page-min-height: 100vh;
+$content-page-background: #f8f9fa;
+$content-layout-gap: $spacing-xl;
+$content-layout-padding: $spacing-xl 0;
+$content-layout-min-height: 600px;
+
+// 侧边导航
+$sidebar-nav-width: 280px;
+$sidebar-nav-background: $white;
+$sidebar-nav-border-radius: $border-radius-md;
+$sidebar-nav-shadow: $shadow-lg;
+$sidebar-nav-sticky-top: $spacing-lg;
+
+// 导航标题
+$nav-title-padding: $spacing-lg;
+$nav-title-border-bottom: 1px solid $border-light;
+$nav-title-color: $white;
+$nav-title-border-radius: $border-radius-md $border-radius-md 0 0;
+$nav-title-font-size: $font-size-lg;
+$nav-title-font-weight: $font-weight-semibold;
+$nav-title-margin: 0;
+
+// 导航菜单
+$nav-menu-border-bottom: 1px solid $gray-200;
+$nav-menu-transition: $transition-slow;
+$nav-menu-item-padding: $spacing-md $spacing-lg;
+$nav-menu-item-color: $text-primary;
+$nav-menu-item-font-size: $font-size-sm;
+$nav-menu-hover-padding-left: 25px;
+$nav-menu-hover-font-weight: $font-weight-medium;
+$nav-menu-active-border-left: 4px;
+$nav-menu-active-font-weight: $font-weight-bold;
+
+// 主内容区域
+$main-content-background: $white;
+$main-content-border-radius: $border-radius-md;
+$main-content-shadow: $shadow-lg;
+$main-content-min-height: 500px;
+
+// 加载容器
+$loading-container-padding: $spacing-4xl;
+$loading-container-text-align: center;
+
+// 内容区域
+$content-section-padding: $spacing-xl;
+$content-header-text-align: center;
+$content-header-margin-bottom: $spacing-xl;
+$content-header-title-font-size: $font-size-3xl;
+$content-header-title-color: $text-primary;
+$content-header-title-margin-bottom: $spacing-md;
+$content-header-title-font-weight: $font-weight-semibold;
+
+// 标题下划线
+$title-underline-width: 80px;
+$title-underline-height: 3px;
+$title-underline-border-radius: $border-radius-sm;
+$title-underline-margin: 0 auto;
+
+// 内容主体
+$content-body-line-height: $line-height-relaxed;
+$content-body-color: $text-secondary;
+$content-body-font-size: $font-size-base;
+$content-body-heading-color: $text-primary;
+$content-body-heading-margin: $spacing-lg 0 $spacing-md 0;
+$content-body-heading-font-weight: $font-weight-semibold;
+$content-body-paragraph-margin-bottom: $spacing-md;
+$content-body-image-border-radius: $border-radius-sm;
+$content-body-image-margin: $spacing-md 0;
+$content-body-image-shadow: $shadow-md;
+$content-body-list-padding-left: $spacing-lg;
+$content-body-list-margin-bottom: $spacing-md;
+$content-body-list-item-margin-bottom: $spacing-sm;
+$content-body-blockquote-border-left: 4px;
+$content-body-blockquote-padding-left: $spacing-md;
+$content-body-blockquote-margin: $spacing-lg 0;
+$content-body-blockquote-color: $text-secondary;
+$content-body-blockquote-background: $background-light;
+$content-body-blockquote-padding: $spacing-md;
+$content-body-blockquote-border-radius: 0 $border-radius-sm $border-radius-sm 0;
+
+// 无内容状态
+$no-content-padding: $spacing-4xl;
+$no-content-text-align: center;
+
+// 响应式断点变量
+$content-mobile-breakpoint: 768px;
+$content-small-mobile-breakpoint: 480px;
+$content-tablet-breakpoint: 1024px;
+
+// 移动端布局
+$content-mobile-layout-gap: $spacing-lg;
+$content-mobile-layout-padding: $spacing-lg 0;
+$content-mobile-nav-menu-padding: $spacing-sm $spacing-md;
+$content-mobile-nav-menu-font-size: $font-size-xs;
+$content-mobile-section-padding: $spacing-lg;
+$content-mobile-header-title-font-size: $font-size-2xl;
+
+// 小屏移动端
+$content-small-mobile-container-padding: 0 $spacing-sm;
+$content-small-mobile-layout-padding: $spacing-lg 0;
+$content-small-mobile-section-padding: $spacing-md;
+$content-small-mobile-body-font-size: $font-size-sm;
+
+// ===== News 页面特有变量 =====
+// 新闻主题色系
+$news-primary: #e74c3c;
+$news-primary-light: #ff6b6b;
+$news-primary-dark: #c0392b;
+$news-accent: #ff4757;
+$news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+
+// 新闻网格
+$news-grid-columns: repeat(auto-fill, minmax(300px, 1fr));
+$news-grid-gap: 25px;
+$news-grid-margin-bottom: $spacing-2xl;
+$news-grid-min-height: 600px;
+
+// 新闻卡片
+$news-card-background: $white;
+$news-card-border: 1px solid $gray-200;
+$news-card-border-radius: $border-radius-xl;
+$news-card-shadow: $shadow-md;
+$news-card-transition: $transition-slow;
+$news-card-hover-transform: translateY(-6px);
+$news-card-hover-shadow: 0 8px 25px rgba($news-primary, 0.15);
+$news-card-hover-border-color: rgba($news-primary, 0.2);
+
+// 新闻图片
+$news-image-height: 200px;
+$news-image-hover-scale: scale(1.05);
+
+// 新闻内容
+$news-content-padding: $spacing-lg;
+$news-title-font-size: $font-size-base;
+$news-title-font-weight: $font-weight-semibold;
+$news-title-color: $text-primary;
+$news-title-line-height: $line-height-tight;
+$news-title-margin-bottom: $spacing-sm;
+$news-title-line-clamp: 2;
+$news-title-hover-color: $news-primary;
+
+// 新闻元信息
+$news-meta-gap: $spacing-md;
+$news-meta-margin-bottom: $spacing-sm;
+$news-meta-font-size: $font-size-sm;
+$news-meta-color: $text-secondary;
+$news-meta-icon-color: $news-primary-light;
+
+// 新闻摘要
+$news-summary-color: $text-secondary;
+$news-summary-line-height: $line-height-relaxed;
+$news-summary-font-size: $font-size-sm;
+$news-summary-margin-bottom: $spacing-lg;
+$news-summary-line-clamp: 3;
+
+// 阅读更多
+$news-read-more-color: $news-primary;
+$news-read-more-font-size: $font-size-sm;
+$news-read-more-font-weight: $font-weight-medium;
+$news-read-more-gap: $spacing-xs;
+$news-read-more-hover-color: $news-primary-dark;
+$news-read-more-icon-transform: translateX(3px);
+
+// 分页
+$pagination-container-margin-top: $spacing-2xl;
+$pagination-background: $white;
+$pagination-padding: $spacing-lg;
+$pagination-border-radius: $border-radius-lg;
+$pagination-shadow: $shadow-lg;
+
+// 新闻页面响应式
+$news-tablet-grid-gap: 20px;
+$news-tablet-layout-gap: 20px;
+$news-tablet-layout-padding: 20px 0;
+$news-mobile-section-padding: $spacing-md;
+$news-mobile-grid-gap: $spacing-md;
+$news-mobile-content-padding: $spacing-lg;
+$news-mobile-title-font-size: $font-size-sm;
+$news-mobile-summary-font-size: $font-size-xs;
+$news-mobile-pagination-margin-top: $spacing-xl;
+$news-mobile-pagination-padding: $spacing-md;
+$news-small-mobile-section-padding: $spacing-sm;
+$news-small-mobile-content-padding: $spacing-md;
+$news-small-mobile-nav-title-padding: $spacing-md;
+$news-small-mobile-nav-title-font-size: $font-size-base;
+$news-small-mobile-no-content-padding: $spacing-2xl $spacing-md;

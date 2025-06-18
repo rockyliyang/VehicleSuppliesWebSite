@@ -139,28 +139,28 @@ export default {
 
 /* Main Container */
 .forgot-password-page {
-  min-height: 100vh;
+  min-height: $auth-page-min-height;
   background-color: $gray-100;
 }
 
 .forgot-password-container {
   background: $gray-50;
-  min-height: calc(100vh - 200px);
-  padding: $spacing-4xl 0;
+  min-height: $auth-container-min-height;
+  padding: $auth-container-padding;
   @include flex-center;
 }
 
 .form-wrapper {
   width: 100%;
-  max-width: 600px;
+  max-width: $auth-form-max-width;
   margin: 0 auto;
-  padding: 0 $spacing-lg;
+  padding: $auth-form-padding;
 }
 
 .forgot-password-card {
   @include card;
   padding: $spacing-2xl;
-  border: 1px solid $gray-200;
+  border: $auth-card-border;
   position: relative;
   overflow: hidden;
 }
@@ -168,15 +168,15 @@ export default {
 /* Header */
 .forgot-password-header {
   text-align: center;
-  margin-bottom: $spacing-2xl;
+  margin-bottom: $auth-header-margin-bottom;
 }
 
 .logo {
-  width: 300px;
+  width: $auth-logo-width;
   height: auto;
-  max-height: 100px;
+  max-height: $auth-logo-max-height;
   object-fit: contain;
-  margin: 0 auto $spacing-lg auto;
+  margin: $auth-logo-margin;
   display: block;
 }
 
@@ -193,7 +193,7 @@ export default {
   font-size: $font-size-xl;
   margin: 0;
   line-height: $line-height-relaxed;
-  max-width: 400px;
+  max-width: $auth-subtitle-max-width;
   margin-left: auto;
   margin-right: auto;
 }
@@ -215,8 +215,8 @@ export default {
 }
 
 .captcha-img {
-  width: 120px;
-  height: 48px;
+  width: $captcha-img-width;
+  height: $captcha-img-height;
   border: 1px solid $gray-300;
   border-radius: $border-radius-md;
   cursor: pointer;
