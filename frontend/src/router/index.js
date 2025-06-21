@@ -193,11 +193,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/checkout-unified',
+    path: '/unified-checkout',
     name: 'UnifiedCheckout',
     component: () => import('../views/UnifiedCheckout.vue'),
     meta: { requiresAuth: true }
-  }
+  },
+  
 ]
 
 const router = createRouter({

@@ -197,7 +197,7 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'PAYMENT.ORDER_NOT_FOUND', 'en', 'Order not found'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'PAYMENT.ORDER_NOT_FOUND', 'zh-CN', '订单不存在'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'PAYMENT.INVALID_ORDER_STATUS_FOR_QR', 'en', 'Invalid order status for QR code generation'),
-(UNHEX(REPLACE(UUID(), '-', '')), 'PAYMENT.INVALID_ORDER_STATUS_FOR_QR', 'zh-CN', '订单状态不支持生成二维码'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'PAYMENT.INVALID_ORDER_STATUS_FOR_QR', 'zh-CN', '订单状态不支持生成二维码');
 
 -- CONTACT相关
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -208,7 +208,7 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'ADMIN.CONTACT.ERROR.ASSIGNFAILED', 'en', 'Failed to assign message'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'ADMIN.CONTACT.ERROR.ASSIGNFAILED', 'zh-CN', '分配消息失败'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'ADMIN.CONTACT.ERROR.STATUSCHANGEFAILED', 'en', 'Failed to change message status'),
-(UNHEX(REPLACE(UUID(), '-', '')), 'ADMIN.CONTACT.ERROR.STATUSCHANGEFAILED', 'zh-CN', '更改消息状态失败');
+(UNHEX(REPLACE(UUID(), '-', '')), 'ADMIN.CONTACT.ERROR.STATUSCHANGEFAILED', 'zh-CN', '更改消息状态失败'),
 
 -- USER_MANAGEMENT相关
 (UNHEX(REPLACE(UUID(), '-', '')), 'USER_MANAGEMENT.REQUIRED_FIELDS_MISSING', 'en', 'Required fields are missing'),
@@ -804,7 +804,51 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'cart.addSuccess', 'en', 'Item added to cart successfully'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'cart.addSuccess', 'zh-CN', '商品已添加到购物车'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'cart.addError', 'en', 'Failed to add item to cart'),
-(UNHEX(REPLACE(UUID(), '-', '')), 'cart.addError', 'zh-CN', '添加到购物车失败');
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.addError', 'zh-CN', '添加到购物车失败'),
+
+-- 询价单相关翻译键
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.inquiries', 'en', 'Inquiries'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.inquiries', 'zh-CN', '询价单'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.newInquiry', 'en', 'New Inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.newInquiry', 'zh-CN', '新建询价单'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.addInquiry', 'en', 'Add Inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.addInquiry', 'zh-CN', '添加询价单'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.closeInquiry', 'en', 'Close Inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.closeInquiry', 'zh-CN', '关闭询价单'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.confirmDeleteInquiry', 'en', 'Are you sure you want to delete this inquiry?'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.confirmDeleteInquiry', 'zh-CN', '确定要删除这个询价单吗？'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.productAlreadyInInquiry', 'en', 'Product already in inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.productAlreadyInInquiry', 'zh-CN', '商品已在询价单中'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.productAddedToInquiry', 'en', 'Product added to inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.productAddedToInquiry', 'zh-CN', '商品已添加到询价单'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.items', 'en', 'Items'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.items', 'zh-CN', '商品'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.inquiryItems', 'en', 'Inquiry Items'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.inquiryItems', 'zh-CN', '询价商品'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.salesCommunication', 'en', 'Sales Communication'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.salesCommunication', 'zh-CN', '销售沟通'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.noItemsInInquiry', 'en', 'No items in this inquiry yet'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.noItemsInInquiry', 'zh-CN', '此询价单中暂无商品'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.expectedPrice', 'en', 'Expected Price'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.expectedPrice', 'zh-CN', '期望价格'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.removeFromInquiry', 'en', 'Remove from inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.removeFromInquiry', 'zh-CN', '从询价单中移除'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.itemRemovedFromInquiry', 'en', 'Item removed from inquiry successfully'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.itemRemovedFromInquiry', 'zh-CN', '商品已从询价单中移除'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.removeFromInquiryFailed', 'en', 'Failed to remove item from inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.removeFromInquiryFailed', 'zh-CN', '删除询价商品失败'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.sendMessage', 'en', 'Send Message'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.sendMessage', 'zh-CN', '发送消息'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.send', 'en', 'Send'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.send', 'zh-CN', '发送'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.typeMessage', 'en', 'Type your message...'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.typeMessage', 'zh-CN', '输入您的消息...'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.noMessages', 'en', 'No messages yet. Start a conversation!'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.noMessages', 'zh-CN', '暂无消息。开始对话吧！'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.maxInquiriesReached', 'en', 'Maximum number of inquiries reached'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.maxInquiriesReached', 'zh-CN', '已达到最大询价单数量'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.inquire', 'en', 'Inquire'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.inquire', 'zh-CN', '询价');
 
 -- UserOrders.vue 和 UnifiedCheckout.vue 翻译键
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -1517,4 +1561,62 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'EMAIL_TEMPLATE.USER_CONFIRMATION_SUBJECT', 'zh-CN', '消息已收到确认'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'EMAIL_TEMPLATE.USER_CONFIRMATION_SUBJECT', 'en', 'Message Received Confirmation')
 
+ON DUPLICATE KEY UPDATE value = VALUES(value);
+
+-- 添加询价单创建相关的新翻译
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- 标题前缀标签
+(UNHEX(REPLACE(UUID(), '-', '')), 'inquiry.create.titlePrefixLabel', 'en', 'Inquiry Title Prefix'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'inquiry.create.titlePrefixLabel', 'zh-CN', '询价单标题前缀'),
+
+-- 标题前缀占位符
+(UNHEX(REPLACE(UUID(), '-', '')), 'inquiry.create.titlePrefixPlaceholder', 'en', 'Enter inquiry title prefix'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'inquiry.create.titlePrefixPlaceholder', 'zh-CN', '请输入询价单标题前缀'),
+
+-- 标题前缀帮助文本
+(UNHEX(REPLACE(UUID(), '-', '')), 'inquiry.create.titlePrefixHelp', 'en', 'System will automatically append a number to create the full title'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'inquiry.create.titlePrefixHelp', 'zh-CN', '系统将自动添加编号生成完整标题'),
+
+-- 标题前缀必填验证
+(UNHEX(REPLACE(UUID(), '-', '')), 'inquiry.create.titlePrefixRequired', 'en', 'Title prefix is required'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'inquiry.create.titlePrefixRequired', 'zh-CN', '请输入标题前缀'),
+
+-- 购物车中的询价单标题前缀
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.inquiryTitlePrefix', 'en', 'Inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'cart.inquiryTitlePrefix', 'zh-CN', '询价单'),
+
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.VALIDATION.INVALID_TITLE_PREFIX', 'en', 'Title prefix is required'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.VALIDATION.INVALID_TITLE_PREFIX', 'zh-CN', '询价单标题前缀不能为空'),
+
+-- INQUIRY相关消息键（来自inquiryController.js）
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.FETCH.SUCCESS', 'en', 'Inquiries retrieved successfully'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.FETCH.SUCCESS', 'zh-CN', '询价单获取成功'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.FETCH.FAILED', 'en', 'Failed to fetch inquiries'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.FETCH.FAILED', 'zh-CN', '询价单获取失败'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.VALIDATION.NOT_FOUND', 'en', 'Inquiry not found'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.VALIDATION.NOT_FOUND', 'zh-CN', '询价单不存在'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.CREATE.SUCCESS', 'en', 'Inquiry created successfully'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.CREATE.SUCCESS', 'zh-CN', '询价单创建成功'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.CREATE.FAILED', 'en', 'Failed to create inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.CREATE.FAILED', 'zh-CN', '询价单创建失败'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.VALIDATION.MAX_INQUIRIES', 'en', 'Maximum number of inquiries reached (5)'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.VALIDATION.MAX_INQUIRIES', 'zh-CN', '已达到询价单数量上限（5个）'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.VALIDATION.INVALID_ID', 'en', 'Invalid parameters'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.VALIDATION.INVALID_ID', 'zh-CN', '参数无效'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED', 'en', 'Cannot modify submitted inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED', 'zh-CN', '无法修改已提交的询价单'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.BUSINESS.PRODUCT_ALREADY_EXISTS', 'en', 'Product already exists in inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.BUSINESS.PRODUCT_ALREADY_EXISTS', 'zh-CN', '商品已存在于询价单中'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.ITEM.ADD_SUCCESS', 'en', 'Product added to inquiry successfully'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.ITEM.ADD_SUCCESS', 'zh-CN', '商品添加到询价单成功'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.ITEM.ADD_FAILED', 'en', 'Failed to add product to inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.ITEM.ADD_FAILED', 'zh-CN', '商品添加到询价单失败'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.MESSAGE.SEND_SUCCESS', 'en', 'Message sent successfully'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.MESSAGE.SEND_SUCCESS', 'zh-CN', '消息发送成功'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.MESSAGE.SEND_FAILED', 'en', 'Failed to send message'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.MESSAGE.SEND_FAILED', 'zh-CN', '消息发送失败'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.DELETE.SUCCESS', 'en', 'Inquiry deleted successfully'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.DELETE.SUCCESS', 'zh-CN', '询价单删除成功'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.DELETE.FAILED', 'en', 'Failed to delete inquiry'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'INQUIRY.DELETE.FAILED', 'zh-CN', '询价单删除失败')
 ON DUPLICATE KEY UPDATE value = VALUES(value);

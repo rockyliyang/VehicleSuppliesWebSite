@@ -48,32 +48,32 @@ $text-secondary: $gray-600;
 $text-muted: $gray-500;
 $text-disabled: $gray-400;
 
-// 尺寸变量
+// 尺寸变量 (紧凑模式 - 80%缩放)
 // 间距
-$spacing-xs: 4px;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$spacing-xl: 32px;
-$spacing-2xl: 48px;
-$spacing-3xl: 64px;
-$spacing-4xl: 80px;
-$spacing-5xl: 120px;
-$spacing-6xl: 200px;
-$spacing-7xl: 280px;
-$spacing-8xl: 320px;
+$spacing-xs: 3px;    // 4px * 0.8
+$spacing-sm: 6px;    // 8px * 0.8
+$spacing-md: 13px;   // 16px * 0.8
+$spacing-lg: 19px;   // 24px * 0.8
+$spacing-xl: 26px;   // 32px * 0.8
+$spacing-2xl: 38px;  // 48px * 0.8
+$spacing-3xl: 51px;  // 64px * 0.8
+$spacing-4xl: 64px;  // 80px * 0.8
+$spacing-5xl: 96px;  // 120px * 0.8
+$spacing-6xl: 160px; // 200px * 0.8
+$spacing-7xl: 224px; // 280px * 0.8
+$spacing-8xl: 256px; // 320px * 0.8
 
-// 字体大小
-$font-size-xs: 12px;
-$font-size-sm: 14px;
-$font-size-base: 16px;
-$font-size-md: 16px;
-$font-size-lg: 18px;
-$font-size-xl: 20px;
-$font-size-2xl: 24px;
-$font-size-3xl: 30px;
-$font-size-4xl: 36px;
-$font-size-5xl: 48px;
+// 字体大小 (紧凑模式 - 80%缩放)
+$font-size-xs: 10px;   // 12px * 0.8
+$font-size-sm: 11px;   // 14px * 0.8
+$font-size-base: 13px; // 16px * 0.8
+$font-size-md: 13px;   // 16px * 0.8
+$font-size-lg: 14px;   // 18px * 0.8
+$font-size-xl: 16px;   // 20px * 0.8
+$font-size-2xl: 19px;  // 24px * 0.8
+$font-size-3xl: 24px;  // 30px * 0.8
+$font-size-4xl: 29px;  // 36px * 0.8
+$font-size-5xl: 38px;  // 48px * 0.8
 
 // 字体族
 $font-family-base: 'Microsoft YaHei', Avenir, Helvetica, Arial, sans-serif;
@@ -90,11 +90,11 @@ $line-height-tight: 1.25;
 $line-height-normal: 1.5;
 $line-height-relaxed: 1.75;
 
-// 圆角
-$border-radius-sm: 4px;
-$border-radius-md: 8px;
-$border-radius-lg: 12px;
-$border-radius-xl: 16px;
+// 圆角 (紧凑模式 - 80%缩放)
+$border-radius-sm: 3px;  // 4px * 0.8
+$border-radius-md: 6px;  // 8px * 0.8
+$border-radius-lg: 10px; // 12px * 0.8
+$border-radius-xl: 13px; // 16px * 0.8
 $border-radius-full: 50%;
 
 // 边框宽度
@@ -188,13 +188,13 @@ $transition-base: all 0.2s ease;
 $transition-fast: all 0.15s ease;
 $transition-slow: all 0.3s ease;
 
-// Header特定变量
-$header-height: 80px;
+// Header特定变量 (紧凑模式)
+$header-height: 64px;  // 80px * 0.8
 $header-bg: $white;
 $header-shadow: $shadow-md;
 
-// 容器变量
-$container-max-width: 1280px;
+// 容器变量 (紧凑模式)
+$container-max-width: 1024px; // 1280px * 0.8
 $container-padding: $spacing-lg;
 
 // 断点变量
@@ -203,26 +203,26 @@ $breakpoint-tablet: 768px;
 $breakpoint-desktop: 1024px;
 $breakpoint-large: 1200px;
 
-// 移动端特定变量
+// 移动端特定变量 (紧凑模式)
 $mobile-nav-overlay-opacity: 0.5;
-$mobile-footer-max-height: 500px;
+$mobile-footer-max-height: 400px; // 500px * 0.8
 $mobile-icon-margin: 2px;
-$mobile-logo-height: 40px;
-$mobile-cart-badge-size: 18px;
-$mobile-submit-button-height: 40px;
+$mobile-logo-height: 32px;        // 40px * 0.8
+$mobile-cart-badge-size: 14px;    // 18px * 0.8
+$mobile-submit-button-height: 32px; // 40px * 0.8
 
 // 导航链接颜色
 $nav-link-color: #6b7280;
 
-// Banner高度变量
-$banner-height-mobile: 220px;
-$banner-height-tablet: 280px;
-$banner-height-desktop: 500px;
-$banner-height-large: 600px;
+// Banner高度变量 (紧凑模式 - 80%缩放)
+$banner-height-mobile: 176px;  // 220px * 0.8
+$banner-height-tablet: 224px;  // 280px * 0.8
+$banner-height-desktop: 400px; // 500px * 0.8
+$banner-height-large: 480px;   // 600px * 0.8
 
-// 轮播图指示器变量
-$carousel-indicator-size: 8px;
-$carousel-indicator-margin: 4px;
+// 轮播图指示器变量 (紧凑模式)
+$carousel-indicator-size: 6px; // 8px * 0.8
+$carousel-indicator-margin: 3px; // 4px * 0.8
 $carousel-indicator-bg: rgba(255, 255, 255, 0.4);
 $carousel-indicator-active-bg: #dc2626;
 $carousel-indicator-hover-bg: rgba(255, 255, 255, 0.7);
@@ -238,9 +238,9 @@ $mobile-breakpoint-sm: 480px;
 $mobile-breakpoint-md: 768px;
 $mobile-breakpoint-lg: 1024px;
 
-// 移动端Banner高度
-$mobile-banner-height-sm: 220px;
-$mobile-banner-height-md: 280px;
+// 移动端Banner高度 (紧凑模式)
+$mobile-banner-height-sm: 176px; // 220px * 0.8
+$mobile-banner-height-md: 224px; // 280px * 0.8
 
 // 过渡动画时间
 $transition-carousel: all 0.3s ease;
@@ -252,15 +252,15 @@ $z-index-mobile-overlay: 999;
 // 移动端悬停背景
 $mobile-hover-bg: rgba(0, 0, 0, 0.05);
 
-// 产品详情页相关变量
-$product-gallery-width: 480px;
-$product-main-image-height: 480px;
-$product-thumbnail-size: 70px;
-$product-border-left-width: 4px;
-$product-image-size-sm: 60px;
+// 产品详情页相关变量 (紧凑模式 - 80%缩放)
+$product-gallery-width: 384px;     // 480px * 0.8
+$product-main-image-height: 384px; // 480px * 0.8
+$product-thumbnail-size: 56px;     // 70px * 0.8
+$product-border-left-width: 3px;   // 4px * 0.8
+$product-image-size-sm: 48px;      // 60px * 0.8
 $product-image-size-md: $spacing-4xl;
-$product-quantity-width: 120px;
-$product-specs-table-width: 200px;
+$product-quantity-width: 96px;     // 120px * 0.8
+$product-specs-table-width: 160px; // 200px * 0.8
 $product-qrcode-max-width: $spacing-6xl;
 $product-qrcode-min-width: $spacing-6xl;
 
@@ -284,8 +284,8 @@ $hover-transform-sm: -1px;
 $hover-transform-md: -2px;
 $hover-transform-lg: -4px;
 
-//banner
-$banner-height: 500px;
+//banner (紧凑模式)
+$banner-height: 400px; // 500px * 0.8
 $banner-bg: $primary-color;
 $banner-text-color: $white;
 
@@ -296,11 +296,11 @@ $modal-max-height: 70vh;
 $red-600: #e53e3e;
 $red-700: $primary-dark;
 
-// 新增的尺寸变量
-$divider-width: 96px;
-$divider-height: 4px;
-$quantity-min-width: 60px;
-$related-product-min-width: 180px;
+// 新增的尺寸变量 (紧凑模式)
+$divider-width: 77px; // 96px * 0.8
+$divider-height: 3px;              // 4px * 0.8
+$quantity-min-width: 48px;         // 60px * 0.8
+$related-product-min-width: 144px; // 180px * 0.8
 $product-title-height: 2.8em;
 
 // 字符间距变量
@@ -308,12 +308,12 @@ $letter-spacing-xs: 0.25px;
 $letter-spacing-sm: 0.3px;
 $letter-spacing-md: 0.5px;
 
-// 对话框变量
-$dialog-min-width: 300px;
-$dialog-width-md: 500px;
-$form-label-width: 100px;
-$form-input-height: 40px;
-$success-icon-size: 80px;
+// 对话框变量 (紧凑模式 - 80%缩放)
+$dialog-min-width: 240px;  // 300px * 0.8
+$dialog-width-md: 400px;   // 500px * 0.8
+$form-label-width: 80px;   // 100px * 0.8
+$form-input-height: 32px;  // 40px * 0.8
+$success-icon-size: 64px;  // 80px * 0.8
 
 // 动画时长变量
 $animation-duration-fast: 0.3s;
@@ -323,20 +323,20 @@ $animation-duration-normal: 0.4s;
 $qrcode-timer-duration: 300; // 5分钟倒计时
 $auto-refresh-delay: 240000; // 4分钟后自动刷新
 
-// 认证页面公共变量
+// 认证页面公共变量 (紧凑模式)
 // 页面布局
 $auth-page-min-height: 100vh;
-$auth-container-min-height: calc(100vh - 200px);
+$auth-container-min-height: calc(100vh - 160px); // 200px * 0.8
 $auth-container-padding: $spacing-4xl 0;
-$auth-form-max-width: 600px;
+$auth-form-max-width: 480px;  // 600px * 0.8
 $auth-form-padding: 0 $spacing-lg;
 $auth-card-border: 1px solid $gray-200;
 $auth-header-margin-bottom: $spacing-2xl;
 
-// Logo相关
-$auth-logo-width: 200px;
-$auth-logo-width-large: 300px;
-$auth-logo-max-height: 100px;
+// Logo相关 (紧凑模式)
+$auth-logo-width: 160px;       // 200px * 0.8
+$auth-logo-width-large: 240px; // 300px * 0.8
+$auth-logo-max-height: 80px;   // 100px * 0.8
 $auth-logo-margin: 0 auto $spacing-lg auto;
 
 // 标题相关
@@ -344,27 +344,27 @@ $auth-title-font-size: $font-size-4xl;
 $auth-title-margin: 0 0 $spacing-sm 0;
 $auth-title-letter-spacing: -0.025em;
 $auth-title-color: #1f2937;
-$auth-subtitle-max-width: 400px;
+$auth-subtitle-max-width: 320px; // 400px * 0.8
 
-// 表单相关
-$auth-form-item-margin: 1.5rem;
-$auth-form-input-font-size: 16px;
+// 表单相关 (紧凑模式)
+$auth-form-item-margin: 1.2rem;    // 1.5rem * 0.8
+$auth-form-input-font-size: 13px;  // 16px * 0.8
 $auth-form-label-font-size: $font-size-xl;
-$auth-form-error-font-size: 12px;
-$auth-form-error-margin-top: 5px;
+$auth-form-error-font-size: 10px;  // 12px * 0.8
+$auth-form-error-margin-top: 4px;  // 5px * 0.8
 
-// 验证码相关
-$captcha-container-gap: 12px;
-$captcha-img-height: 48px;
-$captcha-img-width: 120px;
-$captcha-img-border-radius: 0.375rem;
+// 验证码相关 (紧凑模式)
+$captcha-container-gap: 10px;  // 12px * 0.8
+$captcha-img-height: 38px;     // 48px * 0.8
+$captcha-img-width: 96px;      // 120px * 0.8
+$captcha-img-border-radius: 0.3rem; // 0.375rem * 0.8
 $captcha-img-border: 1px solid #d1d5db;
 $captcha-img-bg: #ffffff;
 $captcha-img-hover-border: #9ca3af;
 $captcha-img-hover-bg: #f3f4f6;
 
-// 按钮相关
-$auth-button-height: 48px;
+// 按钮相关 (紧凑模式)
+$auth-button-height: 38px; // 48px * 0.8
 $auth-button-font-weight: 500;
 
 // 页脚相关
@@ -379,17 +379,17 @@ $agreement-checkbox-margin: 0;
 $agreement-checkbox-padding: 0;
 $agreement-link-color: #dc2626;
 
-// 标签页相关
-$auth-tabs-min-height: 200px;
+// 标签页相关 (紧凑模式)
+$auth-tabs-min-height: 160px; // 200px * 0.8
 
-// 响应式相关
-$auth-mobile-card-margin: 0 1rem;
-$auth-mobile-card-padding: 30px 20px;
-$auth-mobile-container-padding: 40px 0;
+// 响应式相关 (紧凑模式)
+$auth-mobile-card-margin: 0 0.8rem;     // 1rem * 0.8
+$auth-mobile-card-padding: 24px 16px;   // 30px*0.8 20px*0.8
+$auth-mobile-container-padding: 32px 0; // 40px * 0.8
 
-// ===== 二维码相关变量 =====
-$qr-code-size: 120px;
-$qr-code-border-radius: 8px;
+// ===== 二维码相关变量 ===== (紧凑模式)
+$qr-code-size: 96px;           // 120px * 0.8
+$qr-code-border-radius: 6px;   // 8px * 0.8
 $qr-code-border: 1px solid #ddd;
 $qr-code-background: #fff;
 $qr-code-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

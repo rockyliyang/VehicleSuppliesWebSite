@@ -71,7 +71,7 @@
                 }}
               </p>
             </div>
-            <!-- 电脑端More按钮 -->
+            <!-- 电脑端More按钮 - 在文本区域内 -->
             <div class="desktop-button">
               <router-link to="/about" class="learn-more-link">
                 <button class="learn-more-button">
@@ -85,7 +85,8 @@
               alt="About Us" @error="handleImageError" />
           </div>
         </div>
-        <div class="about-button-row">
+        <!-- 移动端More按钮 - 独立行 -->
+        <div class="mobile-button">
           <router-link to="/about" class="learn-more-link">
             <button class="learn-more-button">
               {{ $t('about.learnMore') || '了解更多' }} <i class="fas fa-arrow-right"></i>
@@ -354,17 +355,12 @@ export default {
 
 /* 产品分类按钮 */
 .category-button {
-  @include button-outline;
-  padding: $spacing-sm $spacing-lg;
-  margin: 0 $spacing-xs;
+  @include button-primary;
+  @include button-lg;
   white-space: nowrap;
-  font-size: $font-size-base;
   font-weight: $font-weight-medium;
-  border-radius: $border-radius-md;
-  min-height: $spacing-3xl;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+
+
 
   @include mobile {
     padding: $spacing-xs $spacing-sm;
@@ -375,10 +371,9 @@ export default {
 
   &.active {
     @include button-primary;
-    padding: $spacing-sm $spacing-lg;
-    font-size: $font-size-base;
+    @include button-lg;
     font-weight: $font-weight-semibold;
-    min-height: $spacing-3xl;
+
 
     @include mobile {
       padding: $spacing-xs $spacing-sm;
@@ -391,18 +386,15 @@ export default {
 /* More按钮样式 - 与category-button保持一致 */
 .more-button {
   @include button-base;
+  @include button-lg;
   background-color: $gray-200;
   color: $gray-700;
-  padding: $spacing-sm $spacing-lg;
-  margin: 0 $spacing-xs;
+
   white-space: nowrap;
-  font-size: $font-size-base;
-  font-weight: $font-weight-medium;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
   border-radius: $border-radius-md;
-  min-height: $spacing-3xl;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+
 
   @include mobile {
     padding: $spacing-xs $spacing-sm;
@@ -427,7 +419,7 @@ export default {
 
     @media (min-width: $breakpoint-tablet) {
       flex-direction: row;
-      align-items: center;
+      align-items: flex-start;
     }
   }
 
@@ -453,6 +445,9 @@ export default {
   .about-text {
     @media (min-width: $breakpoint-tablet) {
       width: 50%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
     }
 
     .section-title {
@@ -479,56 +474,46 @@ export default {
       font-size: $font-size-lg;
       margin-bottom: $spacing-lg;
       line-height: $line-height-relaxed;
+      flex: 1;
     }
 
-    // 电脑端：More按钮在文本区域内
     .desktop-button {
+      margin-top: $spacing-xl;
       display: none;
-
-      @include tablet {
+      
+      @media (min-width: $breakpoint-tablet) {
         display: block;
       }
-
-      .learn-more-button {
-        @include button-primary;
-        @include button-lg;
-        font-size: $font-size-lg;
-        font-weight: $font-weight-semibold;
-
-        i {
-          margin-left: $spacing-sm;
-        }
-      }
     }
+    
+  }
+}
+
+// 移动端按钮样式 - 确保在电脑端完全隐藏
+.mobile-button {
+  margin-top: $spacing-lg;
+  width: 100%;
+  display: block;
+  
+  @media (min-width: $breakpoint-tablet) {
+    display: none !important;
+  }
+}
+
+// About Us 按钮样式 - 移到外层以便两个按钮都能使用
+.learn-more-button {
+  @include button-primary;
+  @include button-lg;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+
+  // 移动端：按钮占满宽度
+  @include mobile {
+    width: 100%;
   }
 
-  .about-button-row {
-    margin-top: $spacing-xl;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-
-    // 移动端：显示按钮
-    @include mobile {
-      margin-top: $spacing-lg;
-      display: flex;
-    }
-
-    // 电脑端：隐藏按钮
-    @include tablet {
-      display: none;
-    }
-
-    .learn-more-button {
-      @include button-primary;
-      @include button-lg;
-      font-size: $font-size-lg;
-      font-weight: $font-weight-semibold;
-
-      i {
-        margin-left: $spacing-sm;
-      }
-    }
+  i {
+    margin-left: $spacing-sm;
   }
 }
 
@@ -545,12 +530,12 @@ export default {
     margin-bottom: $spacing-lg;
     overflow-x: auto;
     padding: $spacing-xs 0;
-    
+
     /* 隐藏滚动条但保持滚动功能 */
     &::-webkit-scrollbar {
       display: none;
     }
-    
+
     -ms-overflow-style: none;
     scrollbar-width: none;
 
@@ -560,7 +545,7 @@ export default {
       margin-bottom: $spacing-lg;
       padding: $spacing-xs $spacing-sm;
     }
-    
+
     @include desktop {
       flex-wrap: wrap;
       overflow-x: visible;

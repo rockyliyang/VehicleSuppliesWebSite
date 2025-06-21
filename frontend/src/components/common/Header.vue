@@ -36,6 +36,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
+  
               <el-dropdown-item v-if="isLoggedIn" command="orders">{{ $t('orders') }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="logout">{{ $t('logout') }}</el-dropdown-item>
               <el-dropdown-item v-if="!isLoggedIn" command="login">{{ $t('login') }}</el-dropdown-item>

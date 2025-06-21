@@ -79,9 +79,13 @@ const requireRole = (roles) => {
   };
 };
 
+// 验证管理员权限的中间件（组合verifyToken和isAdmin）
+const verifyAdmin = [verifyToken, isAdmin];
+
 module.exports = {
   verifyToken,
   isAdmin,
+  verifyAdmin,
   requireRole,
   authenticateToken: verifyToken // 添加别名以保持兼容性
 };

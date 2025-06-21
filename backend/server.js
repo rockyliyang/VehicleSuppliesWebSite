@@ -24,6 +24,8 @@ const commonContentRoutes = require('./routes/CommonContentRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const businessGroupRoutes = require('./routes/businessGroupRoutes');
 const userManagementRoutes = require('./routes/userManagementRoutes');
+const inquiryRoutes = require('./routes/inquiryRoutes');
+const adminInquiryRoutes = require('./routes/adminInquiryRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -68,6 +70,8 @@ app.use('/api/common-content', commonContentRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/admin/business-groups', businessGroupRoutes);
 app.use('/api/admin/users', userManagementRoutes);
+app.use('/api/inquiries', inquiryRoutes);
+app.use('/api/admin/inquiries', adminInquiryRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
