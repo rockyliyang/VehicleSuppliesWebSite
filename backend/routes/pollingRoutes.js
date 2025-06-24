@@ -37,7 +37,7 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
     // 检查权限：用户只能访问自己的询价单，管理员可以访问所有
     const inquiry = inquiryCheck[0];
     const [userCheck] = await pool.query(
-      'SELECT role FROM users WHERE id = ?',
+      'SELECT user_role FROM users WHERE id = ?',
       [userId]
     );
     

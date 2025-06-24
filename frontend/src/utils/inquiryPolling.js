@@ -135,7 +135,7 @@ class InquiryPolling {
 
       // 构建请求URL，包含长轮询参数
       const lastMessageId = this.lastMessageIds.get(inquiryId) || 0
-      const url = `/api/polling/inquiry/${inquiryId}/messages?timeout=${this.longPollTimeout}&lastMessageId=${lastMessageId}`
+      const url = `/api/inquiries/${inquiryId}/messages/poll?timeout=${this.longPollTimeout}&lastMessageId=${lastMessageId}`
 
       const response = await fetch(url, {
         method: 'GET',
@@ -221,7 +221,7 @@ class InquiryPolling {
    * @returns {boolean}
    */
   isPollingInquiry(inquiryId) {
-    return this.pollingIntervals.has(inquiryId)
+    return this.pollingConnections.has(inquiryId)
   }
 
   /**
@@ -229,7 +229,7 @@ class InquiryPolling {
    * @returns {number}
    */
   getPollingCount() {
-    return this.pollingIntervals.size
+    return this.pollingConnections.size
   }
 
   /**

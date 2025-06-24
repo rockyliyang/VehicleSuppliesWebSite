@@ -577,6 +577,10 @@ export default {
             if (response.success) {
               this.paySuccess = true;
               this.$messageHandler.showSuccess('支付成功！', 'payment.success.paymentSuccess');
+              // 触发购物车更新事件
+              if (this.$bus) {
+                this.$bus.emit('cart-updated');
+              }
             } else {
               throw new Error(response.message || '支付捕获失败');
             }
@@ -670,6 +674,10 @@ export default {
         if (statusRes.success && statusRes.data.status === 'paid') {
           this.clearPollingTimer();
           this.paySuccess = true;
+          // 触发购物车更新事件
+          if (this.$bus) {
+            this.$bus.emit('cart-updated');
+          }
         }
       }, 3000);
     },

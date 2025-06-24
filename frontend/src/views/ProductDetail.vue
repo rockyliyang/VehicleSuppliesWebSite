@@ -51,8 +51,11 @@
 
               <!-- 按钮组单独一行 -->
               <div class="action-buttons">
-                <el-button type="primary" @click="addToCart" :disabled="product.stock <= 0">{{ $t('buttons.addToCart')
-                  }}</el-button>
+                <el-button type="primary" @click="addToCart" :disabled="product.stock <= 0" :loading="addingToCart"
+                  class="add-to-cart-btn">
+                  <span v-if="!addingToCart">{{ $t('buttons.addToCart') }}</span>
+                  <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
+                </el-button>
                 <el-button class="inquiry-button" @click="addToInquiry" :disabled="product.stock <= 0">{{
                   $t('buttons.addToInquiry')
                   }}</el-button>
@@ -157,6 +160,7 @@ export default {
       mainImgHeight: 0,
       mainImageContainerWidth: 0,
       mainImageContainerHeight: 0,
+      addingToCart: false,
     }
   },
   computed: {
@@ -316,15 +320,35 @@ export default {
     },
     
     async addToCart() {
-      // 使用公共的购物车工具函数
-      await addToCart(this.product, {
-          store: this.$store,
-          router: this.$router,
-          api: this.$api,
-          $t: this.$t,
-          messageHandler: this.$messageHandler,
-          $bus: this.$bus
-        }, this.quantity);
+      if (this.addingToCart) return;
+      
+      this.addingToCart = true;
+      
+      try {
+        // 使用公共的购物车工具函数
+        await addToCart(this.product, {
+            store: this.$store,
+            router: this.$router,
+            api: this.$api,
+            messageHandler: this.$messageHandler,
+            $bus: this.$bus
+          }, this.quantity);
+          
+        // 添加成功后的视觉反馈
+        this.$nextTick(() => {
+          const button = this.$el.querySelector('.add-to-cart-btn');
+          if (button) {
+            button.classList.add('success-animation');
+            setTimeout(() => {
+              button.classList.remove('success-animation');
+            }, 1000);
+          }
+        });
+      } catch (error) {
+        console.error('添加到购物车失败:', error);
+      } finally {
+        this.addingToCart = false;
+      }
     },
     submitInquiry() {
       this.$refs.inquiryForm.validate(valid => {
@@ -966,6 +990,52 @@ export default {
   /* Example padding */
   padding-bottom: $spacing-sm;
   /* Example padding */
+}
+
+/* 购物车按钮动画效果 */
+.add-to-cart-btn {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.add-to-cart-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+}
+
+.add-to-cart-btn.success-animation {
+  background-color: #67c23a !important;
+  border-color: #67c23a !important;
+  transform: scale(1.05);
+}
+
+.add-to-cart-btn.success-animation::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  color: white;
+  animation: checkmark 0.6s ease-in-out;
+}
+
+@keyframes checkmark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 /* 确认对话框样式已移至全局样式文件 elegant-messages.scss */

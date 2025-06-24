@@ -268,10 +268,10 @@ export default {
   },
   created() {
     this.fetchCart();
-    this.initializeInquiries();
   },
   mounted() {
     this.initPolling();
+    this.initializeInquiries();
   },
   beforeUnmount() {
     this.cleanupPolling();

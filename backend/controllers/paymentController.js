@@ -34,8 +34,8 @@ function getAlipayClient() {
   const appId = process.env.ALIPAY_APP_ID;
   if (!appId) throw new Error(getMessage('payment.alipay.config_missing'));
   
-  const privateKeyPath = path.join(__dirname, '../public/keys/myPrivateKey.txt');
-    const alipayPublicKeyPath = path.join(__dirname, '../public/keys/alipayPublicKey_RSA2.txt');
+  const privateKeyPath = process.env.NODE_ENV === 'production'? path.join(__dirname, '../public/keys/myPrivateKey.txt'):path.join(__dirname, '../public/keys/myPrivateKey_dev.txt');
+  const alipayPublicKeyPath = process.env.NODE_ENV === 'production'? path.join(__dirname, '../public/keys/alipayPublicKey_RSA2.txt'):path.join(__dirname, '../public/keys/alipayPublicKey_RSA2_dev.txt');
   
   if (!fs.existsSync(privateKeyPath)) {
     throw new Error(getMessage('payment.alipay.private_key_not_found'));
@@ -51,7 +51,7 @@ function getAlipayClient() {
     appId: appId,
     privateKey: privateKey,
     alipayPublicKey: alipayPublicKey,
-    gateway: process.env.NODE_ENV === 'production' ? 'https://openapi.alipay.com/gateway.do' : 'https://openapi.alipaydev.com/gateway.do',
+    gateway: process.env.ALIPAY_GATEWAY,
     signType: 'RSA2',
     charset: 'utf-8',
     version: '1.0'
@@ -349,7 +349,7 @@ exports.generateQrcode = async (req, res) => {
         const outTradeNo = `ORDER_${orderId}_${Date.now()}`; // 商户订单号
         
         // 调用支付宝预下单接口
-        const result = await alipaySdk.exec('alipay.trade.precreate', {}, {
+        const result = await alipaySdk.exec('alipay.trade.precreate', {
           bizContent: {
             out_trade_no: outTradeNo,
             total_amount: order.total_amount.toString(),
@@ -360,13 +360,13 @@ exports.generateQrcode = async (req, res) => {
           }
         });
         
-        if (result.code === '10000' && result.qr_code) {
+        if (result.code === '10000' && result.qrCode) {
           // 保存商户订单号到数据库
           await pool.query(
             `UPDATE orders SET payment_id = ? WHERE id = ?`,
             [outTradeNo, orderId]
           );
-          paymentUrl = result.qr_code;
+          paymentUrl = result.qrCode;
         } else {
           console.error('Alipay precreate failed:', result);
           return res.json({ 
@@ -411,7 +411,7 @@ exports.checkPaymentStatus = async (req, res) => {
     if (paymentMethod === 'alipay' && order.status === 'pending' && order.payment_id) {
       try {
         const alipaySdk = getAlipayClient();
-        const result = await alipaySdk.exec('alipay.trade.query', {}, {
+        const result = await alipaySdk.exec('alipay.trade.query', {
           bizContent: {
             out_trade_no: order.payment_id
           }

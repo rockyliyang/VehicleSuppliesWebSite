@@ -8,6 +8,7 @@ import './assets/css/global.css'
 import './assets/styles/elegant-messages.scss'
 import api from './utils/api'
 import MessageHandler from './utils/messageHandler'
+import { createTranslateFunction } from './utils/cartUtils'
 import mitt from 'mitt'
 
 const app = createApp(App)
@@ -16,10 +17,11 @@ const app = createApp(App)
 app.config.globalProperties.$api = api
 app.config.globalProperties.$axios = api
 
-// 添加翻译函数 - 使用响应式实现
+// 添加翻译函数 - 使用公共翻译函数实现
 app.config.globalProperties.$t = function(key, defaultValue = key) {
-  // 通过this访问当前组件实例，确保响应式更新
-  return this.$store.getters['language/translate'](key) || defaultValue
+  // 使用公共翻译函数，确保一致性
+  const translate = createTranslateFunction(this.$store)
+  return translate(key, defaultValue)
 }
 
 // 全局注册消息处理器

@@ -173,7 +173,6 @@ export default {
           store: this.$store,
           router: this.$router,
           api: this.$api,
-          $t: this.$t,
           messageHandler: this.$messageHandler,
           $bus: this.$bus
         });
