@@ -1,15 +1,73 @@
 const { pool } = require('../db/db');
 const { getMessage } = require('../config/messages');
-
+const { uuidToBinary } = require('../utils/uuid');
+const { v4: uuidv4 } = require('uuid');
+const sseHandler = require('../utils/sseHandler');
 // 获取所有询价列表（管理员）
 exports.getAllInquiries = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, userId, startDate, endDate } = req.query;
     const offset = (page - 1) * limit;
+    const currentUserId = req.userId; // 从JWT中获取当前登录用户ID
+    
+    // 首先查询当前用户所属的业务组
+    const businessGroupQuery = `
+      SELECT DISTINCT ubg.business_group_id 
+      FROM user_business_groups ubg 
+      WHERE ubg.user_id = ? AND ubg.deleted = 0
+    `;
+    const [businessGroups] = await pool.query(businessGroupQuery, [currentUserId]);
+    
+    if (businessGroups.length === 0) {
+      return res.json({
+        success: true,
+        message: getMessage('INQUIRY.FETCH.SUCCESS'),
+        data: {
+          inquiries: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            totalPages: 0
+          }
+        }
+      });
+    }
+    
+    // 获取业务组ID列表
+    const businessGroupIds = businessGroups.map(bg => bg.business_group_id);
+    
+    // 查询属于这些业务组的所有用户
+    const usersInGroupQuery = `
+      SELECT DISTINCT u.id 
+      FROM users u 
+      WHERE u.business_group_id IN (${businessGroupIds.map(() => '?').join(',')}) 
+      AND u.deleted = 0
+    `;
+    const [usersInGroup] = await pool.query(usersInGroupQuery, businessGroupIds);
+    
+    if (usersInGroup.length === 0) {
+      return res.json({
+        success: true,
+        message: getMessage('INQUIRY.FETCH.SUCCESS'),
+        data: {
+          inquiries: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            totalPages: 0
+          }
+        }
+      });
+    }
+    
+    // 获取用户ID列表
+    const userIds = usersInGroup.map(u => u.id);
     
     // 构建查询条件
-    let whereClause = 'WHERE i.deleted = 0';
-    let queryParams = [];
+    let whereClause = `WHERE i.deleted = 0 AND i.user_id IN (${userIds.map(() => '?').join(',')})`;
+    let queryParams = [...userIds];
     
     if (status) {
       whereClause += ' AND i.status = ?';
@@ -35,7 +93,6 @@ exports.getAllInquiries = async (req, res) => {
     const query = `
       SELECT 
         i.id,
-        i.guid,
         i.user_inquiry_id,
         i.title,
         i.status,
@@ -52,13 +109,21 @@ exports.getAllInquiries = async (req, res) => {
       LEFT JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = 0
       LEFT JOIN inquiry_messages im ON i.id = im.inquiry_id AND im.deleted = 0
       ${whereClause}
-      GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.user_id, i.created_at, i.updated_at, u.username, u.email
+      GROUP BY i.id, i.user_inquiry_id, i.title, i.status, i.user_id, i.created_at, i.updated_at, u.username, u.email
       ORDER BY i.created_at DESC
       LIMIT ? OFFSET ?
     `;
     
     queryParams.push(parseInt(limit), parseInt(offset));
     const [inquiries] = await pool.query(query, queryParams);
+    
+    // 处理返回数据格式
+    const formattedInquiries = inquiries.map(inquiry => ({
+      ...inquiry,
+      total_quoted_price: parseFloat(inquiry.total_quoted_price) || 0,
+      item_count: parseInt(inquiry.item_count) || 0,
+      message_count: parseInt(inquiry.message_count) || 0
+    }));
     
     // 查询总数
     const countQuery = `
@@ -73,7 +138,7 @@ exports.getAllInquiries = async (req, res) => {
       success: true,
       message: getMessage('INQUIRY.FETCH.SUCCESS'),
       data: {
-        inquiries,
+        inquiries: formattedInquiries,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -333,18 +398,18 @@ exports.sendMessage = async (req, res) => {
   try {
     const adminId = req.userId;
     const { inquiryId } = req.params;
-    const { message } = req.body;
+    const { content } = req.body;
     
-    if (!message || message.trim() === '') {
+    if (!content || content.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: getMessage('INQUIRY.VALIDATION.INVALID_ID')
+        message: getMessage('INQUIRY.MESSAGE.CONTENT_REQUIRED')
       });
     }
     
-    // 验证询价是否存在
+    // 验证询价是否存在并获取用户信息
     const [inquiryResult] = await pool.query(
-      'SELECT id FROM inquiries WHERE id = ? AND deleted = 0',
+      'SELECT id, user_id FROM inquiries WHERE id = ? AND deleted = 0',
       [inquiryId]
     );
     
@@ -355,20 +420,51 @@ exports.sendMessage = async (req, res) => {
       });
     }
     
-    // 添加消息
-    const [result] = await pool.query(
-      'INSERT INTO inquiry_messages (inquiry_id, sender_id, sender_type, content, created_by, updated_by) VALUES (?, ?, "admin", ?, ?, ?)',
-      [inquiryId, adminId, message.trim(), adminId, adminId]
+    const inquiry = inquiryResult[0];
+    
+    // 获取管理员信息
+    const [adminResult] = await pool.query(
+      'SELECT username, email FROM users WHERE id = ?',
+      [adminId]
     );
+    
+    const admin = adminResult[0];
+    
+    // 添加消息
+    const guid = uuidToBinary(uuidv4());
+    const [result] = await pool.query(
+      'INSERT INTO inquiry_messages (inquiry_id, guid, sender_id, sender_type, content, created_by, updated_by) VALUES (?, ?, ?, "admin", ?, ?, ?)',
+      [inquiryId, guid, adminId, content.trim(), adminId, adminId]
+    );
+    
+    // 构建消息数据
+    const messageData = {
+      id: result.insertId,
+      inquiryId: parseInt(inquiryId),
+      senderId: adminId,
+      senderType: 'admin',
+      senderName: admin ? admin.username : 'Admin',
+      senderEmail: admin ? admin.email : '',
+      content: content.trim(),
+      messageType: 'text',
+      timestamp: new Date().toISOString()
+    };
+    
+    // 通过SSE推送新消息给用户
+    const userIds = [inquiry.user_id.toString()];
+    sseHandler.broadcastToInquiry(inquiryId, messageData, 'new_message', userIds);
+    
+    // 触发长轮询事件
+    const EventEmitter = require('events');
+    if (!global.inquiryEventEmitter) {
+      global.inquiryEventEmitter = new EventEmitter();
+    }
+    global.inquiryEventEmitter.emit('newMessage', { inquiryId, messageData });
     
     return res.json({
       success: true,
       message: getMessage('INQUIRY.MESSAGE.SEND_SUCCESS'),
-      data: {
-        id: result.insertId,
-        message: message.trim(),
-        senderType: 'admin'
-      }
+      data: messageData
     });
   } catch (error) {
     console.error('发送询价消息失败:', error);

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shopping Cart</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        @layer base {
+            .material-icons {
+                font-family: 'Material Icons';
+                font-weight: normal;
+                font-style: normal;
+                font-size: 24px;
+                display: inline-block;
+                line-height: 1;
+                text-transform: none;
+                letter-spacing: normal;
+                word-wrap: normal;
+                white-space: nowrap;
+                direction: ltr;
+                -webkit-font-smoothing: antialiased;
+                text-rendering: optimizeLegibility;
+                -moz-osx-font-smoothing: grayscale;
+                font-feature-settings: 'liga';
+            }
+        }
+        @layer utilities {
+            .tab-active {
+                border-bottom-color: #ef4444 !important;
+                color: #ef4444 !important;
+            }
+            .tooltip {
+                position: relative;
+                display: inline-block;
+            }
+            .tooltip .tooltiptext {
+                visibility: hidden;
+                width: 160px;
+                background-color: #374151;
+                color: #fff;
+                text-align: center;
+                border-radius: 6px;
+                padding: 5px 0;
+                position: absolute;
+                z-index: 10;
+                bottom: 125%;
+                left: 50%;
+                margin-left: -80px;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+            .tooltip .tooltiptext::after {
+                content: "";
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                margin-left: -5px;
+                border-width: 5px;
+                border-style: solid;
+                border-color: #374151 transparent transparent transparent;
+            }
+            .tooltip:hover .tooltiptext {
+                visibility: visible;
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+<header class="bg-white shadow-md">
+<div class="container mx-auto px-6 py-3 flex justify-between items-center">
+<div class="text-xl font-semibold text-red-600">
+<img alt="Auto Ease Tech X Logo" class="h-8 inline" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwHZIsUpRuvjR4oxrxE8RO-hLcHYjGgrcvpFhWxSRPyBhM1tq55eL66C09ykkOSNFu4m5SppgmD4NaWFMNG6v3z8FbfNww1skfj_FD8T1J3OIqg6UwoI7IkUsEnTpizI8QTMbQyTK7TdH1NXwjUU7ORumXfe9mVISDGgCWxNmD-PFecTQ5K57xDyjsuaY8p_nndHtL54ytS98phEYqQYsIF743YkJfFzfG0hdq7SL9BTjOF5_Z1NZukmYjj2dkVqgPBzWdbzyk89U1"/> AUTO EASE TECH X
+            </div>
+<nav class="space-x-4">
+<a class="text-gray-600 hover:text-red-600" href="#">Home</a>
+<a class="text-gray-600 hover:text-red-600" href="#">About Us</a>
+<a class="text-gray-600 hover:text-red-600" href="#">Products</a>
+<a class="text-gray-600 hover:text-red-600" href="#">News</a>
+<a class="text-gray-600 hover:text-red-600" href="#">Contact Us</a>
+</nav>
+<div class="flex items-center space-x-4">
+<div class="relative">
+<button class="text-gray-600 hover:text-red-600 flex items-center">English <i class="material-icons text-sm">expand_more</i></button>
+</div>
+<a class="text-gray-600 hover:text-red-600 relative" href="#">
+<i class="material-icons">shopping_cart</i>
+<span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+</a>
+<a class="text-gray-600 hover:text-red-600" href="#">
+<i class="material-icons">person</i>
+</a>
+</div>
+</div>
+</header>
+<main>
+<section class="relative h-64 bg-cover bg-center" style="background-image: url('image-hero-background.png');">
+<div class="absolute inset-0 bg-black opacity-50"></div>
+<div class="container mx-auto px-6 py-24 text-center relative z-10">
+<h1 class="text-4xl font-bold text-white">Shopping Cart</h1>
+</div>
+</section>
+<section class="container mx-auto px-6 py-8">
+<div class="text-sm text-gray-600 mb-4">
+<a class="hover:text-red-600" href="#">Home</a> &gt; <span class="text-gray-800">Shopping Cart</span>
+</div>
+<div class="bg-white shadow-md rounded-lg p-6">
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-gray-50 border-b">
+<th class="p-4 w-12"><input class="form-checkbox h-5 w-5 text-red-600 rounded focus:ring-red-500" type="checkbox"/></th>
+<th class="p-4 font-medium text-gray-700">Product</th>
+<th class="p-4 font-medium text-gray-700">Unit Price</th>
+<th class="p-4 font-medium text-gray-700">Quantity</th>
+<th class="p-4 font-medium text-gray-700">Subtotal</th>
+<th class="p-4 font-medium text-gray-700">Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b hover:bg-gray-50">
+<td class="p-4"><input class="form-checkbox h-5 w-5 text-red-600 rounded focus:ring-red-500" type="checkbox"/></td>
+<td class="p-4">
+<div class="flex items-center">
+<img alt="Test product" class="w-16 h-16 object-cover rounded mr-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxv-2_1db9hRJGGI8_Fo3Y-dJFK8Jwfy77l2401FMZs8hWjmb1CZJm6i5f4Qvhd6eX6gOib8PE6Nqq5tOP3OfvEhmJueLTImgLKJES9PBi0Gd0uCVfrZmGtxYu9-G3tiS-TVYADYJk_Ieuh1KCvtXU8AMXYgea67o0U2O1l2-nc3VlTq8MpYvLzEYbCliRrpEvBICBokH15zhDjobZL4j4Hs0ZJsrzJ-pXZ7HMY4BsXU_vNR4wixvpVMJzjF9C-HlLb_3MYNg335VF"/>
+<div>
+<p class="font-semibold text-gray-800">Test</p>
+<p class="text-sm text-gray-500">Product Code: 1</p>
+</div>
+</div>
+</td>
+<td class="p-4 text-gray-700">¥10.00</td>
+<td class="p-4">
+<div class="flex items-center">
+<button class="px-2 py-1 border rounded-l text-gray-600 hover:bg-gray-100">-</button>
+<input class="w-12 text-center border-y focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" type="text" value="2"/>
+<button class="px-2 py-1 border rounded-r text-gray-600 hover:bg-gray-100">+</button>
+</div>
+</td>
+<td class="p-4 text-gray-700 font-semibold">¥20.00</td>
+<td class="p-4">
+<div class="flex items-center space-x-2">
+<button class="bg-red-500 text-white px-3 py-1.5 rounded-md hover:bg-red-600 text-sm">Remove</button>
+<button class="bg-blue-500 text-white px-3 py-1.5 rounded-md hover:bg-blue-600 text-sm add-to-inquiry" data-product-id="1" data-product-name="Test">Inquire</button>
+</div>
+</td>
+</tr>
+<tr class="border-b hover:bg-gray-50">
+<td class="p-4"><input class="form-checkbox h-5 w-5 text-red-600 rounded focus:ring-red-500" type="checkbox"/></td>
+<td class="p-4">
+<div class="flex items-center">
+<img alt="Advanced Gadget" class="w-16 h-16 object-cover rounded mr-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqJgQn0w08q3n35Qd_z3xO8wzD1bX0P3Yc9x8bN1jW5rR4u7hK2kL1fG0s7nB5oP2eS9tA0vR1cQ7fT0gP4lO5iR2sT3jU4vW1dE6sA3fS7gH9iP0lR2kM1nO8pY7xW"/>
+<div>
+<p class="font-semibold text-gray-800">Advanced Gadget</p>
+<p class="text-sm text-gray-500">Product Code: 2</p>
+</div>
+</div>
+</td>
+<td class="p-4 text-gray-700">¥150.00</td>
+<td class="p-4">
+<div class="flex items-center">
+<button class="px-2 py-1 border rounded-l text-gray-600 hover:bg-gray-100">-</button>
+<input class="w-12 text-center border-y focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" type="text" value="1"/>
+<button class="px-2 py-1 border rounded-r text-gray-600 hover:bg-gray-100">+</button>
+</div>
+</td>
+<td class="p-4 text-gray-700 font-semibold">¥150.00</td>
+<td class="p-4">
+<div class="flex items-center space-x-2">
+<button class="bg-red-500 text-white px-3 py-1.5 rounded-md hover:bg-red-600 text-sm">Remove</button>
+<button class="bg-blue-500 text-white px-3 py-1.5 rounded-md hover:bg-blue-600 text-sm add-to-inquiry" data-product-id="2" data-product-name="Advanced Gadget">Inquire</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-6 flex justify-between items-center">
+<div class="text-2xl font-bold text-red-600">Total: ¥170.00</div>
+<div class="space-x-3">
+<button class="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400">Continue Shopping</button>
+<button class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600">Clear Cart</button>
+<button class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600">Checkout</button>
+</div>
+</div>
+</div>
+<div class="bg-white shadow-md rounded-lg p-6 mt-8">
+<h2 class="text-2xl font-semibold text-gray-800 mb-4">Inquiries</h2>
+<div class="border-b border-gray-200">
+<nav class="-mb-px flex space-x-2 items-center overflow-x-auto" id="inquiryTabs">
+<button class="py-3 px-2 text-sm text-blue-600 hover:text-blue-800 flex items-center" id="addInquiryTab">
+<i class="material-icons text-base mr-1">add_circle_outline</i> New Inquiry
+                        </button>
+</nav>
+</div>
+<div id="inquiryPanels">
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-gray-800 text-gray-300 py-12">
+<div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+<div>
+<h3 class="text-xl font-semibold text-white mb-4">
+<img alt="Auto Ease Tech X Logo" class="h-8 inline filter brightness-0 invert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-eU7vUd2CvyzKGoGPyB03KicknkVkhiS3VGjLibMaWfoC-kymrCItsT0uqLDGxKwO551Ljuty08YkstancQQQnJNEg0YN5M48V3jIq8BRMfRIE1PJAtiGlCSwzc4_IHHUiUXLCfGCyepYaeUKNNawWjpYNiolKUZymkfSCic7L21S8yWFfJJFJnwdqPYTZXWdu5FyDo2FkfgKtjTFIDa_Ru_Eta82IywMtrqMyf6xaEvaUZCFgHRL_B01xljx7LxL9KUICh4YRzYh"/> AUTO EASE TECH X
+                </h3>
+<p class="text-sm">Auto Ease Xpert Co., Ltd. is a leading manufacturer of high-quality automotive electronic products designed to make your driving experience more comfortable and convenient.</p>
+<div class="flex space-x-3 mt-4">
+<a class="hover:text-white" href="#"><i class="material-icons text-xl">facebook</i></a>
+<a class="hover:text-white" href="#"><i class="material-icons text-xl">camera_alt</i></a>
+<a class="hover:text-white" href="#"><i class="material-icons text-xl">link</i></a>
+<a class="hover:text-white" href="#"><i class="material-icons text-xl">play_circle_filled</i></a>
+</div>
+</div>
+<div>
+<h4 class="text-lg font-semibold text-white mb-4">QuickLinks</h4>
+<ul class="space-y-2 text-sm">
+<li><a class="hover:text-white" href="#">Home</a></li>
+<li><a class="hover:text-white" href="#">About Us</a></li>
+<li><a class="hover:text-white" href="#">Products</a></li>
+<li><a class="hover:text-white" href="#">News</a></li>
+<li><a class="hover:text-white" href="#">Contact Us</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-lg font-semibold text-white mb-4">OurProducts</h4>
+<ul class="space-y-2 text-sm">
+<li><a class="hover:text-white" href="#">Car Vacuum Cleaner</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-lg font-semibold text-white mb-4">ContactInfo</h4>
+<ul class="space-y-2 text-sm">
+<li class="flex items-start"><i class="material-icons text-lg mr-2 mt-0.5">location_on</i> 123 Auto Street, Vehicle City</li>
+<li class="flex items-center"><i class="material-icons text-lg mr-2">phone</i> +86 123 4567 8910</li>
+<li class="flex items-center"><i class="material-icons text-lg mr-2">email</i> contact@autoease.com</li>
+<li class="flex items-center"><i class="material-icons text-lg mr-2">schedule</i> Mon-Fri: 9:00 AM - 6:00 PM</li>
+</ul>
+<img alt="QR Code" class="w-20 h-20 mt-4 rounded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC05kaaPqR6-1fUPlU4qDO4bMPOICMqSgoAe0zvAeFTm4BCPJCm0222Q9f9ppwjTDahNeq6XUCxWUAHjgLOzlBluqe86ZElfGP1T5NZPAB6Haw-fEVAPnsFqzyy3UpUcQbWGOccbFW9hnyE_yZ9mHkeceoR8dXfANstzSGzg8Nd7xoXjT8UxyV2X016Wc8u3l17vQjepozAga8RV26UGwHPk7lMUc2a__PJQoJJzlpM-fSzURiiem-L_IxnUvrfRdvh96YTsiudAB4u"/>
+</div>
+</div>
+<div class="mt-8 border-t border-gray-700 pt-8 text-center text-sm">
+            © 2025 AUTO EASE EXPERT CO., LTD All Rights Reserved.
+        </div>
+</footer>
+<script>
+        const inquiryTabsContainer = document.getElementById('inquiryTabs');
+        const inquiryPanelsContainer = document.getElementById('inquiryPanels');
+        const addInquiryTabButton = document.getElementById('addInquiryTab');
+        let inquiryCounter = 0; 
+        let inquiryCount = 0; 
+        const maxInquiries = 10;
+        let activeInquiryId = null;
+        const inquiredProductIds = new Set(); 
+        function switchTab(event) {
+            event.preventDefault();
+            const clickedTabLink = event.currentTarget;
+            const newActiveInquiryId = clickedTabLink.getAttribute('data-tab');
+            if (newActiveInquiryId === activeInquiryId) return;
+            activeInquiryId = newActiveInquiryId;
+            document.querySelectorAll('#inquiryTabs .group a').forEach(tabLink => {
+                tabLink.classList.remove('tab-active', 'text-red-500', 'border-red-500');
+                tabLink.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+            });
+            clickedTabLink.classList.add('tab-active', 'text-red-500', 'border-red-500');
+            clickedTabLink.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+            document.querySelectorAll('.inquiry-panel').forEach(panel => panel.classList.add('hidden'));
+            const activePanel = document.getElementById(activeInquiryId);
+            if (activePanel) {
+                activePanel.classList.remove('hidden');
+            }
+        }
+        function createNewInquiryPanel(id, name) {
+            const panel = document.createElement('div');
+            panel.id = id;
+            panel.classList.add('py-6', 'inquiry-panel');
+            if (id !== activeInquiryId) {
+                panel.classList.add('hidden');
+            }
+            panel.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div class="lg:col-span-3">
+                    <h4 class="text-lg font-semibold text-gray-700 mb-3">Items</h4>
+                    <div class="space-y-4" id="${id}-items">
+                    </div>
+                    <p class="text-gray-500 mt-4 text-center italic no-items-message">No items in this inquiry. Add products from your cart.</p>
+                </div>
+                <div class="lg:col-span-2 flex flex-col">
+                    <h4 class="text-lg font-semibold text-gray-700 mb-3">Sales Communication</h4>
+                    <div class="bg-gray-50 p-3 rounded-lg border flex-grow h-80 overflow-y-auto mb-3" id="${id}-chat-history">
+                        <p class="text-sm text-gray-400 italic">No messages yet.</p>
+                    </div>
+                    <div class="flex flex-col space-y-2">
+                        <textarea id="${id}-chat-message" rows="3" class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm" placeholder="Type your message..."></textarea>
+                        <button id="${id}-send-chat" data-inquiry-id="${id}" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 self-end text-sm">Send</button>
+                    </div>
+                </div>
+            </div>
+        `;
+            inquiryPanelsContainer.appendChild(panel);
+            panel.querySelector(`#${id}-send-chat`).addEventListener('click', handleSendMessage);
+            // Removed event listener for global-sync-to-cart-btn
+            updateNoItemsMessage(id);
+            return panel;
+        }
+        // Removed handleGlobalSyncToCart function
+        function addMessageToChat(inquiryId, sender, messageText, isUser = false) {
+            const chatHistory = document.getElementById(`${inquiryId}-chat-history`);
+            if (!chatHistory) return;
+            if (chatHistory.querySelector('.italic')) {
+                chatHistory.innerHTML = '';
+            }
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('mb-2.5');
+            const senderP = document.createElement('p');
+            senderP.classList.add('text-xs', 'text-gray-500', 'mb-0.5');
+            senderP.textContent = `${sender} (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}):`;
+            const messageP = document.createElement('p');
+            messageP.classList.add('text-sm', 'p-2', 'rounded-lg', 'inline-block', 'max-w-xs', 'break-words');
+            messageP.textContent = messageText;
+            if (isUser) {
+                messageDiv.classList.add('text-right');
+                messageP.classList.add('bg-green-100', 'text-green-800');
+            } else {
+                messageP.classList.add('bg-blue-100', 'text-blue-800');
+            }
+            messageDiv.appendChild(senderP);
+            messageDiv.appendChild(messageP);
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+        function handleSendMessage(event) {
+            const inquiryId = event.currentTarget.getAttribute('data-inquiry-id');
+            const messageInput = document.getElementById(`${inquiryId}-chat-message`);
+            const messageText = messageInput.value.trim();
+            if (messageText) {
+                addMessageToChat(inquiryId, "You", messageText, true);
+                messageInput.value = '';
+                setTimeout(() => {
+                    addMessageToChat(inquiryId, "Sales Rep", "Thanks for your message. We'll get back to you shortly.", false);
+                }, 1500);
+            }
+        }
+        function updateNoItemsMessage(inquiryPanelId) {
+            const panelItemsContainer = document.getElementById(`${inquiryPanelId}-items`);
+            const noItemsMessage = inquiryPanelsContainer.querySelector(`#${inquiryPanelId} .no-items-message`);
+            // Removed reference to globalSyncButton
+            if (panelItemsContainer && noItemsMessage) {
+                const hasItems = panelItemsContainer.children.length > 0;
+                noItemsMessage.classList.toggle('hidden', hasItems);
+                // Removed toggling of globalSyncButton visibility
+            }
+        }
+        function addInquiry() {
+            if (inquiryCount >= maxInquiries) {
+                alert(`You can add a maximum of ${maxInquiries} inquiries.`);
+                return null;
+            }
+            inquiryCounter++;
+            inquiryCount++;
+            const newInquiryId = `inquiry-${inquiryCounter}`;
+            const newInquiryName = `Inquiry ${inquiryCount}`; 
+            const tabContainer = document.createElement('div');
+            tabContainer.classList.add('relative', 'group', 'flex-shrink-0'); 
+            tabContainer.setAttribute('data-tab-container-id', newInquiryId);
+            const newTabLink = document.createElement('a');
+            newTabLink.href = '#';
+            newTabLink.classList.add('whitespace-nowrap', 'py-3', 'pl-3', 'pr-8', 'border-b-2', 'font-medium', 'text-sm', 'block', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); 
+            newTabLink.setAttribute('data-tab', newInquiryId);
+            newTabLink.textContent = newInquiryName;
+            newTabLink.addEventListener('click', switchTab);
+            const closeButton = document.createElement('button');
+            closeButton.classList.add('absolute', 'top-1/2', 'right-1.5', '-translate-y-1/2', 'p-0.5', 'rounded-full', 'text-gray-400', 'hover:bg-gray-200', 'hover:text-gray-700', 'opacity-0', 'group-hover:opacity-100', 'transition-opacity', 'focus:opacity-100', 'z-10'); 
+            closeButton.setAttribute('data-inquiry-id', newInquiryId);
+            closeButton.setAttribute('title', 'Close Inquiry');
+            closeButton.innerHTML = `<i class="material-icons text-base leading-none" style="font-size: 16px;">close</i>`; 
+            closeButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteInquiry(newInquiryId);
+            });
+            tabContainer.appendChild(newTabLink);
+            tabContainer.appendChild(closeButton);
+            inquiryTabsContainer.insertBefore(tabContainer, addInquiryTabButton);
+            createNewInquiryPanel(newInquiryId, newInquiryName); 
+            newTabLink.click();
+            updateAddInquiryButtonState();
+            return newInquiryId;
+        }
+        function deleteInquiry(inquiryIdToDelete) {
+            const tabContainerToDelete = inquiryTabsContainer.querySelector(`div[data-tab-container-id="${inquiryIdToDelete}"]`);
+            const panelToDelete = document.getElementById(inquiryIdToDelete);
+            if (!tabContainerToDelete || !panelToDelete) return;
+            panelToDelete.querySelectorAll('.inquiry-item').forEach(item => {
+                const productId = item.getAttribute('data-product-id');
+                inquiredProductIds.delete(productId);
+            });
+            tabContainerToDelete.remove();
+            panelToDelete.remove();
+            inquiryCount--;
+            if (activeInquiryId === inquiryIdToDelete) {
+                activeInquiryId = null;
+                const firstTabLink = inquiryTabsContainer.querySelector('a[data-tab]');
+                if (firstTabLink) {
+                    firstTabLink.click();
+                }
+            }
+            updateAddInquiryButtonState();
+            updateAllCartInquireButtonStates(); 
+        }
+        function updateAddInquiryButtonState() {
+            addInquiryTabButton.disabled = inquiryCount >= maxInquiries;
+            addInquiryTabButton.classList.toggle('opacity-50', inquiryCount >= maxInquiries);
+            addInquiryTabButton.classList.toggle('cursor-not-allowed', inquiryCount >= maxInquiries);
+        }
+        function addProductToInquiry(productId, productName, productImageUrl) {
+            let currentActiveInquiryId = activeInquiryId;
+            if (!currentActiveInquiryId) {
+                if (inquiryCount < maxInquiries) {
+                    currentActiveInquiryId = addInquiry();
+                    if (!currentActiveInquiryId) return;
+                } else {
+                    alert("Maximum number of inquiries reached. Please delete an existing one or add to an active one.");
+                    return;
+                }
+            }
+            if (inquiredProductIds.has(productId)) {
+                let existingInquiryId = null;
+                document.querySelectorAll('.inquiry-panel .inquiry-item').forEach(item => {
+                    if (item.getAttribute('data-product-id') === productId) {
+                        existingInquiryId = item.closest('.inquiry-panel').id;
+                    }
+                });
+                const existingInquiryName = inquiryTabsContainer.querySelector(`a[data-tab="${existingInquiryId}"]`)?.textContent || "another inquiry";
+                alert(`Product "${productName}" is already in ${existingInquiryName}.`);
+                return;
+            }
+            const activePanelItemsContainer = document.getElementById(`${currentActiveInquiryId}-items`);
+            if (!activePanelItemsContainer) {
+                console.error("Active inquiry panel items container not found for ID:", `${currentActiveInquiryId}-items`);
+                return;
+            }
+            const inquiryItem = document.createElement('div');
+            inquiryItem.classList.add('flex', 'flex-col', 'sm:flex-row', 'items-start', 'sm:items-center', 'justify-between', 'p-3', 'border', 'rounded-lg', 'bg-gray-50', 'inquiry-item', 'gap-3');
+            inquiryItem.setAttribute('data-product-id', productId);
+            inquiryItem.innerHTML = `
+            <div class="flex items-center w-full sm:w-2/5">
+              <img src="${productImageUrl}" alt="${productName}" class="w-12 h-12 object-cover rounded mr-3">
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">${productName}</p>
+                <p class="text-xs text-gray-500">Code: ${productId}</p> 
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-2/5">
+              <div class="w-full sm:w-auto">
+                <label for="inquiry-qty-${productId}-${currentActiveInquiryId}" class="block text-xs font-medium text-gray-600 mb-0.5">Quantity</label>
+                <input type="number" id="inquiry-qty-${productId}-${currentActiveInquiryId}" value="1" min="1" class="text-sm block w-full sm:w-20 border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 py-1.5">
+              </div>
+              <div class="w-full sm:w-auto">
+                <label for="inquiry-price-${productId}-${currentActiveInquiryId}" class="block text-xs font-medium text-gray-600 mb-0.5">Expected Price (¥)</label>
+                <input type="number" id="inquiry-price-${productId}-${currentActiveInquiryId}" placeholder="0.00" step="0.01" class="text-sm block w-full sm:w-24 border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 py-1.5">
+              </div>
+            </div>
+            <div class="flex items-center space-x-1.5 self-start sm:self-center mt-2 sm:mt-0 w-full sm:w-1/5 justify-end">
+              <button class="text-red-500 hover:text-red-700 remove-inquiry-item-btn p-1 rounded-md bg-red-100 hover:bg-red-200" data-product-id="${productId}" title="Remove from Inquiry">
+                  <i class="material-icons text-sm" style="font-size: 18px;">remove_circle_outline</i>
+              </button>
+            </div>
+        `;
+            activePanelItemsContainer.appendChild(inquiryItem);
+            inquiredProductIds.add(productId); 
+            inquiryItem.querySelector('.remove-inquiry-item-btn').addEventListener('click', function() {
+                const itemProductId = this.getAttribute('data-product-id');
+                this.closest('.inquiry-item').remove();
+                inquiredProductIds.delete(itemProductId); 
+                updateAllCartInquireButtonStates();
+                updateNoItemsMessage(currentActiveInquiryId);
+            });
+            updateCartInquireButtonState(productId, true, currentActiveInquiryId);
+            updateNoItemsMessage(currentActiveInquiryId);
+        }
+        function updateCartInquireButtonState(productId, isInInquiry, inquiryIdForProduct) {
+            const cartInquireButton = document.querySelector(`.add-to-inquiry[data-product-id="${productId}"]`);
+            if (cartInquireButton) {
+                let tooltipWrapper = cartInquireButton.closest('.tooltip');
+                let tooltipTextElement = tooltipWrapper ? tooltipWrapper.querySelector('.tooltiptext') : null;
+                if (isInInquiry) {
+                    cartInquireButton.disabled = true;
+                    cartInquireButton.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+                    cartInquireButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                    const inquiryName = inquiryTabsContainer.querySelector(`a[data-tab="${inquiryIdForProduct}"]`)?.textContent || "an inquiry";
+                    const message = `Already in ${inquiryName}`;
+                    if (!tooltipWrapper) {
+                        tooltipWrapper = document.createElement('div');
+                        tooltipWrapper.classList.add('tooltip');
+                        cartInquireButton.parentNode.insertBefore(tooltipWrapper, cartInquireButton);
+                        tooltipWrapper.appendChild(cartInquireButton);
+                    }
+                    if (!tooltipTextElement) {
+                        tooltipTextElement = document.createElement('span');
+                        tooltipTextElement.classList.add('tooltiptext');
+                        tooltipWrapper.appendChild(tooltipTextElement);
+                    }
+                    tooltipTextElement.textContent = message;
+                } else {
+                    cartInquireButton.disabled = false;
+                    cartInquireButton.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+                    cartInquireButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    if (tooltipTextElement) {
+                        tooltipTextElement.remove();
+                    }
+                    if (tooltipWrapper && tooltipWrapper.contains(cartInquireButton) && tooltipWrapper.querySelectorAll('.tooltiptext').length === 0) {
+                        tooltipWrapper.parentNode.insertBefore(cartInquireButton, tooltipWrapper);
+                        tooltipWrapper.remove();
+                    }
+                }
+            }
+        }
+        function updateAllCartInquireButtonStates() {
+            document.querySelectorAll('.add-to-inquiry').forEach(button => {
+                const productId = button.getAttribute('data-product-id');
+                let productIsInAnyInquiry = inquiredProductIds.has(productId);
+                let inquiryIdForThisProduct = null;
+                if (productIsInAnyInquiry) {
+                    document.querySelectorAll('.inquiry-panel').forEach(panel => {
+                        if (panel.querySelector(`.inquiry-item[data-product-id="${productId}"]`)) {
+                            inquiryIdForThisProduct = panel.id;
+                        }
+                    });
+                }
+                updateCartInquireButtonState(productId, productIsInAnyInquiry, inquiryIdForThisProduct);
+            });
+        }
+        addInquiryTabButton.addEventListener('click', () => addInquiry());
+        document.querySelectorAll('.add-to-inquiry').forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                const productName = this.getAttribute('data-product-name');
+                const productRow = this.closest('tr');
+                const productImageUrl = productRow?.querySelector('img')?.src || 'image-placeholder.png';
+                addProductToInquiry(productId, productName, productImageUrl);
+            });
+        });
+        if (inquiryCount === 0) {
+            const firstInquiryId = addInquiry(); 
+            if (firstInquiryId) {
+                const product1Image = document.querySelector('.add-to-inquiry[data-product-id="1"]')?.closest('tr')?.querySelector('img')?.src || 'image-placeholder.png';
+                addProductToInquiry('1', 'Test', product1Image);
+                const product2Image = document.querySelector('.add-to-inquiry[data-product-id="2"]')?.closest('tr')?.querySelector('img')?.src || 'image-placeholder.png';
+                addProductToInquiry('2', 'Advanced Gadget', product2Image);
+            }
+        } else if (activeInquiryId) {
+            const panel = document.getElementById(activeInquiryId);
+            if (panel) panel.classList.remove('hidden');
+            updateNoItemsMessage(activeInquiryId);
+        }
+        updateAddInquiryButtonState();
+        updateAllCartInquireButtonStates();
+    </script>
+</body></html>

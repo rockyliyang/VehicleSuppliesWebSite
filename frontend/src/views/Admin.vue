@@ -54,6 +54,12 @@
             </el-icon>
             <span>联系消息</span>
           </el-menu-item>
+          <el-menu-item index="/admin/inquiries">
+            <el-icon>
+              <ChatDotRound />
+            </el-icon>
+            <span>询价管理</span>
+          </el-menu-item>
           <el-sub-menu index="user-management">
             <template #title>
               <el-icon>

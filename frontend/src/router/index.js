@@ -102,6 +102,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'inquiries',
+        name: 'AdminInquiries',
+        component: () => import('../views/admin/InquiryManagement.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'regular-users',
         name: 'AdminRegularUsers',
         component: () => import('../views/admin/RegularUserList.vue'),

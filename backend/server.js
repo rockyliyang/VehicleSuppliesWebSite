@@ -26,6 +26,7 @@ const businessGroupRoutes = require('./routes/businessGroupRoutes');
 const userManagementRoutes = require('./routes/userManagementRoutes');
 const inquiryRoutes = require('./routes/inquiryRoutes');
 const adminInquiryRoutes = require('./routes/adminInquiryRoutes');
+const sseRoutes = require('./routes/sseRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -72,6 +73,11 @@ app.use('/api/admin/business-groups', businessGroupRoutes);
 app.use('/api/admin/users', userManagementRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/admin/inquiries', adminInquiryRoutes);
+app.use('/api/sse', sseRoutes);
+
+// 注册长轮询路由
+const pollingRoutes = require('./routes/pollingRoutes');
+app.use('/api/inquiries', pollingRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));

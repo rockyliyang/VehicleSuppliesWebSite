@@ -5,8 +5,9 @@ const { verifyToken } = require('../middleware/jwt');
 
 // 所有支付路由都需要用户认证（除了回调接口）
 router.use('/callback', (req, res, next) => next()); // 跳过回调接口的认证
+router.use('/alipay/notify', (req, res, next) => next()); // 跳过支付宝异步通知的认证
 router.use((req, res, next) => {
-  if (req.path.startsWith('/callback')) {
+  if (req.path.startsWith('/callback') || req.path.startsWith('/alipay/notify')) {
     return next();
   }
   return verifyToken(req, res, next);
@@ -25,5 +26,8 @@ router.post('/check-status', paymentController.checkPaymentStatus);
 // 支付回调接口
 router.post('/callback/wechat', paymentController.paymentCallback);
 router.post('/callback/alipay', paymentController.paymentCallback);
+
+// 支付宝异步通知接口
+router.post('/alipay/notify', paymentController.alipayNotify);
 
 module.exports = router;

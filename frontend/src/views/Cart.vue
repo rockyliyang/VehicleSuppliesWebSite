@@ -210,6 +210,7 @@ import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import api from '@/utils/api';
 import MessageHandler from '@/utils/messageHandler';
+import InquiryPolling from '@/utils/inquiryPolling';
 
 export default {
   name: 'CartPage',
@@ -228,7 +229,8 @@ export default {
       activeInquiryId: null,
       inquiryCounter: 0,
       maxInquiries: 5,
-      inquiredProductIds: new Set()
+      inquiredProductIds: new Set(),
+      pollingConnection: null
     };
   },
   computed: {
@@ -267,6 +269,12 @@ export default {
   created() {
     this.fetchCart();
     this.initializeInquiries();
+  },
+  mounted() {
+    this.initPolling();
+  },
+  beforeUnmount() {
+    this.cleanupPolling();
   },
   methods: {
     handleImageError,
@@ -417,6 +425,8 @@ export default {
           if (this.inquiries.length > 0) {
             this.activeInquiryId = this.inquiries[0].id;
             await this.fetchInquiryDetail(this.inquiries[0].id);
+            // 开始轮询第一个询价单
+            this.startInquiryPolling(this.inquiries[0].id);
           }
         }
       } catch (error) {
@@ -542,6 +552,11 @@ export default {
     },
     
     async switchTab(inquiryId) {
+      // 停止之前的轮询
+      if (this.activeInquiryId && this.activeInquiryId !== inquiryId) {
+        this.stopInquiryPolling(this.activeInquiryId);
+      }
+      
       this.activeInquiryId = inquiryId;
       
       // 如果该询价单的详情还未加载，则加载详情
@@ -549,6 +564,9 @@ export default {
       if (inquiry && inquiry.items.length === 0 && inquiry.messages.length === 0) {
         await this.fetchInquiryDetail(inquiryId);
       }
+      
+      // 开始新的轮询
+      this.startInquiryPolling(inquiryId);
     },
     
     async addToInquiry(cartItem) {
@@ -660,21 +678,132 @@ export default {
           
           // Scroll to bottom
           this.$nextTick(() => {
-            const chatHistory = this.$refs.chatHistory;
-            if (chatHistory && chatHistory.length) {
-              const activeChat = chatHistory.find(el => 
-                el.closest('.inquiry-panel.active')
-              );
-              if (activeChat) {
-                activeChat.scrollTop = activeChat.scrollHeight;
+            // 确保组件仍然挂载
+            if (this.$el && this.$refs && this.$refs.chatHistory) {
+              const chatHistory = this.$refs.chatHistory;
+              if (chatHistory && chatHistory.length) {
+                const activeChat = chatHistory.find(el => 
+                  el.closest('.inquiry-panel.active')
+                );
+                if (activeChat) {
+                  try {
+                    activeChat.scrollTop = activeChat.scrollHeight;
+                  } catch (error) {
+                    console.warn('Scroll to bottom failed:', error);
+                  }
+                }
               }
             }
+            
           });
         }
       } catch (error) {
         console.error('发送消息失败:', error);
         // 如果发送失败，恢复消息内容
         inquiry.newMessage = messageContent;
+      }
+    },
+    
+    // 长轮询相关方法
+    initPolling() {
+      try {
+        this.pollingConnection = InquiryPolling;
+        
+        // 监听新消息
+        this.pollingConnection.on('new_messages', (data) => {
+          this.handleNewMessages(data);
+        });
+        
+        // 监听轮询错误
+        this.pollingConnection.on('polling_error', (error) => {
+          console.error('轮询错误:', error);
+        });
+        
+        console.log('长轮询初始化完成');
+        
+      } catch (error) {
+        console.error('初始化长轮询失败:', error);
+      }
+    },
+    
+    cleanupPolling() {
+      if (this.pollingConnection) {
+        this.pollingConnection.stopAllPolling();
+        this.pollingConnection = null;
+      }
+    },
+    
+    // 开始轮询指定询价单
+    startInquiryPolling(inquiryId) {
+      if (this.pollingConnection && !this.pollingConnection.isPollingInquiry(inquiryId)) {
+        this.pollingConnection.startPolling(inquiryId);
+        console.log(`开始轮询询价单 ${inquiryId}`);
+      }
+    },
+    
+    // 停止轮询指定询价单
+    stopInquiryPolling(inquiryId) {
+      if (this.pollingConnection) {
+        this.pollingConnection.stopPolling(inquiryId);
+        console.log(`停止轮询询价单 ${inquiryId}`);
+      }
+    },
+    
+    handleNewMessages(data) {
+      try {
+        const { inquiryId, messages } = data;
+        
+        // 查找对应的询价单
+        const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
+        if (!inquiry) {
+          console.log('收到消息但未找到对应询价单:', inquiryId);
+          return;
+        }
+        
+        // 处理每条新消息
+        messages.forEach(messageData => {
+          // 构建消息对象
+          const newMessage = {
+            id: messageData.id,
+            sender: messageData.sender_name || '业务员',
+            content: messageData.message,
+            timestamp: new Date(messageData.created_at).getTime(),
+            isUser: messageData.sender_type === 'user'
+          };
+          
+          // 检查消息是否已存在（避免重复）
+          const existingMessage = inquiry.messages.find(msg => msg.id === newMessage.id);
+          if (!existingMessage) {
+            inquiry.messages.push(newMessage);
+            
+            // 显示新消息提示（如果不是当前用户发送的）
+            if (!newMessage.isUser) {
+              this.$message.success(`收到来自 ${newMessage.sender} 的新消息`);
+            }
+          }
+        });
+        
+        // 滚动到底部
+        this.$nextTick(() => {
+          if (this.$refs.chatHistory) {
+            const chatHistory = this.$refs.chatHistory;
+            if (chatHistory && chatHistory.length) {
+              const activeChat = chatHistory.find(el => 
+                el.closest('.inquiry-panel.active')
+              );
+              if (activeChat) {
+                try {
+                  activeChat.scrollTop = activeChat.scrollHeight;
+                } catch (error) {
+                  console.warn('Scroll to bottom failed:', error);
+                }
+              }
+            }
+          }
+        });
+        
+      } catch (error) {
+        console.error('处理新消息失败:', error);
       }
     }
   }

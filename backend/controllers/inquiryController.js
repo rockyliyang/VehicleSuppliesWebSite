@@ -2,6 +2,7 @@ const { pool } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
 const { uuidToBinary } = require('../utils/uuid');
 const { getMessage } = require('../config/messages');
+const sseHandler = require('../utils/sseHandler');
 
 // 获取用户询价列表
 exports.getUserInquiries = async (req, res) => {
@@ -335,7 +336,7 @@ exports.sendMessage = async (req, res) => {
     
     // 验证询价是否存在且属于当前用户
     const [inquiryResult] = await pool.query(
-      'SELECT id FROM inquiries WHERE id = ? AND user_id = ? AND deleted = 0',
+      'SELECT id, user_id FROM inquiries WHERE id = ? AND user_id = ? AND deleted = 0',
       [inquiryId, userId]
     );
     
@@ -353,14 +354,49 @@ exports.sendMessage = async (req, res) => {
       [inquiryId, guid, userId, message.trim(), userId, userId]
     );
     
+    // 获取用户信息用于SSE推送
+    const [userResult] = await pool.query(
+      'SELECT username, email FROM users WHERE id = ?',
+      [userId]
+    );
+    
+    const user = userResult[0];
+    
+    // 构建消息数据
+    const messageData = {
+      id: result.insertId,
+      inquiryId: parseInt(inquiryId),
+      senderId: userId,
+      senderType: 'user',
+      senderName: user ? user.username : 'Unknown User',
+      senderEmail: user ? user.email : '',
+      content: message.trim(),
+      messageType: 'text',
+      timestamp: new Date().toISOString()
+    };
+    // 通过SSE推送新消息给管理员
+    const [adminUsers] = await pool.query(
+      'SELECT id FROM users WHERE user_role = "admin" AND deleted = 0'
+    );
+    /*
+    const adminUserIds = adminUsers.map(admin => admin.id.toString());
+    
+    // 推送给管理员
+    if (adminUserIds.length > 0) {
+      sseHandler.broadcastToInquiry(inquiryId, messageData, 'new_message', adminUserIds);
+    }*/
+    
+    // 触发长轮询事件
+    const EventEmitter = require('events');
+    if (!global.inquiryEventEmitter) {
+      global.inquiryEventEmitter = new EventEmitter();
+    }
+    global.inquiryEventEmitter.emit('newMessage', { inquiryId, messageData });
+    
     return res.json({
       success: true,
       message: getMessage('INQUIRY.MESSAGE.SEND_SUCCESS'),
-      data: {
-        id: result.insertId,
-        message: message.trim(),
-        senderType: 'user'
-      }
+      data: messageData
     });
   } catch (error) {
     console.error('发送询价消息失败:', error);

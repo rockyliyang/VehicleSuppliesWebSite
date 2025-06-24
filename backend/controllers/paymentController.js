@@ -11,6 +11,9 @@ const {
   LogLevel,
   OrdersController,
 } = require('@paypal/paypal-server-sdk');
+const AlipaySdk = require('alipay-sdk').default;
+const fs = require('fs');
+const path = require('path');
 
 function getPayPalClient() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
@@ -23,6 +26,35 @@ function getPayPalClient() {
       oAuthClientSecret: clientSecret,
     },
     environment: environment
+  });
+}
+
+// 获取支付宝客户端
+function getAlipayClient() {
+  const appId = process.env.ALIPAY_APP_ID;
+  if (!appId) throw new Error(getMessage('payment.alipay.config_missing'));
+  
+  const privateKeyPath = path.join(__dirname, '../public/keys/myPrivateKey.txt');
+    const alipayPublicKeyPath = path.join(__dirname, '../public/keys/alipayPublicKey_RSA2.txt');
+  
+  if (!fs.existsSync(privateKeyPath)) {
+    throw new Error(getMessage('payment.alipay.private_key_not_found'));
+  }
+  if (!fs.existsSync(alipayPublicKeyPath)) {
+    throw new Error(getMessage('payment.alipay.public_key_not_found'));
+  }
+  
+  const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+  const alipayPublicKey = fs.readFileSync(alipayPublicKeyPath, 'utf8');
+  
+  return new AlipaySdk({
+    appId: appId,
+    privateKey: privateKey,
+    alipayPublicKey: alipayPublicKey,
+    gateway: process.env.NODE_ENV === 'production' ? 'https://openapi.alipay.com/gateway.do' : 'https://openapi.alipaydev.com/gateway.do',
+    signType: 'RSA2',
+    charset: 'utf-8',
+    version: '1.0'
   });
 }
 
@@ -312,10 +344,49 @@ exports.generateQrcode = async (req, res) => {
     if (paymentMethod === 'wechat') {
       paymentUrl = `https://example.com/wechat-pay?orderId=${orderId}&amount=${order.total_amount}`;
     } else if (paymentMethod === 'alipay') {
-      paymentUrl = `https://example.com/alipay?orderId=${orderId}&amount=${order.total_amount}`;
+      try {
+        const alipaySdk = getAlipayClient();
+        const outTradeNo = `ORDER_${orderId}_${Date.now()}`; // 商户订单号
+        
+        // 调用支付宝预下单接口
+        const result = await alipaySdk.exec('alipay.trade.precreate', {}, {
+          bizContent: {
+            out_trade_no: outTradeNo,
+            total_amount: order.total_amount.toString(),
+            subject: `订单支付 - ${orderId}`,
+            store_id: 'VEHICLE_STORE',
+            timeout_express: '30m',
+            notify_url: `${process.env.BASE_URL || 'http://localhost:3000'}/api/payment/alipay/notify`
+          }
+        });
+        
+        if (result.code === '10000' && result.qr_code) {
+          // 保存商户订单号到数据库
+          await pool.query(
+            `UPDATE orders SET payment_id = ? WHERE id = ?`,
+            [outTradeNo, orderId]
+          );
+          paymentUrl = result.qr_code;
+        } else {
+          console.error('Alipay precreate failed:', result);
+          return res.json({ 
+            success: false, 
+            message: getMessage('payment.alipay.precreate_failed'), 
+            data: null 
+          });
+        }
+      } catch (error) {
+        console.error('Alipay SDK error:', error);
+        return res.json({ 
+          success: false, 
+          message: getMessage('payment.alipay.service_error'), 
+          data: null 
+        });
+      }
     } else {
       return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_METHOD'), data: null });
     }
+    
     const qrcodeDataUrl = await QRCode.toDataURL(paymentUrl);
     return res.json({ success: true, message: getMessage('PAYMENT.QR_CODE_GENERATE_SUCCESS'), data: { qrcodeUrl: qrcodeDataUrl } });
   } catch (error) {
@@ -328,13 +399,54 @@ exports.checkPaymentStatus = async (req, res) => {
   try {
     const { orderId, paymentMethod } = req.body;
     const [orders] = await pool.query(
-      `SELECT id, status FROM orders WHERE id = ?`,
+      `SELECT id, status, payment_id FROM orders WHERE id = ?`,
       [orderId]
     );
     if (orders.length === 0) {
       return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND'), data: null });
     }
     const order = orders[0];
+    
+    // 如果是支付宝支付且订单状态为pending，主动查询支付宝支付状态
+    if (paymentMethod === 'alipay' && order.status === 'pending' && order.payment_id) {
+      try {
+        const alipaySdk = getAlipayClient();
+        const result = await alipaySdk.exec('alipay.trade.query', {}, {
+          bizContent: {
+            out_trade_no: order.payment_id
+          }
+        });
+        
+        if (result.code === '10000') {
+          if (result.trade_status === 'TRADE_SUCCESS' || result.trade_status === 'TRADE_FINISHED') {
+            // 更新订单状态为已支付
+            await pool.query(
+              `UPDATE orders SET status = 'paid' WHERE id = ?`,
+              [orderId]
+            );
+            return res.json({ 
+              success: true, 
+              message: getMessage('PAYMENT.GET_STATUS_SUCCESS'), 
+              data: { orderId, status: 'paid' } 
+            });
+          } else if (result.trade_status === 'TRADE_CLOSED') {
+            // 更新订单状态为已取消
+            await pool.query(
+              `UPDATE orders SET status = 'cancelled' WHERE id = ?`,
+              [orderId]
+            );
+            return res.json({ 
+              success: true, 
+              message: getMessage('PAYMENT.GET_STATUS_SUCCESS'), 
+              data: { orderId, status: 'cancelled' } 
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to query Alipay payment status:', error);
+      }
+    }
+    
     return res.json({ success: true, message: getMessage('PAYMENT.GET_STATUS_SUCCESS'), data: { orderId, status: order.status } });
   } catch (error) {
     return res.json({ success: false, message: error.message, data: null });
@@ -371,5 +483,90 @@ exports.paymentCallback = async (req, res) => {
     return res.json({ success: true, message: getMessage('PAYMENT.STATUS_UPDATE_SUCCESS'), data: { orderId, status: newStatus } });
   } catch (error) {
     return res.json({ success: false, message: error.message, data: null });
+  }
+};
+
+// 支付宝异步通知回调
+exports.alipayNotify = async (req, res) => {
+  try {
+    const alipaySdk = getAlipayClient();
+    const postData = req.body;
+    
+    // 验证支付宝异步通知签名
+    const signVerified = alipaySdk.checkNotifySign(postData);
+    
+    if (!signVerified) {
+      console.error('Alipay notification signature verification failed');
+      return res.status(400).send('fail');
+    }
+    
+    const {
+      out_trade_no,
+      trade_status,
+      trade_no,
+      total_amount
+    } = postData;
+    
+    // 从商户订单号中提取订单ID
+    const orderIdMatch = out_trade_no.match(/ORDER_(\d+)_/);
+    if (!orderIdMatch) {
+      console.error('Invalid merchant order number format:', out_trade_no);
+      return res.status(400).send('fail');
+    }
+    
+    const orderId = parseInt(orderIdMatch[1]);
+    
+    // 查询订单
+    const [orders] = await pool.query(
+      `SELECT id, status, total_amount FROM orders WHERE id = ?`,
+      [orderId]
+    );
+    
+    if (orders.length === 0) {
+      console.error('Order not found:', orderId);
+      return res.status(400).send('fail');
+    }
+    
+    const order = orders[0];
+    
+    // 验证金额
+    if (parseFloat(total_amount) !== parseFloat(order.total_amount)) {
+      console.error('Payment amount mismatch:', {
+        expected: order.total_amount,
+        received: total_amount
+      });
+      return res.status(400).send('fail');
+    }
+    
+    // 根据交易状态更新订单
+    let newStatus;
+    if (trade_status === 'TRADE_SUCCESS' || trade_status === 'TRADE_FINISHED') {
+      newStatus = 'paid';
+    } else if (trade_status === 'TRADE_CLOSED') {
+      newStatus = 'cancelled';
+    } else {
+      // 其他状态暂不处理
+      console.log('Alipay trade status:', trade_status, 'Order ID:', orderId);
+      return res.send('success');
+    }
+    
+    // 更新订单状态
+    await pool.query(
+      `UPDATE orders SET status = ?, payment_id = ? WHERE id = ?`,
+      [newStatus, trade_no, orderId]
+    );
+    
+    console.log('Alipay notification processed successfully:', {
+      orderId,
+      tradeNo: trade_no,
+      tradeStatus: trade_status,
+      newStatus
+    });
+    
+    return res.send('success');
+    
+  } catch (error) {
+    console.error('Failed to process Alipay notification:', error);
+    return res.status(500).send('fail');
   }
 };

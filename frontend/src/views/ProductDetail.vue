@@ -337,27 +337,41 @@ export default {
     },
     updateMainImgSize() {
       this.$nextTick(() => {
-        const imgEl = this.$refs.mainImgEl;
-        const containerEl = this.$refs.mainImage;
+        // 确保组件仍然挂载
+        if (this.$el && this.$refs && this.$refs.mainImgEl && this.$refs.mainImage) {
+          const imgEl = this.$refs.mainImgEl;
+          const containerEl = this.$refs.mainImage;
 
-        if (imgEl && containerEl) {
-          this.mainImgWidth = imgEl.naturalWidth || imgEl.width;
-          this.mainImgHeight = imgEl.naturalHeight || imgEl.height;
+          if (imgEl && containerEl) {
+            try {
+              this.mainImgWidth = imgEl.naturalWidth || imgEl.width;
+              this.mainImgHeight = imgEl.naturalHeight || imgEl.height;
 
-          const rect = containerEl.getBoundingClientRect();
-          this.mainImageContainerWidth = rect.width;
-          this.mainImageContainerHeight = rect.height;
+              const rect = containerEl.getBoundingClientRect();
+              this.mainImageContainerWidth = rect.width;
+              this.mainImageContainerHeight = rect.height;
+            } catch (error) {
+              console.warn('Update main image size failed:', error);
+            }
+          }
         }
       });
     },
     handleMouseMove(e) {
-      const rect = this.$refs.mainImage.getBoundingClientRect();
-      let x = e.clientX - rect.left;
-      let y = e.clientY - rect.top;
-      // 限制 lens 不超出图片
-      x = Math.max(this.lensSize / 2, Math.min(x, rect.width - this.lensSize / 2));
-      y = Math.max(this.lensSize / 2, Math.min(y, rect.height - this.lensSize / 2));
-      this.zoomPos = { x, y };
+      // 确保组件仍然挂载且refs存在
+      if (this.$el && this.$refs && this.$refs.mainImage) {
+        try {
+          const rect = this.$refs.mainImage.getBoundingClientRect();
+          let x = e.clientX - rect.left;
+          let y = e.clientY - rect.top;
+          // 限制 lens 不超出图片
+          x = Math.max(this.lensSize / 2, Math.min(x, rect.width - this.lensSize / 2));
+          y = Math.max(this.lensSize / 2, Math.min(y, rect.height - this.lensSize / 2));
+          this.zoomPos = { x, y };
+        } catch (error) {
+          console.warn('Handle mouse move failed:', error);
+        }
+      }
     },
   }
 }
