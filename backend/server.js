@@ -62,7 +62,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/product-images', productImageRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', require('./routes/orderRoutes'));
-app.use('/api/orders2', require('./routes/orderRoutes3'));
 //app.use('/api/paypal', paypalRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/payment-config', paymentConfigRoutes); // Register payment config routes

@@ -11,7 +11,7 @@ const {
   LogLevel,
   OrdersController,
 } = require('@paypal/paypal-server-sdk');
-const AlipaySdk = require('alipay-sdk').default;
+const {AlipaySdk} = require('alipay-sdk');
 const fs = require('fs');
 const path = require('path');
 
@@ -353,8 +353,12 @@ exports.generateQrcode = async (req, res) => {
           bizContent: {
             out_trade_no: outTradeNo,
             total_amount: order.total_amount.toString(),
-            subject: `订单支付 - ${orderId}`,
-            store_id: 'VEHICLE_STORE',
+            subject: `AutoEaseXpert - ${orderId}`,
+            product_code: 'FACE_TO_FACE_PAYMENT', // 当面付产品码
+            body: `AutoEaseXpert Order：${orderId}`,
+            store_id: 'VEHICLE_STORE_001',
+            operator_id: 'OPERATOR_001',
+            terminal_id: 'TERMINAL_001',
             timeout_express: '30m',
             notify_url: `${process.env.BASE_URL || 'http://localhost:3000'}/api/payment/alipay/notify`
           }
@@ -418,7 +422,7 @@ exports.checkPaymentStatus = async (req, res) => {
         });
         
         if (result.code === '10000') {
-          if (result.trade_status === 'TRADE_SUCCESS' || result.trade_status === 'TRADE_FINISHED') {
+          if (result.tradeStatus === 'TRADE_SUCCESS' || result.tradeStatus === 'TRADE_FINISHED') {
             // 更新订单状态为已支付
             await pool.query(
               `UPDATE orders SET status = 'paid' WHERE id = ?`,
@@ -429,7 +433,7 @@ exports.checkPaymentStatus = async (req, res) => {
               message: getMessage('PAYMENT.GET_STATUS_SUCCESS'), 
               data: { orderId, status: 'paid' } 
             });
-          } else if (result.trade_status === 'TRADE_CLOSED') {
+          } else if (result.tradeStatus === 'TRADE_CLOSED') {
             // 更新订单状态为已取消
             await pool.query(
               `UPDATE orders SET status = 'cancelled' WHERE id = ?`,

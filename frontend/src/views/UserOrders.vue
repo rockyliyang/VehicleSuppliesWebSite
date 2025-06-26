@@ -169,7 +169,7 @@ export default {
     handleRowClick(row) {
       // 点击行时查看订单详情
       this.$router.push({
-        path: '/checkout-unified',
+        path: '/unified-checkout',
         query: { orderId: row.id }
       });
     }

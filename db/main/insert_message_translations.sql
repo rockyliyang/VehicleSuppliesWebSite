@@ -1006,7 +1006,15 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'order.status', 'en', 'Order Status'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'order.status', 'zh-CN', '订单状态'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'order.orderNumber', 'en', 'Order Number'),
-(UNHEX(REPLACE(UUID(), '-', '')), 'order.orderNumber', 'zh-CN', '订单号');
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.orderNumber', 'zh-CN', '订单号'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.paymentStatus', 'en', 'Payment Status'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.paymentStatus', 'zh-CN', '支付状态'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.paid', 'en', 'Paid'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.paid', 'zh-CN', '已支付'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.paymentMethod', 'en', 'Payment Method'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.paymentMethod', 'zh-CN', '支付方式'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.orderTime', 'en', 'Order Time'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'order.orderTime', 'zh-CN', '下单时间');
 
 -- showError fallbackKey 相关翻译
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -1040,7 +1048,23 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.orderCreated', 'en', 'Order created successfully'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.orderCreated', 'zh-CN', '订单创建成功'),
 (UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.paymentComplete', 'en', 'Payment completed successfully'),
-(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.paymentComplete', 'zh-CN', '支付完成');
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.paymentComplete', 'zh-CN', '支付完成'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.paymentSuccess', 'en', 'Payment Success'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.paymentSuccess', 'zh-CN', '支付成功'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.paymentSuccessTitle', 'en', 'Payment Successful!'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.paymentSuccessTitle', 'zh-CN', '支付成功！'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.paymentSuccessMessage', 'en', 'Your order has been paid successfully'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.paymentSuccessMessage', 'zh-CN', '您的订单已成功支付'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.qrcodeGenerated', 'en', 'QR code generated successfully, please scan to pay'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.qrcodeGenerated', 'zh-CN', '二维码生成成功，请扫码支付'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.qrcodeRefreshed', 'en', 'QR code refreshed'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.success.qrcodeRefreshed', 'zh-CN', '二维码已刷新'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.orderNumber', 'en', 'Order Number:'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.orderNumber', 'zh-CN', '订单号：'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.backHome', 'en', 'Back to Home'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.backHome', 'zh-CN', '返回首页'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.viewOrders', 'en', 'View Orders'),
+(UNHEX(REPLACE(UUID(), '-', '')), 'checkout.viewOrders', 'zh-CN', '查看订单');
 
 -- Login.vue 翻译键
 INSERT INTO language_translations (guid, code, lang, value) VALUES

@@ -80,7 +80,7 @@
         </section>
 
         <!-- 支付方式 -->
-        <section class="payment-methods" v-if="!isOrderPaid">
+        <section class="payment-methods" v-if="!isOrderDetail || !isOrderPaid">
           <h2 class="section-title">
             <i class="el-icon-credit-card"></i>
             {{ $t('checkout.paymentMethod') || '支付方式' }}
@@ -99,7 +99,7 @@
                       <img :src="qrcodeUrl" :alt="$t('checkout.wechatQrcode') || '微信支付二维码'">
                     </div>
                     <div class="qrcode-actions">
-                      <el-button @click="refreshQrcode('wechat')" type="default" class="refresh-qr-btn"
+                      <el-button @click="refreshQrcode('wechat')" type="primary" class="refresh-qr-btn"
                         :loading="refreshing">
                         <i class="el-icon-refresh"></i>
                         {{ $t('checkout.refreshQrcode') || '刷新二维码' }}
@@ -114,19 +114,11 @@
                   <div v-else class="qrcode-placeholder">
                     <i class="el-icon-picture-outline qrcode-placeholder-icon"></i>
                     <p class="qrcode-placeholder-text">{{ $t('checkout.clickToGenerate') || '点击下方按钮生成支付二维码' }}</p>
+                    <el-button @click="generateQrcode('wechat')" type="primary" class="generate-qr-btn"
+                      :loading="generating">
+                      {{ $t('checkout.generateQrcode') || '生成支付二维码' }}
+                    </el-button>
                   </div>
-                </div>
-                <div class="qrcode-controls">
-                  <el-button @click="generateQrcode('wechat')" type="primary" class="generate-qr-btn"
-                    :loading="generating">
-                    {{ qrcodeUrl ? ($t('checkout.regenerateQrcode') || '重新生成二维码') : ($t('checkout.generateQrcode') ||
-                    '生成支付二维码')
-                    }}
-                  </el-button>
-                </div>
-                <div v-if="polling" class="polling-status">
-                  <i class="el-icon-loading"></i>
-                  {{ $t('checkout.checkingPayment') || '正在检测支付状态...' }}
                 </div>
               </div>
             </el-tab-pane>
@@ -138,7 +130,7 @@
                       <img :src="qrcodeUrl" :alt="$t('checkout.alipayQrcode') || '支付宝支付二维码'">
                     </div>
                     <div class="qrcode-actions">
-                      <el-button @click="refreshQrcode('alipay')" type="default" class="refresh-qr-btn"
+                      <el-button @click="refreshQrcode('alipay')" type="primary" class="refresh-qr-btn"
                         :loading="refreshing">
                         <i class="el-icon-refresh"></i>
                         {{ $t('checkout.refreshQrcode') || '刷新二维码' }}
@@ -153,19 +145,11 @@
                   <div v-else class="qrcode-placeholder">
                     <i class="el-icon-picture-outline qrcode-placeholder-icon"></i>
                     <p class="qrcode-placeholder-text">{{ $t('checkout.clickToGenerate') || '点击下方按钮生成支付二维码' }}</p>
+                    <el-button @click="generateQrcode('alipay')" type="primary" class="generate-qr-btn"
+                      :loading="generating">
+                      {{ $t('checkout.generateQrcode') || '生成支付二维码' }}
+                    </el-button>
                   </div>
-                </div>
-                <div class="qrcode-controls">
-                  <el-button @click="generateQrcode('alipay')" type="primary" class="generate-qr-btn"
-                    :loading="generating">
-                    {{ qrcodeUrl ? ($t('checkout.regenerateQrcode') || '重新生成二维码') : ($t('checkout.generateQrcode') ||
-                    '生成支付二维码')
-                    }}
-                  </el-button>
-                </div>
-                <div v-if="polling" class="polling-status">
-                  <i class="el-icon-loading"></i>
-                  {{ $t('checkout.checkingPayment') || '正在检测支付状态...' }}
                 </div>
               </div>
             </el-tab-pane>
@@ -295,7 +279,8 @@ export default {
       qrcodeTimer: 0,
       qrcodeTimerInterval: null,
       autoRefreshTimer: null,
-      currentPaymentMethod: ''
+      currentPaymentMethod: '',
+      isPollingRequest: false // 支付状态轮询请求标志
     };
   },
   computed: {
@@ -604,10 +589,12 @@ export default {
       });
     },
     async generateQrcode(paymentMethod) {
-      // 验证收货信息
-      const isValid = await this.validateShippingInfo();
-      if (!isValid) {
-        return;
+      // 对于订单详情页面，不需要验证收货信息
+      if (!this.isOrderDetail) {
+        const isValid = await this.validateShippingInfo();
+        if (!isValid) {
+          return;
+        }
       }
       
       this.generating = true;
@@ -616,45 +603,56 @@ export default {
       this.qrcodeUrl = '';
       
       try {
-        // 1. 创建订单
-        const orderRes = await this.$api.postWithErrorHandler('/payment/common/create', {
-          shippingInfo: {
-            name: this.shippingInfo.name,
-            phone: this.shippingInfo.phone,
-            email: this.shippingInfo.email,
-            shipping_address: this.shippingInfo.address,
-            shipping_zip_code: this.shippingInfo.zipCode
-          },
-          paymentMethod,
-          orderItems: this.orderItems.map(item => ({
-            product_id: item.product_id,
-            product_code: item.product_code,
-            product_name: item.name,
-            quantity: item.quantity,
-            price: item.price
-          }))
-        });
+        let orderId = this.orderId;
         
-        if (orderRes.success) {
-          this.orderId = orderRes.data.orderId;
-          // 2. 生成二维码
-          const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
-            orderId: this.orderId,
-            paymentMethod
+        // 如果不是订单详情页面，需要先创建订单
+        if (!this.isOrderDetail) {
+          const orderRes = await this.$api.postWithErrorHandler('/payment/common/create', {
+            shippingInfo: {
+              name: this.shippingInfo.name,
+              phone: this.shippingInfo.phone,
+              email: this.shippingInfo.email,
+              shipping_address: this.shippingInfo.address,
+              shipping_zip_code: this.shippingInfo.zipCode
+            },
+            paymentMethod,
+            orderItems: this.orderItems.map(item => ({
+              product_id: item.product_id,
+              product_code: item.product_code,
+              product_name: item.name,
+              quantity: item.quantity,
+              price: item.price
+            }))
           });
           
-          if (qrRes.success) {
-            this.qrcodeUrl = qrRes.data.qrcodeUrl;
-            this.startPaymentStatusPolling(this.orderId, paymentMethod);
-            this.startQrcodeTimer();
-            this.startAutoRefresh(paymentMethod);
-            
-            this.$messageHandler.showSuccess('二维码生成成功，请扫码支付', 'checkout.success.qrcodeGenerated');
-          } else {
-            this.$messageHandler.showError('生成二维码失败: ' + qrRes.message, 'checkout.error.qrcodeGenerateFailed');
+          if (!orderRes.success) {
+            this.$messageHandler.showError('创建订单失败: ' + orderRes.message, 'checkout.error.createOrderFailed');
+            return;
           }
+          
+          orderId = orderRes.data.orderId;
+          this.orderId = orderId;
         } else {
-          this.$messageHandler.showError('创建订单失败: ' + orderRes.message, 'checkout.error.createOrderFailed');
+          // 对于订单详情页面，使用现有的订单ID
+          orderId = this.orderData?.order?.id || this.$route.query.orderId;
+          this.orderId = orderId;
+        }
+        
+        // 生成二维码
+        const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
+          orderId: orderId,
+          paymentMethod
+        });
+        
+        if (qrRes.success) {
+          this.qrcodeUrl = qrRes.data.qrcodeUrl;
+          this.startPaymentStatusPolling(orderId, paymentMethod);
+          this.startQrcodeTimer();
+          this.startAutoRefresh(paymentMethod);
+          
+          this.$messageHandler.showSuccess('二维码生成成功，请扫码支付', 'checkout.success.qrcodeGenerated');
+        } else {
+          this.$messageHandler.showError('生成二维码失败: ' + qrRes.message, 'checkout.error.qrcodeGenerateFailed');
         }
       } catch (error) {
         console.error('Error generating QR code:', error);
@@ -666,30 +664,58 @@ export default {
     startPaymentStatusPolling(orderId, paymentMethod) {
       this.clearPollingTimer();
       this.polling = true;
-      this.pollingTimer = setInterval(async () => {
-        const statusRes = await this.$api.postWithErrorHandler('/payment/check-status', {
-          orderId,
-          paymentMethod
-        });
-        if (statusRes.success && statusRes.data.status === 'paid') {
-          this.clearPollingTimer();
-          this.paySuccess = true;
-          // 触发购物车更新事件
-          if (this.$bus) {
-            this.$bus.emit('cart-updated');
-          }
+      this.isPollingRequest = false; // 添加请求状态标志
+      
+      const pollPaymentStatus = async () => {
+        // 如果上一个请求还在进行中，跳过本次轮询
+        if (this.isPollingRequest) {
+          return;
         }
-      }, 3000);
+        
+        this.isPollingRequest = true;
+        
+        try {
+          const statusRes = await this.$api.post('/payment/check-status', {
+            orderId,
+            paymentMethod
+          });
+          
+          if (statusRes.success && statusRes.data.status === 'paid') {
+            this.clearPollingTimer();
+            this.paySuccess = true;
+            // 触发购物车更新事件
+            if (this.$bus) {
+              this.$bus.emit('cart-updated');
+            }
+          }
+        } catch (error) {
+          console.warn('Payment status check failed:', error);
+          // 不显示错误消息，避免干扰用户体验
+        } finally {
+          this.isPollingRequest = false;
+        }
+      };
+      
+      this.pollingTimer = setInterval(pollPaymentStatus, 3000);
     },
     clearPollingTimer() {
       if (this.pollingTimer) {
         clearInterval(this.pollingTimer);
         this.pollingTimer = null;
         this.polling = false;
+        this.isPollingRequest = false;
       }
     },
     async refreshQrcode(paymentMethod) {
-      if (!this.orderId) {
+      let orderId = this.orderId;
+      
+      // 对于订单详情页面，确保获取正确的订单ID
+      if (this.isOrderDetail && !orderId) {
+        orderId = this.orderData?.order?.id || this.$route.query.orderId;
+        this.orderId = orderId;
+      }
+      
+      if (!orderId) {
         this.$messageHandler.showWarning('没有订单可以刷新', 'checkout.warning.noOrderToRefresh');
         return;
       }
@@ -699,7 +725,7 @@ export default {
       
       try {
         const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
-          orderId: this.orderId,
+          orderId: orderId,
           paymentMethod
         });
         
@@ -927,7 +953,7 @@ export default {
   text-align: left;
   padding-right: $spacing-md;
   line-height: $form-input-height;
-      width: $form-label-width;
+  width: $form-label-width;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -1338,13 +1364,13 @@ export default {
 }
 
 .status-label {
-  font-size: $font-size-sm;
-  color: $text-secondary;
+  font-size: $font-size-md;
+  color: $text-primary;
   font-weight: $font-weight-medium;
 }
 
 .status-value {
-  font-size: $font-size-sm;
+  font-size: $font-size-md;
   color: $text-primary;
   font-weight: $font-weight-semibold;
 }
@@ -1419,7 +1445,7 @@ export default {
 
   .product-image {
     width: $success-icon-size;
-      height: $success-icon-size;
+    height: $success-icon-size;
     margin: 0 auto;
   }
 

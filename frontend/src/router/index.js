@@ -180,13 +180,7 @@ const routes = [
     component: () => import('../views/Activate.vue'),
     meta: { requiresAuth: false }
   },
-  {
-    path: '/checkout-complete',
-    name: 'CheckoutComplete',
-    component: () => import('../views/CheckoutComplete.vue'),
-    // 不需要验证，因为是从PayPal回调
-    meta: { requiresAuth: true }
-  },
+  // CheckoutComplete路由已删除 - 组件不再使用
   {
     path: '/paypal-test',
     name: 'PayPalTest',
@@ -215,7 +209,7 @@ const router = createRouter({
 // 全局路由守卫 - 在每次路由跳转前验证token
 router.beforeEach(async (to, from, next) => {
   // 不需要验证token的路由
-  //const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact', '/paypal-test', '/checkout-complete', '/forgot-password', '/reset-password']
+  //const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact', '/paypal-test', '/forgot-password', '/reset-password']
   //const authRequired = (to.path != '/') && (!publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin'))
   const authRequired =  to.meta.requiresAuth ?? true
 
@@ -247,6 +241,13 @@ router.beforeEach(async (to, from, next) => {
       // 验证管理员token
       await api.post('/users/check-token')
     } catch (error) {
+      // 检查是否为超时错误
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.message?.includes('Network Error')) {
+        // 超时错误，跳转到首页
+        console.warn('Token验证超时，跳转到首页')
+        return next('/')
+      }
+      
       // token无效，清除前端状态并跳转到登录页
       store.commit('setUser', null)
       return next({

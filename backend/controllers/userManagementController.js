@@ -15,13 +15,13 @@ class UserManagementController {
    */
   async createUser(req, res) {
     try {
-      const { username, email, phone, password, user_role, language } = req.body;
+      const { username, email, phone, password, user_role, language } = req.nbody;
       
       // 验证必填字段
       if (!username || !email || !password || !user_role) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.REQUIRED_FIELDS_MISSING',
+          message: getMessage('USER_MANAGEMENT.REQUIRED_FIELDS_MISSING'),
           data: null
         });
       }
@@ -30,7 +30,7 @@ class UserManagementController {
       if (!['admin', 'business', 'user'].includes(user_role)) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.INVALID_ROLE',
+          message: getMessage('USER_MANAGEMENT.INVALID_ROLE'),
           data: null
         });
       }
@@ -44,7 +44,7 @@ class UserManagementController {
       if (existingUsername.length > 0) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.USERNAME_EXISTS',
+          message: getMessage('USER_MANAGEMENT.USERNAME_EXISTS'),
           data: null
         });
       }
@@ -58,7 +58,7 @@ class UserManagementController {
       if (existingEmail.length > 0) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.EMAIL_EXISTS',
+          message: getMessage('USER_MANAGEMENT.EMAIL_EXISTS'),
           data: null
         });
       }
@@ -80,7 +80,7 @@ class UserManagementController {
       
       res.status(201).json({
         success: true,
-        message: 'USER_MANAGEMENT.USER_CREATE_SUCCESS',
+        message: getMessage('USER_MANAGEMENT.USER_CREATE_SUCCESS'),
         data: {
           id: userId,
           username,
@@ -95,7 +95,7 @@ class UserManagementController {
       console.error('创建用户错误:', error);
       res.status(500).json({
         success: false,
-        message: 'USER_MANAGEMENT.USER_CREATE_FAILED',
+        message: getMessage('USER_MANAGEMENT.USER_CREATE_FAILED'),
         data: null
       });
     }
@@ -114,7 +114,7 @@ class UserManagementController {
       if (!['admin', 'business', 'user'].includes(user_role)) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.INVALID_ROLE',
+          message: getMessage('USER_MANAGEMENT.INVALID_ROLE'),
           data: null
         });
       }
@@ -128,7 +128,7 @@ class UserManagementController {
       if (userRows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'USER_MANAGEMENT.USER_NOT_FOUND',
+          message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
           data: null
         });
       }
@@ -139,7 +139,7 @@ class UserManagementController {
       if (parseInt(id) === req.userId) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.CANNOT_MODIFY_SELF',
+          message: getMessage('USER_MANAGEMENT.CANNOT_MODIFY_SELF'),
           data: null
         });
       }
@@ -148,7 +148,7 @@ class UserManagementController {
       if (currentUser.user_role === user_role) {
         return res.json({
           success: true,
-          message: 'USER_MANAGEMENT.ROLE_UPDATE_SUCCESS',
+          message: getMessage('USER_MANAGEMENT.ROLE_UPDATE_SUCCESS'),
           data: {
             id: parseInt(id),
             user_role: user_role,
@@ -158,15 +158,15 @@ class UserManagementController {
       }
       
       // 更新用户角色
-      const [updateResult] = await pool.query(
+      const updateResult = await pool.query(
         'UPDATE users SET user_role = ? WHERE id = ? AND deleted = 0',
         [user_role, id]
       );
       
-      if (updateResult.affectedRows === 0) {
+      if (updateResult[0].affectedRows === 0) {
         return res.status(404).json({
           success: false,
-          message: 'USER_MANAGEMENT.USER_NOT_FOUND',
+          message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
           data: null
         });
       }
@@ -181,7 +181,7 @@ class UserManagementController {
       
       res.json({
         success: true,
-        message: 'USER_MANAGEMENT.ROLE_UPDATE_SUCCESS',
+        message: getMessage('USER_MANAGEMENT.ROLE_UPDATE_SUCCESS'),
         data: {
           id: parseInt(id),
           user_role: user_role,
@@ -194,7 +194,7 @@ class UserManagementController {
       console.error('更新用户角色错误:', error);
       res.status(500).json({
         success: false,
-        message: 'USER_MANAGEMENT.ROLE_UPDATE_FAILED',
+        message: getMessage('USER_MANAGEMENT.ROLE_UPDATE_FAILED'),
         data: null
       });
     }
