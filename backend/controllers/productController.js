@@ -60,7 +60,13 @@ exports.createProduct = async (req, res) => {
       product_type = 'consignment', // 默认为代销
       thumbnail_url = null,
       short_description = '',
-      full_description = ''
+      full_description = '',
+      // 1688产品相关字段
+      alibaba1688 = null,
+      mainImage = null,
+      carouselImages = [],
+      detailContent = '',
+      attributes = []
     } = req.body;
 
     // 验证产品类型
@@ -88,6 +94,13 @@ exports.createProduct = async (req, res) => {
     const guid = uuidToBinary(uuidv4());
 
     const currentUserId = req.userId; // 从JWT中获取当前用户ID
+    
+    // 处理图片URL：优先使用1688的主图，否则使用传入的thumbnail_url
+    const finalThumbnailUrl = mainImage || thumbnail_url;
+    
+    // 处理详情内容：优先使用1688的详情内容，否则使用传入的full_description
+    const finalFullDescription = detailContent || full_description;
+    
     const [result] = await connection.query(
       `INSERT INTO products (
         name, product_code, category_id, price, stock, status, product_type,
@@ -101,14 +114,60 @@ exports.createProduct = async (req, res) => {
         stock,
         status,
         product_type,
-        thumbnail_url,
+        finalThumbnailUrl,
         short_description,
-        full_description,
+        finalFullDescription,
         guid,
         currentUserId,
         currentUserId
       ]
     );
+
+    const productId = result.insertId;
+
+    // 如果是1688产品，保存相关信息
+    if (alibaba1688) {
+      await connection.query(
+        `INSERT INTO product_alibaba1688 (
+          product_id, alibaba_product_id, original_title, original_price,
+          supplier_name, supplier_location, min_order_quantity, unit
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          productId,
+          alibaba1688.productId,
+          alibaba1688.originalTitle,
+          alibaba1688.originalPrice,
+          alibaba1688.supplierName,
+          alibaba1688.supplierLocation,
+          alibaba1688.minOrderQuantity,
+          alibaba1688.unit
+        ]
+      );
+    }
+
+    // 保存轮播图
+    if (carouselImages && carouselImages.length > 0) {
+      const carouselValues = carouselImages.map((imageUrl, index) => [
+        productId, imageUrl, index + 1, 'carousel'
+      ]);
+      
+      await connection.query(
+        `INSERT INTO product_images (product_id, image_url, sort_order, image_type) VALUES ?`,
+        [carouselValues]
+      );
+    }
+
+    // 保存产品属性
+    if (attributes && attributes.length > 0) {
+      const attributeValues = attributes.map(attr => [
+        productId, attr.name, attr.value
+      ]);
+      
+      await connection.query(
+        `INSERT INTO product_attributes (product_id, attribute_name, attribute_value) VALUES ?`,
+        [attributeValues]
+      );
+    }
 
     await connection.commit();
 
@@ -116,7 +175,7 @@ exports.createProduct = async (req, res) => {
       success: true,
       message: getMessage('PRODUCT.CREATE_SUCCESS'),
       data: {
-        id: result.insertId,
+        id: productId,
         name,
         product_code,
         category_id,
@@ -124,10 +183,13 @@ exports.createProduct = async (req, res) => {
         stock,
         status,
         product_type,
-        thumbnail_url,
+        thumbnail_url: finalThumbnailUrl,
         short_description,
-        full_description,
-        guid: binaryToUuid(guid)
+        full_description: finalFullDescription,
+        guid: binaryToUuid(guid),
+        alibaba1688,
+        carouselImages,
+        attributes
       }
     });
   } catch (error) {

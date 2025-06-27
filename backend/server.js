@@ -27,6 +27,7 @@ const userManagementRoutes = require('./routes/userManagementRoutes');
 const inquiryRoutes = require('./routes/inquiryRoutes');
 const adminInquiryRoutes = require('./routes/adminInquiryRoutes');
 const sseRoutes = require('./routes/sseRoutes');
+const alibaba1688Routes = require('./routes/alibaba1688Routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -73,6 +74,7 @@ app.use('/api/admin/users', userManagementRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/admin/inquiries', adminInquiryRoutes);
 app.use('/api/sse', sseRoutes);
+app.use('/api/alibaba1688', alibaba1688Routes);
 
 // 注册长轮询路由
 const pollingRoutes = require('./routes/pollingRoutes');

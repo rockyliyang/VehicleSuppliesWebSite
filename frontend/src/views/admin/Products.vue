@@ -2,7 +2,13 @@
   <div class="admin-products">
     <div class="page-header">
       <h2>产品管理</h2>
-      <el-button type="primary" @click="handleAdd">添加产品</el-button>
+      <div class="header-actions">
+        <el-button type="warning" @click="showAlibabaSelector">
+          <el-icon><ShoppingCart /></el-icon>
+          1688选品
+        </el-button>
+        <el-button type="primary" @click="handleAdd">添加产品</el-button>
+      </div>
     </div>
 
     <!-- 搜索和筛选 -->
@@ -170,14 +176,21 @@
     <el-dialog v-model="previewVisible">
       <img :src="previewUrl" alt="Preview" style="width: 100%">
     </el-dialog>
+
+    <!-- 1688选品对话框 -->
+    <Alibaba1688ProductSelector
+      v-model="alibabaSelectorVisible"
+      @product-selected="handleAlibabaProductSelected"
+    />
   </div>
 </template>
 
 <script>
-import { Plus, Search, Refresh } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, ShoppingCart } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/format'
 import { quillEditor } from 'vue3-quill'
 import { getAuthToken } from '@/utils/api'
+import Alibaba1688ProductSelector from '@/components/admin/Alibaba1688ProductSelector.vue'
 
 export default {
   name: 'AdminProducts',
@@ -185,7 +198,9 @@ export default {
     Plus,
     Search,
     Refresh,
-    quillEditor
+    ShoppingCart,
+    quillEditor,
+    Alibaba1688ProductSelector
   },
   data() {
     return {
@@ -195,6 +210,7 @@ export default {
       dialogStatus: 'create',
       previewVisible: false,
       previewUrl: '',
+      alibabaSelectorVisible: false,
       productList: [],
       categoryOptions: [],
       thumbnailList: [],
@@ -619,6 +635,29 @@ export default {
           this.handleQuillImageUpload(quill);
         });
       }
+    },
+
+    // 显示1688选品对话框
+    showAlibabaSelector() {
+      this.alibabaSelectorVisible = true
+    },
+
+    // 处理1688产品选择
+    async handleAlibabaProductSelected(productData) {
+      try {
+        // 创建产品
+        const response = await this.$api.post('products', productData)
+        
+        if (response.success) {
+          this.$message.success('产品添加成功')
+          this.fetchProducts() // 刷新产品列表
+        } else {
+          this.$message.error(response.message || '产品添加失败')
+        }
+      } catch (error) {
+        console.error('添加1688产品失败:', error)
+        this.$message.error('添加产品失败，请稍后重试')
+      }
     }
   }
 }
@@ -634,6 +673,12 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .filter-container {

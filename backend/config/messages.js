@@ -240,6 +240,28 @@ const MESSAGES = {
     CAPTCHA_INVALID: 'Invalid captcha'
   },
 
+  // 1688选品相关
+  ALIBABA1688: {
+    SEARCH_SUCCESS: 'Product search completed successfully',
+    SEARCH_FAILED: 'Product search failed',
+    IMAGE_SEARCH_SUCCESS: 'Image search completed successfully',
+    IMAGE_SEARCH_FAILED: 'Image search failed',
+    DETAIL_GET_SUCCESS: 'Product details retrieved successfully',
+    DETAIL_GET_FAILED: 'Failed to retrieve product details',
+    STATUS_GET_SUCCESS: 'API status retrieved successfully',
+    STATUS_GET_FAILED: 'Failed to retrieve API status',
+    KEYWORD_REQUIRED: 'Search keyword is required',
+    IMAGE_REQUIRED: 'Image file is required',
+    PRODUCT_ID_REQUIRED: 'Product ID is required',
+    PRODUCT_NOT_FOUND: 'Product not found on 1688 platform',
+    API_NOT_CONFIGURED: '1688 API is not configured',
+    API_CONFIGURED: '1688 API is configured',
+    API_ERROR: '1688 API error',
+    INVALID_IMAGE_FORMAT: 'Invalid image format, only jpeg, jpg, png, gif, webp are supported',
+    IMAGE_TOO_LARGE: 'Image file too large, maximum 5MB allowed',
+    MOCK_DATA_ENABLED: 'Using mock data for testing'
+  },
+
   // 业务组相关
   BUSINESS_GROUP: {
     VALIDATION_FAILED: 'Business group validation failed',
