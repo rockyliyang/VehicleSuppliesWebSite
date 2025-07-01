@@ -10,6 +10,7 @@ router.get('/generate-code', productController.generateProductCode);
 
 // Admin routes - JWT auth required
 router.post('/', verifyToken, productController.createProduct);
+router.post('/import-from-1688', verifyToken, productController.importFrom1688);
 router.put('/:id', verifyToken, productController.updateProduct);
 router.delete('/:id', verifyToken, productController.deleteProduct);
 

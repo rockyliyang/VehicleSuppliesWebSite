@@ -1,0 +1,9 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="128" height="128" rx="16" fill="#FF6B35"/>
+  <path d="M24 40h80l-8 48H32l-8-48z" fill="white"/>
+  <circle cx="40" cy="104" r="8" fill="white"/>
+  <circle cx="88" cy="104" r="8" fill="white"/>
+  <path d="M16 16h16l4 16" stroke="white" stroke-width="4" fill="none"/>
+  <text x="64" y="70" text-anchor="middle" fill="#FF6B35" font-family="Arial" font-size="20" font-weight="bold">1688</text>
+  <text x="64" y="90" text-anchor="middle" fill="#FF6B35" font-family="Arial" font-size="12">导入助手</text>
+</svg>

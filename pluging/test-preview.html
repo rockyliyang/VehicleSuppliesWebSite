@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品信息预览测试</title>
+    <link rel="stylesheet" href="popup.css">
+    <style>
+        body {
+            width: auto;
+            min-height: auto;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .test-controls {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        .test-controls h2 {
+            margin: 0 0 16px 0;
+            color: #495057;
+        }
+        .test-controls button {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .debug-info {
+            margin-top: 20px;
+            padding: 16px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+        }
+        .debug-info h3 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+        .debug-info pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+  <div class="test-controls">
+    <h2>🧪 产品信息预览功能测试</h2>
+    
+    <button class="btn btn-primary" onclick="testCompleteData()">测试完整数据</button>
+    <button class="btn btn-secondary" onclick="testPartialData()">测试部分数据</button>
+    <button class="btn btn-warning" onclick="testEmptyData()">测试空数据</button>
+    <button class="btn btn-danger" onclick="clearPreview()">清空预览</button>
+    <button class="btn btn-info" onclick="showDebugInfo()">显示调试信息</button>
+  </div>
+    
+    <!-- 产品信息预览区域 -->
+    <div id="product-preview" class="product-preview" style="display: none;">
+      <h3>📋 提取的产品信息预览</h3>
+      
+      <!-- 基本信息 -->
+      <div class="preview-section">
+        <h4>🏷️ 基本信息</h4>
+        <div class="preview-field">
+          <label>产品标题:</label>
+          <div class="value" id="preview-title">-</div>
+        </div>
+        <div class="preview-field">
+          <label>产品ID:</label>
+          <div class="value" id="preview-product-id">-</div>
+        </div>
+        <div class="preview-field">
+          <label>价格:</label>
+          <div class="value price" id="preview-price">-</div>
+        </div>
+        <div class="preview-field">
+          <label>最小起订量:</label>
+          <div class="value" id="preview-min-order">-</div>
+        </div>
+        <div class="preview-field">
+          <label>单位:</label>
+          <div class="value" id="preview-unit">-</div>
+        </div>
+      </div>
+      
+      <!-- 供应商信息 -->
+      <div class="preview-section">
+        <h4>🏢 供应商信息</h4>
+        <div class="preview-field">
+          <label>供应商名称:</label>
+          <div class="value" id="preview-supplier">-</div>
+        </div>
+        <div class="preview-field">
+          <label>供应商位置:</label>
+          <div class="value" id="preview-location">-</div>
+        </div>
+      </div>
+      
+      <!-- 图片信息 -->
+      <div class="preview-section">
+        <h4>🖼️ 图片信息</h4>
+        <div class="preview-field">
+          <label>主图:</label>
+          <div class="image-container" id="preview-main-image">
+            <div class="no-image">未提取到主图</div>
+          </div>
+        </div>
+        <div class="preview-field">
+          <label>轮播图 (<span id="carousel-count">0</span>张):</label>
+          <div class="image-gallery" id="preview-carousel-images">
+            <div class="no-image">未提取到轮播图</div>
+          </div>
+        </div>
+        <div class="preview-field">
+          <label>详情图 (<span id="detail-count">0</span>张):</label>
+          <div class="image-gallery" id="preview-detail-images">
+            <div class="no-image">未提取到详情图</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 其他信息 -->
+      <div class="preview-section">
+        <h4>📝 其他信息</h4>
+        <div class="preview-field">
+          <label>分类:</label>
+          <div class="value" id="preview-category">-</div>
+        </div>
+        <div class="preview-field">
+          <label>产品描述:</label>
+          <div class="value description" id="preview-description">-</div>
+        </div>
+        <div class="preview-field">
+          <label>规格参数:</label>
+          <div class="value specifications" id="preview-specifications">-</div>
+        </div>
+      </div>
+      
+      <!-- 提取状态统计 -->
+      <div class="preview-section">
+        <h4>📊 提取状态统计</h4>
+        <div class="extraction-stats">
+          <div class="stat-item">
+            <span class="stat-label">成功提取:</span>
+            <span class="stat-value success" id="success-count">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">提取失败:</span>
+            <span class="stat-value failed" id="failed-count">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">完整度:</span>
+            <span class="stat-value percentage" id="completion-rate">0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 调试信息区域 -->
+    <div id="debug-info" class="debug-info" style="display: none;">
+      <h3>🐛 调试信息</h3>
+      <pre id="debug-content"></pre>
+    </div>
+
+    <!-- 图片大图查看模态框 -->
+    <div id="image-modal" class="image-modal">
+      <span class="close">&times;</span>
+      <img id="modal-image" src="" alt="大图">
+    </div>
+
+
+
+    <script>
+    // 模拟PopupManager的方法
+      function updatePreviewField(elementId, value, isLongText = false) {
+        const element = document.getElementById(elementId);
+        if (element) {
+          if (value && value.trim() !== '') {
+            element.textContent = isLongText ? truncateText(value, 200) : value;
+            element.title = isLongText ? value : '';
+            element.style.color = '#212529';
+            console.log(`✅ 更新字段 ${elementId}:`, value);
+          } else {
+            element.textContent = '-';
+            element.style.color = '#6c757d';
+            console.log(`⚠️ 字段 ${elementId} 为空，设置为 -`);
+          }
+        } else {
+          console.error(`❌ 找不到元素: ${elementId}`);
+        }
+      }
+    
+    function updateImagePreview(elementId, images, type) {
+      const container = document.getElementById(elementId);
+      if (!container) return;
+      
+      if (type === 'single') {
+        if (images && images.trim() !== '') {
+          container.innerHTML = `<img src="${images}" alt="主图" title="点击查看大图" onclick="showImageModal('${images}')">`;
+        } else {
+          container.innerHTML = '<div class="no-image">未提取到主图</div>';
+        }
+      } else {
+        if (images && images.length > 0) {
+          const imageHtml = images.map((img, index) => 
+            `<img src="${img}" alt="图片${index + 1}" title="点击查看大图" onclick="showImageModal('${img}')">`
+          ).join('');
+          container.innerHTML = imageHtml;
+        } else {
+          const noImageText = elementId.includes('carousel') ? '未提取到轮播图' : '未提取到详情图';
+          container.innerHTML = `<div class="no-image">${noImageText}</div>`;
+        }
+      }
+    }
+    
+    function updateExtractionStats(product) {
+      const fields = [
+        product.title,
+        product.productId,
+        product.price,
+        product.minOrderQuantity,
+        product.unit,
+        product.supplierName,
+        product.supplierLocation,
+        product.mainImage,
+        product.carouselImages?.length > 0 ? 'has_images' : null,
+        product.detailImages?.length > 0 ? 'has_images' : null,
+        product.category,
+        product.description,
+        product.specifications
+      ];
+      
+      const successCount = fields.filter(field => field && field.toString().trim() !== '').length;
+      const totalCount = fields.length;
+      const failedCount = totalCount - successCount;
+      const completionRate = Math.round((successCount / totalCount) * 100);
+      
+      document.getElementById('success-count').textContent = successCount;
+      document.getElementById('failed-count').textContent = failedCount;
+      document.getElementById('completion-rate').textContent = `${completionRate}%`;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text || text.length <= maxLength) return text;
+      return text.substring(0, maxLength) + '...';
+    }
+    
+    function displayProductInfo(product) {
+      const previewDiv = document.getElementById('product-preview');
+      previewDiv.style.display = 'block';
+      
+      updatePreviewField('preview-title', product.title);
+      updatePreviewField('preview-product-id', product.productId);
+      updatePreviewField('preview-price', product.price ? `¥${product.price}` : null);
+      updatePreviewField('preview-min-order', product.minOrderQuantity);
+      updatePreviewField('preview-unit', product.unit);
+      
+      updatePreviewField('preview-supplier', product.supplierName);
+      updatePreviewField('preview-location', product.supplierLocation);
+      
+      updateImagePreview('preview-main-image', product.mainImage, 'single');
+      updateImagePreview('preview-carousel-images', product.carouselImages, 'gallery');
+      updateImagePreview('preview-detail-images', product.detailImages, 'gallery');
+      
+      document.getElementById('carousel-count').textContent = product.carouselImages?.length || 0;
+      document.getElementById('detail-count').textContent = product.detailImages?.length || 0;
+      
+      updatePreviewField('preview-category', product.category);
+      updatePreviewField('preview-description', product.description, true);
+      updatePreviewField('preview-specifications', product.specifications, true);
+      
+      updateExtractionStats(product);
+    }
+    
+    // 测试数据
+    function testCompleteData() {
+      const product = {
+        title: '汽车LED大灯 H7 超亮白光 6000K 车灯改装专用',
+        productId: '12345678901',
+        price: '89.00',
+        minOrderQuantity: '2',
+        unit: '对',
+        supplierName: '广州市天河区明亮车灯厂',
+        supplierLocation: '广东省广州市',
+        mainImage: 'https://picsum.photos/400/400?random=1',
+        carouselImages: [
+          'https://picsum.photos/400/400?random=2',
+          'https://picsum.photos/400/400?random=3',
+          'https://picsum.photos/400/400?random=4'
+        ],
+        detailImages: [
+          'https://picsum.photos/600/400?random=5',
+          'https://picsum.photos/600/400?random=6'
+        ],
+        category: '汽车用品 > 车灯 > LED大灯',
+        description: '这是一款高品质的汽车LED大灯，采用进口芯片，亮度高，寿命长，安装简单，适用于各种车型。产品通过CE认证，质量可靠。',
+        specifications: {
+          '功率': '36W',
+          '电压': '12V-24V',
+          '色温': '6000K',
+          '光通量': '3600LM',
+          '防水等级': 'IP67',
+          '材质': '铝合金散热'
+        },
+        extractedAt: new Date().toISOString()
+      };
+      // 保存测试数据到全局变量
+      window.currentTestData = product;
+      displayProductInfo(product);
+    }
+    
+    function testPartialData() {
+      const product = {
+        title: '汽车脚垫',
+        productId: '98765432109',
+        price: '45.50',
+        minOrderQuantity: '',
+        unit: '',
+        supplierName: '',
+        supplierLocation: '浙江省',
+        mainImage: 'https://picsum.photos/400/400?random=7',
+        carouselImages: [],
+        detailImages: [
+          'https://picsum.photos/600/400?random=8'
+        ],
+        category: '',
+        description: '',
+        specifications: ''
+      };
+      displayProductInfo(product);
+    }
+    
+    function testEmptyData() {
+      const product = {
+        title: '',
+        productId: '',
+        price: '',
+        minOrderQuantity: '',
+        unit: '',
+        supplierName: '',
+        supplierLocation: '',
+        mainImage: '',
+        carouselImages: [],
+        detailImages: [],
+        category: '',
+        description: '',
+        specifications: ''
+      };
+      displayProductInfo(product);
+    }
+    
+    function clearPreview() {
+      const previewDiv = document.getElementById('product-preview');
+      if (previewDiv) {
+        previewDiv.style.display = 'none';
+      }
+      console.log('🧹 清空预览');
+    }
+
+    function showDebugInfo() {
+      const debugDiv = document.getElementById('debug-info');
+      const debugContent = document.getElementById('debug-content');
+      
+      if (debugDiv && debugContent) {
+        const debugData = {
+          '当前时间': new Date().toLocaleString(),
+          '预览区域状态': document.getElementById('product-preview')?.style.display || 'none',
+          '可用元素': {
+            'product-preview': !!document.getElementById('product-preview'),
+            'preview-title': !!document.getElementById('preview-title'),
+            'preview-main-image': !!document.getElementById('preview-main-image'),
+            'open-large-preview': !!document.getElementById('open-large-preview')
+          },
+          '当前产品数据': window.currentTestData || null
+        };
+        
+        debugContent.textContent = JSON.stringify(debugData, null, 2);
+        debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+    
+    // 图片模态框功能
+    function showImageModal(imageSrc) {
+      const modal = document.getElementById('image-modal');
+      const modalImage = document.getElementById('modal-image');
+      
+      modalImage.src = imageSrc;
+      modal.style.display = 'block';
+    }
+    
+    function hideImageModal() {
+      const modal = document.getElementById('image-modal');
+      modal.style.display = 'none';
+    }
+
+
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('image-modal');
+      const closeBtn = modal.querySelector('.close');
+      
+      if (closeBtn) {
+        closeBtn.onclick = hideImageModal;
+      }
+      
+      if (modal) {
+        modal.onclick = function(event) {
+          if (event.target === modal) {
+            hideImageModal();
+          }
+        };
+      }
+      
+      if (largePreviewModal) {
+        largePreviewModal.onclick = function(event) {
+          if (event.target === largePreviewModal) {
+            hideLargePreview();
+          }
+        };
+      }
+      
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+          hideImageModal();
+          hideLargePreview();
+        }
+      });
+    });
+  </script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -431,6 +431,98 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+// 从1688导入产品
+exports.importFrom1688 = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const {
+      title,
+      price,
+      productId,
+      url,
+      supplierName,
+      supplierLocation,
+      description,
+      specifications,
+      minOrderQuantity,
+      unit,
+      category
+    } = req.body;
+
+    // 生成产品编号
+    const productCode = `1688-${productId || Date.now()}`;
+    
+    // 查找或创建默认分类
+    let categoryId = 1; // 默认分类ID
+    if (category) {
+      const [existingCategory] = await connection.query(
+        'SELECT id FROM product_categories WHERE name = ? AND deleted = 0',
+        [category]
+      );
+      if (existingCategory.length > 0) {
+        categoryId = existingCategory[0].id;
+      }
+    }
+
+    const guid = uuidToBinary(uuidv4());
+    const currentUserId = req.userId;
+
+    // 创建产品
+    const [result] = await connection.query(
+      `INSERT INTO products (
+        name, product_code, category_id, price, stock, status, product_type,
+        short_description, full_description, guid, deleted, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+      [
+        title,
+        productCode,
+        categoryId,
+        parseFloat(price) || 0,
+        parseInt(minOrderQuantity) || 0,
+        1, // 默认上架
+        'consignment', // 1688导入的产品默认为代销
+        `供应商: ${supplierName || '未知'} | 位置: ${supplierLocation || '未知'} | 最小起订量: ${minOrderQuantity || '1'} ${unit || '件'}`,
+        description || '',
+        guid,
+        currentUserId,
+        currentUserId
+      ]
+    );
+
+    const productId_new = result.insertId;
+
+    // 图片已经通过 /api/product-images/upload 接口单独上传，这里不需要处理图片
+
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      message: '1688产品导入成功',
+      data: {
+        id: productId_new,
+        name: title,
+        product_code: productCode,
+        category_id: categoryId,
+        price: parseFloat(price) || 0,
+        stock: parseInt(minOrderQuantity) || 0,
+        guid: binaryToUuid(guid),
+        source_url: url
+      }
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('1688产品导入失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '1688产品导入失败: ' + error.message
+    });
+  } finally {
+    connection.release();
+  }
+};
+
 // 按分类获取产品
 exports.getProductsByCategory = async (req, res) => {
   try {
