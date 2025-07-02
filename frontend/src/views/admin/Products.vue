@@ -121,11 +121,11 @@
           <el-input-number v-model="productForm.stock" :min="0" :max="999999" />
         </el-form-item>
         <el-form-item label="产品图片" prop="images">
-          <el-upload class="product-image-uploader" action="/api/product-images/upload" :headers="uploadHeaders"
-            :data="{ product_id: productForm.id, image_type: 0, session_id: sessionId }" :file-list="thumbnailList"
-            list-type="picture-card" :on-preview="handlePictureCardPreview" :on-remove="handleRemove"
-            :on-success="handleUploadSuccess" :before-upload="beforeImageUpload" :name="'images'" :limit="1"
-            :multiple="false" :show-file-list="true">
+          <el-upload class="product-image-uploader" action="/api/product-images/upload?image_type=0"
+            :headers="uploadHeaders" :data="{ product_id: productForm.id, session_id: sessionId }"
+            :file-list="thumbnailList" list-type="picture-card" :on-preview="handleMediaPreview"
+            :on-remove="handleRemove" :on-success="handleUploadSuccess" :before-upload="beforeImageUpload"
+            :name="'images'" :limit="1" :multiple="false" :show-file-list="true">
             <template v-if="thumbnailList.length < 1">
               <el-icon>
                 <Plus />
@@ -133,15 +133,48 @@
             </template>
           </el-upload>
         </el-form-item>
-        <el-form-item label="轮播图片" prop="carousel_images">
-          <el-upload class="product-image-uploader" action="/api/product-images/upload" :headers="uploadHeaders"
-            :data="{ product_id: productForm.id, image_type: 1, session_id: sessionId }" :file-list="carouselList"
-            list-type="picture-card" :on-preview="handlePictureCardPreview" :on-remove="handleRemove"
-            :on-success="handleUploadSuccess" :before-upload="beforeImageUpload" :name="'images'" :limit="10"
-            :multiple="true" :show-file-list="true">
+        <el-form-item label="轮播媒体" prop="carousel_media">
+          <el-upload ref="uploadRef" class="product-media-uploader" action="/api/product-images/upload?image_type=1"
+            :headers="uploadHeaders" :data="{ product_id: productForm.id, session_id: sessionId }"
+            :file-list="carouselList" list-type="picture-card" :on-preview="handleMediaPreview"
+            :on-remove="handleRemove" :on-success="handleUploadSuccess" :before-upload="beforeMediaUpload"
+            :name="'images'" :limit="10" :multiple="true" :show-file-list="true">
             <el-icon>
               <Plus />
             </el-icon>
+            <template #file="{ file }">
+              <div class="upload-file-item">
+                <img v-if="isImageFile(file.name)" :src="file.url" alt="预览图" class="upload-file-preview" />
+                <div v-else-if="isVideoFile(file.name)" class="upload-video-preview">
+                  <video :src="file.url" class="upload-file-preview" preload="metadata" muted>
+                    您的浏览器不支持视频播放
+                  </video>
+                  <!-- 视频标识 -->
+                  <div class="video-indicator">视频</div>
+                  <!-- 视频播放图标 -->
+                  <el-icon class="video-play-overlay">
+                    <VideoPlay />
+                  </el-icon>
+                </div>
+                <div v-else class="upload-unknown-file">
+                  <el-icon>
+                    <Document />
+                  </el-icon>
+                  <span>{{ file.name }}</span>
+                </div>
+                <div class="upload-file-actions">
+                  <el-icon class="preview-icon" @click="handleMediaPreview(file)">
+                    <ZoomIn />
+                  </el-icon>
+                  <el-icon class="delete-icon" @click="handleCustomRemove(file)">
+                    <Delete />
+                  </el-icon>
+                </div>
+              </div>
+            </template>
+            <template #tip>
+              <div class="el-upload__tip">支持图片(jpg, jpeg, png, gif)和视频(mp4, webm, ogg)格式，图片不超过5MB，视频不超过50MB</div>
+            </template>
           </el-upload>
         </el-form-item>
         <el-form-item label="产品简介" prop="short_description">
@@ -174,7 +207,7 @@
 </template>
 
 <script>
-import { Plus, Search, Refresh } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Document, Delete, ZoomIn, VideoPlay } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/format'
 import { quillEditor } from 'vue3-quill'
 import { getAuthToken } from '@/utils/api'
@@ -185,6 +218,10 @@ export default {
     Plus,
     Search,
     Refresh,
+    Document,
+    Delete,
+    ZoomIn,
+    VideoPlay,
     quillEditor
   },
   data() {
@@ -363,50 +400,159 @@ export default {
       return true
     },
     
-    // 处理图片上传成功
+    // 媒体文件上传前的验证
+    beforeMediaUpload(file) {
+      const isImage = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/gif' || file.type === 'image/jpg'
+      const isVideo = file.type === 'video/mp4' || file.type === 'video/webm' || file.type === 'video/ogg'
+      
+      if (isImage) {
+        const isLt5M = file.size / 1024 / 1024 < 5
+        if (!isLt5M) {
+          this.$messageHandler.showError('上传图片大小不能超过 5MB!', 'admin.products.error.imageTooLarge')
+          return false
+        }
+        return true
+      } else if (isVideo) {
+        const isLt50M = file.size / 1024 / 1024 < 50
+        if (!isLt50M) {
+          this.$messageHandler.showError('上传视频大小不能超过 50MB!', 'admin.products.error.videoTooLarge')
+          return false
+        }
+        return true
+      } else {
+        this.$messageHandler.showError('只能上传图片(JPG/PNG/GIF)或视频(MP4/WEBM/OGG)格式的文件!', 'admin.products.error.invalidMediaFormat')
+        return false
+      }
+    },
+    
+    // 处理媒体文件上传成功
     handleUploadSuccess(response, file) {
       if (response.success) {
-        this.$messageHandler.showSuccess('图片上传成功', 'product.success.imageUploadSuccess')
-        // 根据图片类型更新对应的列表
+        const isVideo = file.raw && file.raw.type && file.raw.type.startsWith('video/')
+        const successMessage = isVideo ? '视频上传成功' : '图片上传成功'
+        this.$messageHandler.showSuccess(successMessage, 'product.success.mediaUploadSuccess')
+        
+        // 根据媒体类型更新对应的列表
         if (file && file.status === 'success') {
           if (file.response && file.response.data && file.response.data.images) {
-            const img = file.response.data.images[0];
-            // 只根据 image_type 精确更新对应的图片列表
-            if (file.raw && typeof file.raw.image_type !== 'undefined') {
-              if (file.raw.image_type === 0) {
-                this.thumbnailList = [{
-                  name: img.filename,
-                  url: img.path
-                }];
-              } else if (file.raw.image_type === 1) {
+            const media = file.response.data.images[0];
+
+            const image_type = file.response.data.image_type;
+            
+            // 将ID信息同步到file对象中，以便删除时使用
+            file.id = media.id
+            file.name = media.filename
+            file.url = media.path
+            
+            // 恢复手动操作thumbnailList和carouselList的逻辑
+            // 因为el-upload组件不会自动同步这些数据到我们的列表中
+            
+            // 根据图片类型添加到对应列表
+            if (image_type === 0) {
+              // 缩略图：替换现有的缩略图
+              this.thumbnailList = [{
+                id: media.id,
+                name: media.filename,
+                url: media.path
+              }]
+            } else if (image_type === 1) {
+              // 轮播图：添加到轮播图列表
+              // 先检查是否已存在相同uid的文件，如果存在则更新，否则添加
+              const existingIndex = this.carouselList.findIndex(item => item.id === file.id)
+              if (existingIndex !== -1) {
+                // 更新现有文件
+                this.$set(this.carouselList, existingIndex, {
+                  id: media.id,
+                  name: media.filename,
+                  url: media.path
+                })
+              } else {
+                // 添加新文件
                 this.carouselList.push({
-                  name: img.filename,
-                  url: img.path
-                });
+                  id: media.id,
+                  name: media.filename,
+                  url: media.path
+
+                })
               }
             }
           }
         }
       } else {
-        this.$messageHandler.showError(response.message, 'admin.products.error.imageUploadFailed')
+        this.$messageHandler.showError(response.message, 'admin.products.error.mediaUploadFailed')
       }
     },
     
     // 处理图片移除
     async handleRemove(file) {
       try {
+        // 检查file.id是否存在
+        if (!file.id) {
+          console.error('文件ID不存在:', file)
+          this.$messageHandler.showError('文件ID不存在，无法删除', 'admin.products.error.fileIdMissing')
+          return false // 返回false阻止el-upload组件删除文件
+        }
+        
         await this.$api.delete(`product-images/${file.id}`)
+        
+        // 恢复手动操作thumbnailList和carouselList的逻辑
+        // 从缩略图列表中移除
+        this.thumbnailList = this.thumbnailList.filter(item => item.id !== file.id )
+        console.debug(`file: ${file}`)
+        console.debug('删除前的carouselList:')
+        this.carouselList.forEach((item, index) => {
+            console.debug(`对象 ${index}:`, item); // 直接打印整个对象
+        });
+        // 从轮播图列表中移除
+        this.carouselList = this.carouselList.filter(item => item.id !== file.id)
+
+        console.debug('删除后的carouselList:')
+         this.carouselList.forEach((item, index) => {
+            console.debug(`对象 ${index}:`, item); // 直接打印整个对象
+        });
         this.$messageHandler.showSuccess('图片删除成功', 'product.success.imageDeleteSuccess')
+        return true // 返回true允许el-upload组件删除文件
       } catch (error) {
         console.error('删除图片失败:', error)
         this.$messageHandler.showError(error, 'admin.products.error.imageDeleteFailed')
+        return false // 返回false阻止el-upload组件删除文件
       }
     },
     
-    // 处理图片预览
-    handlePictureCardPreview(file) {
-      this.previewUrl = file.url
-      this.previewVisible = true
+    // 处理自定义删除按钮点击
+    async handleCustomRemove(file) {
+      this.$refs.uploadRef.handleRemove(file);
+    },
+    
+    // 处理媒体预览
+    handleMediaPreview(file) {
+      // 判断文件类型
+      const isVideo = file.name && (file.name.toLowerCase().endsWith('.mp4') || 
+                                   file.name.toLowerCase().endsWith('.webm') || 
+                                   file.name.toLowerCase().endsWith('.ogg'))
+      
+      if (isVideo) {
+        // 对于视频文件，在新窗口打开
+        window.open(file.url, '_blank')
+      } else {
+        // 对于图片文件，使用预览弹窗
+        this.previewUrl = file.url
+        this.previewVisible = true
+      }
+    },
+    
+    // 判断是否为图片文件
+    isImageFile(filename) {
+      if (!filename) return false
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+      return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext))
+    },
+    
+    // 判断是否为视频文件
+    isVideoFile(filename) {
+      if (!filename) return false
+      const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov']
+      return videoExtensions.some(ext => filename.toLowerCase().endsWith(ext))
     },
     
     // 处理筛选
@@ -482,7 +628,7 @@ export default {
       })
       this.quillKey++;
       
-      // 获取产品图片
+      // 获取产品图片和视频
       try {
         const [thumbnailResponse, carouselResponse] = await Promise.all([
           this.$api.get(`product-images?product_id=${row.id}&image_type=0`),
@@ -495,14 +641,14 @@ export default {
           url: img.image_url
         }))
         
-        this.carouselList = carouselResponse.data.map(img => ({
-          id: img.id,
-          name: img.image_url.split('/').pop(),
-          url: img.image_url
+        this.carouselList = carouselResponse.data.map(media => ({
+          id: media.id,
+          name: media.image_url.split('/').pop(),
+          url: media.image_url
         }))
       } catch (error) {
-        console.error('获取产品图片失败:', error)
-        this.$messageHandler.showError(error, 'admin.products.error.fetchImagesFailed')
+        console.error('获取产品媒体文件失败:', error)
+        this.$messageHandler.showError(error, 'admin.products.error.fetchMediaFailed')
       }
       
       this.dialogVisible = true
@@ -539,11 +685,16 @@ export default {
             let response
             if (this.dialogStatus === 'create') {
               response = await this.$api.postWithErrorHandler('products', this.productForm)
-              // 新建产品后，关联图片
-              await this.$api.postWithErrorHandler('product-images/assign', {
-                product_id: response.data.id,
-                session_id: this.sessionId
-              })
+              // 新建产品后，关联图片和视频
+              const productId = response.data.id
+              
+              // 关联所有上传的图片和视频到新创建的产品
+              if (this.sessionId) {
+                await this.$api.post('product-images/assign', {
+                  product_id: productId,
+                  session_id: this.sessionId
+                })
+              }
             } else {
               response = await this.$api.put(`products/${this.productForm.id}`, this.productForm)
             }
@@ -654,9 +805,187 @@ export default {
   border-radius: 6px;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
-  transition: var(--el-transition-duration-fast);
 }
+
+/* 自定义文件项样式 */
+.upload-file-item {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.upload-file-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-video-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+.upload-unknown-file {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-unknown-file .el-icon {
+  font-size: 32px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.upload-unknown-file span {
+  font-size: 12px;
+  color: #666;
+  word-break: break-all;
+  line-height: 1.2;
+}
+
+.upload-file-actions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.upload-file-item:hover .upload-file-actions {
+  opacity: 1;
+}
+
+/* 轮播图自定义按钮样式 */
+.product-media-uploader :deep(.el-upload-list__item-actions) {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  cursor: pointer;
+  text-align: center;
+  color: #fff;
+  opacity: 0;
+  font-size: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  transition: opacity 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.product-media-uploader :deep(.el-upload-list__item:hover .el-upload-list__item-actions) {
+  opacity: 1;
+}
+
+.product-media-uploader :deep(.el-upload-list__item-preview),
+.product-media-uploader :deep(.el-upload-list__item-delete) {
+  font-size: 20px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.product-media-uploader :deep(.el-upload-list__item-preview:hover),
+.product-media-uploader :deep(.el-upload-list__item-delete:hover) {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+.upload-file-actions .el-icon {
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.upload-file-actions .el-icon:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 预览和删除图标样式 */
+.preview-icon,
+.delete-icon {
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.preview-icon:hover,
+.delete-icon:hover {
+  background-color: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+/* 视频标识样式 */
+.video-indicator {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.video-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 32px;
+  z-index: 1;
+  pointer-events: none;
+}
+
 
 .product-image-uploader :deep(.el-upload:hover) {
   border-color: var(--el-color-primary);

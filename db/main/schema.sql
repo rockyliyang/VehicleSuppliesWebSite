@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS product_images (
   guid BINARY(16) NOT NULL,
   product_id BIGINT NOT NULL,
   image_url VARCHAR(255) NOT NULL,
+  image_type tinyint NOT NULL DEFAULT '0' COMMENT '图片类型：0-主图，1-轮播图,2-详情图',
   sort_order INT DEFAULT 0,
   session_id VARCHAR(64) DEFAULT NULL COMMENT '临时会话ID，用于未保存产品时图片归属',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

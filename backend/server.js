@@ -31,6 +31,9 @@ const sseRoutes = require('./routes/sseRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 信任代理，以便正确获取客户端IP地址
+app.set('trust proxy', true);
+
 // 中间件
 app.use(cors());
 app.use(bodyParser.json());

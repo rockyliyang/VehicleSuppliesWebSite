@@ -1,5 +1,5 @@
 
-class Product1688Extractor {
+class ProductExtractor {
   constructor() {
     this.init();
   }
@@ -15,13 +15,11 @@ class Product1688Extractor {
       }
     });
     
-    // 检查并创建1688推荐的chromePlugin容器
+    // 检查并创建推荐的chromePlugin容器
     //this.ensureChromePluginContainer();
-    
-    console.log('1688产品提取器已加载');
   }
 
-  // 确保chromePlugin容器存在，遵循1688网站建议
+  // 确保chromePlugin容器存在，提供插件运行环境
   ensureChromePluginContainer() {
     // 检查是否已存在chromePlugin容器
     let chromePluginContainer = document.getElementById('chromePlugin');
@@ -40,7 +38,7 @@ class Product1688Extractor {
       const insertionPoint = this.findInsertionPoint();
       if (insertionPoint) {
         insertionPoint.appendChild(chromePluginContainer);
-        console.log('已创建chromePlugin容器，遵循1688网站建议');
+        console.log('已创建chromePlugin容器');
       } else {
         // 如果找不到合适位置，插入到body
         document.body.appendChild(chromePluginContainer);
@@ -49,17 +47,20 @@ class Product1688Extractor {
     }
   }
 
-  // 找到合适的插入位置，避免SKU面板
+  // 找到合适的插入位置，避免干扰页面布局
   findInsertionPoint() {
-    // 优先查找1688页面的特定容器
+    // 查找常见的页面容器，按优先级排序
     const selectors = [
       '#screen',           // 1688详情页主容器
       '#recyclerview',     // 1688列表页容器
       '.layout-right',     // 右侧布局容器
       '.detail-main',      // 详情主容器
       '.offer-detail',     // 商品详情容器
-      'main',              // 主内容区
-      '.container'         // 通用容器
+      '.product-detail',   // 产品详情容器
+      '.main-content',     // 主内容区
+      'main',              // HTML5主内容标签
+      '.container',        // 通用容器
+      '.wrapper'           // 包装容器
     ];
     
     for (const selector of selectors) {
@@ -737,7 +738,16 @@ class Product1688Extractor {
   }
 }
 
-// 初始化提取器
-if (window.location.href.includes('detail.1688.com')) {
-  new Product1688Extractor();
+// 初始化提取器 - 支持所有网站
+new ProductExtractor();
+
+// 根据当前网站显示相应的加载信息
+if (window.location.href.includes('1688.com')) {
+  console.log('1688产品提取器已加载');
+} else if (window.location.href.includes('taobao.com')) {
+  console.log('淘宝产品提取器已加载');
+} else if (window.location.href.includes('tmall.com')) {
+  console.log('天猫产品提取器已加载');
+} else {
+  console.log('通用产品提取器已加载 - 当前网站:', window.location.hostname);
 }

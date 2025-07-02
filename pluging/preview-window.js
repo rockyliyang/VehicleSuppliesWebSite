@@ -316,8 +316,195 @@ function closeWindow() {
   window.close();
 }
 
-// 上传选中的图片
-function uploadSelectedImages() {
+// 上传图片到服务器
+async function uploadImages(imageUrls, imageType = 0, sessionId) {
+  if (!imageUrls || imageUrls.length === 0) {
+    return [];
+  }
+  
+  const uploadedImages = [];
+  if (!sessionId) {
+    sessionId = `1688_import_${Date.now()}`;
+  }
+  
+  // 获取API配置
+  const config = await chrome.storage.sync.get(['apiUrl', 'apiToken']);
+  if (!config.apiUrl || !config.apiToken) {
+    console.error('API配置不完整，无法上传');
+    return [];
+  }
+  
+  for (const imageUrl of imageUrls) {
+    try {
+      // 1. 下载图片
+      const imageResponse = await fetch(imageUrl, {
+        mode: 'cors',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (!imageResponse.ok) {
+        console.warn('图片下载失败:', imageUrl, imageResponse.status);
+        continue;
+      }
+      
+      const blob = await imageResponse.blob();
+      
+      // 2. 创建FormData上传到后端
+      const formData = new FormData();
+      
+      // 生成文件名
+      const url = new URL(imageUrl);
+      const pathParts = url.pathname.split('/');
+      const originalName = pathParts[pathParts.length - 1] || 'image.jpg';
+      const fileName = `1688_${Date.now()}_${originalName}`;
+      
+      formData.append('images', blob, fileName);
+      formData.append('image_type', imageType.toString());
+      formData.append('product_id', 'undefined'); // 临时产品ID
+      formData.append('session_id', sessionId);
+      
+      // 3. 上传到后端服务器
+      const uploadResponse = await fetch(`${config.apiUrl}/api/product-images/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.apiToken}`
+        },
+        body: formData
+      });
+      
+      const uploadResult = await uploadResponse.json();
+      
+      if (uploadResponse.ok && uploadResult.success) {
+        const localUrl = uploadResult.data.images[0].path;
+        uploadedImages.push(`${config.apiUrl}${localUrl}`);
+      } else {
+        console.warn('图片上传失败:', imageUrl, uploadResult.message);
+        uploadedImages.push(imageUrl); // 保留原始URL作为备选
+      }
+    } catch (error) {
+      console.warn('图片处理异常:', imageUrl, error);
+      uploadedImages.push(imageUrl); // 保留原始URL作为备选
+    }
+  }
+  
+  return uploadedImages;
+}
+
+// 上传产品到系统
+async function uploadProduct(productData, selectedImages) {
+  try {
+    if (!productData) {
+      console.error('没有产品数据，无法上传');
+      return;
+    }
+    
+    // 获取API配置
+    const config = await chrome.storage.sync.get(['apiUrl', 'apiToken']);
+    if (!config.apiUrl || !config.apiToken) {
+      console.error('API配置不完整，无法上传');
+      return;
+    }
+    
+    console.log('正在上传图片...');
+    
+    // 生成会话ID用于关联图片
+    const sessionId = `1688_import_${Date.now()}`;
+    
+    let mainImage = selectedImages.mainImage ?? selectedImages.carouselImages[0];
+    // 上传图片到服务器
+    const uploadedMainImage = mainImage ? 
+      (await uploadImages([mainImage], 0, sessionId))[0] : null; // 主图类型为0
+    
+    const uploadedCarouselImages = await uploadImages(
+      selectedImages.carouselImages || [], 1, sessionId // 轮播图也是类型0
+    );
+    
+    const uploadedDetailImages = await uploadImages(
+      selectedImages.detailImages || [], 2, sessionId // 详情图类型为1
+    );
+    
+    // 生成富文本格式的description，使用上传后的详情图片URL
+    let richTextDescription = productData.description || '';
+    if (uploadedDetailImages && uploadedDetailImages.length > 0) {
+      const imageHtml = uploadedDetailImages.map(imageUrl => {
+        // 提取相对路径用于富文本
+        const relativePath = imageUrl.replace(config.apiUrl, '');
+        return `<p><img src="${relativePath}"></p>`;
+      }).join('\n');
+      
+      // 如果原有描述存在，在描述后添加图片；否则只使用图片
+      richTextDescription = richTextDescription ? 
+        `${richTextDescription}\n${imageHtml}` : 
+        imageHtml;
+    }
+    
+    // 准备上传数据（不包含图片URL，因为图片已经单独上传）
+    const uploadData = {
+      title: productData.title,
+      price: productData.price,
+      productId: productData.productId,
+      url: productData.url,
+      supplierName: productData.supplierName,
+      supplierUrl: productData.supplierUrl,
+      description: richTextDescription, // 使用富文本格式的描述
+      minOrderQuantity: productData.minOrderQuantity,
+      unit: productData.unit,
+      category: productData.category,
+      // 不包含图片URL，因为图片已经通过/api/product-images/upload上传
+    };
+    
+    console.log('正在上传产品...');
+    
+    const response = await fetch(`${config.apiUrl}/api/products/import-from-1688`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiToken}`
+      },
+      body: JSON.stringify(uploadData)
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      // 关联图片到产品
+      try {
+        const assignResponse = await fetch(`${config.apiUrl}/api/product-images/assign`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.apiToken}`
+          },
+          body: JSON.stringify({
+            product_id: result.data.id,
+            session_id: sessionId
+          })
+        });
+        
+        const assignResult = await assignResponse.json();
+        if (!assignResponse.ok || !assignResult.success) {
+          console.warn('图片关联失败:', assignResult.message);
+        }
+      } catch (error) {
+        console.warn('图片关联异常:', error);
+      }
+      
+      console.log('✅ 产品上传成功:', result.data);
+      return result.data;
+    } else {
+      console.error('产品上传失败:', result.message);
+      return null;
+    }
+  } catch (error) {
+    console.error('上传产品失败:', error);
+    return null;
+  }
+}
+
+// 上传选中的图片和产品
+async function uploadSelectedImages() {
   const selectedImages = getSelectedImages();
   const totalSelected = (selectedImages.mainImage ? 1 : 0) + 
                        selectedImages.carouselImages.length + 
@@ -325,33 +512,31 @@ function uploadSelectedImages() {
                        selectedImages.otherImages.length;
   
   if (totalSelected === 0) {
-    alert('请至少选择一张图片进行上传');
+    console.log('没有选择图片，跳过上传');
     return;
   }
   
-  // 这里可以添加实际的上传逻辑
-  console.log('选中的图片:', selectedImages);
-  alert(`已选择 ${totalSelected} 张图片，准备上传...\n\n主图: ${selectedImages.mainImage ? '1张' : '0张'}\n轮播图: ${selectedImages.carouselImages.length}张\n详情图: ${selectedImages.detailImages.length}张\n其他图片: ${selectedImages.otherImages.length}张`);
-  
-  // 将选中的图片数据传回父窗口或保存到localStorage
   try {
     // 获取原始产品数据
     let productData = getProductDataFromStorage() || getProductDataFromUrl();
-    if (productData) {
-      // 更新产品数据中的图片
-      productData.mainImage = selectedImages.mainImage;
-      productData.carouselImages = selectedImages.carouselImages;
-      productData.detailImages = selectedImages.detailImages;
-      if (selectedImages.otherImages.length > 0) {
-        productData.images = selectedImages.otherImages;
-      }
-      
-      // 保存更新后的数据
-      localStorage.setItem('selectedProductData', JSON.stringify(productData));
-      console.log('✅ 选中的产品数据已保存到localStorage');
+    if (!productData) {
+      console.error('没有产品数据，无法上传');
+      return;
     }
+    
+    console.log('开始上传选中的图片和产品...', selectedImages);
+    
+    // 上传产品和图片
+    const result = await uploadProduct(productData, selectedImages);
+    
+    if (result) {
+      console.log('✅ 产品和图片上传成功');
+    } else {
+      console.error('❌ 产品和图片上传失败');
+    }
+    
   } catch (error) {
-    console.error('保存选中数据失败:', error);
+    console.error('上传过程中发生错误:', error);
   }
 }
 

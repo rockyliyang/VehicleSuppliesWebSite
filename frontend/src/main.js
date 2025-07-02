@@ -4,6 +4,7 @@ import router from './router'
 import store from './store'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import './assets/css/global.css'
 import './assets/styles/elegant-messages.scss'
 import api from './utils/api'
@@ -37,6 +38,11 @@ app.config.globalProperties.$bus = emitter
 
 app.use(store)
 app.use(ElementPlus)
+
+// 注册所有Element Plus图标组件
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
+}
 
 // 初始化应用（包括语言设置）
 store.dispatch('initApp').then(() => {

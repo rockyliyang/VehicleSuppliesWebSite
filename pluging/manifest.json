@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "1688产品导入助手",
+  "name": "产品导入助手",
   "version": "1.0.0",
-  "description": "从1688网站导入产品信息到Vehicle Supplies网站",
+  "description": "从外部导入产品信息到Vehicle Supplies网站",
   "permissions": [
     "activeTab",
     "storage",
@@ -16,14 +16,20 @@
     "https://cbu01.alicdn.com/*",
     "https://sc04.alicdn.com/*",
     "http://localhost:3000/*",
-    "https://your-domain.com/*"
+    "https://your-domain.com/*",
+    "https://*.alibaba.com/*",
+    "https://www.alibaba.com/*"
   ],
   "externally_connectable": {
-    "matches": ["https://*.1688.com/*"]
+    "matches": [
+      "https://*.1688.com/*",
+      "https://*.alibaba.com/*",
+      "https://www.alibaba.com/*"
+    ]
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "导入1688产品",
+    "default_title": "导入外部产品",
     "default_icon": {
       "16": "icons/icon16.svg",
       "48": "icons/icon48.svg",
@@ -32,9 +38,18 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://detail.1688.com/*", "https://*.1688.com/*"],
-      "js": ["content.js"],
-      "css": ["content.css"],
+      "matches": [
+        "https://detail.1688.com/*",
+        "https://*.1688.com/*",
+        "https://*.alibaba.com/*",
+        "https://www.alibaba.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
       "run_at": "document_end"
     }
   ],
@@ -52,7 +67,10 @@
         "inject.js"
       ],
       "matches": [
-        "https://detail.1688.com/*"
+        "https://detail.1688.com/*",
+        "https://*.1688.com/*",
+        "https://*.alibaba.com/*",
+        "https://www.alibaba.com/*"
       ]
     },
     {

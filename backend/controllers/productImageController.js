@@ -9,7 +9,13 @@ const { getMessage } = require('../config/messages');
 // 配置文件上传
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = 'public/static/images';
+    // 根据文件类型选择不同的目录
+    let uploadDir;
+    if (file.mimetype.startsWith('video/')) {
+      uploadDir = 'public/static/videos';
+    } else {
+      uploadDir = 'public/static/images';
+    }
     // 确保目录存在
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
@@ -26,7 +32,7 @@ const uploadMain = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
       return cb(new Error(getMessage('PRODUCT_IMAGE.INVALID_FILE_TYPE')), false);
     }
     cb(null, true);
@@ -35,25 +41,55 @@ const uploadMain = multer({
 
 const uploadCarousel = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB限制，支持视频
   fileFilter: function (req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+    // 支持图片和视频格式
+    const isImage = file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/);
+    const isVideo = file.originalname.match(/\.(mp4|webm|ogg)$/);
+    
+    if (!isImage && !isVideo) {
       return cb(new Error(getMessage('PRODUCT_IMAGE.INVALID_FILE_TYPE')), false);
     }
+    
+    // 根据文件类型设置不同的大小限制
+      if (isImage && file.size > 5 * 1024 * 1024) {
+        return cb(new Error(getMessage('PRODUCT_IMAGE.IMAGE_TOO_LARGE')), false);
+      }
+      if (isVideo && file.size > 50 * 1024 * 1024) {
+        return cb(new Error(getMessage('PRODUCT_IMAGE.VIDEO_TOO_LARGE')), false);
+      }
+    
     cb(null, true);
   }
-}).array('images', 10); // 轮播图多张
+}).array('images', 10); // 轮播媒体多张
 
-// 上传产品图片（主图/轮播图）
+// 创建一个动态multer中间件来处理不同的上传类型
+const createDynamicUpload = (req, res, next) => {
+  // 从查询参数或表单数据中获取image_type
+  const image_type = parseInt(req.query.image_type || req.body?.image_type) || 0;
+  console.log('动态获取的image_type:', image_type);
+  
+  let uploadHandler;
+  if (image_type == 0) {
+    uploadHandler = uploadMain; // 主图
+  } else if (image_type == 1 || image_type == 2) { //轮播图和详情图
+    uploadHandler = uploadCarousel; // 轮播媒体（图片和视频），多张
+  } else {
+    return res.status(400).json({ success: false, message: getMessage('PRODUCT_IMAGE.INVALID_FILE_TYPE'), data: null });
+  }
+  
+  uploadHandler(req, res, next);
+};
+
+// 上传产品图片/视频（主图/轮播图/轮播视频）
 exports.uploadProductImages = async (req, res) => {
-  const { image_type } = req.body;
-  const uploadHandler = image_type == 0 ? uploadMain : uploadCarousel;
-  uploadHandler(req, res, async function (err) {
+  createDynamicUpload(req, res, async function (err) {
     if (err) {
       return res.status(400).json({ success: false, message: err.message, data: null });
     }
     try {
-      const { product_id, image_type, session_id } = req.body;
+      const image_type = parseInt(req.query.image_type || req.body?.image_type) ;
+      const { product_id, session_id } = req.body;
       const files = req.files || (req.file ? [req.file] : []);
       if (!files || files.length === 0) {
         return res.status(400).json({ success: false, message: getMessage('PRODUCT_IMAGE.NO_FILE_UPLOADED'), data: null });
@@ -63,23 +99,44 @@ exports.uploadProductImages = async (req, res) => {
       try {
         const guid = uuidToBinary(uuidv4());
         
-        const imageValues = files.map((file, index) => [
-          guid,
-          product_id === 'undefined' ? null : product_id,
-          `/static/images/${file.filename}`,
-          image_type || 0,
-          index,
-          session_id || null
-        ]);
-        await connection.query(
-          'INSERT INTO product_images (guid, product_id, image_url, image_type, sort_order, session_id, created_by, updated_by) VALUES ?',[imageValues.map(values => [...values, req.userId, req.userId])]
-        );
+        const uploadedImages = [];
+        
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const filePath = file.mimetype.startsWith('video/') 
+            ? `/static/videos/${file.filename}` 
+            : `/static/images/${file.filename}`;
+          
+          const [result] = await connection.query(
+            'INSERT INTO product_images (guid, product_id, image_url, image_type, sort_order, session_id, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              guid,
+              product_id === 'undefined' ? null : product_id,
+              filePath,
+              image_type,
+              i,
+              session_id || null,
+              req.userId,
+              req.userId
+            ]
+          );
+          
+          uploadedImages.push({
+            id: result.insertId,
+            filename: file.filename,
+            path: filePath,
+            name: file.originalname,
+            url: filePath
+          });
+        }
+        
         await connection.commit();
         res.json({
           success: true,
           message: getMessage('PRODUCT_IMAGE.UPLOAD_SUCCESS'),
           data: {
-            images: files.map(file => ({ filename: file.filename, path: `/static/images/${file.filename}` }))
+            images: uploadedImages,
+            image_type: image_type
           }
         });
       } catch (error) {

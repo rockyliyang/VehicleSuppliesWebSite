@@ -314,6 +314,26 @@ const MESSAGES = {
      USER_DELETE_FAILED: 'Failed to delete user'
   },
 
+  // 产品图片相关
+  PRODUCT_IMAGE: {
+    UPLOAD_SUCCESS: 'Product image uploaded successfully',
+    UPLOAD_FAILED: 'Failed to upload product image',
+    NO_FILE_UPLOADED: 'No file uploaded',
+    INVALID_FILE_TYPE: 'Invalid file type, please upload images (jpg, jpeg, png, gif) or videos (mp4, webm, ogg)',
+    IMAGE_TOO_LARGE: 'Image file size cannot exceed 5MB',
+    VIDEO_TOO_LARGE: 'Video file size cannot exceed 50MB',
+    GET_SUCCESS: 'Product images retrieved successfully',
+    GET_FAILED: 'Failed to retrieve product images',
+    NOT_FOUND: 'Product image not found',
+    DELETE_SUCCESS: 'Product image deleted successfully',
+    DELETE_FAILED: 'Failed to delete product image',
+    ORDER_UPDATE_SUCCESS: 'Product image order updated successfully',
+    ORDER_UPDATE_FAILED: 'Failed to update product image order',
+    MISSING_PARAMS: 'Missing required parameters',
+    ASSIGN_SUCCESS: 'Product images assigned successfully',
+    ASSIGN_FAILED: 'Failed to assign product images'
+  },
+
   // 询价相关
   INQUIRY: {
     CREATE: {

@@ -12,17 +12,51 @@
           <div class="product-gallery-block">
             <div class="main-image" ref="mainImage" @mousemove="handleMouseMove" @mouseenter="showZoom = true"
               @mouseleave="showZoom = false">
-              <img :src="activeImage || product.thumbnail_url" :alt="product.name" @error="handleImageError"
+              <!-- 显示视频或图片 -->
+              <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls 
+                ref="mainVideoEl" class="main-video" @loadedmetadata="updateMainImgSize">
+                您的浏览器不支持视频播放。
+              </video>
+              <img v-else :src="activeImage || product.thumbnail_url" :alt="product.name" @error="handleImageError"
                 ref="mainImgEl" @load="updateMainImgSize">
-              <div v-if="showZoom" class="zoom-lens" :style="zoomLensStyle"></div>
+              <div v-if="showZoom && !isActiveMediaVideo" class="zoom-lens" :style="zoomLensStyle"></div>
             </div>
-            <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0" class="zoom-window" :style="zoomWindowStyle">
+            <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0 && !isActiveMediaVideo" class="zoom-window" :style="zoomWindowStyle">
               <img :src="activeImage || product.thumbnail_url" :style="zoomImgStyle" />
             </div>
-            <div class="thumbnail-list">
-              <div v-for="(img, idx) in galleryImages" :key="idx"
-                :class="['thumbnail', activeImage === img ? 'active' : '']" @click="activeImage = img">
-                <img :src="img" :alt="product.name" @error="handleImageError">
+            <div class="thumbnail-container">
+              <div class="thumbnail-scroll-wrapper" ref="thumbnailWrapper">
+                <div class="thumbnail-list" ref="thumbnailList">
+                  <div v-for="(media, idx) in galleryImages" :key="idx"
+                    :class="['thumbnail', activeImage === media.url ? 'active' : '']" @click="setActiveMedia(media)">
+                    <!-- 视频缩略图显示播放图标 -->
+                    <div v-if="media.type === 'video'" class="video-thumbnail">
+                      <video :src="media.url" :alt="product.name" @error="handleImageError" muted>
+                        您的浏览器不支持视频播放。
+                      </video>
+                      <div class="play-icon">
+                        <i class="el-icon-video-play"></i>
+                      </div>
+                    </div>
+                    <img v-else :src="media.url" :alt="product.name" @error="handleImageError">
+                  </div>
+                </div>
+              </div>
+              <div v-if="showScrollArrows" class="scroll-arrows">
+                <button 
+                  class="scroll-arrow scroll-arrow-left" 
+                  @mouseenter="startScrolling('left')"
+                  @mouseleave="stopScrolling"
+                  :disabled="!canScrollLeft">
+                  ‹
+                </button>
+                <button 
+                  class="scroll-arrow scroll-arrow-right" 
+                  @mouseenter="startScrolling('right')"
+                  @mouseleave="stopScrolling"
+                  :disabled="!canScrollRight">
+                  ›
+                </button>
               </div>
             </div>
           </div>
@@ -46,7 +80,7 @@
               <!-- 数量选择器单独一行 -->
               <div class="quantity-selector">
                 <label class="quantity-label">{{ $t('productDetail.quantity') || '数量' }}:</label>
-                <el-input-number v-model="quantity" :min="1" :max="product.stock" size="medium"></el-input-number>
+                <el-input-number v-model="quantity" :min="1" :max="product.stock" size="default"></el-input-number>
               </div>
 
               <!-- 按钮组单独一行 -->
@@ -161,6 +195,11 @@ export default {
       mainImageContainerWidth: 0,
       mainImageContainerHeight: 0,
       addingToCart: false,
+      // 滚动相关状态
+      showScrollArrows: false,
+      canScrollLeft: false,
+      canScrollRight: false,
+      scrollInterval: null,
     }
   },
   computed: {
@@ -185,13 +224,23 @@ export default {
       return items;
     },
     galleryImages() {
-      // 主图和所有详情图（image_type=0 和 1）
+      // 轮播图只包含详情图（image_type=1），支持图片和视频
       const arr = []
-      if (this.product.thumbnail_url) arr.push(this.product.thumbnail_url)
+      
+      // 添加详情图片，detail_images是字符串数组
       if (this.product.detail_images && Array.isArray(this.product.detail_images)) {
-        arr.push(...this.product.detail_images.filter(url => url && url !== this.product.thumbnail_url))
+        arr.push(...this.product.detail_images
+          .filter(imageUrl => imageUrl && imageUrl.trim())
+          .map(imageUrl => ({
+            url: imageUrl,
+            type: this.getMediaType(imageUrl)
+          }))
+        )
       }
       return arr
+    },
+    isActiveMediaVideo() {
+      return this.getMediaType(this.activeImage) === 'video'
     },
     zoomLensStyle() {
       return {
@@ -256,6 +305,12 @@ export default {
     '$route.params.id'(newId) {
       this.productId = parseInt(newId)
       this.fetchProduct()
+    },
+    // 监听图片列表变化，重新检查滚动需求
+    galleryImages() {
+      this.$nextTick(() => {
+        this.checkScrollNeed();
+      });
     }
   },
   created() {
@@ -267,9 +322,24 @@ export default {
   mounted() {
     this.updateMainImgSize();
     window.addEventListener('resize', this.updateMainImgSize);
+    this.$nextTick(() => {
+      this.checkScrollNeed();
+      window.addEventListener('resize', this.checkScrollNeed);
+    });
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.updateMainImgSize);
+    window.removeEventListener('resize', this.checkScrollNeed);
+    
+    // 移除滚动事件监听器
+    const wrapper = this.$refs.thumbnailWrapper;
+    if (wrapper) {
+      wrapper.removeEventListener('scroll', this.updateScrollButtons);
+    }
+    
+    if (this.scrollInterval) {
+      clearInterval(this.scrollInterval);
+    }
   },
   methods: {
     handleImageError,
@@ -362,20 +432,27 @@ export default {
     updateMainImgSize() {
       this.$nextTick(() => {
         // 确保组件仍然挂载
-        if (this.$el && this.$refs && this.$refs.mainImgEl && this.$refs.mainImage) {
-          const imgEl = this.$refs.mainImgEl;
+        if (this.$el && this.$refs && this.$refs.mainImage) {
+          const mediaEl = this.$refs.mainImgEl || this.$refs.mainVideoEl;
           const containerEl = this.$refs.mainImage;
 
-          if (imgEl && containerEl) {
+          if (mediaEl && containerEl) {
             try {
-              this.mainImgWidth = imgEl.naturalWidth || imgEl.width;
-              this.mainImgHeight = imgEl.naturalHeight || imgEl.height;
+              if (this.isActiveMediaVideo) {
+                // 视频元素
+                this.mainImgWidth = mediaEl.videoWidth || mediaEl.clientWidth;
+                this.mainImgHeight = mediaEl.videoHeight || mediaEl.clientHeight;
+              } else {
+                // 图片元素
+                this.mainImgWidth = mediaEl.naturalWidth || mediaEl.width;
+                this.mainImgHeight = mediaEl.naturalHeight || mediaEl.height;
+              }
 
               const rect = containerEl.getBoundingClientRect();
               this.mainImageContainerWidth = rect.width;
               this.mainImageContainerHeight = rect.height;
             } catch (error) {
-              console.warn('Update main image size failed:', error);
+              console.warn('Update main media size failed:', error);
             }
           }
         }
@@ -395,6 +472,78 @@ export default {
         } catch (error) {
           console.warn('Handle mouse move failed:', error);
         }
+      }
+    },
+    // 判断媒体类型
+    getMediaType(url) {
+      if (!url) return 'image'
+      const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv']
+      const extension = url.toLowerCase().substring(url.lastIndexOf('.'))
+      return videoExtensions.includes(extension) ? 'video' : 'image'
+    },
+    // 设置当前活动媒体
+    setActiveMedia(media) {
+      this.activeImage = media.url
+      // 如果是视频，停止放大功能
+      if (media.type === 'video') {
+        this.showZoom = false
+      }
+    },
+    // 检查是否需要显示滚动箭头
+    checkScrollNeed() {
+      this.$nextTick(() => {
+        const wrapper = this.$refs.thumbnailWrapper;
+        const list = this.$refs.thumbnailList;
+        if (wrapper && list) {
+          const wrapperWidth = wrapper.clientWidth;
+          const listWidth = list.scrollWidth;
+          this.showScrollArrows = listWidth > wrapperWidth;
+          this.updateScrollButtons();
+          
+          // 添加滚动事件监听器
+          wrapper.addEventListener('scroll', this.updateScrollButtons);
+        }
+      });
+    },
+    // 更新滚动按钮状态
+    updateScrollButtons() {
+      const wrapper = this.$refs.thumbnailWrapper;
+      if (wrapper) {
+        this.canScrollLeft = wrapper.scrollLeft > 0;
+        this.canScrollRight = wrapper.scrollLeft < (wrapper.scrollWidth - wrapper.clientWidth);
+      }
+    },
+    // 开始滚动
+    startScrolling(direction) {
+      if (this.scrollInterval) {
+        clearInterval(this.scrollInterval);
+      }
+      
+      const wrapper = this.$refs.thumbnailWrapper;
+      if (!wrapper) return;
+      
+      const scrollSpeed = 2; // 滚动速度
+      
+      this.scrollInterval = setInterval(() => {
+        if (direction === 'left') {
+          wrapper.scrollLeft -= scrollSpeed;
+          if (wrapper.scrollLeft <= 0) {
+            this.stopScrolling();
+          }
+        } else {
+          wrapper.scrollLeft += scrollSpeed;
+          if (wrapper.scrollLeft >= (wrapper.scrollWidth - wrapper.clientWidth)) {
+            this.stopScrolling();
+          }
+        }
+        this.updateScrollButtons();
+      }, 16); // 约60fps
+    },
+    // 停止滚动
+    stopScrolling() {
+      if (this.scrollInterval) {
+        clearInterval(this.scrollInterval);
+        this.scrollInterval = null;
       }
     },
   }
@@ -517,7 +666,8 @@ export default {
   cursor: crosshair;
 }
 
-.main-image img {
+.main-image img,
+.main-image video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -525,10 +675,65 @@ export default {
   display: block;
 }
 
+.main-video {
+  background: #000;
+}
+
+.video-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.video-thumbnail video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.play-icon i {
+  margin-left: 2px; /* 调整播放图标位置 */
+}
+
+.thumbnail-container {
+  position: relative;
+  width: 100%;
+}
+
+.thumbnail-scroll-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+
 .thumbnail-list {
   display: flex;
   gap: $spacing-sm;
   justify-content: flex-start;
+  min-width: min-content;
 }
 
 .thumbnail {
@@ -539,6 +744,7 @@ export default {
   border-radius: $border-radius-sm;
   display: flex;
   align-items: center;
+  flex-shrink: 0; /* 防止缩略图被压缩 */
   justify-content: center;
   cursor: pointer;
   transition: $transition-base;
@@ -562,6 +768,52 @@ export default {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+
+:deep(.scroll-arrows) {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 2;
+}
+
+:deep(.scroll-arrow) {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: $transition-base;
+  pointer-events: auto;
+  font-size: 18px;
+  font-weight: bold;
+  
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+  }
+  
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+:deep(.scroll-arrow-left) {
+  margin-left: -12px;
+}
+
+:deep(.scroll-arrow-right) {
+  margin-right: -12px;
 }
 
 .product-info-block {
