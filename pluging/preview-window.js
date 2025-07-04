@@ -1,3 +1,11 @@
+// 判断是否为视频URL
+function isVideoUrl(url) {
+  if (!url) return false;
+  const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
+  const lowerUrl = url.toLowerCase();
+  return videoExtensions.some(ext => lowerUrl.includes(ext));
+}
+
 // 从URL参数获取产品数据
 function getProductDataFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -86,14 +94,20 @@ function generatePreviewContent(product) {
   // 主图
   if (product.mainImage && product.mainImage.trim() !== '') {
     totalImages++;
+    const isVideo = isVideoUrl(product.mainImage);
     html += `
       <div class="preview-section">
-        <h3>🖼️ 主图 (1张)</h3>
+        <h3>${isVideo ? '🎬' : '🖼️'} 主图 (1${isVideo ? '个视频' : '张'})</h3>
         <div class="image-grid">
-          <div class="image-item">
-            <img src="${product.mainImage}" alt="主图" data-image-src="${product.mainImage}" class="preview-image">
+          <div class="image-item ${isVideo ? 'video-item' : ''} selected" data-image-src="${product.mainImage}">
+            ${isVideo ? 
+              `<video src="${product.mainImage}" alt="主图视频" data-image-src="${product.mainImage}" class="preview-video" controls preload="metadata">
+                 您的浏览器不支持视频播放
+               </video>` :
+              `<img src="${product.mainImage}" alt="主图" data-image-src="${product.mainImage}" class="preview-image">`
+            }
             <div class="image-info">
-              <div class="image-resolution">加载中...</div>
+              <div class="image-resolution">${isVideo ? '视频文件' : '加载中...'}</div>
               <label class="image-checkbox">
                 <input type="checkbox" data-image-type="main" data-image-src="${product.mainImage}" checked>
                 选中
@@ -117,10 +131,16 @@ function generatePreviewContent(product) {
       `;
       
       validCarouselImages.forEach((img, index) => {
+        const isVideo = isVideoUrl(img);
         html += `
-          <div class="image-item" data-image-src="${img}">
-            <img src="${img}" alt="轮播图${index + 1}" data-image-src="${img}" class="preview-image">
-            <div class="image-resolution">加载中...</div>
+          <div class="image-item ${isVideo ? 'video-item' : ''}" data-image-src="${img}">
+            ${isVideo ? 
+              `<video src="${img}" alt="轮播视频${index + 1}" data-image-src="${img}" class="preview-video" controls preload="metadata">
+                 您的浏览器不支持视频播放
+               </video>` :
+              `<img src="${img}" alt="轮播图${index + 1}" data-image-src="${img}" class="preview-image">`
+            }
+            <div class="image-resolution">${isVideo ? '视频文件' : '加载中...'}</div>
           </div>
         `;
       });
@@ -144,10 +164,16 @@ function generatePreviewContent(product) {
       `;
       
       validDetailImages.forEach((img, index) => {
+        const isVideo = isVideoUrl(img);
         html += `
-          <div class="image-item" data-image-src="${img}">
-            <img src="${img}" alt="详情图${index + 1}" data-image-src="${img}" class="preview-image">
-            <div class="image-resolution">加载中...</div>
+          <div class="image-item ${isVideo ? 'video-item' : ''}" data-image-src="${img}">
+            ${isVideo ? 
+              `<video src="${img}" alt="详情视频${index + 1}" data-image-src="${img}" class="preview-video" controls preload="metadata">
+                 您的浏览器不支持视频播放
+               </video>` :
+              `<img src="${img}" alt="详情图${index + 1}" data-image-src="${img}" class="preview-image">`
+            }
+            <div class="image-resolution">${isVideo ? '视频文件' : '加载中...'}</div>
           </div>
         `;
       });
@@ -171,10 +197,16 @@ function generatePreviewContent(product) {
       `;
       
       validImages.forEach((img, index) => {
+        const isVideo = isVideoUrl(img);
         html += `
-          <div class="image-item" data-image-src="${img}">
-            <img src="${img}" alt="图片${index + 1}" data-image-src="${img}" class="preview-image">
-            <div class="image-resolution">加载中...</div>
+          <div class="image-item ${isVideo ? 'video-item' : ''}" data-image-src="${img}">
+            ${isVideo ? 
+              `<video src="${img}" alt="视频${index + 1}" data-image-src="${img}" class="preview-video" controls preload="metadata">
+                 您的浏览器不支持视频播放
+               </video>` :
+              `<img src="${img}" alt="图片${index + 1}" data-image-src="${img}" class="preview-image">`
+            }
+            <div class="image-resolution">${isVideo ? '视频文件' : '加载中...'}</div>
           </div>
         `;
       });
@@ -259,17 +291,51 @@ function generatePreviewContent(product) {
   return html;
 }
 
-// 显示图片模态框
-function showImageModal(imageSrc) {
+// 显示图片/视频模态框
+function showImageModal(mediaSrc) {
   const modal = document.getElementById('image-modal');
   const modalImage = document.getElementById('modal-image');
-  modalImage.src = imageSrc;
+  const modalVideo = document.getElementById('modal-video');
+  
+  if (isVideoUrl(mediaSrc)) {
+    // 显示视频
+    if (modalVideo) {
+      modalVideo.src = mediaSrc;
+      modalVideo.style.display = 'block';
+      modalImage.style.display = 'none';
+    } else {
+      // 如果没有video元素，创建一个
+      const videoElement = document.createElement('video');
+      videoElement.id = 'modal-video';
+      videoElement.src = mediaSrc;
+      videoElement.controls = true;
+      videoElement.style.maxWidth = '90%';
+      videoElement.style.maxHeight = '90%';
+      modalImage.parentNode.insertBefore(videoElement, modalImage.nextSibling);
+      modalImage.style.display = 'none';
+    }
+  } else {
+    // 显示图片
+    modalImage.src = mediaSrc;
+    modalImage.style.display = 'block';
+    if (modalVideo) {
+      modalVideo.style.display = 'none';
+    }
+  }
+  
   modal.style.display = 'block';
 }
 
-// 隐藏图片模态框
+// 隐藏图片/视频模态框
 function hideImageModal() {
   const modal = document.getElementById('image-modal');
+  const modalVideo = document.getElementById('modal-video');
+  
+  // 暂停视频播放
+  if (modalVideo) {
+    modalVideo.pause();
+  }
+  
   modal.style.display = 'none';
 }
 
@@ -281,9 +347,22 @@ function updateImageResolution(img) {
   }
 }
 
+// 更新视频信息显示
+function updateVideoInfo(video) {
+  const resolutionDiv = video.parentElement.querySelector('.image-resolution');
+  if (resolutionDiv) {
+    video.addEventListener('loadedmetadata', () => {
+      if (video.videoWidth && video.videoHeight) {
+        const duration = video.duration ? ` (${Math.round(video.duration)}s)` : '';
+        resolutionDiv.textContent = `${video.videoWidth} × ${video.videoHeight}${duration}`;
+      }
+    });
+  }
+}
+
 // 获取选中的图片
 function getSelectedImages() {
-  const selectedItems = document.querySelectorAll('.image-item.selected[data-image-src]');
+  const selectedItems = document.querySelectorAll('.image-item.selected[data-image-src],.image-item.video-item.selected[data-image-src]');
   const selectedImages = {
     mainImage: null,
     carouselImages: [],
@@ -294,10 +373,11 @@ function getSelectedImages() {
   selectedItems.forEach(item => {
     const src = item.getAttribute('data-image-src');
     const img = item.querySelector('img');
-    const alt = img ? img.getAttribute('alt') : '';
+    const video = item.querySelector('video');
+    const alt = img ? img.getAttribute('alt') : video ? video.getAttribute('alt') : '';
     
     // 根据alt属性判断图片类型
-    if (alt.includes('轮播图')) {
+    if (alt.includes('轮播图') || alt.includes('轮播视频')) {
       selectedImages.carouselImages.push(src);
     } else if (alt.includes('详情图')) {
       selectedImages.detailImages.push(src);
@@ -366,7 +446,7 @@ async function uploadImages(imageUrls, imageType = 0, sessionId) {
       formData.append('session_id', sessionId);
       
       // 3. 上传到后端服务器
-      const uploadResponse = await fetch(`${config.apiUrl}/api/product-images/upload`, {
+      const uploadResponse = await fetch(`${config.apiUrl}/api/product-images/upload?image_type=${imageType}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${config.apiToken}`
@@ -392,6 +472,61 @@ async function uploadImages(imageUrls, imageType = 0, sessionId) {
   return uploadedImages;
 }
 
+// 获取分类列表
+async function loadCategories() {
+  try {
+    const config = await chrome.storage.sync.get(['apiUrl', 'apiToken']);
+    if (!config.apiUrl || !config.apiToken) {
+      console.error('API配置不完整，无法获取分类');
+      return [];
+    }
+    
+    const response = await fetch(`${config.apiUrl}/api/categories`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${config.apiToken}`
+      }
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      return result.data || [];
+    } else {
+      console.error('获取分类失败:', result.message);
+      return [];
+    }
+  } catch (error) {
+    console.error('获取分类异常:', error);
+    return [];
+  }
+}
+
+// 填充分类选择框
+async function populateCategorySelect() {
+  const categorySelect = document.getElementById('category-select');
+  if (!categorySelect) return;
+  
+  // 清空现有选项
+  categorySelect.innerHTML = '<option value="">请选择分类</option>';
+  
+  try {
+    const categories = await loadCategories();
+    
+    categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category.id;
+      option.textContent = category.name;
+      categorySelect.appendChild(option);
+    });
+    
+    showMessage('分类列表已更新', 'success');
+  } catch (error) {
+    console.error('填充分类选择框失败:', error);
+    showMessage('获取分类列表失败', 'error');
+  }
+}
+
 // 上传产品到系统
 async function uploadProduct(productData, selectedImages) {
   try {
@@ -406,6 +541,10 @@ async function uploadProduct(productData, selectedImages) {
       console.error('API配置不完整，无法上传');
       return;
     }
+    
+    // 获取选中的分类
+    const categorySelect = document.getElementById('category-select');
+    const selectedCategoryId = categorySelect ? categorySelect.value : null;
     
     console.log('正在上传图片...');
     
@@ -452,6 +591,7 @@ async function uploadProduct(productData, selectedImages) {
       minOrderQuantity: productData.minOrderQuantity,
       unit: productData.unit,
       category: productData.category,
+      category_id: selectedCategoryId, // 添加选中的分类ID
       // 不包含图片URL，因为图片已经通过/api/product-images/upload上传
     };
     
@@ -503,6 +643,60 @@ async function uploadProduct(productData, selectedImages) {
   }
 }
 
+// 显示提示消息
+function showMessage(message, type = 'info') {
+  // 创建消息元素
+  const messageEl = document.createElement('div');
+  messageEl.className = `message-toast message-${type}`;
+  messageEl.textContent = message;
+  
+  // 添加样式
+  messageEl.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    max-width: 300px;
+    word-wrap: break-word;
+  `;
+  
+  // 根据类型设置背景色
+  switch (type) {
+    case 'success':
+      messageEl.style.backgroundColor = '#67C23A';
+      break;
+    case 'error':
+      messageEl.style.backgroundColor = '#F56C6C';
+      break;
+    case 'warning':
+      messageEl.style.backgroundColor = '#E6A23C';
+      break;
+    default:
+      messageEl.style.backgroundColor = '#409EFF';
+  }
+  
+  // 添加到页面
+  document.body.appendChild(messageEl);
+  
+  // 3秒后自动移除
+  setTimeout(() => {
+    if (messageEl.parentNode) {
+      messageEl.style.opacity = '0';
+      messageEl.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        messageEl.parentNode.removeChild(messageEl);
+      }, 300);
+    }
+  }, 3000);
+}
+
 // 上传选中的图片和产品
 async function uploadSelectedImages() {
   const selectedImages = getSelectedImages();
@@ -512,15 +706,25 @@ async function uploadSelectedImages() {
                        selectedImages.otherImages.length;
   
   if (totalSelected === 0) {
-    console.log('没有选择图片，跳过上传');
+    showMessage('请至少选择一张图片', 'warning');
     return;
+  }
+  
+  // 显示上传中提示
+  showMessage('正在上传产品和图片，请稍候...', 'info');
+  
+  // 禁用上传按钮
+  const uploadBtn = document.getElementById('upload-selected-btn');
+  if (uploadBtn) {
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = '上传中...';
   }
   
   try {
     // 获取原始产品数据
     let productData = getProductDataFromStorage() || getProductDataFromUrl();
     if (!productData) {
-      console.error('没有产品数据，无法上传');
+      showMessage('没有产品数据，无法上传', 'error');
       return;
     }
     
@@ -531,12 +735,21 @@ async function uploadSelectedImages() {
     
     if (result) {
       console.log('✅ 产品和图片上传成功');
+      showMessage(`产品"${productData.title}"上传成功！`, 'success');
     } else {
       console.error('❌ 产品和图片上传失败');
+      showMessage('产品上传失败，请检查网络连接和API配置', 'error');
     }
     
   } catch (error) {
     console.error('上传过程中发生错误:', error);
+    showMessage('上传过程中发生错误：' + error.message, 'error');
+  } finally {
+    // 恢复上传按钮
+    if (uploadBtn) {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = '上传选中的图片';
+    }
   }
 }
 
@@ -564,6 +777,12 @@ document.addEventListener('DOMContentLoaded', function() {
   if (uploadBtn) {
     uploadBtn.addEventListener('click', uploadSelectedImages);
   }
+  
+  // 绑定刷新分类按钮事件
+  const refreshCategoriesBtn = document.getElementById('refresh-categories');
+  if (refreshCategoriesBtn) {
+    refreshCategoriesBtn.addEventListener('click', populateCategorySelect);
+  }
 
   // 绑定模态框关闭事件
   closeBtn.addEventListener('click', hideImageModal);
@@ -585,40 +804,63 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loading.style.display = 'none';
     content.style.display = 'block';
-    content.innerHTML = generatePreviewContent(productData);
     
-
+    // 将动态内容放到dynamic-content容器中，而不是替换整个content
+    const dynamicContent = document.getElementById('dynamic-content');
+    if (dynamicContent) {
+      dynamicContent.innerHTML = generatePreviewContent(productData);
+    }
     
-    // 绑定图片项点击事件（切换选中状态）
-    content.addEventListener('click', function(event) {
-      const imageItem = event.target.closest('.image-item');
-      if (imageItem && imageItem.hasAttribute('data-image-src')) {
-        // 如果点击的是图片预览（用于放大），不切换选中状态
-        if (event.target.classList.contains('preview-image')) {
-          const imageSrc = event.target.getAttribute('data-image-src');
-          if (imageSrc) {
-            showImageModal(imageSrc);
+    // 初始化分类选择框
+    populateCategorySelect();
+    
+    // 绑定图片/视频项点击事件（切换选中状态）
+    if (dynamicContent) {
+      dynamicContent.addEventListener('click', function(event) {
+        const imageItem = event.target.closest('.image-item');
+        if (imageItem && imageItem.hasAttribute('data-image-src')) {
+          // 如果点击的是图片预览（用于放大），不切换选中状态
+          if (event.target.classList.contains('preview-image')) {
+            const imageSrc = event.target.getAttribute('data-image-src');
+            if (imageSrc) {
+              showImageModal(imageSrc);
+            }
+          } else if (event.target.classList.contains('preview-video')) {
+            // 如果点击的是视频预览，显示模态框
+            const videoSrc = event.target.getAttribute('data-image-src');
+            if (videoSrc) {
+              showImageModal(videoSrc);
+            }
+          } else {
+            // 切换选中状态
+            imageItem.classList.toggle('selected');
           }
-        } else {
-          // 切换选中状态
-          imageItem.classList.toggle('selected');
         }
-      }
-    });
+      });
+    }
     
     // 绑定图片加载事件（事件委托）
-     content.addEventListener('load', function(event) {
-       if (event.target.classList.contains('preview-image')) {
-         updateImageResolution(event.target);
-       }
-     }, true);
-     
-     // 初始化所有图片为选中状态
-     setTimeout(() => {
-       const imageItems = content.querySelectorAll('.image-item[data-image-src]');
-       imageItems.forEach(item => {
-         item.classList.add('selected');
-       });
-     }, 100);
+     if (dynamicContent) {
+       dynamicContent.addEventListener('load', function(event) {
+         if (event.target.classList.contains('preview-image')) {
+           updateImageResolution(event.target);
+         }
+       }, true);
+       
+       // 绑定视频加载事件（事件委托）
+       dynamicContent.addEventListener('loadedmetadata', function(event) {
+         if (event.target.classList.contains('preview-video')) {
+           updateVideoInfo(event.target);
+         }
+       }, true);
+       
+       // 初始化所有图片为选中状态
+       setTimeout(() => {
+         const imageItems = dynamicContent.querySelectorAll('.image-item[data-image-src]');
+         imageItems.forEach(item => {
+           item.classList.add('selected');
+         });
+       }, 100);
+     }
   }, 500);
 });

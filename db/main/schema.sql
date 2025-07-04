@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS products (
   category_id BIGINT NOT NULL,
   product_type ENUM('physical', 'virtual', 'service') NOT NULL DEFAULT 'physical' COMMENT '产品类型：physical-实物商品，virtual-虚拟商品，service-服务',
   status ENUM('on_shelf', 'off_shelf') NOT NULL DEFAULT 'off_shelf',
+  sort_order INT NOT NULL DEFAULT 0 COMMENT '排序字段，数值越大排序越靠前'
   deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -103,6 +104,7 @@ CREATE TABLE IF NOT EXISTS products (
   UNIQUE KEY unique_active_product_code (active_unique_key),
   INDEX idx_created_by (created_by),
   INDEX idx_updated_by (updated_by),
+  INDEX idx_products_sort_order (sort_order DESC),
   CONSTRAINT fk_products_created_by FOREIGN KEY (created_by) REFERENCES users(id),
   CONSTRAINT fk_products_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 );

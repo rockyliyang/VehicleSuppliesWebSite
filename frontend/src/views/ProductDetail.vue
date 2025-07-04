@@ -13,7 +13,7 @@
             <div class="main-image" ref="mainImage" @mousemove="handleMouseMove" @mouseenter="showZoom = true"
               @mouseleave="showZoom = false">
               <!-- 显示视频或图片 -->
-              <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls 
+              <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted
                 ref="mainVideoEl" class="main-video" @loadedmetadata="updateMainImgSize">
                 您的浏览器不支持视频播放。
               </video>
@@ -90,10 +90,7 @@
                   <span v-if="!addingToCart">{{ $t('buttons.addToCart') }}</span>
                   <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
                 </el-button>
-                <el-button class="inquiry-button" @click="addToInquiry" :disabled="product.stock <= 0">{{
-                  $t('buttons.addToInquiry')
-                  }}</el-button>
-                <el-button class="contact-button" @click="contactUs">{{ $t('buttons.contactUs') }}</el-button>
+                <el-button class="inquiry-button" @click="addToInquiry" :disabled="product.stock <= 0">{{ $t('buttons.addToInquiry') }}</el-button>
               </div>
             </div>
             <div class="product-share">
@@ -298,8 +295,14 @@ export default {
   },
   watch: {
     product(val) {
-      // 切换产品时重置主图
-      this.activeImage = val.thumbnail_url || ''
+      // 切换产品时设置为第一个轮播图，如果没有轮播图则使用主图
+      this.$nextTick(() => {
+        if (this.galleryImages && this.galleryImages.length > 0) {
+          this.setActiveMedia(this.galleryImages[0])
+        } else {
+          this.activeImage = val.thumbnail_url || ''
+        }
+      })
     },
     // 监听路由参数变化，切换产品时重新获取数据
     '$route.params.id'(newId) {
@@ -484,9 +487,20 @@ export default {
     // 设置当前活动媒体
     setActiveMedia(media) {
       this.activeImage = media.url
-      // 如果是视频，停止放大功能
+      // 如果是视频，停止放大功能并设置自动播放
       if (media.type === 'video') {
         this.showZoom = false
+        this.$nextTick(() => {
+          const videoEl = this.$refs.mainVideoEl
+          if (videoEl) {
+            videoEl.currentTime = 0 // 从头开始播放
+            videoEl.loop = true // 循环播放
+            videoEl.muted = true // 默认静音
+            videoEl.play().catch(error => {
+              console.warn('视频自动播放失败:', error)
+            })
+          }
+        })
       }
     },
     // 检查是否需要显示滚动箭头

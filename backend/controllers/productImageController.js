@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 });
 
 const uploadMain = multer({
-  storage: storage,
+  storage: storage, 
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
@@ -67,7 +67,7 @@ const uploadCarousel = multer({
 const createDynamicUpload = (req, res, next) => {
   // 从查询参数或表单数据中获取image_type
   const image_type = parseInt(req.query.image_type || req.body?.image_type) || 0;
-  console.log('动态获取的image_type:', image_type);
+  console.log('image_type is :', image_type);
   
   let uploadHandler;
   if (image_type == 0) {
@@ -77,8 +77,9 @@ const createDynamicUpload = (req, res, next) => {
   } else {
     return res.status(400).json({ success: false, message: getMessage('PRODUCT_IMAGE.INVALID_FILE_TYPE'), data: null });
   }
-  
+ 
   uploadHandler(req, res, next);
+  console.log('写入文件成功:', req.files || (req.file ? [req.file] : []));
 };
 
 // 上传产品图片/视频（主图/轮播图/轮播视频）
@@ -95,7 +96,9 @@ exports.uploadProductImages = async (req, res) => {
         return res.status(400).json({ success: false, message: getMessage('PRODUCT_IMAGE.NO_FILE_UPLOADED'), data: null });
       }
       const connection = await pool.getConnection();
+      console.log('before transaction');
       await connection.beginTransaction();
+      console.log('entre transaction');
       try {
         const guid = uuidToBinary(uuidv4());
         
@@ -106,7 +109,8 @@ exports.uploadProductImages = async (req, res) => {
           const filePath = file.mimetype.startsWith('video/') 
             ? `/static/videos/${file.filename}` 
             : `/static/images/${file.filename}`;
-          
+          console.log('before insert file info to db');
+
           const [result] = await connection.query(
             'INSERT INTO product_images (guid, product_id, image_url, image_type, sort_order, session_id, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [
@@ -120,7 +124,7 @@ exports.uploadProductImages = async (req, res) => {
               req.userId
             ]
           );
-          
+          console.log('写入文件信息到数据库:', file.filename);
           uploadedImages.push({
             id: result.insertId,
             filename: file.filename,
@@ -131,6 +135,7 @@ exports.uploadProductImages = async (req, res) => {
         }
         
         await connection.commit();
+        console.log('提交数据库');
         res.json({
           success: true,
           message: getMessage('PRODUCT_IMAGE.UPLOAD_SUCCESS'),

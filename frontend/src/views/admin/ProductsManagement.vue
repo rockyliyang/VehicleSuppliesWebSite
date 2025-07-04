@@ -120,6 +120,14 @@
         <el-form-item label="产品库存" prop="stock">
           <el-input-number v-model="productForm.stock" :min="0" :max="999999" />
         </el-form-item>
+        <el-form-item label="排序" prop="sort_order">
+          <el-input-number 
+            v-model="productForm.sort_order" 
+            :min="0" 
+            placeholder="请输入排序值（数值越大越排前）"
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-form-item label="产品图片" prop="images">
           <el-upload class="product-image-uploader" action="/api/product-images/upload?image_type=0"
             :headers="uploadHeaders" :data="{ product_id: productForm.id, session_id: sessionId }"
@@ -259,6 +267,7 @@ export default {
         product_type: 'consignment',
         price: '',
         stock: 0,
+        sort_order: 0,
         short_description: '',
         full_description: '',
         status: 'on_shelf'
@@ -605,6 +614,7 @@ export default {
         product_type: 'consignment',
         price: '',
         stock: 0,
+        sort_order: 0,
         short_description: '',
         full_description: '',
         status: 'on_shelf'

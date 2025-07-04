@@ -4,7 +4,7 @@
     <PageBanner :title="$t('products.title') || '产品中心'" />
     <NavigationMenu :breadcrumb-items="breadcrumbItems" />
     <!-- Category Navigation -->
-    <div class="category-navigation-wrapper py-8">
+    <div class="category-navigation-wrapper">
       <div class="container mx-auto">
         <div class="flex justify-center py-12">
           <div class="flex space-x-8 category-tabs">
@@ -30,22 +30,21 @@
 
           <!-- Modern Products Grid -->
           <div class="products-grid">
-            <ProductCard v-for="product in paginatedProducts" :key="product.id" :product="product"
-              :show-description="true" :show-arrow="true"
-              :default-description="'Powerful suction with long battery life'" card-style="products"
+            <ProductCard v-for="product in products" :key="product.id" :product="product" :show-description="true"
+              :show-arrow="true" :default-description="'Powerful suction with long battery life'" card-style="products"
               @card-click="handleProductClick" @title-click="handleProductClick" />
           </div>
 
           <!-- No Products Message -->
-          <div v-if="filteredProducts.length === 0" class="no-products">
+          <div v-if="products.length === 0" class="no-products">
             <i class="fas fa-search text-6xl text-gray-400 mb-4"></i>
             <p class="text-xl text-gray-500">{{ $t('products.noProducts') || '暂无相关产品' }}</p>
           </div>
 
           <!-- Modern Pagination -->
-          <div class="pagination-container">
-            <el-pagination background layout="total, prev, pager, next, jumper" :total="filteredProducts.length"
-              :page-size="12" :current-page="currentPage" @current-change="handleCurrentChange"
+          <div class="pagination-container" v-if="totalProducts > pageSize">
+            <el-pagination background layout="total, prev, pager, next, jumper" :total="totalProducts"
+              :page-size="pageSize" :current-page="currentPage" @current-change="handlePageChange"
               class="modern-pagination">
             </el-pagination>
           </div>
@@ -75,9 +74,10 @@ export default {
       products: [],
       categories: [],
       selectedCategory: null,
-      sortOption: 'default',
       currentPage: 1,
-      loading: false
+      loading: false,
+      totalProducts: 0,
+      pageSize: 10
     }
   },
   computed: {
@@ -85,28 +85,6 @@ export default {
       return [
         { text: this.$t('products.title') || '产品中心' }
       ];
-    },
-    filteredProducts() {
-      if (!this.selectedCategory) {
-        return this.products
-      }
-      return this.products.filter(product => product.category_id && product.category_id.toString() === this.selectedCategory)
-    },
-    sortedProducts() {
-      const products = [...this.filteredProducts]
-      
-      switch(this.sortOption) {
-        case 'price-asc':
-          return products.sort((a, b) => a.price - b.price)
-        case 'price-desc':
-          return products.sort((a, b) => b.price - a.price)
-        default:
-          return products
-      }
-    },
-    paginatedProducts() {
-      const startIndex = (this.currentPage - 1) * 12
-      return this.sortedProducts.slice(startIndex, startIndex + 12)
     }
   },
   created() {
@@ -139,10 +117,23 @@ export default {
       }
     },
     async fetchProducts() {
+      this.loading = true
       try {
-        this.loading = true
-        const response = await this.$api.get('products')
-        this.products = (response.data && response.data.items) ? response.data.items : []
+        const params = {
+          page: this.currentPage,
+          limit: this.pageSize,
+          sort_by: 'sort_order',
+          sort_order: 'desc'
+        }
+        
+        // 添加分类筛选
+        if (this.selectedCategory) {
+          params.category_id = this.selectedCategory
+        }
+        
+        const response = await this.$api.get('products', { params })
+        this.products = response.data?.items || []
+        this.totalProducts = response.data?.total || 0
         //this.$messageHandler.showSuccess(response.message || '获取产品成功', 'product.success.fetchSuccess')
       } catch (error) {
         console.error('获取产品失败:', error)
@@ -161,11 +152,9 @@ export default {
       } else {
         this.$router.push({ query: { category: categoryId } })
       }
-    },
-    handleCurrentChange(page) {
-      this.currentPage = page
-      // 滚动到页面顶部
-      window.scrollTo(0, 0)
+      
+      // 重新获取产品数据
+      this.fetchProducts()
     },
     async addToInquiry(product) {
       // 使用公共的购物车工具函数
@@ -176,6 +165,14 @@ export default {
           messageHandler: this.$messageHandler,
           $bus: this.$bus
         });
+    },
+    
+    // 处理分页变化
+    handlePageChange(page) {
+      this.currentPage = page
+      this.fetchProducts()
+      // 滚动到页面顶部
+      window.scrollTo(0, 0)
     }
   }
 }
@@ -317,6 +314,7 @@ export default {
 .category-navigation-wrapper {
   background: $white !important;
   background-color: $white !important;
+  padding-bottom: $spacing-xl;
 }
 
 .category-tabs {
@@ -336,8 +334,8 @@ export default {
 /* Modern Products Grid */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: $spacing-xl;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: $spacing-lg;
   margin-bottom: $spacing-xl;
 }
 
@@ -361,6 +359,19 @@ export default {
   border-top: 2px solid $gray-100;
 }
 
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+@media (min-width: 1200px) {
+  .product-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
 .modern-pagination {
   --el-color-primary: #{$primary-color};
 }
@@ -368,7 +379,8 @@ export default {
 /* Responsive Design */
 @include desktop {
   .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(5, 1fr);
+    gap: $spacing-lg;
   }
 }
 

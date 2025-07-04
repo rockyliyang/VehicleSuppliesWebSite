@@ -60,7 +60,8 @@ exports.createProduct = async (req, res) => {
       product_type = 'consignment', // 默认为代销
       thumbnail_url = null,
       short_description = '',
-      full_description = ''
+      full_description = '',
+      sort_order = 0
     } = req.body;
 
     // 验证产品类型
@@ -91,8 +92,8 @@ exports.createProduct = async (req, res) => {
     const [result] = await connection.query(
       `INSERT INTO products (
         name, product_code, category_id, price, stock, status, product_type,
-        thumbnail_url, short_description, full_description, guid, deleted, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+        thumbnail_url, short_description, full_description, sort_order, guid, deleted, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
       [
         name,
         product_code,
@@ -104,6 +105,7 @@ exports.createProduct = async (req, res) => {
         thumbnail_url,
         short_description,
         full_description,
+        sort_order,
         guid,
         currentUserId,
         currentUserId
@@ -177,8 +179,19 @@ exports.getAllProducts = async (req, res) => {
       params.push(product_type);
     }
 
-    // 添加排序
-    query += ` ORDER BY p.${sort_by} ${sort_order === 'asc' ? 'ASC' : 'DESC'}`;
+    // 白名单验证排序字段，防止SQL注入
+    const allowedSortFields = ['id', 'name', 'product_code', 'price', 'stock', 'status', 'created_at', 'updated_at', 'sort_order'];
+    const validSortBy = allowedSortFields.includes(sort_by) ? sort_by : 'id';
+    const validSortOrder = sort_order === 'asc' ? 'ASC' : 'DESC';
+
+    // 构建排序条件 - 优先按sort_order字段排序（数值越大越排前）
+    if (validSortBy === 'sort_order') {
+      // 如果按sort_order排序，再按id降序
+      query += ` ORDER BY p.sort_order ${validSortOrder}, p.id DESC`;
+    } else {
+      // 先按sort_order排序（数值大的在前），再按指定字段排序
+      query += ` ORDER BY p.sort_order DESC, p.${validSortBy} ${validSortOrder}`;
+    }
 
     // 添加分页
     query += ' LIMIT ? OFFSET ?';
@@ -286,7 +299,8 @@ exports.updateProduct = async (req, res) => {
       product_type,
       thumbnail_url,
       short_description,
-      full_description
+      full_description,
+      sort_order = 0
     } = req.body;
 
     // 验证产品类型
@@ -336,6 +350,7 @@ exports.updateProduct = async (req, res) => {
         thumbnail_url = ?, 
         short_description = ?, 
         full_description = ?,
+        sort_order = ?,
         updated_by = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
@@ -350,6 +365,7 @@ exports.updateProduct = async (req, res) => {
         thumbnail_url,
         short_description,
         full_description,
+        sort_order,
         req.userId,
         id
       ]
@@ -448,15 +464,28 @@ exports.importFrom1688 = async (req, res) => {
       specifications,
       minOrderQuantity,
       unit,
-      category
+      category,
+      category_id
     } = req.body;
 
     // 生成产品编号
     const productCode = `1688-${productId || Date.now()}`;
     
-    // 查找或创建默认分类
+    // 确定分类ID
     let categoryId = 1; // 默认分类ID
-    if (category) {
+    
+    // 优先使用传入的category_id
+    if (category_id && !isNaN(parseInt(category_id))) {
+      // 验证category_id是否存在
+      const [categoryExists] = await connection.query(
+        'SELECT id FROM product_categories WHERE id = ? AND deleted = 0',
+        [parseInt(category_id)]
+      );
+      if (categoryExists.length > 0) {
+        categoryId = parseInt(category_id);
+      }
+    } else if (category) {
+      // 如果没有category_id，则通过category名称查找
       const [existingCategory] = await connection.query(
         'SELECT id FROM product_categories WHERE name = ? AND deleted = 0',
         [category]

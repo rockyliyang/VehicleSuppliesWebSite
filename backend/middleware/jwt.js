@@ -39,7 +39,7 @@ const verifyToken = (req, res, next) => {
     
     // 检查是否为局域网访问且为特定API路径
     const isLocalAccess = isLocalNetwork(clientIp);
-    const isSkipPath = localNetworkSkipPaths.includes(req.path);
+    const isSkipPath = localNetworkSkipPaths.includes(req.baseUrl + req.path);
     
     // 从请求头或Cookie中获取token
     let token = req.header('Authorization');
