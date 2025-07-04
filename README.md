@@ -6,7 +6,7 @@ a. 产品的展示，询价，下单，
 b. 用户信息，订单管理
 c. 物流跟踪功能
 
-系统使用vue 做前端，nodejs 做后端，mysql 做DB
+系统使用vue 做前端，nodejs 做后端，postgreSQL 做DB
 前端目录: frontend
 后端目录: backed
 DB 目录: db

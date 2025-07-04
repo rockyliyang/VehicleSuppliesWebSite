@@ -602,7 +602,7 @@ const products = await Product.findAll({
   where: {
     categoryId: categoryId,  // 确保 categoryId 有索引
     status: 'active',        // 确保 status 有索引
-    deleted: 0               // 确保 deleted 有索引
+    deleted: false           // 确保 deleted 有索引
   },
   order: [['createdAt', 'DESC']], // 确保 createdAt 有索引
   limit: pageSize,
@@ -782,8 +782,8 @@ describe('POST /api/v1/users', () => {
    ```sql
    -- 新增消息键翻译
    INSERT INTO language_translations (guid, code, lang, value) VALUES
-   (UNHEX(REPLACE(UUID(), '-', '')), 'NEW.MESSAGE.KEY', 'en', 'English message'),
-   (UNHEX(REPLACE(UUID(), '-', '')), 'NEW.MESSAGE.KEY', 'zh-CN', '中文消息');
+   (gen_random_uuid(), 'NEW.MESSAGE.KEY', 'en', 'English message'),
+   (gen_random_uuid(), 'NEW.MESSAGE.KEY', 'zh-CN', '中文消息');
    ```
 3. **执行SQL脚本更新数据库**
 4. **通知前端团队同步更新前端翻译文件**
@@ -821,34 +821,33 @@ res.status(400).json({
 #### 1. 使用 UUID 工具函数（推荐）
 ```javascript
 // 引入 UUID 工具
-const { uuidToBinary } = require('../utils/uuid');
 const { v4: uuidv4 } = require('uuid');
 
 // 生成 GUID
-const guid = uuidToBinary(uuidv4());
+const guid = uuidv4();
 
 // 插入数据
-const [result] = await pool.query(
-  'INSERT INTO table_name (guid, field1, field2) VALUES (?, ?, ?)',
+const result = await pool.query(
+  'INSERT INTO table_name (guid, field1, field2) VALUES ($1, $2, $3)',
   [guid, value1, value2]
 );
 ```
 
-#### 2. 使用 MySQL 函数（备选）
+#### 2. 使用 PostgreSQL 函数（备选）
 ```javascript
-// 直接在 SQL 中使用 UUID_TO_BIN(UUID())
-const [result] = await pool.query(
-  'INSERT INTO table_name (guid, field1, field2) VALUES (UUID_TO_BIN(UUID()), ?, ?)',
+// 直接在 SQL 中使用 gen_random_uuid()
+const result = await pool.query(
+  'INSERT INTO table_name (guid, field1, field2) VALUES (gen_random_uuid(), $1, $2)',
   [value1, value2]
 );
 ```
 
-#### 3. 使用 UNHEX(REPLACE(UUID(), '-', ''))（兼容旧代码）
+#### 3. 使用默认值（推荐用于新表）
 ```javascript
-// 用于兼容现有的翻译数据插入
-const [result] = await pool.query(
-  'INSERT INTO language_translations (guid, code, lang, value) VALUES (UNHEX(REPLACE(UUID(), \'-\', \'\')), ?, ?, ?)',
-  [code, lang, value]
+// 利用表定义中的默认值 gen_random_uuid()
+const result = await pool.query(
+  'INSERT INTO table_name (field1, field2) VALUES ($1, $2)',
+  [value1, value2]
 );
 ```
 
@@ -856,38 +855,40 @@ const [result] = await pool.query(
 
 1. **所有表必须包含 GUID 字段**：
    - 字段名：`guid`
-   - 类型：`BINARY(16)`
-   - 约束：`NOT NULL UNIQUE`
+   - 类型：`UUID`
+   - 约束：`NOT NULL UNIQUE DEFAULT gen_random_uuid()`
 
-2. **插入数据时必须提供 GUID 值**：
-   - 不能依赖数据库默认值
-   - 必须使用上述三种方法之一
+2. **插入数据时的 GUID 处理**：
+   - 可以依赖数据库默认值（推荐）
+   - 也可以显式提供 GUID 值
 
 3. **GUID 生成方法选择**：
-   - **新代码**：优先使用方法1（UUID工具函数）
-   - **数据库脚本**：使用方法2（MySQL函数）
-   - **翻译数据**：使用方法3（兼容现有格式）
+   - **新代码**：优先使用方法3（依赖默认值）或方法1（UUID工具函数）
+   - **数据库脚本**：使用方法2（PostgreSQL函数）
+   - **需要预知GUID的场景**：使用方法1（UUID工具函数）
 
 ### 常见错误及解决方案
 
-#### 错误：Field 'guid' doesn't have a default value
+#### PostgreSQL GUID 字段最佳实践
 ```javascript
-// ❌ 错误：缺少 GUID 字段
-INSERT INTO user_business_groups (user_id, business_group_id, assigned_by)
-VALUES (?, ?, ?)
+// ✅ 推荐：依赖默认值（最简洁）
+const result = await pool.query(
+  'INSERT INTO user_business_groups (user_id, business_group_id, assigned_by) VALUES ($1, $2, $3) RETURNING guid',
+  [userId, businessGroupId, assignedBy]
+);
 
-// ✅ 正确：包含 GUID 字段
-const guid = uuidToBinary(uuidv4());
-INSERT INTO user_business_groups (guid, user_id, business_group_id, assigned_by)
-VALUES (?, ?, ?, ?)
+// ✅ 备选：显式提供 GUID
+const { v4: uuidv4 } = require('uuid');
+const guid = uuidv4();
+const result = await pool.query(
+  'INSERT INTO user_business_groups (guid, user_id, business_group_id, assigned_by) VALUES ($1, $2, $3, $4)',
+  [guid, userId, businessGroupId, assignedBy]
+);
 ```
 
-#### 修复步骤
-1. 引入 UUID 工具：`const { uuidToBinary } = require('../utils/uuid');`
-2. 引入 UUID 生成器：`const { v4: uuidv4 } = require('uuid');`
-3. 在插入前生成 GUID：`const guid = uuidToBinary(uuidv4());`
-4. 在 INSERT 语句中包含 GUID 字段和值
-
----
-
-> 📝 **注意**: 所有后端API开发都应遵循以上规范，确保接口的一致性、安全性和可维护性。特别注意多语言支持的规范，每次添加新的消息键都必须同时更新翻译数据。GUID字段处理必须严格按照规范执行，避免数据库插入错误。
+#### 迁移注意事项
+1. 参数占位符从 `?` 改为 `$1, $2, $3...`
+2. GUID 字段类型从 `BINARY(16)` 改为 `UUID`
+3. 移除 `uuidToBinary` 工具函数的使用
+4. 软删除字段值从数字改为布尔值（`0` → `false`, `1` → `true`）
+5. 查询结果解构从 `const [result]` 改为 `const result`
