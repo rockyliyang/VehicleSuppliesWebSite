@@ -1,7 +1,7 @@
 <template>
   <el-input :model-value="modelValue" :type="type" :placeholder="placeholder" :disabled="disabled" :readonly="readonly"
     :clearable="clearable" :show-password="computedShowPassword" :maxlength="maxlength" :minlength="minlength" :size="size"
-    :class="['form-input', inputClass]" @input="handleInput" @change="handleChange" @focus="handleFocus"
+    :autocomplete="autocomplete" :name="randomName" :class="['form-input', inputClass]" @input="handleInput" @change="handleChange" @focus="handleFocus"
     @blur="handleBlur" @clear="handleClear" @keyup.enter="handleEnter">
     <template #prefix v-if="computedPrefixIcon">
       <el-icon>
@@ -90,6 +90,10 @@ export default {
     'show-password': {
       type: Boolean,
       default: false
+    },
+    autocomplete: {
+      type: String,
+      default: 'on'
     }
   },
   emits: ['update:modelValue', 'input', 'change', 'blur', 'focus', 'enter'],
@@ -111,6 +115,10 @@ export default {
     },
     computedShowPassword() {
       return this['show-password'] || this.showPassword;
+    },
+    randomName() {
+      // 生成随机name属性，防止浏览器自动填充
+      return 'field_' + Math.random().toString(36).substr(2, 9);
     }
   },
   methods: {

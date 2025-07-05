@@ -233,7 +233,7 @@
         </el-form-item>
 
         <el-form-item label="密码" required>
-          <el-input v-model="userForm.password" type="password" placeholder="请输入密码" />
+          <el-input v-model="userForm.password" type="password" placeholder="请输入密码" autocomplete="off" />
         </el-form-item>
 
         <el-form-item label="用户角色" required>

@@ -65,7 +65,7 @@
             <div class="form-row">
               <el-form-item :label="$t('checkout.email') || '邮箱'" prop="email">
                 <el-input v-model="shippingInfo.email" :placeholder="$t('checkout.emailPlaceholder') || '请输入邮箱地址'"
-                  :readonly="isOrderDetail" clearable />
+                  :readonly="isOrderDetail" clearable autocomplete="off" />
               </el-form-item>
               <el-form-item :label="$t('checkout.zipCode') || '邮编'" prop="zipCode">
                 <el-input v-model="shippingInfo.zipCode" :placeholder="$t('checkout.zipCodePlaceholder') || '请输入邮政编码'"

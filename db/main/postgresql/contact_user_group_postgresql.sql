@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS business_groups (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
     updated_by BIGINT,
-    deleted SMALLINT DEFAULT 0
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 创建更新时间触发器（如果不存在）
@@ -34,8 +34,8 @@ CREATE TRIGGER update_business_groups_updated_at BEFORE UPDATE ON business_group
 ALTER TABLE business_groups ADD CONSTRAINT chk_status CHECK (status IN ('active', 'inactive'));
 
 -- 创建唯一索引（模拟MySQL的虚拟列）
-CREATE UNIQUE INDEX uk_active_group_name ON business_groups(group_name) WHERE deleted = 0;
-CREATE UNIQUE INDEX uk_active_group_email ON business_groups(group_email) WHERE deleted = 0;
+CREATE UNIQUE INDEX uk_active_group_name ON business_groups(group_name) WHERE deleted = FALSE;
+CREATE UNIQUE INDEX uk_active_group_email ON business_groups(group_email) WHERE deleted = FALSE;
 
 -- 创建索引
 CREATE INDEX idx_business_groups_is_default ON business_groups(is_default);
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS user_business_groups (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
     updated_by BIGINT,
-    deleted SMALLINT DEFAULT 0
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 为user_business_groups表创建更新时间触发器
@@ -71,7 +71,7 @@ CREATE TRIGGER update_user_business_groups_updated_at BEFORE UPDATE ON user_busi
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 创建唯一索引（模拟MySQL的虚拟列）
-CREATE UNIQUE INDEX uk_active_user_group ON user_business_groups(user_id, business_group_id) WHERE deleted = 0;
+CREATE UNIQUE INDEX uk_active_user_group ON user_business_groups(user_id, business_group_id) WHERE deleted = FALSE;
 
 -- 创建索引
 CREATE INDEX idx_user_business_groups_user_id ON user_business_groups(user_id);
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
     updated_by BIGINT,
-    deleted SMALLINT DEFAULT 0
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 为contact_messages表创建更新时间触发器
@@ -194,4 +194,4 @@ VALUES (
     1,
     'active'
 )
-ON CONFLICT (group_name) WHERE deleted = 0 DO NOTHING;
+ON CONFLICT (group_name) WHERE deleted = FALSE DO NOTHING;

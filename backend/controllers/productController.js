@@ -1,6 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
-const { pool } = require('../db/db');
-const { uuidToBinary, binaryToUuid } = require('../utils/uuid');
+const { query, getConnection } = require('../db/db');
+// 移除 uuidToBinary 和 binaryToUuid 的引用，PostgreSQL 使用原生 UUID
 const { getMessage } = require('../config/messages');
 
 // Generate a unique product code
@@ -9,12 +9,12 @@ exports.generateProductCode = async (req, res) => {
     const { category_id } = req.query;
     
     // 获取分类信息
-    const [category] = await pool.query(
-      'SELECT code FROM product_categories WHERE id = ? AND deleted = 0',
+    const category = await query(
+      'SELECT code FROM product_categories WHERE id = $1 AND deleted = false',
       [category_id]
     );
 
-    if (category.length === 0) {
+    if (category.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('PRODUCT.CATEGORY_NOT_FOUND')
@@ -22,13 +22,13 @@ exports.generateProductCode = async (req, res) => {
     }
 
     // 获取该分类下的产品数量
-    const [count] = await pool.query(
-      'SELECT COUNT(*) as count FROM products WHERE category_id = ? AND deleted = 0',
+    const count = await query(
+      'SELECT COUNT(*) as count FROM products WHERE category_id = $1 AND deleted = false',
       [category_id]
     );
 
     // 生成产品编号：分类编码 + 4位序号
-    const productCode = `${category[0].code}${String(count[0].count + 1).padStart(4, '0')}`;
+    const productCode = `${category.getFirstRow().code}${String(count.getFirstRow().count + 1).padStart(4, '0')}`;
 
     res.json({
       success: true,
@@ -46,7 +46,7 @@ exports.generateProductCode = async (req, res) => {
 
 // Create a new product
 exports.createProduct = async (req, res) => {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     await connection.beginTransaction();
 
@@ -56,7 +56,7 @@ exports.createProduct = async (req, res) => {
       category_id,
       price,
       stock = 0,
-      status = 1,
+      status = 'on_shelf',
       product_type = 'consignment', // 默认为代销
       thumbnail_url = null,
       short_description = '',
@@ -74,26 +74,25 @@ exports.createProduct = async (req, res) => {
     }
 
     // 检查产品编号是否已存在
-    const [existing] = await connection.query(
-      'SELECT id FROM products WHERE product_code = ? AND deleted = 0',
+    const existing = await connection.query(
+      'SELECT id FROM products WHERE product_code = $1 AND deleted = false',
       [product_code]
     );
 
-    if (existing.length > 0) {
+    if (existing.getRowCount() > 0) {
+
       return res.status(400).json({
         success: false,
         message: getMessage('PRODUCT.CODE_EXISTS')
       });
     }
 
-    const guid = uuidToBinary(uuidv4());
-
     const currentUserId = req.userId; // 从JWT中获取当前用户ID
-    const [result] = await connection.query(
+    const result = await connection.query(
       `INSERT INTO products (
         name, product_code, category_id, price, stock, status, product_type,
-        thumbnail_url, short_description, full_description, sort_order, guid, deleted, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+        thumbnail_url, short_description, full_description, sort_order, deleted, created_by, updated_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, false, $12, $13) RETURNING id, guid`,
       [
         name,
         product_code,
@@ -106,7 +105,6 @@ exports.createProduct = async (req, res) => {
         short_description,
         full_description,
         sort_order,
-        guid,
         currentUserId,
         currentUserId
       ]
@@ -118,7 +116,7 @@ exports.createProduct = async (req, res) => {
       success: true,
       message: getMessage('PRODUCT.CREATE_SUCCESS'),
       data: {
-        id: result.insertId,
+        id: result.rows[0].id,
         name,
         product_code,
         category_id,
@@ -129,7 +127,7 @@ exports.createProduct = async (req, res) => {
         thumbnail_url,
         short_description,
         full_description,
-        guid: binaryToUuid(guid)
+        guid: result.getFirstRow().guid
       }
     });
   } catch (error) {
@@ -150,33 +148,38 @@ exports.getAllProducts = async (req, res) => {
     const { page = 1, limit = 10, sort_by = 'id', sort_order = 'desc', keyword, category_id, status, product_type } = req.query;
     const offset = (page - 1) * limit;
 
-    let query = `
+    let querystr = `
       SELECT p.*, c.name as category_name, 
-        (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = 0 ORDER BY sort_order ASC, id ASC LIMIT 1) as thumbnail_url
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1) as thumbnail_url
       FROM products p
       LEFT JOIN product_categories c ON p.category_id = c.id
-      WHERE p.deleted = 0
+      WHERE p.deleted = false
     `;
     const params = [];
+    let paramIndex = 1;
 
     if (keyword) {
-      query += ' AND (p.name LIKE ? OR p.product_code LIKE ?)';
+      querystr += ` AND (p.name ILIKE $${paramIndex} OR p.product_code ILIKE $${paramIndex + 1})`;
       params.push(`%${keyword}%`, `%${keyword}%`);
+      paramIndex += 2;
     }
 
     if (category_id) {
-      query += ' AND p.category_id = ?';
+      querystr += ` AND p.category_id = $${paramIndex}`;
       params.push(category_id);
+      paramIndex += 1;
     }
 
     if (status !== undefined) {
-      query += ' AND p.status = ?';
+      querystr += ` AND p.status = $${paramIndex}`;
       params.push(status);
+      paramIndex += 1;
     }
 
     if (product_type) {
-      query += ' AND p.product_type = ?';
+      querystr += ` AND p.product_type = $${paramIndex}`;
       params.push(product_type);
+      paramIndex += 1;
     }
 
     // 白名单验证排序字段，防止SQL注入
@@ -187,34 +190,31 @@ exports.getAllProducts = async (req, res) => {
     // 构建排序条件 - 优先按sort_order字段排序（数值越大越排前）
     if (validSortBy === 'sort_order') {
       // 如果按sort_order排序，再按id降序
-      query += ` ORDER BY p.sort_order ${validSortOrder}, p.id DESC`;
+      querystr += ` ORDER BY p.sort_order ${validSortOrder}, p.id DESC`;
     } else {
       // 先按sort_order排序（数值大的在前），再按指定字段排序
-      query += ` ORDER BY p.sort_order DESC, p.${validSortBy} ${validSortOrder}`;
+      querystr += ` ORDER BY p.sort_order DESC, p.${validSortBy} ${validSortOrder}`;
     }
 
     // 添加分页
-    query += ' LIMIT ? OFFSET ?';
+    querystr += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     params.push(parseInt(limit), offset);
 
-    const [rows] = await pool.query(query, params);
-    const [total] = await pool.query(
-      'SELECT COUNT(*) as total FROM products WHERE deleted = 0',
+    const rows = await query(querystr, params);
+    const total = await query(
+      'SELECT COUNT(*) as total FROM products WHERE deleted = false',
       []
     );
 
-    // 转换 guid 为字符串
-    const products = rows.map(row => ({
-      ...row,
-      guid: binaryToUuid(row.guid)
-    }));
+    // PostgreSQL 返回的 guid 已经是字符串格式
+    const products = rows.getRows();
 
     res.json({
       success: true,
       message: getMessage('PRODUCT.LIST_SUCCESS'),
       data: {
         items: products,
-        total: total[0].total,
+        total: total.getFirstRow().total,
         page: parseInt(page),
         limit: parseInt(limit)
       }
@@ -232,17 +232,17 @@ exports.getAllProducts = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     // 查询产品基本信息，明确列出所有字段
-    const [rows] = await pool.query(
+    const rows = await query(
       `SELECT p.id, p.guid, p.name, p.product_code, p.category_id, p.price, p.stock, p.status, 
        p.product_type, p.short_description, p.full_description, p.created_at, p.updated_at, 
        c.name as category_name 
        FROM products p
        LEFT JOIN product_categories c ON p.category_id = c.id
-       WHERE p.id = ? AND p.deleted = 0`,
+       WHERE p.id = $1 AND p.deleted = false`,
       [req.params.id]
     );
 
-    if (rows.length === 0) {
+    if (rows.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('PRODUCT.NOT_FOUND')
@@ -250,22 +250,21 @@ exports.getProductById = async (req, res) => {
     }
 
     // 查询主图
-    const [mainImages] = await pool.query(
-      'SELECT image_url FROM product_images WHERE product_id = ? AND image_type = 0 AND deleted = 0 ORDER BY sort_order ASC, id ASC LIMIT 1',
+    const mainImages = await query(
+      'SELECT image_url FROM product_images WHERE product_id = $1 AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1',
       [req.params.id]
     );
     // 查询详情图
-    const [detailImages] = await pool.query(
-      'SELECT image_url FROM product_images WHERE product_id = ? AND image_type = 1 AND deleted = 0 ORDER BY sort_order ASC, id ASC',
+    const detailImages = await query(
+      'SELECT image_url FROM product_images WHERE product_id = $1 AND image_type = 1 AND deleted = false ORDER BY sort_order ASC, id ASC',
       [req.params.id]
     );
 
-    // 转换 guid 为字符串
+    // PostgreSQL 返回的 guid 已经是字符串格式
     const product = {
-      ...rows[0],
-      guid: binaryToUuid(rows[0].guid),
-      thumbnail_url: mainImages.length > 0 ? mainImages[0].image_url : '',
-      detail_images: detailImages.map(img => img.image_url)
+      ...rows.getFirstRow(),
+      thumbnail_url: mainImages.getRowCount() > 0 ? mainImages.getFirstRow().image_url : '',
+      detail_images: detailImages.getRows().map(img => img.image_url)
     };
 
     res.json({
@@ -284,7 +283,7 @@ exports.getProductById = async (req, res) => {
 
 // Update a product
 exports.updateProduct = async (req, res) => {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     await connection.beginTransaction();
 
@@ -313,12 +312,12 @@ exports.updateProduct = async (req, res) => {
     }
 
     // 检查产品是否存在
-    const [existing] = await connection.query(
-      'SELECT id FROM products WHERE id = ? AND deleted = 0',
+    const existing = await connection.query(
+      'SELECT id FROM products WHERE id = $1 AND deleted = false',
       [id]
     );
 
-    if (existing.length === 0) {
+    if (existing.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('PRODUCT.NOT_FOUND')
@@ -326,12 +325,12 @@ exports.updateProduct = async (req, res) => {
     }
 
     // 检查产品编号是否已被其他产品使用
-    const [codeExists] = await connection.query(
-      'SELECT id FROM products WHERE product_code = ? AND id != ? AND deleted = 0',
+    const codeExists = await connection.query(
+      'SELECT id FROM products WHERE product_code = $1 AND id != $2 AND deleted = false',
       [product_code, id]
     );
 
-    if (codeExists.length > 0) {
+    if (codeExists.getRowCount() > 0) {
       return res.status(400).json({
         success: false,
         message: getMessage('PRODUCT.CODE_EXISTS')
@@ -340,20 +339,20 @@ exports.updateProduct = async (req, res) => {
 
     await connection.query(
       `UPDATE products SET 
-        name = ?, 
-        product_code = ?, 
-        category_id = ?, 
-        price = ?, 
-        stock = ?, 
-        status = ?, 
-        product_type = ?,
-        thumbnail_url = ?, 
-        short_description = ?, 
-        full_description = ?,
-        sort_order = ?,
-        updated_by = ?,
+        name = $1, 
+        product_code = $2, 
+        category_id = $3, 
+        price = $4, 
+        stock = $5, 
+        status = $6, 
+        product_type = $7,
+        thumbnail_url = $8, 
+        short_description = $9, 
+        full_description = $10,
+        sort_order = $11,
+        updated_by = $12,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?`,
+      WHERE id = $13`,
       [
         name,
         product_code,
@@ -404,19 +403,19 @@ exports.updateProduct = async (req, res) => {
 
 // Soft delete a product
 exports.deleteProduct = async (req, res) => {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     await connection.beginTransaction();
 
     const { id } = req.params;
 
     // 检查产品是否存在
-    const [existing] = await connection.query(
-      'SELECT id FROM products WHERE id = ? AND deleted = 0',
+    const existing = await connection.query(
+      'SELECT id FROM products WHERE id = $1 AND deleted = false',
       [id]
     );
 
-    if (existing.length === 0) {
+    if (existing.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('PRODUCT.NOT_FOUND')
@@ -425,7 +424,13 @@ exports.deleteProduct = async (req, res) => {
 
     // 软删除产品
     await connection.query(
-      'UPDATE products SET deleted = 1, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE products SET deleted = true, updated_by = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [req.userId, id]
+    );
+
+    // 软删除相关的产品图片
+    await connection.query(
+      'UPDATE product_images SET deleted = true, updated_by = $1, updated_at = CURRENT_TIMESTAMP WHERE product_id = $2',
       [req.userId, id]
     );
 
@@ -447,9 +452,32 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+// 解析1688分段价格，提取第一个价格
+const parseFirstPrice = (priceString) => {
+  if (!priceString || typeof priceString !== 'string') {
+    return 0;
+  }
+  
+  // 匹配价格模式：数字 + $ + 数字（小数）
+  // 例如："20 - 999 pieces$0.25" 或 "$0.25"
+  const priceMatch = priceString.match(/\$([0-9]+(?:\.[0-9]+)?)/);
+  
+  if (priceMatch && priceMatch[1]) {
+    return parseFloat(priceMatch[1]);
+  }
+  
+  // 如果没有找到$符号，尝试直接解析数字
+  const numberMatch = priceString.match(/([0-9]+(?:\.[0-9]+)?)/);
+  if (numberMatch && numberMatch[1]) {
+    return parseFloat(numberMatch[1]);
+  }
+  
+  return 0;
+};
+
 // 从1688导入产品
 exports.importFrom1688 = async (req, res) => {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     await connection.beginTransaction();
 
@@ -468,6 +496,9 @@ exports.importFrom1688 = async (req, res) => {
       category_id
     } = req.body;
 
+    // 解析价格，提取第一个价格值
+    const parsedPrice = parseFirstPrice(price);
+
     // 生成产品编号
     const productCode = `1688-${productId || Date.now()}`;
     
@@ -477,50 +508,48 @@ exports.importFrom1688 = async (req, res) => {
     // 优先使用传入的category_id
     if (category_id && !isNaN(parseInt(category_id))) {
       // 验证category_id是否存在
-      const [categoryExists] = await connection.query(
-        'SELECT id FROM product_categories WHERE id = ? AND deleted = 0',
+      const categoryExists = await connection.query(
+        'SELECT id FROM product_categories WHERE id = $1 AND deleted = false',
         [parseInt(category_id)]
       );
-      if (categoryExists.length > 0) {
+      if (categoryExists.getRowCount() > 0) {
         categoryId = parseInt(category_id);
       }
     } else if (category) {
       // 如果没有category_id，则通过category名称查找
-      const [existingCategory] = await connection.query(
-        'SELECT id FROM product_categories WHERE name = ? AND deleted = 0',
+      const existingCategory = await connection.query(
+        'SELECT id FROM product_categories WHERE name = $1 AND deleted = false',
         [category]
       );
-      if (existingCategory.length > 0) {
-        categoryId = existingCategory[0].id;
+      if (existingCategory.getRowCount() > 0) {
+        categoryId = existingCategory.getFirstRow().id;
       }
     }
 
-    const guid = uuidToBinary(uuidv4());
     const currentUserId = req.userId;
 
     // 创建产品
-    const [result] = await connection.query(
+    const result = await connection.query(
       `INSERT INTO products (
         name, product_code, category_id, price, stock, status, product_type,
-        short_description, full_description, guid, deleted, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+        short_description, full_description, deleted, created_by, updated_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, $10, $11) RETURNING id, guid`,
       [
         title,
         productCode,
         categoryId,
-        parseFloat(price) || 0,
+        parsedPrice,
         parseInt(minOrderQuantity) || 0,
-        1, // 默认上架
-        'consignment', // 1688导入的产品默认为代销
+        'on_shelf', // 默认上架
+        'virtual', // 1688导入的产品默认为代销
         `供应商: ${supplierName || '未知'} | 位置: ${supplierLocation || '未知'} | 最小起订量: ${minOrderQuantity || '1'} ${unit || '件'}`,
         description || '',
-        guid,
         currentUserId,
         currentUserId
       ]
     );
 
-    const productId_new = result.insertId;
+    const productId_new = result.getFirstRow().id;
 
     // 图片已经通过 /api/product-images/upload 接口单独上传，这里不需要处理图片
 
@@ -534,9 +563,9 @@ exports.importFrom1688 = async (req, res) => {
         name: title,
         product_code: productCode,
         category_id: categoryId,
-        price: parseFloat(price) || 0,
+        price: parsedPrice,
         stock: parseInt(minOrderQuantity) || 0,
-        guid: binaryToUuid(guid),
+        guid: result.getFirstRow().guid,
         source_url: url
       }
     });
@@ -556,18 +585,18 @@ exports.importFrom1688 = async (req, res) => {
 exports.getProductsByCategory = async (req, res) => {
   try {
     const { categoryId } = req.params;
-    const [rows] = await pool.query(`
+    const rows = await query(`
       SELECT p.*, c.name as category_name,
-        (SELECT JSON_ARRAYAGG(image_url) FROM product_images WHERE product_id = p.id AND deleted = 0) as gallery_urls
+        (SELECT JSON_AGG(image_url) FROM product_images WHERE product_id = p.id AND deleted = false) as gallery_urls
       FROM products p 
       LEFT JOIN product_categories c ON p.category_id = c.id 
-      WHERE p.category_id = ? AND p.deleted = 0 AND p.status = 'on_shelf'
+      WHERE p.category_id = $1 AND p.deleted = false AND p.status = 'on_shelf'
     `, [categoryId]);
 
     // 处理gallery_urls
-    const products = rows.map(product => ({
+    const products = rows.getRows().map(product => ({
       ...product,
-      gallery_urls: product.gallery_urls ? JSON.parse(product.gallery_urls) : []
+      gallery_urls: product.gallery_urls || []
     }));
 
     res.json({

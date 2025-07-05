@@ -21,13 +21,13 @@
                         <el-form-item prop="password">
                             <FormInput v-model="form.password" type="password"
                                 :placeholder="$t('resetPassword.passwordPlaceholder') || '请输入新密码（至少8位，包含字母和数字）'"
-                                :prefix-icon="Lock" :show-password="true" />
+                                :prefix-icon="Lock" :show-password="true" autocomplete="off" />
                         </el-form-item>
 
                         <el-form-item prop="confirmPassword">
                             <FormInput v-model="form.confirmPassword" type="password"
                                 :placeholder="$t('resetPassword.confirmPasswordPlaceholder') || '请再次输入新密码'"
-                                :prefix-icon="Lock" :show-password="true" />
+                                :prefix-icon="Lock" :show-password="true" autocomplete="off" />
                         </el-form-item>
 
                         <el-form-item class="button-form-item">

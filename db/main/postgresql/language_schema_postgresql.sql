@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS language_translations (
     value TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted SMALLINT DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT DEFAULT NULL,
     updated_by BIGINT DEFAULT NULL
 );
@@ -30,7 +30,7 @@ CREATE TRIGGER update_language_translations_updated_at BEFORE UPDATE ON language
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 创建唯一索引（模拟MySQL的虚拟列unique_active_code_lang）
-CREATE UNIQUE INDEX unique_active_code_lang ON language_translations(code, lang) WHERE deleted = 0;
+CREATE UNIQUE INDEX unique_active_code_lang ON language_translations(code, lang) WHERE deleted = FALSE;
 
 -- 创建索引
 CREATE INDEX idx_language_translations_created_by ON language_translations(created_by);
@@ -66,4 +66,4 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'logout', 'zh-CN', '退出'),
 (gen_random_uuid(), 'orders', 'en', 'My Orders'),
 (gen_random_uuid(), 'orders', 'zh-CN', '我的订单')
-ON CONFLICT (code, lang) WHERE deleted = 0 DO NOTHING;
+ON CONFLICT (code, lang) WHERE deleted = FALSE DO NOTHING;

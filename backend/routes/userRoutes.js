@@ -3,19 +3,19 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const svgCaptcha = require('svg-captcha');
-const { pool } = require('../db/db');
+const { query } = require('../db/db');
 const { sendMail } = require('../utils/email');
 
 // 获取邮件翻译
 async function getEmailTranslations(language = 'zh-CN') {
   try {
-    const [rows] = await pool.execute(
-      'SELECT translation_key, translation_value FROM translations WHERE language = ? AND translation_key LIKE "EMAIL_TEMPLATE.%"',
-      [language]
+    const rows = await query(
+      'SELECT translation_key, translation_value FROM translations WHERE language = $1 AND translation_key LIKE $2',
+      [language, 'EMAIL_TEMPLATE.%']
     );
     
     const translations = {};
-    rows.forEach(row => {
+    rows.getRows().forEach(row => {
       translations[row.translation_key] = row.translation_value;
     });
     
@@ -85,8 +85,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: getMessage('USER.EMAIL_PASSWORD_REQUIRED'), data: null });
     }
     // 检查邮箱是否已存在
-    const [existingUsers] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (existingUsers.length > 0) {
+    const existingUsers = await query('SELECT * FROM users WHERE email = $1', [email]);
+    if (existingUsers.getRowCount() > 0) {
       return res.status(400).json({ success: false, message: getMessage('USER.EMAIL_EXISTS'), data: null });
     }
     
@@ -96,14 +96,14 @@ router.post('/register', async (req, res) => {
     const activation_token = crypto.randomBytes(32).toString('hex');
     
     // 获取默认业务组ID
-    const [defaultGroupRows] = await pool.query(
-      'SELECT id FROM business_groups WHERE is_default = 1 AND deleted = 0 LIMIT 1'
+    const defaultGroupRows = await query(
+      'SELECT id FROM business_groups WHERE is_default = 1 AND deleted = false LIMIT 1'
     );
-    const defaultBusinessGroupId = defaultGroupRows.length > 0 ? defaultGroupRows[0].id : null;
+    const defaultBusinessGroupId = defaultGroupRows.getRowCount() > 0 ? defaultGroupRows.getFirstRow().id : null;
     
-    await pool.query(
-      'INSERT INTO users (guid, username, email, password, is_active, activation_token, user_role, business_group_id, created_by, updated_by) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, 0, ?, "user", ?, ?, ?)',
-      [username, email, hashedPassword, activation_token, defaultBusinessGroupId, null, null]
+    await query(
+      'INSERT INTO users (username, email, password, is_active, activation_token, user_role, business_group_id, created_by, updated_by) VALUES ($1, $2, $3, 1, $4, $5, $6, $7, $8)',
+      [username, email, hashedPassword, activation_token, 'user', defaultBusinessGroupId, null, null]
     );
     
     const link = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/activate?token=${activation_token}`;
@@ -122,10 +122,10 @@ router.get('/activate', async (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_ACTIVATION_CODE'), data: null });
   
-  const [users] = await pool.query('SELECT * FROM users WHERE activation_token = ?', [token]);
-  if (users.length === 0) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_ACTIVATION_CODE'), data: null });
+  const users = await query('SELECT * FROM users WHERE activation_token = $1', [token]);
+  if (users.getRowCount() === 0) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_ACTIVATION_CODE'), data: null });
   
-  await pool.query('UPDATE users SET is_active=1, activation_token=NULL, updated_by=? WHERE id=?', [users[0].id, users[0].id]);
+  await query('UPDATE users SET is_active=1, activation_token=NULL, updated_by=$1 WHERE id=$2', [users.getFirstRow().id, users.getFirstRow().id]);
   res.json({ success: true, message: getMessage('USER.ACTIVATION_SUCCESS'), data: null });
 });
 
@@ -134,15 +134,15 @@ router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ success: false, message: getMessage('USER.EMAIL_REQUIRED'), data: null });
   
-  const [users] = await pool.query('SELECT id, language FROM users WHERE email = ?', [email]);
-  if (users.length === 0) return res.status(400).json({ success: false, message: getMessage('USER.NOT_FOUND'), data: null });
+  const users = await query('SELECT id, language FROM users WHERE email = $1', [email]);
+  if (users.getRowCount() === 0) return res.status(400).json({ success: false, message: getMessage('USER.NOT_FOUND'), data: null });
   
   const reset_token = crypto.randomBytes(32).toString('hex');
   const expire = new Date(Date.now() + 1000 * 60 * 30); // 30分钟有效
-  await pool.query('UPDATE users SET reset_token=?, reset_token_expire=?, updated_by=? WHERE id=?', [reset_token, expire, users[0].id, users[0].id]);
+  await query('UPDATE users SET reset_token=$1, reset_token_expire=$2, updated_by=$3 WHERE id=$4', [reset_token, expire, users.getFirstRow().id, users.getFirstRow().id]);
   
   const link = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${reset_token}`;
-  const userLanguage = users[0].language || 'en'; // 如果language为空，默认使用英文
+  const userLanguage = users.getFirstRow().language || 'en'; // 如果language为空，默认使用英文
   const emailContent = await getEmailContent('resetPassword', userLanguage, { link });
   await sendMail(email, emailContent.subject, emailContent.html);
   
@@ -154,12 +154,12 @@ router.post('/reset-password', async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_PARAMS'), data: null });
   
-  const [users] = await pool.query('SELECT * FROM users WHERE reset_token = ?', [token]);
-  if (users.length === 0) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_RESET_CODE'), data: null });
-  if (new Date(users[0].reset_token_expire) < new Date()) return res.status(400).json({ success: false, message: getMessage('USER.RESET_CODE_EXPIRED'), data: null });
+  const users = await query('SELECT * FROM users WHERE reset_token = $1', [token]);
+  if (users.getRowCount() === 0) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_RESET_CODE'), data: null });
+  if (new Date(users.getFirstRow().reset_token_expire) < new Date()) return res.status(400).json({ success: false, message: getMessage('USER.RESET_CODE_EXPIRED'), data: null });
   
   const hashedPassword = await bcrypt.hash(password, 10);
-  await pool.query('UPDATE users SET password=?, reset_token=NULL, reset_token_expire=NULL, updated_by=? WHERE id=?', [hashedPassword, users[0].id, users[0].id]);
+  await query('UPDATE users SET password=$1, reset_token=NULL, reset_token_expire=NULL, updated_by=$2 WHERE id=$3', [hashedPassword, users.getFirstRow().id, users.getFirstRow().id]);
   
   res.json({ success: true, message: getMessage('USER.PASSWORD_RESET_SUCCESS'), data: null });
 });
@@ -169,15 +169,15 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password, admin } = req.body; // admin: true/false
     // 查找用户
-    const [users] = await pool.query(
-      'SELECT * FROM users WHERE email = ? AND deleted = 0',
+    const users = await query(
+      'SELECT * FROM users WHERE email = $1 AND deleted = false',
       [username]
     );
-    if (users.length === 0) {
+    if (users.getRowCount() === 0) {
       return res.status(401).json({ success: false, message: getMessage('USER.NOT_FOUND'), data: null });
     }
     
-    const user = users[0];
+    const user = users.getFirstRow();
     
     // 角色校验
     if (admin) {
@@ -288,12 +288,12 @@ router.post('/logout', (req, res) => {
 // 获取用户信息
 router.get('/profile', verifyToken, async (req, res) => {
   try {
-    const [users] = await pool.query(
-      'SELECT id, username, email, phone, user_role FROM users WHERE id = ? AND deleted = 0',
+    const users = await query(
+      'SELECT id, username, email, phone, user_role FROM users WHERE id = $1 AND deleted = false',
       [req.userId]
     );
     
-    if (users.length === 0) {
+    if (users.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('USER.NOT_FOUND'),
@@ -304,7 +304,7 @@ router.get('/profile', verifyToken, async (req, res) => {
     res.json({
       success: true,
       message: getMessage('USER.PROFILE_SUCCESS'),
-      data: users[0]
+      data: users.getFirstRow()
     });
   } catch (error) {
     console.error('获取用户信息错误:', error);
@@ -322,12 +322,12 @@ router.post('/admin/create', verifyToken, isAdmin, async (req, res) => {
     const { username, email, password } = req.body;
 
     // 检查用户是否已存在
-    const [existingUsers] = await pool.query(
-      'SELECT * FROM users WHERE email = ? OR username = ?',
+    const existingUsers = await query(
+      'SELECT * FROM users WHERE email = $1 OR username = $2',
       [email, username]
     );
 
-    if (existingUsers.length > 0) {
+    if (existingUsers.getRowCount() > 0) {
       return res.status(400).json({
         success: false,
         message: getMessage('USER.USERNAME_OR_EMAIL_EXISTS'),
@@ -339,9 +339,9 @@ router.post('/admin/create', verifyToken, isAdmin, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 创建新管理员
-    const [result] = await pool.query(
-      'INSERT INTO users (guid, username, email, password, user_role, created_by, updated_by) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, "admin", ?, ?)',
-      [username, email, hashedPassword, req.userId, req.userId]
+    const result = await query(
+      'INSERT INTO users (username, email, password, user_role, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6)',
+      [username, email, hashedPassword, 'admin', req.userId, req.userId]
     );
     
     res.status(201).json({
@@ -362,14 +362,14 @@ router.post('/admin/create', verifyToken, isAdmin, async (req, res) => {
 // 获取所有用户列表（仅管理员）
 router.get('/admin/users', verifyToken, isAdmin, async (req, res) => {
   try {
-    const [users] = await pool.query(
-      'SELECT id, username, email, phone, user_role, created_at FROM users WHERE deleted = 0'
+    const users = await query(
+      'SELECT id, username, email, phone, user_role, created_at FROM users WHERE deleted = false'
     );
     
     res.json({
       success: true,
       message: getMessage('USER.LIST_SUCCESS'),
-      data: users
+      data: users.getRows()
     });
   } catch (error) {
     console.error('获取用户列表错误:', error);

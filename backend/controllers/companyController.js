@@ -1,4 +1,4 @@
-const { pool } = require('../db/db');
+const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
 const path = require('path');
 const fs = require('fs');
@@ -6,11 +6,11 @@ const fs = require('fs');
 // 获取公司信息
 exports.getCompanyInfo = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM company_info WHERE deleted = 0 LIMIT 1');
-    if (rows.length === 0) {
+    const rows = await query('SELECT * FROM company_info WHERE deleted = false LIMIT 1');
+    if (rows.getRowCount() === 0) {
       return res.json({ success: false, message: getMessage('COMPANY.NO_FILE_UPLOADED'), data: null });
     }
-    res.json({ success: true, message: getMessage('COMPANY.GET_SUCCESS'), data: rows[0] });
+    res.json({ success: true, message: getMessage('COMPANY.GET_SUCCESS'), data: rows.getFirstRow() });
   } catch (error) {
     console.error('获取公司信息失败:', error);
     res.status(500).json({ success: false, message: getMessage('COMPANY.GET_FAILED'), data: null });
@@ -31,13 +31,13 @@ exports.updateCompanyInfo = async (req, res) => {
       wechat_qrcode
     } = req.body;
     // 只更新第一条未删除的公司信息
-    const [rows] = await pool.query('SELECT id FROM company_info WHERE deleted = 0 LIMIT 1');
-    if (rows.length === 0) {
+    const rows = await query('SELECT id FROM company_info WHERE deleted = false LIMIT 1');
+    if (rows.getRowCount() === 0) {
       return res.json({ success: false, message: getMessage('COMPANY.NO_FILE_UPLOADED'), data: null });
     }
-    const id = rows[0].id;
-    await pool.query(
-      `UPDATE company_info SET company_name=?, contact_name=?, address=?, phone=?, email=?, description=?, logo_url=?, wechat_qrcode=?, updated_by=?, updated_at=NOW() WHERE id=?`,
+    const id = rows.getFirstRow().id;
+    await query(
+      `UPDATE company_info SET company_name=$1, contact_name=$2, address=$3, phone=$4, email=$5, description=$6, logo_url=$7, wechat_qrcode=$8, updated_by=$9, updated_at=NOW() WHERE id=$10`,
       [company_name, contact_name, address, phone, email, description, logo_url, wechat_qrcode, req.userId, id]
     );
     res.json({ success: true, message: getMessage('COMPANY.UPDATE_SUCCESS'), data: null });

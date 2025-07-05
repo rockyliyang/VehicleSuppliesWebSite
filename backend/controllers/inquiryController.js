@@ -1,6 +1,4 @@
-const { pool } = require('../db/db');
-const { v4: uuidv4 } = require('uuid');
-const { uuidToBinary } = require('../utils/uuid');
+const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
 const sseHandler = require('../utils/sseHandler');
 
@@ -12,16 +10,18 @@ exports.getUserInquiries = async (req, res) => {
     const offset = (page - 1) * limit;
     
     // 构建查询条件
-    let whereClause = 'WHERE i.user_id = ? AND i.deleted = 0';
+    let whereClause = 'WHERE i.user_id = $1 AND i.deleted = false';
     let queryParams = [userId];
+    let paramIndex = 2;
     
     if (status) {
-      whereClause += ' AND i.status = ?';
+      whereClause += ` AND i.status = $${paramIndex}`;
       queryParams.push(status);
+      paramIndex++;
     }
     
     // 查询询价列表
-    const query = `
+    const queryStr = `
       SELECT 
         i.id,
         i.guid,
@@ -33,15 +33,15 @@ exports.getUserInquiries = async (req, res) => {
         COUNT(ii.id) as item_count,
         SUM(CASE WHEN ii.unit_price IS NOT NULL THEN ii.quantity * ii.unit_price ELSE 0 END) as total_quoted_price
       FROM inquiries i
-      LEFT JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = 0
+      LEFT JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = false
       ${whereClause}
       GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.created_at, i.updated_at
       ORDER BY i.created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
     
     queryParams.push(parseInt(limit), parseInt(offset));
-    const [inquiries] = await pool.query(query, queryParams);
+    const inquiries = await query(queryStr, queryParams);
     
     // 查询总数
     const countQuery = `
@@ -49,14 +49,14 @@ exports.getUserInquiries = async (req, res) => {
       FROM inquiries i
       ${whereClause}
     `;
-    const [countResult] = await pool.query(countQuery, queryParams.slice(0, -2));
-    const total = countResult[0].total;
+    const countResult = await query(countQuery, queryParams.slice(0, -2));
+    const total = countResult.getFirstRow().total;
     
     return res.json({
       success: true,
       message: getMessage('INQUIRY.FETCH.SUCCESS'),
       data: {
-        inquiries,
+        inquiries: inquiries.getRows(),
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -93,19 +93,19 @@ exports.getInquiryDetail = async (req, res) => {
         u.username as created_by_name
       FROM inquiries i
       LEFT JOIN users u ON i.created_by = u.id
-      WHERE i.id = ? AND i.user_id = ? AND i.deleted = 0
+      WHERE i.id = $1 AND i.user_id = $2 AND i.deleted = false
     `;
     
-    const [inquiryResult] = await pool.query(inquiryQuery, [inquiryId, userId]);
+    const inquiryResult = await query(inquiryQuery, [inquiryId, userId]);
     
-    if (!inquiryResult || inquiryResult.length === 0) {
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
       });
     }
     
-    const inquiry = inquiryResult[0];
+    const inquiry = inquiryResult.getFirstRow();
     
     // 查询询价商品
     const itemsQuery = `
@@ -118,14 +118,14 @@ exports.getInquiryDetail = async (req, res) => {
         p.name as product_name,
         p.product_code,
         p.price as original_price,
-        (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = 0 ORDER BY sort_order ASC LIMIT 1) as image_url
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
       FROM inquiry_items ii
       JOIN products p ON ii.product_id = p.id
-      WHERE ii.inquiry_id = ? AND ii.deleted = 0
+      WHERE ii.inquiry_id = $1 AND ii.deleted = false
       ORDER BY ii.created_at ASC
     `;
     
-    const [items] = await pool.query(itemsQuery, [inquiryId]);
+    const items = await query(itemsQuery, [inquiryId]);
     
     // 查询询价消息
     const messagesQuery = `
@@ -137,19 +137,19 @@ exports.getInquiryDetail = async (req, res) => {
         u.username as sender_name
       FROM inquiry_messages im
       LEFT JOIN users u ON im.sender_id = u.id
-      WHERE im.inquiry_id = ? AND im.deleted = 0
+      WHERE im.inquiry_id = $1 AND im.deleted = false
       ORDER BY im.created_at ASC
     `;
     
-    const [messages] = await pool.query(messagesQuery, [inquiryId]);
+    const messages = await query(messagesQuery, [inquiryId]);
     
     return res.json({
       success: true,
       message: getMessage('INQUIRY.FETCH.SUCCESS'),
       data: {
         inquiry,
-        items,
-        messages
+        items: items.getRows(),
+        messages: messages.getRows()
       }
     });
   } catch (error) {
@@ -175,12 +175,12 @@ exports.createInquiry = async (req, res) => {
     }
     
     // 检查用户当前询价数量限制
-    const [countResult] = await pool.query(
-      'SELECT COUNT(*) as count FROM inquiries WHERE user_id = ? AND status IN ("pending", "quoted") AND deleted = 0',
+    const countResult = await query(
+      'SELECT COUNT(*) as count FROM inquiries WHERE user_id = $1 AND status IN (\'pending\', \'quoted\') AND deleted = false',
       [userId]
     );
     
-    if (countResult[0].count >= 5) { // 限制最多5个活跃询价
+    if (countResult.getFirstRow().count >= 5) { // 限制最多5个活跃询价
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.MAX_INQUIRIES')
@@ -188,25 +188,24 @@ exports.createInquiry = async (req, res) => {
     }
     
     // 获取用户当前最大的user_inquiry_id
-    const [maxIdResult] = await pool.query(
-      'SELECT COALESCE(MAX(user_inquiry_id), 0) as max_id FROM inquiries WHERE user_id = ?',
+    const maxIdResult = await query(
+      'SELECT COALESCE(MAX(user_inquiry_id), 0) as max_id FROM inquiries WHERE user_id = $1',
       [userId]
     );
     
-    const nextUserInquiryId = maxIdResult[0].max_id + 1;
+    const nextUserInquiryId = maxIdResult.getFirstRow().max_id + 1;
     const fullTitle = `${titlePrefix.trim()}${nextUserInquiryId}`;
     
-    const guid = uuidToBinary(uuidv4());
-    const [result] = await pool.query(
-      'INSERT INTO inquiries (guid, user_id, user_inquiry_id, title, status, created_by, updated_by) VALUES (?, ?, ?, ?, "pending", ?, ?)',
-      [guid, userId, nextUserInquiryId, fullTitle, userId, userId]
+    const result = await query(
+      'INSERT INTO inquiries (user_id, user_inquiry_id, title, status, created_by, updated_by) VALUES ($1, $2, $3, \'pending\', $4, $5) RETURNING id',
+      [userId, nextUserInquiryId, fullTitle, userId, userId]
     );
     
     return res.json({
       success: true,
       message: getMessage('INQUIRY.CREATE.SUCCESS'),
       data: {
-        id: result.insertId,
+        id: result.getFirstRow().id,
         user_inquiry_id: nextUserInquiryId,
         title: fullTitle,
         status: 'pending'
@@ -236,19 +235,19 @@ exports.addItemToInquiry = async (req, res) => {
     }
     
     // 验证询价是否存在且属于当前用户
-    const [inquiryResult] = await pool.query(
-      'SELECT id, status FROM inquiries WHERE id = ? AND user_id = ? AND deleted = 0',
+    const inquiryResult = await query(
+      'SELECT id, status FROM inquiries WHERE id = $1 AND user_id = $2 AND deleted = false',
       [inquiryId, userId]
     );
     
-    if (!inquiryResult || inquiryResult.length === 0) {
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
       });
     }
     
-    if (inquiryResult[0].status !== 'pending') {
+    if (inquiryResult.getFirstRow().status !== 'pending') {
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED')
@@ -256,19 +255,19 @@ exports.addItemToInquiry = async (req, res) => {
     }
     
     // 验证商品是否存在并获取完整信息
-    const [productResult] = await pool.query(
+    const productResult = await query(
       `SELECT 
         p.id, 
         p.name as product_name, 
         p.product_code,
         p.price as original_price,
-        (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = 0 ORDER BY sort_order ASC LIMIT 1) as image_url
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
       FROM products p 
-      WHERE p.id = ? AND p.deleted = 0`,
+      WHERE p.id = $1 AND p.deleted = false`,
       [productId]
     );
     
-    if (!productResult || productResult.length === 0) {
+    if (!productResult || productResult.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('PRODUCT.NOT_FOUND')
@@ -276,12 +275,12 @@ exports.addItemToInquiry = async (req, res) => {
     }
     
     // 检查商品是否已在询价中
-    const [existingItem] = await pool.query(
-      'SELECT id FROM inquiry_items WHERE inquiry_id = ? AND product_id = ? AND deleted = 0',
+    const existingItem = await query(
+      'SELECT id FROM inquiry_items WHERE inquiry_id = $1 AND product_id = $2 AND deleted = false',
       [inquiryId, productId]
     );
     
-    if (existingItem && existingItem.length > 0) {
+    if (existingItem && existingItem.getRowCount() > 0) {
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.BUSINESS.PRODUCT_ALREADY_EXISTS')
@@ -289,10 +288,9 @@ exports.addItemToInquiry = async (req, res) => {
     }
     
     // 添加商品到询价，包含价格信息
-    const guid = uuidToBinary(uuidv4());
-    const [result] = await pool.query(
-      'INSERT INTO inquiry_items (guid, inquiry_id, product_id, quantity, unit_price, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [guid, inquiryId, productId, quantity, unitPrice || null, userId, userId]
+    const result = await query(
+      'INSERT INTO inquiry_items (inquiry_id, product_id, quantity, unit_price, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [inquiryId, productId, quantity, unitPrice || null, userId, userId]
     );
     
     // 返回与getInquiryDetail相同的数据结构
@@ -300,15 +298,15 @@ exports.addItemToInquiry = async (req, res) => {
       success: true,
       message: getMessage('INQUIRY.ITEM.ADD_SUCCESS'),
       data: {
-        id: result.insertId,
+        id: result.getFirstRow().id,
         product_id: productId,
         quantity: quantity,
         unit_price: unitPrice || null,
         item_status: 'pending',
-        product_name: productResult[0].product_name,
-        product_code: productResult[0].product_code,
-        original_price: productResult[0].original_price,
-        image_url: productResult[0].image_url
+        product_name: productResult.getFirstRow().product_name,
+        product_code: productResult.getFirstRow().product_code,
+        original_price: productResult.getFirstRow().original_price,
+        image_url: productResult.getFirstRow().image_url
       }
     });
   } catch (error) {
@@ -335,12 +333,12 @@ exports.sendMessage = async (req, res) => {
     }
     
     // 验证询价是否存在且属于当前用户
-    const [inquiryResult] = await pool.query(
-      'SELECT id, user_id FROM inquiries WHERE id = ? AND user_id = ? AND deleted = 0',
+    const inquiryResult = await query(
+      'SELECT id, user_id FROM inquiries WHERE id = $1 AND user_id = $2 AND deleted = false',
       [inquiryId, userId]
     );
     
-    if (!inquiryResult || inquiryResult.length === 0) {
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
@@ -348,23 +346,22 @@ exports.sendMessage = async (req, res) => {
     }
     
     // 添加消息
-    const guid = uuidToBinary(uuidv4());
-    const [result] = await pool.query(
-      'INSERT INTO inquiry_messages (inquiry_id, guid, sender_id, sender_type, content, created_by, updated_by) VALUES (?, ?, ?, "user", ?, ?, ?)',
-      [inquiryId, guid, userId, message.trim(), userId, userId]
+    const result = await query(
+      'INSERT INTO inquiry_messages (inquiry_id, sender_id, sender_type, content, created_by, updated_by) VALUES ($1, $2, \'user\', $3, $4, $5) RETURNING id',
+      [inquiryId, userId, message.trim(), userId, userId]
     );
     
     // 获取用户信息用于SSE推送
-    const [userResult] = await pool.query(
-      'SELECT username, email FROM users WHERE id = ?',
+    const userResult = await query(
+      'SELECT username, email FROM users WHERE id = $1',
       [userId]
     );
     
-    const user = userResult[0];
+    const user = userResult.getFirstRow();
     
     // 构建消息数据
     const messageData = {
-      id: result.insertId,
+      id: result.getFirstRow().id,
       inquiryId: parseInt(inquiryId),
       senderId: userId,
       senderType: 'user',
@@ -375,8 +372,8 @@ exports.sendMessage = async (req, res) => {
       timestamp: new Date().toISOString()
     };
     // 通过SSE推送新消息给管理员
-    const [adminUsers] = await pool.query(
-      'SELECT id FROM users WHERE user_role = "admin" AND deleted = 0'
+    const adminUsers = await query(
+      'SELECT id FROM users WHERE user_role = \'admin\' AND deleted = false'
     );
     /*
     const adminUserIds = adminUsers.map(admin => admin.id.toString());
@@ -414,19 +411,19 @@ exports.removeItemFromInquiry = async (req, res) => {
     const { inquiryId, itemId } = req.params;
     
     // 验证询价是否存在且属于当前用户
-    const [inquiryResult] = await pool.query(
-      'SELECT id, status FROM inquiries WHERE id = ? AND user_id = ? AND deleted = 0',
+    const inquiryResult = await query(
+      'SELECT id, status FROM inquiries WHERE id = $1 AND user_id = $2 AND deleted = false',
       [inquiryId, userId]
     );
     
-    if (!inquiryResult || inquiryResult.length === 0) {
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
       });
     }
     
-    if (inquiryResult[0].status !== 'pending') {
+    if (inquiryResult.getFirstRow().status !== 'pending') {
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED')
@@ -434,12 +431,12 @@ exports.removeItemFromInquiry = async (req, res) => {
     }
     
     // 验证商品是否存在于询价中
-    const [itemResult] = await pool.query(
-      'SELECT id, product_id FROM inquiry_items WHERE id = ? AND inquiry_id = ? AND deleted = 0',
+    const itemResult = await query(
+      'SELECT id, product_id FROM inquiry_items WHERE id = $1 AND inquiry_id = $2 AND deleted = false',
       [itemId, inquiryId]
     );
     
-    if (!itemResult || itemResult.length === 0) {
+    if (!itemResult || itemResult.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
@@ -447,8 +444,8 @@ exports.removeItemFromInquiry = async (req, res) => {
     }
     
     // 软删除询价商品
-    await pool.query(
-      'UPDATE inquiry_items SET deleted = 1, updated_by = ?, updated_at = NOW() WHERE id = ?',
+    await query(
+      'UPDATE inquiry_items SET deleted = true, updated_by = $1, updated_at = NOW() WHERE id = $2',
       [userId, itemId]
     );
     
@@ -457,7 +454,7 @@ exports.removeItemFromInquiry = async (req, res) => {
       message: getMessage('INQUIRY.ITEM.DELETE.SUCCESS'),
       data: {
         itemId,
-        productId: itemResult[0].product_id
+        productId: itemResult.getFirstRow().product_id
       }
     });
   } catch (error) {
@@ -476,12 +473,12 @@ exports.deleteInquiry = async (req, res) => {
     const { inquiryId } = req.params;
     
     // 验证询价是否存在且属于当前用户
-    const [inquiryResult] = await pool.query(
-      'SELECT id, status FROM inquiries WHERE id = ? AND user_id = ? AND deleted = 0',
+    const inquiryResult = await query(
+      'SELECT id, status FROM inquiries WHERE id = $1 AND user_id = $2 AND deleted = false',
       [inquiryId, userId]
     );
     
-    if (!inquiryResult || inquiryResult.length === 0) {
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
@@ -490,13 +487,13 @@ exports.deleteInquiry = async (req, res) => {
     
     
     // 软删除询价及相关商品
-    await pool.query(
-      'UPDATE inquiries SET deleted = 1, updated_by = ?, updated_at = NOW() WHERE id = ?',
+    await query(
+      'UPDATE inquiries SET deleted = true, updated_by = $1, updated_at = NOW() WHERE id = $2',
       [userId, inquiryId]
     );
     
-    await pool.query(
-      'UPDATE inquiry_items SET deleted = 1, updated_by = ?, updated_at = NOW() WHERE inquiry_id = ?',
+    await query(
+      'UPDATE inquiry_items SET deleted = true, updated_by = $1, updated_at = NOW() WHERE inquiry_id = $2',
       [userId, inquiryId]
     );
     

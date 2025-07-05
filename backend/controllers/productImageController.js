@@ -1,9 +1,9 @@
 const { v4: uuidv4 } = require('uuid');
-const { pool } = require('../db/db');
+const { getConnection, query } = require('../db/db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { uuidToBinary, binaryToUuid } = require('../utils/uuid');
+// PostgreSQL 不需要 UUID 转换工具
 const { getMessage } = require('../config/messages');
 
 // 配置文件上传
@@ -95,13 +95,11 @@ exports.uploadProductImages = async (req, res) => {
       if (!files || files.length === 0) {
         return res.status(400).json({ success: false, message: getMessage('PRODUCT_IMAGE.NO_FILE_UPLOADED'), data: null });
       }
-      const connection = await pool.getConnection();
-      console.log('before transaction');
-      await connection.beginTransaction();
+      const connection = await getConnection();
+       console.log('before transaction');
+       await connection.beginTransaction();
       console.log('entre transaction');
       try {
-        const guid = uuidToBinary(uuidv4());
-        
         const uploadedImages = [];
         
         for (let i = 0; i < files.length; i++) {
@@ -111,10 +109,9 @@ exports.uploadProductImages = async (req, res) => {
             : `/static/images/${file.filename}`;
           console.log('before insert file info to db');
 
-          const [result] = await connection.query(
-            'INSERT INTO product_images (guid, product_id, image_url, image_type, sort_order, session_id, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          const result = await connection.query(
+            'INSERT INTO product_images (product_id, image_url, image_type, sort_order, session_id, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
             [
-              guid,
               product_id === 'undefined' ? null : product_id,
               filePath,
               image_type,
@@ -126,7 +123,7 @@ exports.uploadProductImages = async (req, res) => {
           );
           console.log('写入文件信息到数据库:', file.filename);
           uploadedImages.push({
-            id: result.insertId,
+            id: result.getFirstRow().id,
             filename: file.filename,
             path: filePath,
             name: file.originalname,
@@ -160,10 +157,11 @@ exports.uploadProductImages = async (req, res) => {
 exports.getProductImages = async (req, res) => {
   try {
     const { product_id, image_type } = req.query;
-    const [rows] = await pool.query(
-      'SELECT * FROM product_images WHERE product_id = ? AND image_type = ? AND deleted = 0 ORDER BY sort_order ASC',
+    const result = await query(
+      'SELECT * FROM product_images WHERE product_id = $1 AND image_type = $2 AND deleted = false ORDER BY sort_order ASC',
       [product_id, image_type]
     );
+    const rows = result.getRows();
     res.json({
       success: true,
       message: getMessage('PRODUCT_IMAGE.GET_SUCCESS'),
@@ -183,15 +181,16 @@ exports.getProductImages = async (req, res) => {
 exports.deleteProductImage = async (req, res) => {
   try {
     const { id } = req.params;
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
+    const connection = await getConnection();
+     await connection.beginTransaction();
 
     try {
       // 获取图片信息
-      const [rows] = await connection.query(
-        'SELECT image_url FROM product_images WHERE id = ? AND deleted = 0',
+      const result = await connection.query(
+        'SELECT image_url FROM product_images WHERE id = $1 AND deleted = false',
         [id]
       );
+      const rows = result.getRows();
 
       if (rows.length === 0) {
         return res.status(404).json({
@@ -203,7 +202,7 @@ exports.deleteProductImage = async (req, res) => {
 
       // 软删除图片记录
       await connection.query(
-        'UPDATE product_images SET deleted = 1, updated_by = ? WHERE id = ?',
+        'UPDATE product_images SET deleted = true, updated_by = $1 WHERE id = $2',
         [req.userId, id]
       );
 
@@ -239,13 +238,13 @@ exports.deleteProductImage = async (req, res) => {
 exports.updateImageOrder = async (req, res) => {
   try {
     const { images } = req.body; // [{id: 1, sort_order: 0}, {id: 2, sort_order: 1}]
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
+    const connection = await getConnection();
+     await connection.beginTransaction();
 
     try {
       for (const image of images) {
         await connection.query(
-          'UPDATE product_images SET sort_order = ?, updated_by = ? WHERE id = ? AND deleted = 0',
+          'UPDATE product_images SET sort_order = $1, updated_by = $2 WHERE id = $3 AND deleted = false',
           [image.sort_order, req.userId, image.id]
         );
       }
@@ -279,8 +278,8 @@ exports.assignProductImages = async (req, res) => {
     if (!product_id || !session_id) {
       return res.status(400).json({ success: false, message: getMessage('PRODUCT_IMAGE.MISSING_PARAMS'), data: null });
     }
-    await pool.query(
-      'UPDATE product_images SET product_id = ? WHERE product_id IS NULL AND session_id = ?',
+    await query(
+      'UPDATE product_images SET product_id = $1 WHERE product_id IS NULL AND session_id = $2',
       [product_id, session_id]
     );
     res.json({ success: true, message: getMessage('PRODUCT_IMAGE.ASSIGN_SUCCESS') });

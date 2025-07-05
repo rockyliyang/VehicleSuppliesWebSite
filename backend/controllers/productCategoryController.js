@@ -1,34 +1,23 @@
-const { v4: uuidv4 } = require('uuid');
-const { pool } = require('../db/db');
+const { query, getConnection } = require('../db/db');
 const { getMessage } = require('../config/messages');
 
-// 将 UUID 字符串转换为 BINARY(16)
-function uuidToBinary(uuid) {
-  return Buffer.from(uuid.replace(/-/g, ''), 'hex');
-}
-
-// 将 BINARY(16) 转换为 UUID 字符串
-function binaryToUuid(binary) {
-  const hex = binary.toString('hex');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
+// PostgreSQL 不需要 UUID 转换工具
 
 // Create a new product category
 exports.createCategory = async (req, res) => {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     await connection.beginTransaction();
 
-    const { name, code, sort_order = 0, status = 1, description = '' } = req.body;
-    const guid = uuidToBinary(uuidv4());
+    const { name, code, sort_order = 0, status = 'on_shelf', description = '' } = req.body;
 
     // 检查编码是否已存在
-    const [existing] = await connection.query(
-      'SELECT id FROM product_categories WHERE code = ? AND deleted = 0',
+    const existing = await connection.query(
+      'SELECT id FROM product_categories WHERE code = $1 AND deleted = false',
       [code]
     );
 
-    if (existing.length > 0) {
+    if (existing.getRowCount() > 0) {
       return res.status(400).json({
         success: false,
         message: getMessage('CATEGORY.CODE_EXISTS')
@@ -36,9 +25,9 @@ exports.createCategory = async (req, res) => {
     }
 
     const currentUserId = req.userId; // 从JWT中获取当前用户ID
-    const [result] = await connection.query(
-      'INSERT INTO product_categories (name, code, sort_order, status, description, guid, deleted, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)',
-      [name, code, sort_order, status, description, guid, currentUserId, currentUserId]
+    const result = await connection.query(
+      'INSERT INTO product_categories (name, code, sort_order, status, description, deleted, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, false, $6, $7) RETURNING id, guid',
+      [name, code, sort_order, status, description, currentUserId, currentUserId]
     );
 
     await connection.commit();
@@ -47,13 +36,13 @@ exports.createCategory = async (req, res) => {
       success: true,
       message: getMessage('CATEGORY.CREATE_SUCCESS'),
       data: {
-        id: result.insertId,
+        id: result.getFirstRow().id,
         name,
         code,
         sort_order,
         status,
         description,
-        guid: binaryToUuid(guid)
+        guid: result.getFirstRow().guid
       }
     });
   } catch (error) {
@@ -71,15 +60,12 @@ exports.createCategory = async (req, res) => {
 // Get all product categories (non-deleted)
 exports.getAllCategories = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      'SELECT id, name, code, sort_order, status, description, guid FROM product_categories WHERE deleted = 0 ORDER BY sort_order ASC'
+    const rows = await query(
+      'SELECT id, name, code, sort_order, status, description, guid FROM product_categories WHERE deleted = false ORDER BY sort_order ASC'
     );
     
-    // 转换 guid 为字符串
-    const categories = rows.map(row => ({
-      ...row,
-      guid: binaryToUuid(row.guid)
-    }));
+    // PostgreSQL 返回的 guid 已经是字符串格式
+    const categories = rows.getRows();
 
     res.json({
       success: true,
@@ -97,23 +83,20 @@ exports.getAllCategories = async (req, res) => {
 // Get a single product category by id
 exports.getCategoryById = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      'SELECT id, name, code, sort_order, status, description, guid FROM product_categories WHERE id = ? AND deleted = 0',
+    const rows = await query(
+      'SELECT id, name, code, sort_order, status, description, guid FROM product_categories WHERE id = $1 AND deleted = false',
       [req.params.id]
     );
 
-    if (rows.length === 0) {
+    if (rows.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('CATEGORY.NOT_FOUND')
       });
     }
 
-    // 转换 guid 为字符串
-    const category = {
-      ...rows[0],
-      guid: binaryToUuid(rows[0].guid)
-    };
+    // PostgreSQL 返回的 guid 已经是字符串格式
+    const category = rows.getFirstRow();
 
     res.json({
       success: true,
@@ -130,7 +113,7 @@ exports.getCategoryById = async (req, res) => {
 
 // Update a product category
 exports.updateCategory = async (req, res) => {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     await connection.beginTransaction();
 
@@ -138,12 +121,12 @@ exports.updateCategory = async (req, res) => {
     const { name, code, sort_order, status, description } = req.body;
 
     // 检查分类是否存在
-    const [existing] = await connection.query(
-      'SELECT id FROM product_categories WHERE id = ? AND deleted = 0',
+    const existing = await connection.query(
+      'SELECT id FROM product_categories WHERE id = $1 AND deleted = false',
       [id]
     );
 
-    if (existing.length === 0) {
+    if (existing.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('CATEGORY.NOT_FOUND')
@@ -151,12 +134,12 @@ exports.updateCategory = async (req, res) => {
     }
 
     // 检查编码是否已被其他分类使用
-    const [codeExists] = await connection.query(
-      'SELECT id FROM product_categories WHERE code = ? AND id != ? AND deleted = 0',
+    const codeExists = await connection.query(
+      'SELECT id FROM product_categories WHERE code = $1 AND id != $2 AND deleted = false',
       [code, id]
     );
 
-    if (codeExists.length > 0) {
+    if (codeExists.getRowCount() > 0) {
       return res.status(400).json({
         success: false,
         message: getMessage('CATEGORY.CODE_USED_BY_OTHER')
@@ -164,7 +147,7 @@ exports.updateCategory = async (req, res) => {
     }
 
     await connection.query(
-      'UPDATE product_categories SET name = ?, code = ?, sort_order = ?, status = ?, description = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE product_categories SET name = $1, code = $2, sort_order = $3, status = $4, description = $5, updated_by = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7',
       [name, code, sort_order, status, description, req.userId, id]
     );
 
@@ -196,28 +179,41 @@ exports.updateCategory = async (req, res) => {
 
 // Soft delete a product category
 exports.deleteCategory = async (req, res) => {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     await connection.beginTransaction();
 
     const { id } = req.params;
 
     // 检查分类是否存在
-    const [existing] = await connection.query(
-      'SELECT id FROM product_categories WHERE id = ? AND deleted = 0',
+    const existing = await connection.query(
+      'SELECT id FROM product_categories WHERE id = $1 AND deleted = false',
       [id]
     );
 
-    if (existing.length === 0) {
+    if (existing.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('CATEGORY.NOT_FOUND')
       });
     }
 
+    // 检查是否有产品使用此分类
+    const productsUsingCategory = await connection.query(
+      'SELECT id FROM products WHERE category_id = $1 AND deleted = false LIMIT 1',
+      [id]
+    );
+
+    if (productsUsingCategory.getRowCount() > 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('CATEGORY.CANNOT_DELETE_USED')
+      });
+    }
+
     // 软删除分类
     await connection.query(
-      'UPDATE product_categories SET deleted = 1, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE product_categories SET deleted = true, updated_by = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [req.userId, id]
     );
 

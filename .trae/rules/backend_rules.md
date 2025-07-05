@@ -812,6 +812,133 @@ res.status(400).json({
 });
 ```
 
+## 数据库连接封装规范
+
+### 统一数据库接口
+
+**重要：所有控制器必须使用 `db.js` 中封装的统一数据库接口，禁止直接使用 `pool.connect()` 等原生方法。**
+
+#### 1. 引入数据库连接
+```javascript
+// 统一引入方式
+const { getConnection } = require('../db/db');
+```
+
+#### 2. 简单查询操作
+```javascript
+// ✅ 正确：使用封装的接口
+const connection = await getConnection();
+try {
+  const result = await connection.query(
+    'SELECT * FROM users WHERE deleted = $1',
+    [false]
+  );
+  
+  // 使用统一的结果处理方法
+  const users = result.getRows();
+  const count = result.getRowCount();
+  const firstUser = result.getFirstRow();
+  
+  return users;
+} finally {
+  connection.release();
+}
+```
+
+#### 3. 事务操作
+```javascript
+// ✅ 正确：使用封装的事务接口
+const connection = await getConnection();
+try {
+  await connection.beginTransaction();
+  
+  // 执行多个数据库操作
+  const result1 = await connection.query(
+    'INSERT INTO users (username, email) VALUES ($1, $2)',
+    [username, email]
+  );
+  
+  const result2 = await connection.query(
+    'INSERT INTO user_profiles (user_id, full_name) VALUES ($1, $2)',
+    [result1.getFirstRow().id, fullName]
+  );
+  
+  await connection.commit();
+  return result1.getFirstRow();
+} catch (error) {
+  await connection.rollback();
+  throw error;
+} finally {
+  connection.release();
+}
+```
+
+#### 4. 禁止的用法
+```javascript
+// ❌ 错误：直接使用原生连接池
+const client = await pool.connect();
+const result = await client.query('SELECT * FROM users');
+client.release();
+
+// ❌ 错误：直接使用原生事务
+const client = await pool.connect();
+await client.query('BEGIN');
+await client.query('COMMIT');
+
+// ❌ 错误：手动处理结果格式
+const rows = result.rows || result;
+const count = result.rowCount || result.length;
+```
+
+### 数据库接口方法说明
+
+#### DatabaseConnection 类方法
+1. **query(sql, params)** - 执行查询，返回增强的结果对象
+2. **beginTransaction()** - 开始事务
+3. **commit()** - 提交事务
+4. **rollback()** - 回滚事务
+5. **release()** - 释放连接
+
+#### 结果对象方法
+1. **getRows()** - 获取查询结果行数组
+2. **getRowCount()** - 获取影响的行数
+3. **getFirstRow()** - 获取第一行结果
+
+### 迁移指南
+
+#### 从原生 PostgreSQL 接口迁移
+```javascript
+// 旧代码
+const client = await pool.connect();
+try {
+  await client.query('BEGIN');
+  const result = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+  const user = result.rows[0];
+  await client.query('COMMIT');
+  return user;
+} catch (error) {
+  await client.query('ROLLBACK');
+  throw error;
+} finally {
+  client.release();
+}
+
+// 新代码
+const connection = await getConnection();
+try {
+  await connection.beginTransaction();
+  const result = await connection.query('SELECT * FROM users WHERE id = $1', [userId]);
+  const user = result.getFirstRow();
+  await connection.commit();
+  return user;
+} catch (error) {
+  await connection.rollback();
+  throw error;
+} finally {
+  connection.release();
+}
+```
+
 ## GUID 字段处理规范
 
 ### GUID 插入规则
@@ -827,7 +954,8 @@ const { v4: uuidv4 } = require('uuid');
 const guid = uuidv4();
 
 // 插入数据
-const result = await pool.query(
+const connection = await getConnection();
+const result = await connection.query(
   'INSERT INTO table_name (guid, field1, field2) VALUES ($1, $2, $3)',
   [guid, value1, value2]
 );
@@ -836,7 +964,8 @@ const result = await pool.query(
 #### 2. 使用 PostgreSQL 函数（备选）
 ```javascript
 // 直接在 SQL 中使用 gen_random_uuid()
-const result = await pool.query(
+const connection = await getConnection();
+const result = await connection.query(
   'INSERT INTO table_name (guid, field1, field2) VALUES (gen_random_uuid(), $1, $2)',
   [value1, value2]
 );
@@ -845,7 +974,8 @@ const result = await pool.query(
 #### 3. 使用默认值（推荐用于新表）
 ```javascript
 // 利用表定义中的默认值 gen_random_uuid()
-const result = await pool.query(
+const connection = await getConnection();
+const result = await connection.query(
   'INSERT INTO table_name (field1, field2) VALUES ($1, $2)',
   [value1, value2]
 );
@@ -872,7 +1002,8 @@ const result = await pool.query(
 #### PostgreSQL GUID 字段最佳实践
 ```javascript
 // ✅ 推荐：依赖默认值（最简洁）
-const result = await pool.query(
+const connection = await getConnection();
+const result = await connection.query(
   'INSERT INTO user_business_groups (user_id, business_group_id, assigned_by) VALUES ($1, $2, $3) RETURNING guid',
   [userId, businessGroupId, assignedBy]
 );
@@ -880,7 +1011,8 @@ const result = await pool.query(
 // ✅ 备选：显式提供 GUID
 const { v4: uuidv4 } = require('uuid');
 const guid = uuidv4();
-const result = await pool.query(
+const connection = await getConnection();
+const result = await connection.query(
   'INSERT INTO user_business_groups (guid, user_id, business_group_id, assigned_by) VALUES ($1, $2, $3, $4)',
   [guid, userId, businessGroupId, assignedBy]
 );
@@ -892,3 +1024,6 @@ const result = await pool.query(
 3. 移除 `uuidToBinary` 工具函数的使用
 4. 软删除字段值从数字改为布尔值（`0` → `false`, `1` → `true`）
 5. 查询结果解构从 `const [result]` 改为 `const result`
+6. **必须使用 `getConnection()` 替代 `pool.connect()`**
+7. **必须使用封装的事务方法替代原生事务操作**
+8. **必须使用结果对象的辅助方法处理查询结果**

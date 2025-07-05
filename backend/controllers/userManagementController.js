@@ -1,7 +1,6 @@
 const express = require('express');
-const { pool } = require('../db/db');
+const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
-const { uuidToBinary } = require('../utils/uuid');
 const { v4: uuidv4 } = require('uuid');
 /**
  * 用户管理控制器
@@ -15,7 +14,7 @@ class UserManagementController {
    */
   async createUser(req, res) {
     try {
-      const { username, email, phone, password, user_role, language } = req.nbody;
+      const { username, email, phone, password, user_role, language } = req.body;
       
       // 验证必填字段
       if (!username || !email || !password || !user_role) {
@@ -36,12 +35,12 @@ class UserManagementController {
       }
       
       // 检查用户名是否已存在
-      const [existingUsername] = await pool.query(
-        'SELECT id FROM users WHERE username = ? AND deleted = 0',
+      const existingUsername = await query(
+        'SELECT id FROM users WHERE username = $1 AND deleted = false',
         [username]
       );
       
-      if (existingUsername.length > 0) {
+      if (existingUsername.getRowCount() > 0) {
         return res.status(400).json({
           success: false,
           message: getMessage('USER_MANAGEMENT.USERNAME_EXISTS'),
@@ -50,12 +49,12 @@ class UserManagementController {
       }
       
       // 检查邮箱是否已存在
-      const [existingEmail] = await pool.query(
-        'SELECT id FROM users WHERE email = ? AND deleted = 0',
+      const existingEmail = await query(
+        'SELECT id FROM users WHERE email = $1 AND deleted = false',
         [email]
       );
       
-      if (existingEmail.length > 0) {
+      if (existingEmail.getRowCount() > 0) {
         return res.status(400).json({
           success: false,
           message: getMessage('USER_MANAGEMENT.EMAIL_EXISTS'),
@@ -68,15 +67,14 @@ class UserManagementController {
       const hashedPassword = await bcrypt.hash(password, 10);
       
       // 创建用户
-      const guid = uuidToBinary(uuidv4());
       const currentUserId = req.userId; // 从JWT中获取当前用户ID
-      const [insertResult] = await pool.query(
-        `INSERT INTO users (guid, username, email, phone, password, user_role, language, is_active, created_by, updated_by) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-        [guid, username, email, phone || null, hashedPassword, user_role, language || 'en', currentUserId, currentUserId]
+      const insertResult = await query(
+        `INSERT INTO users (username, email, phone, password, user_role, language, is_active, created_by, updated_by) 
+         VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8) RETURNING id`,
+        [username, email, phone || null, hashedPassword, user_role, language || 'en', currentUserId, currentUserId]
       );
       
-      const userId = insertResult.insertId;
+      const userId = insertResult.getFirstRow().id;
       
       res.status(201).json({
         success: true,
@@ -120,12 +118,12 @@ class UserManagementController {
       }
       
       // 检查用户是否存在
-      const [userRows] = await pool.query(
-        'SELECT id, user_role, email FROM users WHERE id = ? AND deleted = 0',
+      const userRows = await query(
+        'SELECT id, user_role, email FROM users WHERE id = $1 AND deleted = false',
         [id]
       );
       
-      if (userRows.length === 0) {
+      if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
@@ -133,7 +131,7 @@ class UserManagementController {
         });
       }
       
-      const currentUser = userRows[0];
+      const currentUser = userRows.getFirstRow();
       
       // 防止用户修改自己的角色
       if (parseInt(id) === req.userId) {
@@ -158,12 +156,12 @@ class UserManagementController {
       }
       
       // 更新用户角色
-      const updateResult = await pool.query(
-        'UPDATE users SET user_role = ? WHERE id = ? AND deleted = 0',
+      const updateResult = await query(
+        'UPDATE users SET user_role = $1 WHERE id = $2 AND deleted = false',
         [user_role, id]
       );
       
-      if (updateResult[0].affectedRows === 0) {
+      if (updateResult.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
@@ -173,8 +171,8 @@ class UserManagementController {
       
       // 如果用户角色变为普通用户，移除其业务组关联
       if (user_role === 'user') {
-        await pool.query(
-          'UPDATE user_business_groups SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0',
+        await query(
+          'UPDATE user_business_groups SET deleted = true, updated_by = $1 WHERE user_id = $2 AND deleted = false',
           [req.userId, id]
         );
       }
@@ -211,14 +209,16 @@ class UserManagementController {
       const offset = (page - 1) * pageSize;
       const limit = parseInt(pageSize);
       
-      let whereConditions = ["u.deleted = 0", "u.user_role = 'admin'"];
+      let whereConditions = ["u.deleted = false", "u.user_role = 'business'"];
       let queryParams = [];
+      let paramIndex = 1;
       
       // 关键词搜索
       if (keyword) {
-        whereConditions.push('(u.username LIKE ? OR u.email LIKE ?)');
+        whereConditions.push(`(u.username ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex + 1})`);
         const searchTerm = `%${keyword}%`;
         queryParams.push(searchTerm, searchTerm);
+        paramIndex += 2;
       }
       
       // 业务组筛选
@@ -227,26 +227,27 @@ class UserManagementController {
           u.id IN (
             SELECT ubg.user_id 
             FROM user_business_groups ubg 
-            WHERE ubg.business_group_id = ? AND ubg.deleted = 0
+            WHERE ubg.business_group_id = $${paramIndex} AND ubg.deleted = false
           )
         `);
         queryParams.push(business_group_id);
+        paramIndex += 1;
       }
       
       const whereClause = whereConditions.join(' AND ');
       
       // 查询总数
-      const [countRows] = await pool.query(`
+      const countRows = await query(`
         SELECT COUNT(*) as total
         FROM users u
         WHERE ${whereClause}
       `, queryParams);
       
-      const total = countRows[0].total;
+      const total = countRows.getFirstRow().total;
       const totalPages = Math.ceil(total / limit);
       
       // 查询业务人员列表
-      const [userRows] = await pool.query(`
+      const userRows = await query(`
         SELECT 
           u.id,
           u.username,
@@ -254,22 +255,21 @@ class UserManagementController {
           u.user_role as role,
           u.created_at,
           u.updated_at,
-          GROUP_CONCAT(
-            CONCAT(bg.id, ':', bg.group_name) 
-            ORDER BY bg.group_name 
-            SEPARATOR '|'
+          STRING_AGG(
+            CONCAT(bg.id, ':', bg.group_name), '|'
+            ORDER BY bg.group_name
           ) as business_groups
         FROM users u
-        LEFT JOIN user_business_groups ubg ON u.id = ubg.user_id AND ubg.deleted = 0
-        LEFT JOIN business_groups bg ON ubg.business_group_id = bg.id AND bg.deleted = 0
+        LEFT JOIN user_business_groups ubg ON u.id = ubg.user_id AND ubg.deleted = false
+        LEFT JOIN business_groups bg ON ubg.business_group_id = bg.id AND bg.deleted = false
         WHERE ${whereClause}
-        GROUP BY u.id
+        GROUP BY u.id, u.username, u.email, u.user_role, u.created_at, u.updated_at
         ORDER BY u.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `, [...queryParams, limit, offset]);
       
       // 格式化数据
-      const items = userRows.map(row => {
+      const items = userRows.getAllRows().map(row => {
         let businessGroups = [];
         if (row.business_groups) {
           businessGroups = row.business_groups.split('|').map(group => {
@@ -321,7 +321,7 @@ class UserManagementController {
     try {
       const { id } = req.params;
       
-      const [userRows] = await pool.query(`
+      const userRows = await query(`
         SELECT 
           u.id,
           u.username,
@@ -333,10 +333,10 @@ class UserManagementController {
           u.created_at,
           u.updated_at
         FROM users u
-        WHERE u.id = ? AND u.deleted = 0
+        WHERE u.id = $1 AND u.deleted = false
       `, [id]);
       
-      if (userRows.length === 0) {
+      if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
@@ -344,33 +344,33 @@ class UserManagementController {
         });
       }
       
-      const user = userRows[0];
+      const user = userRows.getFirstRow();
       let businessGroups = [];
       
       // 根据用户角色获取业务组信息
       if (user.user_role === 'user' && user.business_group_id) {
         // 普通用户：查询单个业务组
-        const [groupRows] = await pool.query(`
+        const groupRows = await query(`
           SELECT 
             bg.id,
             bg.group_name,
             bg.group_email,
             bg.description
           FROM business_groups bg
-          WHERE bg.id = ? AND bg.deleted = 0
+          WHERE bg.id = $1 AND bg.deleted = false
         `, [user.business_group_id]);
         
-        if (groupRows.length > 0) {
+        if (groupRows.getRowCount() > 0) {
           businessGroups = [{
-            id: groupRows[0].id,
-            name: groupRows[0].group_name,
-            email: groupRows[0].group_email,
-            description: groupRows[0].description
+            id: groupRows.getFirstRow().id,
+            name: groupRows.getFirstRow().group_name,
+            email: groupRows.getFirstRow().group_email,
+            description: groupRows.getFirstRow().description
           }];
         }
       } else if (['admin', 'business'].includes(user.user_role)) {
         // 管理员和业务人员：查询关联的多个业务组
-        const [groupRows] = await pool.query(`
+        const groupRows = await query(`
           SELECT 
             bg.id,
             bg.group_name,
@@ -379,11 +379,11 @@ class UserManagementController {
             ubg.created_at as joined_at
           FROM user_business_groups ubg
           INNER JOIN business_groups bg ON ubg.business_group_id = bg.id
-          WHERE ubg.user_id = ? AND ubg.deleted = 0 AND bg.deleted = 0
+          WHERE ubg.user_id = $1 AND ubg.deleted = false AND bg.deleted = false
           ORDER BY ubg.created_at ASC
         `, [id]);
         
-        businessGroups = groupRows.map(group => ({
+        businessGroups = groupRows.getRows().map(group => ({
           id: group.id,
           name: group.group_name,
           email: group.group_email,
@@ -393,13 +393,13 @@ class UserManagementController {
       }
       
       // 获取用户处理的联系消息统计
-      const [messageStats] = await pool.query(`
+      const messageStats = await query(`
         SELECT 
           COUNT(*) as total_messages,
           SUM(CASE WHEN status = 'replied' THEN 1 ELSE 0 END) as replied_messages,
           SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing_messages
         FROM contact_messages
-        WHERE assigned_to = ? AND deleted = 0
+        WHERE assigned_to = $1 AND deleted = false
       `, [id]);
       
       res.json({
@@ -416,9 +416,9 @@ class UserManagementController {
           updated_at: user.updated_at,
           business_groups: businessGroups,
           message_stats: {
-            total_messages: messageStats[0].total_messages,
-            replied_messages: messageStats[0].replied_messages,
-            processing_messages: messageStats[0].processing_messages
+            total_messages: messageStats.getFirstRow().total_messages,
+            replied_messages: messageStats.getFirstRow().replied_messages,
+            processing_messages: messageStats.getFirstRow().processing_messages
           }
         }
       });
@@ -444,36 +444,39 @@ class UserManagementController {
       const offset = (page - 1) * pageSize;
       const limit = parseInt(pageSize);
       
-      let whereConditions = ['u.deleted = 0'];
+      let whereConditions = ['u.deleted = false'];
       let queryParams = [];
+      let paramIndex = 1;
       
       // 关键词搜索
       if (keyword) {
-        whereConditions.push('(u.username LIKE ? OR u.email LIKE ?)');
+        whereConditions.push(`(u.username ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex + 1})`);
         const searchTerm = `%${keyword}%`;
         queryParams.push(searchTerm, searchTerm);
+        paramIndex += 2;
       }
       
       // 角色筛选
       if (role && ['user', 'business', 'admin'].includes(role)) {
-        whereConditions.push('u.user_role = ?');
+        whereConditions.push(`u.user_role = $${paramIndex}`);
         queryParams.push(role);
+        paramIndex += 1;
       }
       
       const whereClause = whereConditions.join(' AND ');
       
       // 查询总数
-      const [countRows] = await pool.query(`
+      const countRows = await query(`
         SELECT COUNT(*) as total
         FROM users u
         WHERE ${whereClause}
       `, queryParams);
       
-      const total = countRows[0].total;
+      const total = countRows.getFirstRow().total;
       const totalPages = Math.ceil(total / limit);
       
       // 查询用户列表
-      const [userRows] = await pool.query(`
+      const userRows = await query(`
         SELECT 
           u.id,
           u.username,
@@ -486,24 +489,23 @@ class UserManagementController {
           u.created_at,
           u.updated_at,
           COUNT(ubg.business_group_id) as business_group_count,
-          GROUP_CONCAT(
+          STRING_AGG(
             CASE WHEN ubg.business_group_id IS NOT NULL 
             THEN CONCAT(ubg_bg.id, ':', ubg_bg.group_name) 
-            ELSE NULL END 
-            SEPARATOR '|'
+            ELSE NULL END, '|'
           ) as business_groups
         FROM users u
-        LEFT JOIN business_groups bg ON u.business_group_id = bg.id AND bg.deleted = 0
-        LEFT JOIN user_business_groups ubg ON u.id = ubg.user_id AND ubg.deleted = 0
-        LEFT JOIN business_groups ubg_bg ON ubg.business_group_id = ubg_bg.id AND ubg_bg.deleted = 0
+        LEFT JOIN business_groups bg ON u.business_group_id = bg.id AND bg.deleted = false
+        LEFT JOIN user_business_groups ubg ON u.id = ubg.user_id AND ubg.deleted = false
+        LEFT JOIN business_groups ubg_bg ON ubg.business_group_id = ubg_bg.id AND ubg_bg.deleted = false
         WHERE ${whereClause}
-        GROUP BY u.id
+        GROUP BY u.id, u.username, u.email, u.phone, u.user_role, u.language, u.business_group_id, bg.group_name, u.created_at, u.updated_at
         ORDER BY u.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `, [...queryParams, limit, offset]);
       
       // 格式化数据
-      const items = userRows.map(row => {
+      const items = userRows.getRows().map(row => {
         const item = {
           id: row.id,
           username: row.username,
@@ -571,12 +573,12 @@ class UserManagementController {
       const { username, email, phone, language } = req.body;
       
       // 检查用户是否存在
-      const [userRows] = await pool.query(
-        'SELECT id, username, email FROM users WHERE id = ? AND deleted = 0',
+      const userRows = await query(
+        'SELECT id, username, email FROM users WHERE id = $1 AND deleted = false',
         [id]
       );
       
-      if (userRows.length === 0) {
+      if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: 'USER_MANAGEMENT.USER_NOT_FOUND',
@@ -586,12 +588,12 @@ class UserManagementController {
       
       // 检查用户名是否已被其他用户使用
       if (username) {
-        const [existingUsers] = await pool.query(
-          'SELECT id FROM users WHERE username = ? AND id != ? AND deleted = 0',
+        const existingUsers = await query(
+          'SELECT id FROM users WHERE username = $1 AND id != $2 AND deleted = false',
           [username, id]
         );
         
-        if (existingUsers.length > 0) {
+        if (existingUsers.getRowCount() > 0) {
           return res.status(400).json({
             success: false,
             message: 'USER_MANAGEMENT.USERNAME_EXISTS',
@@ -602,12 +604,12 @@ class UserManagementController {
       
       // 检查邮箱是否已被其他用户使用
       if (email) {
-        const [existingEmails] = await pool.query(
-          'SELECT id FROM users WHERE email = ? AND id != ? AND deleted = 0',
+        const existingEmails = await query(
+          'SELECT id FROM users WHERE email = $1 AND id != $2 AND deleted = false',
           [email, id]
         );
         
-        if (existingEmails.length > 0) {
+        if (existingEmails.getRowCount() > 0) {
           return res.status(400).json({
             success: false,
             message: 'USER_MANAGEMENT.EMAIL_EXISTS',
@@ -620,24 +622,30 @@ class UserManagementController {
       const updateFields = [];
       const updateValues = [];
       
+      let paramIndex = 1;
+      
       if (username !== undefined) {
-        updateFields.push('username = ?');
+        updateFields.push(`username = $${paramIndex}`);
         updateValues.push(username);
+        paramIndex++;
       }
       
       if (email !== undefined) {
-        updateFields.push('email = ?');
+        updateFields.push(`email = $${paramIndex}`);
         updateValues.push(email);
+        paramIndex++;
       }
       
       if (phone !== undefined) {
-        updateFields.push('phone = ?');
+        updateFields.push(`phone = $${paramIndex}`);
         updateValues.push(phone || null);
+        paramIndex++;
       }
       
       if (language !== undefined) {
-        updateFields.push('language = ?');
+        updateFields.push(`language = $${paramIndex}`);
         updateValues.push(language || null);
+        paramIndex++;
       }
       
       if (updateFields.length === 0) {
@@ -649,17 +657,18 @@ class UserManagementController {
       }
       
       updateFields.push('updated_at = CURRENT_TIMESTAMP');
-      updateFields.push('updated_by = ?');
+      updateFields.push(`updated_by = $${paramIndex}`);
       updateValues.push(req.userId); // 添加更新人ID
+      paramIndex++;
       updateValues.push(id);
       
       // 执行更新
-      const [updateResult] = await pool.query(
-        `UPDATE users SET ${updateFields.join(', ')} WHERE id = ? AND deleted = 0`,
+      const updateResult = await query(
+        `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${paramIndex} AND deleted = false`,
         updateValues
       );
       
-      if (updateResult.affectedRows === 0) {
+      if (updateResult.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: 'USER_MANAGEMENT.USER_NOT_FOUND',
@@ -724,13 +733,12 @@ class UserManagementController {
       }
       
       // 检查所有用户是否存在
-      const placeholders = user_ids.map(() => '?').join(',');
-      const [userRows] = await pool.query(
-        `SELECT id, user_role FROM users WHERE id IN (${placeholders}) AND deleted = 0`,
-        user_ids
+      const userRows = await query(
+        `SELECT id, user_role FROM users WHERE id = ANY($1) AND deleted = false`,
+        [user_ids]
       );
       
-      if (userRows.length !== user_ids.length) {
+      if (userRows.getRowCount() !== user_ids.length) {
         return res.status(400).json({
           success: false,
           message: 'USER_MANAGEMENT.SOME_USERS_NOT_FOUND',
@@ -739,16 +747,16 @@ class UserManagementController {
       }
       
       // 批量更新角色
-      const [updateResult] = await pool.query(
-        `UPDATE users SET user_role = ? WHERE id IN (${placeholders}) AND deleted = 0`,
-        [user_role, ...user_ids]
+      const updateResult = await query(
+        `UPDATE users SET user_role = $1, updated_at = CURRENT_TIMESTAMP, updated_by = $2 WHERE id = ANY($3) AND deleted = false`,
+        [user_role, req.userId, user_ids]
       );
       
       // 如果角色变为普通客户，移除业务组关联
       if (user_role === 'user') {
-        await pool.query(
-          `UPDATE user_business_groups SET deleted = 1, updated_by = ? WHERE user_id IN (${placeholders}) AND deleted = 0`,
-          [req.userId, ...user_ids]
+        await query(
+          `UPDATE user_business_groups SET deleted = true, updated_at = CURRENT_TIMESTAMP, updated_by = $1 WHERE user_id = ANY($2) AND deleted = false`,
+          [req.userId, user_ids]
         );
       }
       
@@ -756,7 +764,7 @@ class UserManagementController {
         success: true,
         message: 'USER_MANAGEMENT.BATCH_ROLE_UPDATE_SUCCESS',
         data: {
-          updated_count: updateResult.affectedRows,
+          updated_count: updateResult.getRowCount(),
           user_ids: user_ids,
           user_role: user_role
         }
@@ -781,12 +789,12 @@ class UserManagementController {
       const { id } = req.params;
       
       // 检查用户是否存在
-      const [userRows] = await pool.query(
-        'SELECT id, user_role, username FROM users WHERE id = ? AND deleted = 0',
+      const userRows = await query(
+        'SELECT id, user_role, username FROM users WHERE id = $1 AND deleted = false',
         [id]
       );
       
-      if (userRows.length === 0) {
+      if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: 'USER_MANAGEMENT.USER_NOT_FOUND',
@@ -794,7 +802,7 @@ class UserManagementController {
         });
       }
       
-      const user = userRows[0];
+      const user = userRows.getFirstRow();
       
       // 只允许删除管理员和业务员
       if (!['admin', 'business'].includes(user.user_role)) {
@@ -815,14 +823,14 @@ class UserManagementController {
       }
       
       // 软删除用户
-      await pool.query(
-        'UPDATE users SET deleted = 1, updated_at = NOW() WHERE id = ?',
+      await query(
+        'UPDATE users SET deleted = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
         [id]
       );
       
       // 删除用户的业务组关联
-      await pool.query(
-        'UPDATE user_business_groups SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0',
+      await query(
+        'UPDATE user_business_groups SET deleted = true, updated_by = $1 WHERE user_id = $2 AND deleted = false',
         [req.userId, id]
       );
       
@@ -855,12 +863,12 @@ class UserManagementController {
       const { business_group_ids } = req.body;
       
       // 检查用户是否存在
-      const [userRows] = await pool.query(
-        'SELECT id, user_role FROM users WHERE id = ? AND deleted = 0',
+      const userRows = await query(
+        'SELECT id, user_role FROM users WHERE id = $1 AND deleted = false',
         [id]
       );
       
-      if (userRows.length === 0) {
+      if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: 'USER_MANAGEMENT.USER_NOT_FOUND',
@@ -868,7 +876,7 @@ class UserManagementController {
         });
       }
       
-      const user = userRows[0];
+      const user = userRows.getFirstRow();
       
       // 只有业务人员和管理员可以分配业务组
       if (!['business', 'admin'].includes(user.user_role)) {
@@ -881,13 +889,12 @@ class UserManagementController {
       
       // 验证业务组ID
       if (business_group_ids && business_group_ids.length > 0) {
-        const placeholders = business_group_ids.map(() => '?').join(',');
-        const [groupRows] = await pool.query(
-          `SELECT id FROM business_groups WHERE id IN (${placeholders}) AND deleted = 0`,
-          business_group_ids
+        const groupRows = await query(
+          `SELECT id FROM business_groups WHERE id = ANY($1) AND deleted = false`,
+          [business_group_ids]
         );
         
-        if (groupRows.length !== business_group_ids.length) {
+        if (groupRows.getRowCount() !== business_group_ids.length) {
           return res.status(400).json({
             success: false,
             message: 'USER_MANAGEMENT.INVALID_BUSINESS_GROUPS',
@@ -897,24 +904,24 @@ class UserManagementController {
       }
       
       // 删除现有的业务组关联
-      await pool.query(
-        'UPDATE user_business_groups SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0',
+      await query(
+        'UPDATE user_business_groups SET deleted = true, updated_by = $1 WHERE user_id = $2 AND deleted = false',
         [req.userId, id]
       );
       
       // 添加新的业务组关联
       if (business_group_ids && business_group_ids.length > 0) {
-        const insertValues = business_group_ids.map(groupId => [
-          require('crypto').randomUUID().replace(/-/g, ''),
-          parseInt(id),
-          parseInt(groupId),
-          req.userId,
-          req.userId
-        ]);
+        const insertValues = [];
+        const params = [];
         
-        await pool.query(
-          `INSERT INTO user_business_groups (guid, user_id, business_group_id, assigned_by, created_by) VALUES ${insertValues.map(() => '(UNHEX(?), ?, ?, ?, ?)').join(', ')}`,
-          insertValues.flat()
+        business_group_ids.forEach((groupId, index) => {
+          insertValues.push(`($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4})`);
+          params.push(parseInt(id), parseInt(groupId), req.userId, req.userId);
+        });
+        
+        await query(
+          `INSERT INTO user_business_groups (user_id, business_group_id, assigned_by, created_by) VALUES ${insertValues.join(', ')}`,
+          params
         );
       }
       
@@ -943,14 +950,14 @@ class UserManagementController {
    */
   async getBusinessGroups(req, res) {
     try {
-      const [groupRows] = await pool.query(
-        'SELECT id, group_name, group_email, description, is_default FROM business_groups WHERE deleted = 0 ORDER BY is_default DESC, group_name ASC'
+      const groupRows = await query(
+        'SELECT id, group_name, group_email, description, is_default FROM business_groups WHERE deleted = false ORDER BY is_default DESC, group_name ASC'
       );
       
       res.json({
         success: true,
         message: getMessage('USER_MANAGEMENT.BUSINESS_GROUPS_SUCCESS'),
-        data: groupRows.map(row => ({
+        data: groupRows.getRows().map(row => ({
           id: row.id,
           name: row.group_name,
           email: row.group_email,
@@ -977,11 +984,11 @@ class UserManagementController {
     try {
       const { id } = req.params;
       
-      const [groupRows] = await pool.query(
+      const groupRows = await query(
         `SELECT bg.id, bg.group_name, bg.group_email, bg.description, bg.is_default
          FROM user_business_groups ubg
          INNER JOIN business_groups bg ON ubg.business_group_id = bg.id
-         WHERE ubg.user_id = ? AND ubg.deleted = 0 AND bg.deleted = 0
+         WHERE ubg.user_id = $1 AND ubg.deleted = false AND bg.deleted = false
          ORDER BY bg.is_default DESC, bg.group_name ASC`,
         [id]
       );
@@ -989,7 +996,7 @@ class UserManagementController {
       res.json({
         success: true,
         message: getMessage('USER_MANAGEMENT.USER_BUSINESS_GROUPS_SUCCESS'),
-        data: groupRows.map(row => ({
+        data: groupRows.getRows().map(row => ({
           id: row.id,
           name: row.group_name,
           email: row.group_email,
@@ -1016,16 +1023,16 @@ class UserManagementController {
     try {
       const { id } = req.params;
       
-      const [rows] = await pool.query(
+      const rows = await query(
         `SELECT u.id, u.username, u.email, u.business_group_id,
                 bg.group_name as business_group_name, bg.group_email as business_group_email
          FROM users u
-         LEFT JOIN business_groups bg ON u.business_group_id = bg.id AND bg.deleted = 0
-         WHERE u.id = ? AND u.deleted = 0`,
+         LEFT JOIN business_groups bg ON u.business_group_id = bg.id AND bg.deleted = false
+         WHERE u.id = $1 AND u.deleted = false`,
         [id]
       );
       
-      if (rows.length === 0) {
+      if (rows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: getMessage('USER.NOT_FOUND'),
@@ -1036,7 +1043,7 @@ class UserManagementController {
       res.json({
         success: true,
         message: getMessage('USER.GET_SUCCESS'),
-        data: rows[0]
+        data: rows.getFirstRow()
       });
     } catch (error) {
       console.error('获取用户业务组错误:', error);
@@ -1059,12 +1066,12 @@ class UserManagementController {
       
       // 验证业务组是否存在
       if (business_group_id) {
-        const [bgRows] = await pool.query(
-          'SELECT id FROM business_groups WHERE id = ? AND deleted = 0',
+        const bgRows = await query(
+          'SELECT id FROM business_groups WHERE id = $1 AND deleted = false',
           [business_group_id]
         );
         
-        if (bgRows.length === 0) {
+        if (bgRows.getRowCount() === 0) {
           return res.status(400).json({
             success: false,
             message: getMessage('BUSINESS_GROUP.NOT_FOUND'),
@@ -1074,12 +1081,12 @@ class UserManagementController {
       }
       
       // 验证用户是否存在
-      const [userRows] = await pool.query(
-        'SELECT id FROM users WHERE id = ? AND deleted = 0',
+      const userRows = await query(
+        'SELECT id FROM users WHERE id = $1 AND deleted = false',
         [id]
       );
       
-      if (userRows.length === 0) {
+      if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
@@ -1088,8 +1095,8 @@ class UserManagementController {
       }
       
       // 更新用户的业务组
-      await pool.query(
-        'UPDATE users SET business_group_id = ?, updated_at = NOW(), updated_by = ? WHERE id = ?',
+      await query(
+        'UPDATE users SET business_group_id = $1, updated_at = CURRENT_TIMESTAMP, updated_by = $2 WHERE id = $3',
         [business_group_id, req.userId, id]
       );
       

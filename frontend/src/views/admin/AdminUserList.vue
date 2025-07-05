@@ -102,7 +102,7 @@
           <el-input v-model="createForm.email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password />
+          <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password autocomplete="off" />
         </el-form-item>
       </el-form>
 
@@ -129,7 +129,7 @@
           <el-input v-model="editForm.email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="editForm.password" type="password" placeholder="留空则不修改密码" show-password />
+          <el-input v-model="editForm.password" type="password" placeholder="留空则不修改密码" show-password autocomplete="off" />
         </el-form-item>
       </el-form>
       <template #footer>

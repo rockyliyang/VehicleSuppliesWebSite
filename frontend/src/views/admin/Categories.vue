@@ -13,8 +13,8 @@
       <el-table-column prop="sort_order" label="排序" width="100" />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{row}">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '启用' : '禁用' }}
+          <el-tag :type="row.status === 'on_shelf' ? 'success' : 'info'">
+            {{ row.status === 'on_shelf' ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -47,8 +47,8 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="categoryForm.status">
-            <el-radio :label="1">启用</el-radio>
-            <el-radio :label="0">禁用</el-radio>
+            <el-radio label="on_shelf">启用</el-radio>
+            <el-radio label="off_shelf">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="描述" prop="description">
@@ -83,7 +83,7 @@ export default {
         parent_id: 0,
         sort_order: 0,
         description: '',
-        status: 1
+        status: "on_shelf"
       },
       rules: {
         name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
@@ -124,7 +124,7 @@ export default {
         parent_id: 0,
         sort_order: 0,
         description: '',
-        status: 1
+        status: 'on_shelf'
       }
       this.dialogVisible = true
       this.$nextTick(() => {

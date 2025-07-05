@@ -20,7 +20,7 @@
           <el-form :model="form" :rules="rules" ref="formRef" class="forgot-password-form">
             <el-form-item prop="email">
               <FormInput v-model="form.email" :placeholder="$t('forgotPassword.emailPlaceholder') || '请输入注册时使用的邮箱地址'"
-                :prefix-icon="Message" />
+                :prefix-icon="Message" autocomplete="off" />
             </el-form-item>
 
             <el-form-item prop="captcha">

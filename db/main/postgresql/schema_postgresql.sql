@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS users (
   language VARCHAR(10) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -46,8 +46,8 @@ COMMENT ON COLUMN users.created_by IS '创建者用户ID';
 COMMENT ON COLUMN users.updated_by IS '最后更新者用户ID';
 
 -- 创建唯一索引（模拟MySQL的虚拟列）
-CREATE UNIQUE INDEX unique_active_username ON users (username) WHERE deleted = 0;
-CREATE UNIQUE INDEX unique_active_email ON users (email) WHERE deleted = 0;
+CREATE UNIQUE INDEX unique_active_username ON users (username) WHERE deleted = FALSE;
+CREATE UNIQUE INDEX unique_active_email ON users (email) WHERE deleted = FALSE;
 
 -- 创建普通索引
 CREATE INDEX idx_created_by ON users (created_by);
@@ -71,9 +71,9 @@ CREATE TABLE IF NOT EXISTS product_categories (
   name VARCHAR(255) NOT NULL,
   code VARCHAR(32) NOT NULL,
   sort_order INT NOT NULL DEFAULT 0,
-  status VARCHAR(10) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
+  status VARCHAR(16) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
   description TEXT,
-  deleted SMALLINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_by BIGINT DEFAULT NULL,
@@ -85,7 +85,7 @@ COMMENT ON COLUMN product_categories.created_by IS '创建者用户ID';
 COMMENT ON COLUMN product_categories.updated_by IS '最后更新者用户ID';
 
 -- 创建唯一索引（模拟MySQL的虚拟列）
-CREATE UNIQUE INDEX unique_active_code ON product_categories (code) WHERE deleted = 0;
+CREATE UNIQUE INDEX unique_active_code ON product_categories (code) WHERE deleted = FALSE;
 
 -- 创建普通索引
 CREATE INDEX idx_product_categories_created_by ON product_categories (created_by);
@@ -113,10 +113,10 @@ CREATE TABLE IF NOT EXISTS products (
   thumbnail_url VARCHAR(255) DEFAULT NULL,
   stock INT NOT NULL,
   category_id BIGINT NOT NULL,
-  product_type VARCHAR(10) NOT NULL DEFAULT 'physical' CHECK (product_type IN ('physical', 'virtual', 'service')),
-  status VARCHAR(10) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
+  product_type VARCHAR(16) NOT NULL DEFAULT 'physical' CHECK (product_type IN ('physical', 'virtual', 'service')),
+  status VARCHAR(16) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
   sort_order INT NOT NULL DEFAULT 0,
-  deleted SMALLINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_by BIGINT DEFAULT NULL,
@@ -130,7 +130,7 @@ COMMENT ON COLUMN products.created_by IS '创建者用户ID';
 COMMENT ON COLUMN products.updated_by IS '最后更新者用户ID';
 
 -- 创建唯一索引（模拟MySQL的虚拟列）
-CREATE UNIQUE INDEX unique_active_product_code ON products (product_code) WHERE deleted = 0;
+CREATE UNIQUE INDEX unique_active_product_code ON products (product_code) WHERE deleted = FALSE;
 
 -- 创建普通索引
 CREATE INDEX idx_products_created_by ON products (created_by);
@@ -152,14 +152,14 @@ CREATE TRIGGER update_products_modtime
 CREATE TABLE IF NOT EXISTS product_images (
   id BIGSERIAL PRIMARY KEY,
   guid UUID DEFAULT gen_random_uuid() NOT NULL,
-  product_id BIGINT NOT NULL,
+  product_id BIGINT NULL,
   image_url VARCHAR(255) NOT NULL,
   image_type SMALLINT NOT NULL DEFAULT 0,
   sort_order INT DEFAULT 0,
   session_id VARCHAR(64) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -201,7 +201,7 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_zip_code VARCHAR(16) NOT NULL DEFAULT '',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -237,10 +237,10 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_code VARCHAR(64) NOT NULL DEFAULT '',
   quantity INT NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
-  product_name VARCHAR(64) NOT NULL,
+  product_name VARCHAR(256) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -278,7 +278,7 @@ CREATE TABLE IF NOT EXISTS logistics (
   description VARCHAR(256),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -315,7 +315,7 @@ CREATE TABLE IF NOT EXISTS site_settings (
   setting_group VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -325,7 +325,7 @@ COMMENT ON COLUMN site_settings.created_by IS '创建者用户ID';
 COMMENT ON COLUMN site_settings.updated_by IS '最后更新者用户ID';
 
 -- 创建唯一索引（模拟MySQL的虚拟列）
-CREATE UNIQUE INDEX unique_active_setting_key ON site_settings (setting_key) WHERE deleted = 0;
+CREATE UNIQUE INDEX unique_active_setting_key ON site_settings (setting_key) WHERE deleted = FALSE;
 
 -- 创建普通索引
 CREATE INDEX idx_site_settings_created_by ON site_settings (created_by);
@@ -355,7 +355,7 @@ CREATE TABLE IF NOT EXISTS company_info (
   wechat_qrcode VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -390,7 +390,7 @@ CREATE TABLE IF NOT EXISTS banners (
   is_active SMALLINT DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -423,7 +423,7 @@ CREATE TABLE IF NOT EXISTS news (
   published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted SMALLINT DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_by BIGINT DEFAULT NULL,
   updated_by BIGINT DEFAULT NULL
 );
@@ -457,4 +457,4 @@ INSERT INTO site_settings (guid, setting_key, setting_value, setting_group) VALU
 
 -- 创建默认管理员用户 (密码: admin123)
 INSERT INTO users (guid, username, password, email, user_role) 
-VALUES (gen_random_uuid(), 'admin', '$2b$10$YourHashedPasswordHere', 'admin@autoease.com', 'admin');
+VALUES (gen_random_uuid(), 'admin', '$2a$10$iFYbr7GWsaiDd8iZji5LRuzpE5Ch8YHlBu0eqVE7IB/zpnbhEBrGy', 'admin@autoease.com', 'admin');

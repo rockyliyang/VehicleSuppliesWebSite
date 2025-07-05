@@ -1,6 +1,5 @@
-const { pool } = require('../db/db');
+const { query, getConnection } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
-const { uuidToBinary, binaryToUuid } = require('../utils/uuid');
 const QRCode = require('qrcode');
 const { getMessage } = require('../config/messages');
 const {
@@ -59,22 +58,20 @@ function getAlipayClient() {
 }
 
 // 统一订单初始化
-async function initOrder(userId, cartItems, shippingInfo, paymentMethod, connection) {
+async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client) {
   let totalAmount = 0;
   for (const item of cartItems) totalAmount += item.price * item.quantity;
-  const orderGuid = uuidToBinary(uuidv4());
-  const [orderResult] = await connection.query(
+  const orderResult = await client.query(
     `INSERT INTO orders 
-     (user_id, total_amount, status, payment_method, order_guid, 
+     (user_id, total_amount, status, payment_method, 
       shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
       created_by, updated_by) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
     [
       userId,
       totalAmount,
       'pending',
       paymentMethod,
-      orderGuid,
       shippingInfo.name,
       shippingInfo.phone,
       shippingInfo.email,
@@ -84,20 +81,21 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, connect
       userId
     ]
   );
-  const orderId = orderResult.insertId;
+  const orderId = orderResult.rows[0].id;
+  const orderGuid = orderResult.rows[0].guid;
   for (const item of cartItems) {
-    await connection.query(
+    await client.query(
       `INSERT INTO order_items 
        (order_id, product_id, quantity, price, product_name, product_code, created_by, updated_by) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [orderId, item.product_id, item.quantity, item.price, item.product_name || item.name, item.product_code, userId, userId]
     );
-    await connection.query(
-      `UPDATE products SET stock = stock - ?, updated_by = ? WHERE id = ? AND deleted = 0`,
+    await client.query(
+      `UPDATE products SET stock = stock - $1, updated_by = $2 WHERE id = $3 AND deleted = false`,
       [item.quantity, userId, item.product_id]
     );
-    await connection.query(
-      `UPDATE cart_items SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0 and product_id =?`,
+    await client.query(
+      `UPDATE cart_items SET deleted = true, updated_by = $1 WHERE user_id = $2 AND deleted = false and product_id = $3`,
       [userId, userId, item.product_id]
     );
   }
@@ -109,21 +107,21 @@ exports.createPayPalOrder = async (req, res) => {
   try {
     const { shippingInfo, orderItems } = req.body;
     const userId = req.userId;
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     await connection.beginTransaction();
     try {
       let cartItems;
       if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
         cartItems = orderItems;
       } else {
-        const [dbCartItems] = await connection.query(
+        const dbCartItems = await connection.query(
           `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
            FROM cart_items ci 
            JOIN products p ON ci.product_id = p.id 
-           WHERE ci.user_id = ? AND ci.deleted = 0 AND p.deleted = 0`,
+           WHERE ci.user_id = $1 AND ci.deleted = false AND p.deleted = false`,
           [userId]
         );
-        cartItems = dbCartItems;
+        cartItems = dbCartItems.getRows();
       }
       if (!cartItems || cartItems.length === 0) {
         await connection.rollback();
@@ -131,8 +129,8 @@ exports.createPayPalOrder = async (req, res) => {
         return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
       const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, 'paypal', connection);
-      const client = getPayPalClient();
-      const ordersController = new OrdersController(client);
+      const paypalClient = getPayPalClient();
+      const ordersController = new OrdersController(paypalClient);
       const request = {
         body: {
           intent: CheckoutPaymentIntent.Capture,
@@ -150,7 +148,7 @@ exports.createPayPalOrder = async (req, res) => {
       const { body } = await ordersController.createOrder(request);
       const paypalOrderData = JSON.parse(body);
       await connection.query(
-        `UPDATE orders SET payment_id = ?, updated_by = ? WHERE id = ?`,
+        `UPDATE orders SET payment_id = $1, updated_by = $2 WHERE id = $3`,
         [paypalOrderData.id, req.userId, orderId]
       );
       await connection.commit();
@@ -171,14 +169,14 @@ exports.createPayPalOrder = async (req, res) => {
 exports.capturePayPalPayment = async (req, res) => {
   try {
     const { paypalOrderId, orderId } = req.body;
-    const [orders] = await pool.query(
-      `SELECT id, status FROM orders WHERE id = ? AND payment_id = ?`,
+    const orders = await query(
+      `SELECT id, status FROM orders WHERE id = $1 AND payment_id = $2`,
       [orderId, paypalOrderId]
     );
-    if (orders.length === 0) {
+    if (orders.getRowCount() === 0) {
       return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND_OR_MISMATCH'), data: null });
     }
-    const order = orders[0];
+    const order = orders.getFirstRow();
     if (order.status !== 'pending') {
       return res.json({ success: false, message: getMessage('PAYMENT.INVALID_ORDER_STATUS'), data: null });
     }
@@ -187,8 +185,8 @@ exports.capturePayPalPayment = async (req, res) => {
     const request = { id: paypalOrderId };
     const { body } = await ordersController.captureOrder(request);
     const captureData = JSON.parse(body);
-    await pool.query(
-      `UPDATE orders SET status = ?, updated_by = ? WHERE id = ?`,
+    await query(
+      `UPDATE orders SET status = $1, updated_by = $2 WHERE id = $3`,
       ['paid', req.userId, orderId]
     );
     return res.json({ success: true, message: getMessage('PAYMENT.PAYPAL_CAPTURE_SUCCESS'), data: { orderId, paymentId: captureData.id } });
@@ -204,19 +202,19 @@ exports.repayPayPalOrder = async (req, res) => {
     const userId = req.userId;
     
     // 验证订单是否存在且属于当前用户
-    const [orders] = await pool.query(
-      `SELECT id, total_amount, status, user_id FROM orders WHERE id = ? AND user_id = ? AND deleted = 0`,
+    const orders = await query(
+      `SELECT id, total_amount, status, user_id FROM orders WHERE id = $1 AND user_id = $2 AND deleted = false`,
       [orderId, userId]
     );
     
-    if (orders.length === 0) {
+    if (orders.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('PAYMENT.ORDER_NOT_FOUND_OR_NO_PERMISSION')
       });
     }
     
-    const order = orders[0];
+    const order = orders.getFirstRow();
     
     // 只有未支付的订单才能重新支付
     if (order.status === 'paid') {
@@ -249,8 +247,8 @@ exports.repayPayPalOrder = async (req, res) => {
     const paypalOrderData = JSON.parse(body);
     
     // 更新订单的PayPal订单ID
-    await pool.query(
-      `UPDATE orders SET payment_id = ?, updated_by = ? WHERE id = ?`,
+    await query(
+      `UPDATE orders SET payment_id = $1, updated_by = $2 WHERE id = $3`,
       [paypalOrderData.id, req.userId, orderId]
     );
     
@@ -281,21 +279,21 @@ exports.createCommonOrder = async (req, res) => {
     if (!['wechat', 'alipay'].includes(paymentMethod)) {
       return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_METHOD'), data: null });
     }
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     await connection.beginTransaction();
     try {
       let cartItems;
       if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
         cartItems = orderItems;
       } else {
-        const [dbCartItems] = await connection.query(
+        const dbCartItems = await connection.query(
           `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
            FROM cart_items ci 
            JOIN products p ON ci.product_id = p.id 
-           WHERE ci.user_id = ? AND ci.deleted = 0 AND p.deleted = 0`,
+           WHERE ci.user_id = $1 AND ci.deleted = false AND p.deleted = false`,
           [userId]
         );
-        cartItems = dbCartItems;
+        cartItems = dbCartItems.getRows();
       }
       if (!cartItems || cartItems.length === 0) {
         await connection.rollback();
@@ -308,8 +306,8 @@ exports.createCommonOrder = async (req, res) => {
       
       // 如果是从购物车创建的订单，清空购物车
       if (!orderItems || orderItems.length === 0) {
-        await pool.query(
-          `UPDATE cart_items SET deleted = 1, updated_by = ? WHERE user_id = ? AND deleted = 0`,
+        const clearCartResult = await query(
+          `UPDATE cart_items SET deleted = true, updated_by = $1 WHERE user_id = $2 AND deleted = false`,
           [userId, userId]
         );
       }
@@ -329,14 +327,14 @@ exports.createCommonOrder = async (req, res) => {
 exports.generateQrcode = async (req, res) => {
   try {
     const { orderId, paymentMethod } = req.body;
-    const [orders] = await pool.query(
-      `SELECT id, total_amount, status FROM orders WHERE id = ?`,
+    const orders = await query(
+      `SELECT id, total_amount, status FROM orders WHERE id = $1`,
       [orderId]
     );
-    if (orders.length === 0) {
+    if (orders.getRowCount() === 0) {
       return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND'), data: null });
     }
-    const order = orders[0];
+    const order = orders.getFirstRow();
     if (order.status !== 'pending') {
       return res.json({ success: false, message: getMessage('PAYMENT.INVALID_ORDER_STATUS_FOR_QR'), data: null });
     }
@@ -366,8 +364,8 @@ exports.generateQrcode = async (req, res) => {
         
         if (result.code === '10000' && result.qrCode) {
           // 保存商户订单号到数据库
-          await pool.query(
-            `UPDATE orders SET payment_id = ? WHERE id = ?`,
+          await query(
+            `UPDATE orders SET payment_id = $1 WHERE id = $2`,
             [outTradeNo, orderId]
           );
           paymentUrl = result.qrCode;
@@ -402,14 +400,14 @@ exports.generateQrcode = async (req, res) => {
 exports.checkPaymentStatus = async (req, res) => {
   try {
     const { orderId, paymentMethod } = req.body;
-    const [orders] = await pool.query(
-      `SELECT id, status, payment_id FROM orders WHERE id = ?`,
+    const orders = await query(
+      `SELECT id, status, payment_id FROM orders WHERE id = $1`,
       [orderId]
     );
-    if (orders.length === 0) {
+    if (orders.getRowCount() === 0) {
       return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND'), data: null });
     }
-    const order = orders[0];
+    const order = orders.getFirstRow();
     
     // 如果是支付宝支付且订单状态为pending，主动查询支付宝支付状态
     if (paymentMethod === 'alipay' && order.status === 'pending' && order.payment_id) {
@@ -424,8 +422,8 @@ exports.checkPaymentStatus = async (req, res) => {
         if (result.code === '10000') {
           if (result.tradeStatus === 'TRADE_SUCCESS' || result.tradeStatus === 'TRADE_FINISHED') {
             // 更新订单状态为已支付
-            await pool.query(
-              `UPDATE orders SET status = 'paid' WHERE id = ?`,
+            await query(
+              `UPDATE orders SET status = 'paid' WHERE id = $1`,
               [orderId]
             );
             return res.json({ 
@@ -435,8 +433,8 @@ exports.checkPaymentStatus = async (req, res) => {
             });
           } else if (result.tradeStatus === 'TRADE_CLOSED') {
             // 更新订单状态为已取消
-            await pool.query(
-              `UPDATE orders SET status = 'cancelled' WHERE id = ?`,
+            await query(
+              `UPDATE orders SET status = 'cancelled' WHERE id = $1`,
               [orderId]
             );
             return res.json({ 
@@ -461,14 +459,14 @@ exports.checkPaymentStatus = async (req, res) => {
 exports.paymentCallback = async (req, res) => {
   try {
     const { orderId, paymentMethod, paymentId, status } = req.body;
-    const [orders] = await pool.query(
-      `SELECT id, status FROM orders WHERE id = ?`,
+    const orders = await query(
+      `SELECT id, status FROM orders WHERE id = $1`,
       [orderId]
     );
-    if (orders.length === 0) {
+    if (orders.getRowCount() === 0) {
       return res.json({ success: false, message: getMessage('PAYMENT.ORDER_NOT_FOUND'), data: null });
     }
-    const order = orders[0];
+    const order = orders.getFirstRow();
     if (order.status !== 'pending') {
       return res.json({ success: false, message: getMessage('PAYMENT.INVALID_ORDER_STATUS_FOR_UPDATE'), data: null });
     }
@@ -480,8 +478,8 @@ exports.paymentCallback = async (req, res) => {
     } else {
       return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_STATUS'), data: null });
     }
-    await pool.query(
-      `UPDATE orders SET status = ?, payment_id = ? WHERE id = ?`,
+    await query(
+      `UPDATE orders SET status = $1, payment_id = $2 WHERE id = $3`,
       [newStatus, paymentId, orderId]
     );
     return res.json({ success: true, message: getMessage('PAYMENT.STATUS_UPDATE_SUCCESS'), data: { orderId, status: newStatus } });
@@ -521,17 +519,17 @@ exports.alipayNotify = async (req, res) => {
     const orderId = parseInt(orderIdMatch[1]);
     
     // 查询订单
-    const [orders] = await pool.query(
-      `SELECT id, status, total_amount FROM orders WHERE id = ?`,
+    const orders = await query(
+      `SELECT id, status, total_amount FROM orders WHERE id = $1`,
       [orderId]
     );
     
-    if (orders.length === 0) {
+    if (orders.getRowCount() === 0) {
       console.error('Order not found:', orderId);
       return res.status(400).send('fail');
     }
     
-    const order = orders[0];
+    const order = orders.getFirstRow();
     
     // 验证金额
     if (parseFloat(total_amount) !== parseFloat(order.total_amount)) {
@@ -555,8 +553,8 @@ exports.alipayNotify = async (req, res) => {
     }
     
     // 更新订单状态
-    await pool.query(
-      `UPDATE orders SET status = ?, payment_id = ? WHERE id = ?`,
+    await query(
+      `UPDATE orders SET status = $1, payment_id = $2 WHERE id = $3`,
       [newStatus, trade_no, orderId]
     );
     

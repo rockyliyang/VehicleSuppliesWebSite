@@ -1,6 +1,5 @@
-const { pool } = require('../db/db');
+const { query } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
-const { binaryToUuid } = require('../utils/uuid');
 const { getMessage } = require('../config/messages');
 
 // 根据环境变量决定使用哪个支付网关
@@ -31,28 +30,27 @@ exports.getOrders = async (req, res) => {
 
   try {
     // 获取订单总数
-    const [countResult] = await pool.query(
-      'SELECT COUNT(*) as total FROM orders WHERE user_id = ? AND deleted = 0',
+    const countResult = await query(
+      'SELECT COUNT(*) as total FROM orders WHERE user_id = $1 AND deleted = false',
       [userId]
     );
-    const total = countResult[0].total;
+    const total = countResult.getFirstRow().total;
 
     // 获取订单列表
-    const [orders] = await pool.query(
+    const orders = await query(
       `SELECT id, order_guid, total_amount, status, payment_method, 
               created_at, updated_at, shipping_name, shipping_phone 
        FROM orders 
-       WHERE user_id = ? AND deleted = 0 
+       WHERE user_id = $1 AND deleted = false 
        ORDER BY created_at DESC 
-       LIMIT ? OFFSET ?`,
+       LIMIT $2 OFFSET $3`,
       [userId, pageSize, offset]
     );
 
-    // 转换order_guid为可读格式并添加order_number
-    const formattedOrders = orders.map(order => ({
+    // PostgreSQL返回的order_guid已经是字符串格式
+    const formattedOrders = orders.getRows().map(order => ({
       ...order,
-      order_number: binaryToUuid(order.order_guid),
-      order_guid: binaryToUuid(order.order_guid)
+      order_number: order.order_guid
     }));
 
     return res.status(200).json({
@@ -86,38 +84,38 @@ exports.getOrderDetail = async (req, res) => {
 
   try {
     // 获取订单信息
-    const [orders] = await pool.query(
+    const orders = await query(
       `SELECT id, order_guid, total_amount, status, payment_method, payment_id, 
               created_at, updated_at, shipping_name, shipping_phone, 
               shipping_email, shipping_address, shipping_zip_code 
        FROM orders 
-       WHERE id = ? AND user_id = ? AND deleted = 0`,
+       WHERE id = $1 AND user_id = $2 AND deleted = false`,
       [orderId, userId]
     );
 
-    if (orders.length === 0) {
+    if (orders.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('ORDER.NOT_FOUND')
       });
     }
 
-    const order = orders[0];
+    const order = orders.getFirstRow();
 
     // 获取订单项（包含商品图片）
-    const [orderItems] = await pool.query(
+    const orderItems = await query(
       `SELECT oi.id, oi.product_id, oi.quantity, oi.price, oi.product_name, oi.product_code,
-              (SELECT image_url FROM product_images WHERE product_id = oi.product_id AND deleted = 0 ORDER BY sort_order ASC LIMIT 1) as image_url
+              (SELECT image_url FROM product_images WHERE product_id = oi.product_id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
        FROM order_items oi
-       WHERE oi.order_id = ? AND oi.deleted = 0`,
+       WHERE oi.order_id = $1 AND oi.deleted = false`,
       [orderId]
     );
 
     // 获取物流信息
-    const [logistics] = await pool.query(
+    const logistics = await query(
       `SELECT id, tracking_number, carrier, status, location, description, created_at 
        FROM logistics 
-       WHERE order_id = ? AND deleted = 0 
+       WHERE order_id = $1 AND deleted = false 
        ORDER BY created_at DESC`,
       [orderId]
     );
@@ -127,8 +125,8 @@ exports.getOrderDetail = async (req, res) => {
       message: getMessage('ORDER.DETAIL_SUCCESS'),
       data: {
         order,
-        items: orderItems,
-        logistics
+        items: orderItems.getRows(),
+        logistics: logistics.getRows()
       }
     });
   } catch (error) {

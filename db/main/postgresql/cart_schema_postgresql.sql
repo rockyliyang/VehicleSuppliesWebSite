@@ -2,7 +2,7 @@
 -- 从MySQL转换而来，严格保持原有字段名称和结构
 -- 转换日期: 2024年
 
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
     id BIGSERIAL PRIMARY KEY,
     guid UUID DEFAULT gen_random_uuid() NOT NULL,
     user_id BIGINT NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE cart_items (
     quantity INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted SMALLINT DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT DEFAULT NULL,
     updated_by BIGINT DEFAULT NULL
 );
@@ -39,7 +39,7 @@ CREATE INDEX idx_cart_items_created_by ON cart_items(created_by);
 CREATE INDEX idx_cart_items_updated_by ON cart_items(updated_by);
 
 -- 创建唯一索引（模拟MySQL的虚拟列unique_active_user_product）
-CREATE UNIQUE INDEX unique_active_user_product ON cart_items(user_id, product_id) WHERE deleted = 0;
+CREATE UNIQUE INDEX unique_active_user_product ON cart_items(user_id, product_id) WHERE deleted = FALSE;
 
 -- 注释说明
 COMMENT ON TABLE cart_items IS '购物车项目表';

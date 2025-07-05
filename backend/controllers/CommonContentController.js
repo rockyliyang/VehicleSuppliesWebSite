@@ -1,7 +1,5 @@
-const { pool } = require('../db/db');
-const { uuidToBinary, binaryToUuid } = require('../utils/uuid');
+const { getConnection, query } = require('../db/db');
 const { getMessage } = require('../config/messages');
-const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 
@@ -11,7 +9,7 @@ exports.getNavList = async (req, res) => {
       const { language = 'zh-CN' } = req.query;
       const { contentType = 'about_us' } = req.params;
 
-      const [navList] = await pool.query(`
+      const navList = await query(`
         SELECT 
           n.id,
           n.name_key,
@@ -20,15 +18,15 @@ exports.getNavList = async (req, res) => {
           n.status,
           COALESCE(lt.value, n.name_key) as title
         FROM common_content_nav n
-        LEFT JOIN language_translations lt ON n.name_key = lt.code AND lt.lang = ? AND lt.deleted = 0
-        WHERE n.deleted = 0 AND n.status = 1 AND n.content_type = ?
+        LEFT JOIN language_translations lt ON n.name_key = lt.code AND lt.lang = $1 AND lt.deleted = false
+        WHERE n.deleted = false AND n.status = 1 AND n.content_type = $2
         ORDER BY n.sort_order ASC, n.id ASC
       `, [language, contentType]);
 
       res.json({
         success: true,
         message: getMessage('COMMON_CONTENT.NAV_LIST_SUCCESS'),
-        data: { navList }
+        data: { navList: navList.getRows() }
       });
     } catch (error) {
       console.error('获取导航菜单失败:', error);
@@ -52,28 +50,28 @@ exports.getContent = async (req, res) => {
       }
 
       // 首先获取导航信息
-      const [navResult] = await pool.query(`
+      const navResult = await query(`
         SELECT 
           n.id,
           n.name_key,
           n.content_type,
           COALESCE(lt.value, n.name_key) as title
         FROM common_content_nav n
-        LEFT JOIN language_translations lt ON n.name_key = lt.code AND lt.lang = ? AND lt.deleted = 0
-        WHERE n.name_key = ? AND n.deleted = 0 AND n.status = 1
+        LEFT JOIN language_translations lt ON n.name_key = lt.code AND lt.lang = $1 AND lt.deleted = false
+        WHERE n.name_key = $2 AND n.deleted = false AND n.status = 1
       `, [language, nameKey]);
 
-      if (navResult.length === 0) {
+      if (navResult.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: getMessage('COMMON_CONTENT.NAV_NOT_FOUND')
         });
       }
 
-      const nav = navResult[0];
+      const nav = navResult.getFirstRow();
 
       // 获取该导航下的内容（按语言过滤）
-      const [contentList] = await pool.query(`
+      const contentList = await query(`
         SELECT 
           c.id,
           c.nav_id,
@@ -85,8 +83,8 @@ exports.getContent = async (req, res) => {
           c.updated_at,
           img.image_url as main_image
         FROM common_content c
-        LEFT JOIN common_content_images img ON c.nav_id = img.nav_id AND c.id = img.content_id AND img.image_type = 'main' AND img.deleted = 0
-        WHERE c.nav_id = ? AND c.language_code = ? AND c.deleted = 0 AND c.status = 1
+        LEFT JOIN common_content_images img ON c.nav_id = img.nav_id AND c.id = img.content_id AND img.image_type = 'main' AND img.deleted = false
+        WHERE c.nav_id = $1 AND c.language_code = $2 AND c.deleted = false AND c.status = 1
         ORDER BY c.created_at DESC
       `, [nav.id, language]);
 
@@ -95,7 +93,7 @@ exports.getContent = async (req, res) => {
         message: getMessage('COMMON_CONTENT.CONTENT_SUCCESS'),
         data: {
           nav: nav,
-          contentList: contentList
+          contentList: contentList.getRows()
         }
       });
     } catch (error) {
@@ -112,7 +110,7 @@ exports.getAdminNavList = async (req, res) => {
   try {
     const { contentType } = req.query;
     
-    let query = `
+    let queryStr = `
       SELECT 
         id,
         name_key,
@@ -122,23 +120,23 @@ exports.getAdminNavList = async (req, res) => {
         created_at,
         updated_at
       FROM common_content_nav
-      WHERE deleted = 0`;
+      WHERE deleted = false`;
     
     let params = [];
     
     if (contentType) {
-      query += ` AND content_type = ?`;
+      queryStr += ` AND content_type = $1`;
       params.push(contentType);
     }
     
-    query += ` ORDER BY sort_order ASC, id ASC`;
+    queryStr += ` ORDER BY sort_order ASC, id ASC`;
     
-    const [navList] = await pool.query(query, params);
+    const navList = await query(queryStr, params);
 
       res.json({
         success: true,
         message: getMessage('COMMON_CONTENT.ADMIN_NAV_LIST_SUCCESS'),
-        data: { navList }
+        data: { navList: navList.getRows() }
       });
     } catch (error) {
       console.error('获取管理员导航菜单失败:', error);
@@ -151,7 +149,7 @@ exports.getAdminNavList = async (req, res) => {
 
 // 管理员：添加导航菜单
 exports.addNav = async (req, res) => {
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     try {
         await connection.beginTransaction();
         
@@ -166,12 +164,12 @@ exports.addNav = async (req, res) => {
         }
 
         // 检查name_key是否已存在
-        const [existingNav] = await connection.query(
-            'SELECT id FROM common_content_nav WHERE name_key = ? AND content_type = ? AND deleted = 0',
+        const existingNav = await connection.query(
+            'SELECT id FROM common_content_nav WHERE name_key = $1 AND content_type = $2 AND deleted = false',
             [name_key, content_type]
         );
 
-        if (existingNav.length > 0) {
+        if (existingNav.getRowCount() > 0) {
             await connection.rollback();
             return res.status(400).json({
                 success: false,
@@ -180,9 +178,9 @@ exports.addNav = async (req, res) => {
         }
 
         // 插入导航菜单
-        const [result] = await connection.query(
+        const result = await connection.query(
             `INSERT INTO common_content_nav (name_key, content_type, sort_order, status, created_by, updated_by) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
             [name_key, content_type, sort_order, status, req.userId, req.userId]
         );
 
@@ -192,7 +190,7 @@ exports.addNav = async (req, res) => {
             success: true,
             message: getMessage('COMMON_CONTENT.NAV_ADD_SUCCESS'),
             data: {
-                id: result.insertId,
+                id: result.getFirstRow().id,
                 name_key,
                 content_type,
                 sort_order,
@@ -213,7 +211,7 @@ exports.addNav = async (req, res) => {
 
 // 管理员：更新导航菜单
 exports.updateNav = async (req, res) => {
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     try {
         await connection.beginTransaction();
         
@@ -221,12 +219,12 @@ exports.updateNav = async (req, res) => {
         const { name_key, content_type, sort_order, status } = req.body;
 
         // 检查导航是否存在
-        const [navCheck] = await connection.query(
-            'SELECT id FROM common_content_nav WHERE id = ? AND deleted = 0',
+        const navCheck = await connection.query(
+            'SELECT id FROM common_content_nav WHERE id = $1 AND deleted = false',
             [id]
         );
 
-        if (navCheck.length === 0) {
+        if (navCheck.getRowCount() === 0) {
             await connection.rollback();
             return res.status(404).json({
                 success: false,
@@ -236,12 +234,12 @@ exports.updateNav = async (req, res) => {
 
         // 如果更新name_key，检查是否与其他记录冲突
         if (name_key) {
-            const [existingNav] = await connection.query(
-                'SELECT id FROM common_content_nav WHERE name_key = ? AND content_type = ? AND id != ? AND deleted = 0',
+            const existingNav = await connection.query(
+                'SELECT id FROM common_content_nav WHERE name_key = $1 AND content_type = $2 AND id != $3 AND deleted = false',
                 [name_key, content_type || 'about_us', id]
             );
 
-            if (existingNav.length > 0) {
+            if (existingNav.getRowCount() > 0) {
                 await connection.rollback();
                 return res.status(400).json({
                     success: false,
@@ -255,16 +253,16 @@ exports.updateNav = async (req, res) => {
         const updateValues = [];
 
         if (name_key !== undefined) {
-            updateFields.push('name_key = ?');
+            updateFields.push(`name_key = $${updateValues.length + 1}`);
             updateValues.push(name_key);
         }
         if (content_type !== undefined) {
-            updateFields.push('content_type = ?');
+            updateFields.push(`content_type = $${updateValues.length + 1}`);
             updateValues.push(content_type);
         }
 
         if (status !== undefined) {
-            updateFields.push('status = ?');
+            updateFields.push(`status = $${updateValues.length + 1}`);
             updateValues.push(status);
         }
 
@@ -277,12 +275,12 @@ exports.updateNav = async (req, res) => {
         }
 
         updateFields.push('updated_at = NOW()');
-        updateFields.push('updated_by = ?');
+        updateFields.push(`updated_by = $${updateValues.length + 1}`);
         updateValues.push(req.userId);
         updateValues.push(id);
 
         await connection.query(
-            `UPDATE common_content_nav SET ${updateFields.join(', ')} WHERE id = ?`,
+            `UPDATE common_content_nav SET ${updateFields.join(', ')} WHERE id = $${updateValues.length}`,
             updateValues
         );
 
@@ -307,19 +305,19 @@ exports.updateNav = async (req, res) => {
 
 // 管理员：删除导航菜单（软删除）
 exports.deleteNav = async (req, res) => {
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     try {
         await connection.beginTransaction();
         
         const { id } = req.params;
 
         // 检查导航是否存在
-        const [navCheck] = await connection.query(
-            'SELECT id FROM common_content_nav WHERE id = ? AND deleted = 0',
+        const navCheck = await connection.query(
+            'SELECT id FROM common_content_nav WHERE id = $1 AND deleted = false',
             [id]
         );
 
-        if (navCheck.length === 0) {
+        if (navCheck.getRowCount() === 0) {
             await connection.rollback();
             return res.status(404).json({
                 success: false,
@@ -329,13 +327,13 @@ exports.deleteNav = async (req, res) => {
 
         // 软删除导航菜单
         await connection.query(
-            'UPDATE common_content_nav SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE id = ?',
+            'UPDATE common_content_nav SET deleted = true, updated_by = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [req.userId, id]
         );
 
-        // 同时软删除该导航下的所有内容
+        // 软删除相关的内容
         await connection.query(
-            'UPDATE common_content SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE nav_id = ?',
+            'UPDATE common_content SET deleted = true, updated_by = $1, updated_at = CURRENT_TIMESTAMP WHERE nav_id = $2',
             [req.userId, id]
         );
 
@@ -371,12 +369,12 @@ exports.getAdminContentList = async (req, res) => {
         }
 
         // 检查导航是否存在
-        const [navCheck] = await pool.query(
-            'SELECT id, name_key FROM common_content_nav WHERE id = ? AND deleted = 0',
+        const navCheck = await query(
+            'SELECT id, name_key FROM common_content_nav WHERE id = $1 AND deleted = false',
             [navId]
         );
 
-        if (navCheck.length === 0) {
+        if (navCheck.getRowCount() === 0) {
             return res.status(404).json({
                 success: false,
                 message: getMessage('COMMON_CONTENT.NAV_NOT_FOUND')
@@ -384,7 +382,7 @@ exports.getAdminContentList = async (req, res) => {
         }
 
         // 获取该导航下的所有内容
-        const [contentList] = await pool.query(`
+        const contentList = await query(`
             SELECT 
                 c.id,
                 c.nav_id,
@@ -396,8 +394,8 @@ exports.getAdminContentList = async (req, res) => {
                 c.updated_at,
                 img.image_url as main_image
             FROM common_content c
-            LEFT JOIN common_content_images img ON c.nav_id = img.nav_id AND c.id=img.content_id AND img.image_type = 'main' AND img.deleted = 0 
-            WHERE c.nav_id = ? AND c.deleted = 0
+            LEFT JOIN common_content_images img ON c.nav_id = img.nav_id AND c.id=img.content_id AND img.image_type = 'main' AND img.deleted = false 
+            WHERE c.nav_id = $1 AND c.deleted = false
             ORDER BY c.created_at DESC
         `, [navId]);
 
@@ -405,8 +403,8 @@ exports.getAdminContentList = async (req, res) => {
             success: true,
             message: getMessage('COMMON_CONTENT.ADMIN_CONTENT_LIST_SUCCESS'),
             data: {
-                nav: navCheck[0],
-                contentList: contentList
+                nav: navCheck.getFirstRow(),
+                contentList: contentList.getRows()
             }
         });
     } catch (error) {
@@ -420,14 +418,14 @@ exports.getAdminContentList = async (req, res) => {
 
 // 管理员：添加内容
 exports.addContent = async (req, res) => {
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     try {
         await connection.beginTransaction();
         
         const { nav_id, language_code = 'zh-CN', title, content, status = 1 } = req.body;
 
         if (!nav_id || !title || !content) {
-            await connection.rollback();
+            await client.query('ROLLBACK');
             return res.status(400).json({
                 success: false,
                 message: getMessage('COMMON_CONTENT.REQUIRED_FIELDS_MISSING')
@@ -435,12 +433,12 @@ exports.addContent = async (req, res) => {
         }
 
         // 检查导航是否存在
-        const [navCheck] = await connection.query(
-            'SELECT id FROM common_content_nav WHERE id = ? AND deleted = 0',
+        const navCheck = await connection.query(
+            'SELECT id FROM common_content_nav WHERE id = $1 AND deleted = false',
             [nav_id]
         );
 
-        if (navCheck.length === 0) {
+        if (navCheck.getRowCount() === 0) {
             await connection.rollback();
             return res.status(404).json({
                 success: false,
@@ -449,9 +447,9 @@ exports.addContent = async (req, res) => {
         }
 
         // 插入内容
-        const [result] = await connection.query(
+        const result = await connection.query(
             `INSERT INTO common_content (nav_id, language_code, title, content, status, created_by, updated_by) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
             [nav_id, language_code, title, content, status, req.userId, req.userId]
         );
 
@@ -461,7 +459,7 @@ exports.addContent = async (req, res) => {
             success: true,
             message: getMessage('COMMON_CONTENT.CONTENT_ADD_SUCCESS'),
             data: {
-                id: result.insertId,
+                id: result.getFirstRow().id,
                 nav_id,
                 language_code,
                 title,
@@ -483,7 +481,7 @@ exports.addContent = async (req, res) => {
 
 // 管理员：更新内容
 exports.updateContent = async (req, res) => {
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     try {
         await connection.beginTransaction();
         
@@ -491,12 +489,12 @@ exports.updateContent = async (req, res) => {
         const { title, content, status,language_code } = req.body;
 
         // 检查内容是否存在
-        const [contentCheck] = await connection.query(
-            'SELECT id FROM common_content WHERE id = ? AND deleted = 0',
+        const contentCheck = await connection.query(
+            'SELECT id FROM common_content WHERE id = $1 AND deleted = false',
             [id]
         );
 
-        if (contentCheck.length === 0) {
+        if (contentCheck.getRowCount() === 0) {
             await connection.rollback();
             return res.status(404).json({
                 success: false,
@@ -509,21 +507,21 @@ exports.updateContent = async (req, res) => {
         const updateValues = [];
 
         if (title !== undefined) {
-            updateFields.push('title = ?');
+            updateFields.push(`title = $${updateValues.length + 1}`);
             updateValues.push(title);
         }
         if (content !== undefined) {
-            updateFields.push('content = ?');
+            updateFields.push(`content = $${updateValues.length + 1}`);
             updateValues.push(content);
         }
 
         if (status !== undefined) {
-            updateFields.push('status = ?');
+            updateFields.push(`status = $${updateValues.length + 1}`);
             updateValues.push(status);
         }
 
         if (language_code != undefined) {
-            updateFields.push('language_code =?');
+            updateFields.push(`language_code = $${updateValues.length + 1}`);
             updateValues.push(language_code);
         }
 
@@ -536,12 +534,12 @@ exports.updateContent = async (req, res) => {
         }
 
         updateFields.push('updated_at = NOW()');
-        updateFields.push('updated_by = ?');
+        updateFields.push(`updated_by = $${updateValues.length + 1}`);
         updateValues.push(req.userId);
         updateValues.push(id);
 
         await connection.query(
-            `UPDATE common_content SET ${updateFields.join(', ')} WHERE id = ?`,
+            `UPDATE common_content SET ${updateFields.join(', ')} WHERE id = $${updateValues.length}`,
             updateValues
         );
 
@@ -566,19 +564,19 @@ exports.updateContent = async (req, res) => {
 
 // 管理员：删除内容（软删除）
 exports.deleteContent = async (req, res) => {
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     try {
         await connection.beginTransaction();
         
         const { id } = req.params;
 
         // 检查内容是否存在
-        const [contentCheck] = await connection.query(
-            'SELECT id FROM common_content WHERE id = ? AND deleted = 0',
+        const contentCheck = await connection.query(
+            'SELECT id FROM common_content WHERE id = $1 AND deleted = false',
             [id]
         );
 
-        if (contentCheck.length === 0) {
+        if (contentCheck.getRowCount() === 0) {
             await connection.rollback();
             return res.status(404).json({
                 success: false,
@@ -588,7 +586,7 @@ exports.deleteContent = async (req, res) => {
 
         // 软删除内容
         await connection.query(
-            'UPDATE common_content SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE id = ?',
+            'UPDATE common_content SET deleted = true, updated_by = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [req.userId, id]
         );
 
@@ -613,7 +611,7 @@ exports.deleteContent = async (req, res) => {
 
 // 图片上传
 exports.uploadImages = async (req, res) => {
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     try {
         const { nav_id, content_id, image_type = 'content', session_id } = req.body;
         const files = req.files;
@@ -646,19 +644,19 @@ exports.uploadImages = async (req, res) => {
         // 如果是主图类型，先删除该内容的所有主图
         if (image_type === 'main' && content_id) {
             // 获取要删除的主图文件路径
-            const [existingMainImages] = await connection.query(
-                'SELECT image_url FROM common_content_images WHERE content_id = ? AND image_type = "main" AND deleted = 0',
-                [content_id]
+            const existingMainImages = await connection.query(
+                'SELECT image_url FROM common_content_images WHERE content_id = $1 AND image_type = $2 AND deleted = false',
+                [content_id, 'main']
             );
 
             // 软删除数据库中的主图记录
             await connection.query(
-                'UPDATE common_content_images SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE content_id = ? AND image_type = "main" AND deleted = 0',
-                [req.userId, content_id]
+                'UPDATE common_content_images SET deleted = true, updated_at = NOW(), updated_by = $1 WHERE content_id = $2 AND image_type = $3 AND deleted = false',
+                [req.userId, content_id, 'main']
             );
 
             // 删除物理文件
-            for (const img of existingMainImages) {
+            for (const img of existingMainImages.getRows()) {
                 const imagePath = path.join(__dirname, '..', img.image_url);
                 if (fs.existsSync(imagePath)) {
                     try {
@@ -681,15 +679,15 @@ exports.uploadImages = async (req, res) => {
             await fs.promises.writeFile(filePath, file.buffer);
 
             // 插入数据库记录
-            const [result] = await connection.query(
+            const result = await connection.query(
                 `INSERT INTO common_content_images 
                  (nav_id, content_id, image_type, image_url, alt_text, sort_order, status, created_by, updated_by) 
-                 VALUES (?, ?, ?, ?, ?, 0, 1, ?, ?)`,
+                 VALUES ($1, $2, $3, $4, $5, 0, 1, $6, $7) RETURNING id`,
                 [nav_id || null, content_id || null, image_type, relativePath, file.originalname, req.userId, req.userId]
             );
 
             uploadedImages.push({
-                id: result.insertId,
+                id: result.getFirstRow().id,
                 path: relativePath,
                 alt_text: file.originalname,
                 image_type: image_type
@@ -723,27 +721,27 @@ exports.getImages = async (req, res) => {
         const { navId } = req.params;
         const { image_type } = req.query;
 
-        let query = `
+        let queryStr = `
             SELECT id, nav_id, content_id, image_type, image_url, alt_text, sort_order, status, created_at
             FROM common_content_images 
-            WHERE nav_id = ? AND deleted = 0
+            WHERE nav_id = $1 AND deleted = false
         `;
         const params = [navId];
 
         if (image_type) {
-            query += ' AND image_type = ?';
+            queryStr += ' AND image_type = $2';
             params.push(image_type);
         }
 
-        query += ' ORDER BY sort_order ASC, created_at DESC';
+        queryStr += ' ORDER BY sort_order ASC, created_at DESC';
 
-        const [images] = await pool.query(query, params);
+        const images = await query(queryStr, params);
 
         res.json({
             success: true,
             message: getMessage('COMMON_CONTENT.IMAGE_LIST_SUCCESS'),
             data: {
-                images: images
+                images: images.getRows()
             }
         });
     } catch (error) {
@@ -761,27 +759,27 @@ exports.getImagesByContentId = async (req, res) => {
         const { content_id } = req.params;
         const { image_type } = req.query;
 
-        let query = `
+        let queryStr = `
             SELECT id, nav_id, content_id, image_type, image_url, alt_text, sort_order, status, created_at
             FROM common_content_images 
-            WHERE content_id = ? AND deleted = 0
+            WHERE content_id = $1 AND deleted = false
         `;
         const params = [content_id];
 
         if (image_type) {
-            query += ' AND image_type = ?';
+            queryStr += ' AND image_type = $2';
             params.push(image_type);
         }
 
-        query += ' ORDER BY sort_order ASC, created_at DESC';
+        queryStr += ' ORDER BY sort_order ASC, created_at DESC';
 
-        const [images] = await pool.query(query, params);
+        const images = await query(queryStr, params);
 
         res.json({
             success: true,
             message: getMessage('COMMON_CONTENT.IMAGE_LIST_SUCCESS'),
             data: {
-                images: images
+                images: images.getRows()
             }
         });
     } catch (error) {
@@ -795,19 +793,19 @@ exports.getImagesByContentId = async (req, res) => {
 
 // 删除图片
 exports.deleteImage = async (req, res) => {
-    const connection = await pool.getConnection();
+    const connection = await getConnection();
     try {
         await connection.beginTransaction();
         
         const { id } = req.params;
 
         // 检查图片是否存在
-        const [imageCheck] = await connection.query(
-            'SELECT image_url FROM common_content_images WHERE id = ? AND deleted = 0',
+        const imageCheck = await connection.query(
+            'SELECT image_url FROM common_content_images WHERE id = $1 AND deleted = false',
             [id]
         );
 
-        if (imageCheck.length === 0) {
+        if (imageCheck.getRowCount() === 0) {
             await connection.rollback();
             return res.status(404).json({
                 success: false,
@@ -817,12 +815,12 @@ exports.deleteImage = async (req, res) => {
 
         // 软删除图片记录
         await connection.query(
-            'UPDATE common_content_images SET deleted = 1, updated_at = NOW(), updated_by = ? WHERE id = ?',
+            'UPDATE common_content_images SET deleted = true, updated_at = NOW(), updated_by = $1 WHERE id = $2',
             [req.userId, id]
         );
 
         // 删除物理文件
-        const imagePath = path.join(__dirname, '..', imageCheck[0].image_url);
+        const imagePath = path.join(__dirname, '..', imageCheck.getFirstRow().image_url);
         if (fs.existsSync(imagePath)) {
             await fs.promises.unlink(imagePath);
         }
@@ -851,10 +849,10 @@ exports.getMainImageByContentId = async (req, res) => {
     try {
         const { content_id } = req.params;
         
-        const [images] = await pool.query(
+        const images = await query(
             `SELECT id, image_url, alt_text 
              FROM common_content_images 
-             WHERE content_id = ? AND image_type = 'main' AND deleted = 0 
+             WHERE content_id = $1 AND image_type = 'main' AND deleted = false 
              ORDER BY created_at DESC 
              LIMIT 1`,
             [content_id]
@@ -862,7 +860,7 @@ exports.getMainImageByContentId = async (req, res) => {
         
         res.json({
             success: true,
-            data: images[0] || null
+            data: images.getFirstRow() || null
         });
     } catch (error) {
         console.error('获取主图失败:', error);
@@ -878,11 +876,11 @@ exports.getMainImageByNavId = async (req, res) => {
     try {
         const { nav_id } = req.params;
         
-        const [images] = await pool.query(
+        const images = await query(
             `SELECT img.id, img.image_url, img.alt_text 
              FROM common_content_images img
              INNER JOIN common_content c ON img.content_id = c.id
-             WHERE c.nav_id = ? AND img.image_type = 'main' AND img.deleted = 0 AND c.deleted = 0
+             WHERE c.nav_id = $1 AND img.image_type = 'main' AND img.deleted = false AND c.deleted = false
              ORDER BY c.id ASC, img.created_at DESC 
              LIMIT 1`,
             [nav_id]
@@ -890,7 +888,7 @@ exports.getMainImageByNavId = async (req, res) => {
         
         res.json({
             success: true,
-            data: images[0] || null
+            data: images.getFirstRow() || null
         });
     } catch (error) {
         console.error('获取主图失败:', error);

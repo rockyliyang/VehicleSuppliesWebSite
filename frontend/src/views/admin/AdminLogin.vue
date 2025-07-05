@@ -4,10 +4,10 @@
       <h2 class="admin-login-title">管理员登录</h2>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入管理员邮箱" />
+          <el-input v-model="form.email" placeholder="请输入管理员邮箱" autocomplete="off" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password autocomplete="off" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="submitForm" :loading="loading">登录</el-button>

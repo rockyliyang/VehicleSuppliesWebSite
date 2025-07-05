@@ -17,22 +17,22 @@
             </p>
           </div>
 
-          <el-form :model="form" :rules="rules" ref="formRef" class="register-form">
+          <el-form :model="form" :rules="rules" ref="formRef" class="register-form" autocomplete="off">
             <el-form-item prop="email">
               <FormInput v-model="form.email" :placeholder="$t('register.emailPlaceholder') || '请输入邮箱地址'"
-                :prefix-icon="Message" />
+                :prefix-icon="Message" autocomplete="new-email" />
             </el-form-item>
 
             <el-form-item prop="password">
               <FormInput v-model="form.password" type="password"
                 :placeholder="$t('register.passwordPlaceholder') || '请输入密码（至少8位，包含字母和数字）'" :prefix-icon="Lock"
-                :show-password="true" />
+                :show-password="true" autocomplete="new-password" />
             </el-form-item>
 
             <el-form-item prop="confirmPassword">
               <FormInput v-model="form.confirmPassword" type="password"
                 :placeholder="$t('register.confirmPasswordPlaceholder') || '请再次输入密码'" :prefix-icon="Lock"
-                :show-password="true" />
+                :show-password="true" autocomplete="new-password" />
             </el-form-item>
 
             <el-form-item prop="captcha">
@@ -177,7 +177,7 @@ export default {
           this.$message.error(error.response?.data?.message || this.$t('register.registerFailed'));
           this.refreshCaptcha();
         } finally {
-          this.isSubmitting = false;
+          this.loading = false;
         }
       });
     }

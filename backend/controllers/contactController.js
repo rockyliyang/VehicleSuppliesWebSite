@@ -1,9 +1,7 @@
 const express = require('express');
-const { pool } = require('../db/db');
+const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
 const { sendMail } = require('../utils/email');
-const { uuidToBinary } = require('../utils/uuid');
-const { v4: uuidv4 } = require('uuid');
 
 /**
  * 联系消息控制器
@@ -37,9 +35,9 @@ class ContactController {
       // 获取用户语言偏好（如果用户已登录）
       let userLanguage = 'en'; // 默认英文
       if (req.userId) {
-        const [userRows] = await pool.query('SELECT language FROM users WHERE id = ?', [req.userId]);
-        if (userRows.length > 0 && userRows[0].language) {
-          userLanguage = userRows[0].language;
+        const userRows = await query('SELECT language FROM users WHERE id = $1', [req.userId]);
+        if (userRows.getRowCount() > 0 && userRows.getFirstRow().language) {
+          userLanguage = userRows.getFirstRow().language;
         }
       }
       
@@ -172,36 +170,36 @@ class ContactController {
       
       // 如果用户已登录，获取用户信息和业务组信息
       if (userId) {
-        const [userRows] = await pool.query(`
+        const userRows = await query(`
           SELECT u.id, u.username, u.email, u.language, u.business_group_id,
                  bg.id as group_id, bg.group_name, bg.group_email
           FROM users u
-          LEFT JOIN business_groups bg ON u.business_group_id = bg.id AND bg.deleted = 0
-          WHERE u.id = ? AND u.deleted = 0
+          LEFT JOIN business_groups bg ON u.business_group_id = bg.id AND bg.deleted = false
+          WHERE u.id = $1 AND u.deleted = false
         `, [userId]);
         
-        if (userRows.length > 0) {
-          user = userRows[0];
+        if (userRows.getRowCount() > 0) {
+          user = userRows.getFirstRow();
           businessGroupId = user.business_group_id;
         }
       }
       
       // 如果用户未绑定业务组或未登录，使用默认业务组
       if (!businessGroupId) {
-        const [defaultGroupRows] = await pool.query(`
+        const defaultGroupRows = await query(`
           SELECT id FROM business_groups 
-          WHERE is_default = 1 AND deleted = 0 
+          WHERE is_default = true AND deleted = false 
           ORDER BY created_at ASC 
           LIMIT 1
         `);
         
-        if (defaultGroupRows.length > 0) {
-          businessGroupId = defaultGroupRows[0].id;
+        if (defaultGroupRows.getRowCount() > 0) {
+          businessGroupId = defaultGroupRows.getFirstRow().id;
           
           // 如果用户已登录且未绑定业务组，更新用户的业务组
           if (userId && user) {
-            await pool.query(
-              'UPDATE users SET business_group_id = ? WHERE id = ?',
+            await query(
+              'UPDATE users SET business_group_id = $1 WHERE id = $2',
               [businessGroupId, userId]
             );
           }
@@ -211,42 +209,42 @@ class ContactController {
       // 获取业务组信息用于邮件通知
       let businessGroup = null;
       if (businessGroupId) {
-        const [groupRows] = await pool.query(`
+        const groupRows = await query(`
           SELECT id, group_name, group_email
           FROM business_groups 
-          WHERE id = ? AND deleted = 0
+          WHERE id = $1 AND deleted = false
         `, [businessGroupId]);
         
-        if (groupRows.length > 0) {
-          businessGroup = groupRows[0];
+        if (groupRows.getRowCount() > 0) {
+          businessGroup = groupRows.getFirstRow();
         }
       }
       
       // 如果没有找到业务组，使用默认业务组
       if (!businessGroup) {
-        const [defaultGroupRows] = await pool.query(
-          'SELECT id, group_name, group_email FROM business_groups WHERE is_default = 1 AND deleted = 0 LIMIT 1'
+        const defaultGroupRows = await query(
+          'SELECT id, group_name, group_email FROM business_groups WHERE is_default = true AND deleted = false LIMIT 1'
         );
-        if (defaultGroupRows.length > 0) {
-          businessGroup = defaultGroupRows[0];
+        if (defaultGroupRows.getRowCount() > 0) {
+          businessGroup = defaultGroupRows.getFirstRow();
           businessGroupId = businessGroup.id;
         }
       }
       
       // 插入联系消息（包含name、email、phone字段）
-      const messageGuid = uuidv4();
-      const guid = uuidToBinary(messageGuid);
-      const [insertResult] = await pool.query(`
+      const insertResult = await query(`
         INSERT INTO contact_messages (
-          guid, user_id, business_group_id, name, email, phone, subject, message, 
+          user_id, business_group_id, name, email, phone, subject, message, 
           priority, ip_address, user_agent, created_by, updated_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING id, guid
       `, [
-        guid, userId, businessGroupId, name, email, phone, subject, message,
+        userId, businessGroupId, name, email, phone, subject, message,
         priority, ipAddress, userAgent, userId, userId
       ]);
       
-      const messageId = insertResult.insertId;
+      const messageId = insertResult.getFirstRow().id;
+      const messageGuid = insertResult.getFirstRow().guid;
       
       // 发送邮件通知
       try {
@@ -313,8 +311,9 @@ class ContactController {
       const offset = (page - 1) * pageSize;
       const limit = parseInt(pageSize);
       
-      let whereConditions = ['cm.deleted = 0'];
+      let whereConditions = ['cm.deleted = false'];
       let queryParams = [];
+      let paramIndex = 1;
       
       // 根据用户角色过滤数据
       if (req.userRole === 'business') {
@@ -323,54 +322,59 @@ class ContactController {
           cm.business_group_id IN (
             SELECT ubg.business_group_id 
             FROM user_business_groups ubg 
-            WHERE ubg.user_id = ? AND ubg.deleted = 0
+            WHERE ubg.user_id = $${paramIndex} AND ubg.deleted = false
           )
         `);
         queryParams.push(req.userId);
+        paramIndex++;
       }
       
       // 状态筛选
       if (status) {
-        whereConditions.push('cm.status = ?');
+        whereConditions.push(`cm.status = $${paramIndex}`);
         queryParams.push(status);
+        paramIndex++;
       }
       
       // 优先级筛选
       if (priority) {
-        whereConditions.push('cm.priority = ?');
+        whereConditions.push(`cm.priority = $${paramIndex}`);
         queryParams.push(priority);
+        paramIndex++;
       }
       
       // 业务组筛选（仅管理员可用）
       if (business_group_id && req.userRole === 'admin') {
-        whereConditions.push('cm.business_group_id = ?');
+        whereConditions.push(`cm.business_group_id = $${paramIndex}`);
         queryParams.push(business_group_id);
+        paramIndex++;
       }
       
       // 关键词搜索
       if (keyword) {
-        whereConditions.push('(cm.name LIKE ? OR cm.email LIKE ? OR cm.subject LIKE ? OR cm.message LIKE ?)');
+        whereConditions.push(`(cm.name LIKE $${paramIndex} OR cm.email LIKE $${paramIndex+1} OR cm.subject LIKE $${paramIndex+2} OR cm.message LIKE $${paramIndex+3})`);
         const searchTerm = `%${keyword}%`;
         queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        paramIndex += 4;
       }
       
       const whereClause = whereConditions.join(' AND ');
       
       // 查询总数
-      const [countRows] = await pool.query(`
+      const countRows = await query(`
         SELECT COUNT(*) as total
         FROM contact_messages cm
         WHERE ${whereClause}
       `, queryParams);
       
-      const total = countRows[0].total;
+      const total = countRows.getFirstRow().total;
       const totalPages = Math.ceil(total / limit);
       
       // 查询消息列表
-      const [messageRows] = await pool.query(`
+      const messageRows = await query(`
         SELECT 
           cm.id,
-          HEX(cm.guid) as guid,
+          cm.guid,
           cm.name,
           cm.email,
           cm.phone,
@@ -393,11 +397,11 @@ class ContactController {
         LEFT JOIN users assigned_user ON cm.assigned_to = assigned_user.id
         WHERE ${whereClause}
         ORDER BY cm.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT $${paramIndex} OFFSET $${paramIndex+1}
       `, [...queryParams, limit, offset]);
       
       // 格式化数据
-      const items = messageRows.map(row => ({
+      const items = messageRows.getRows().map(row => ({
         id: row.id,
         guid: row.guid,
         name: row.name,
@@ -453,8 +457,9 @@ class ContactController {
     try {
       const { id } = req.params;
       
-      let whereConditions = ['cm.id = ?', 'cm.deleted = 0'];
+      let whereConditions = ['cm.id = $1', 'cm.deleted = false'];
       let queryParams = [id];
+      let paramIndex = 2;
       
       // 根据用户角色过滤数据
       if (req.userRole === 'business') {
@@ -462,18 +467,19 @@ class ContactController {
           cm.business_group_id IN (
             SELECT ubg.business_group_id 
             FROM user_business_groups ubg 
-            WHERE ubg.user_id = ? AND ubg.deleted = 0
+            WHERE ubg.user_id = $${paramIndex} AND ubg.deleted = false
           )
         `);
         queryParams.push(req.userId);
+        paramIndex++;
       }
       
       const whereClause = whereConditions.join(' AND ');
       
-      const [messageRows] = await pool.query(`
+      const messageRows = await query(`
         SELECT 
           cm.*,
-          HEX(cm.guid) as guid,
+          cm.guid,
           bg.group_name as business_group_name,
           bg.group_email as business_group_email,
           replied_user.username as replied_by_name,
@@ -487,7 +493,7 @@ class ContactController {
         WHERE ${whereClause}
       `, queryParams);
       
-      if (messageRows.length === 0) {
+      if (messageRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: 'CONTACT.MESSAGE_NOT_FOUND',
@@ -495,7 +501,7 @@ class ContactController {
         });
       }
       
-      const message = messageRows[0];
+      const message = messageRows.getFirstRow();
       
       res.json({
         success: true,
@@ -555,8 +561,9 @@ class ContactController {
         });
       }
       
-      let whereConditions = ['id = ?', 'deleted = 0'];
+      let whereConditions = ['id = $1', 'deleted = false'];
       let queryParams = [id];
+      let paramIndex = 2;
       
       // 根据用户角色过滤数据
       if (req.userRole === 'business') {
@@ -564,10 +571,11 @@ class ContactController {
           business_group_id IN (
             SELECT ubg.business_group_id 
             FROM user_business_groups ubg 
-            WHERE ubg.user_id = ? AND ubg.deleted = 0
+            WHERE ubg.user_id = $${paramIndex} AND ubg.deleted = false
           )
         `);
         queryParams.push(req.userId);
+        paramIndex++;
       }
       
       const whereClause = whereConditions.join(' AND ');
@@ -579,16 +587,16 @@ class ContactController {
         updateData.replied_by = req.userId;
       }
       
-      const setClause = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
+      const setClause = Object.keys(updateData).map((key, index) => `${key} = $${paramIndex + index}`).join(', ');
       const updateParams = Object.values(updateData);
       
-      const [updateResult] = await pool.query(`
+      const updateResult = await query(`
         UPDATE contact_messages 
         SET ${setClause}
         WHERE ${whereClause}
       `, [...updateParams, ...queryParams]);
       
-      if (updateResult.affectedRows === 0) {
+      if (updateResult.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: 'CONTACT.MESSAGE_NOT_FOUND',
@@ -623,12 +631,12 @@ class ContactController {
       
       // 验证被分配的用户是否为业务人员
       if (assigned_to) {
-        const [userRows] = await pool.query(
-          'SELECT user_role FROM users WHERE id = ? AND deleted = 0',
+        const userRows = await query(
+          'SELECT user_role FROM users WHERE id = $1 AND deleted = false',
           [assigned_to]
         );
         
-        if (userRows.length === 0 || !['business', 'admin'].includes(userRows[0].user_role)) {
+        if (userRows.getRowCount() === 0 || !['business', 'admin'].includes(userRows.getFirstRow().user_role)) {
           return res.status(400).json({
             success: false,
             message: 'CONTACT.INVALID_ASSIGNEE',
@@ -637,12 +645,12 @@ class ContactController {
         }
       }
       
-      const [updateResult] = await pool.query(
-        'UPDATE contact_messages SET assigned_to = ?, updated_by = ? WHERE id = ? AND deleted = 0',
+      const updateResult = await query(
+        'UPDATE contact_messages SET assigned_to = $1, updated_by = $2 WHERE id = $3 AND deleted = false',
         [assigned_to, req.userId, id]
       );
       
-      if (updateResult.affectedRows === 0) {
+      if (updateResult.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: 'CONTACT.MESSAGE_NOT_FOUND',
@@ -674,12 +682,12 @@ class ContactController {
     try {
       const { id } = req.params;
       
-      const [updateResult] = await pool.query(
-        'UPDATE contact_messages SET deleted = 1, updated_by = ? WHERE id = ? AND deleted = 0',
+      const updateResult = await query(
+        'UPDATE contact_messages SET deleted = true, updated_by = $1 WHERE id = $2 AND deleted = false',
         [req.userId, id]
       );
       
-      if (updateResult.affectedRows === 0) {
+      if (updateResult.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
           message: 'CONTACT.MESSAGE_NOT_FOUND',
@@ -842,12 +850,12 @@ class ContactController {
       let userLanguage = 'en'; // 默认英文
       if (req.userId) {
         try {
-          const [userRows] = await pool.execute(
-            'SELECT language FROM users WHERE id = ?',
+          const userRows = await query(
+            'SELECT language FROM users WHERE id = $1',
             [req.userId]
           );
-          if (userRows.length > 0 && userRows[0].language) {
-            userLanguage = userRows[0].language;
+          if (userRows.getRowCount() > 0 && userRows.getFirstRow().language) {
+            userLanguage = userRows.getFirstRow().language;
           }
         } catch (error) {
           console.error('获取用户语言失败:', error);
@@ -941,13 +949,13 @@ class ContactController {
    */
   async getEmailTranslations(language = 'zh-CN') {
     try {
-      const [rows] = await pool.query(
-        'SELECT code, value FROM language_translations WHERE lang = ? AND code LIKE "EMAIL_TEMPLATE.%"',
-        [language]
+      const rows = await query(
+        'SELECT code, value FROM language_translations WHERE lang = $1 AND code LIKE $2',
+        [language, 'EMAIL_TEMPLATE.%']
       );
       
       const translations = {};
-      rows.forEach(row => {
+      rows.getRows().forEach(row => {
         translations[row.code] = row.value;
       });
       

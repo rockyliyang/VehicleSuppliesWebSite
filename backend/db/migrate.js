@@ -1,21 +1,11 @@
-const mysql = require('mysql2/promise');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 // 加载环境变量配置
 const env = require('../config/env');
-
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'vehicle_supplies',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+const { getConnection } = require('./db');
 
 async function runMigration() {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     // 开始事务
     await connection.beginTransaction();
@@ -53,8 +43,6 @@ async function runMigration() {
   } finally {
     // 释放连接
     connection.release();
-    // 关闭连接池
-    await pool.end();
   }
 }
 

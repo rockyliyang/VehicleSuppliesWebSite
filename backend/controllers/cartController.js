@@ -1,6 +1,5 @@
-const { pool } = require('../db/db');
+const { query } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
-const { uuidToBinary } = require('../utils/uuid');
 const { getMessage } = require('../config/messages');
 
 // 获取用户购物车
@@ -9,16 +8,16 @@ exports.getUserCart = async (req, res) => {
     const userId = req.userId;
     
     // 查询用户购物车中的商品
-    const query = `SELECT ci.id, ci.guid, ci.quantity, 
+    const queryStr = `SELECT ci.id, ci.guid, ci.quantity, 
              p.id as product_id, p.name, p.product_code, p.price, p.stock, 
-             (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = 0 ORDER BY sort_order ASC LIMIT 1) as image_url
+             (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
-      WHERE ci.user_id = ? AND ci.deleted = 0 AND p.deleted = 0
+      WHERE ci.user_id = $1 AND ci.deleted = false AND p.deleted = false
       ORDER BY ci.created_at DESC`;
     
-    const [cartItems] = await pool.query(query, [userId]);
-    if (cartItems.length === 0) {
+    const cartItems = await query(queryStr, [userId]);
+    if (cartItems.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('CART.EMPTY')
@@ -26,14 +25,14 @@ exports.getUserCart = async (req, res) => {
     } 
     // 计算总价
     let totalPrice = 0;
-    cartItems.forEach(item => {
+    cartItems.getRows().forEach(item => {
       totalPrice += item.price * item.quantity;
     });
     
     return res.json({
       success: true,
       data: {
-        items: cartItems,
+        items: cartItems.getRows(),
         totalPrice: totalPrice
       }
     });
@@ -60,16 +59,16 @@ exports.addToCart = async (req, res) => {
     }
     
     // 检查商品是否存在且有库存
-    const product = await pool.query('SELECT id, stock FROM products WHERE id = ? AND deleted = 0', [productId]);
+    const product = await query('SELECT id, stock FROM products WHERE id = $1 AND deleted = false', [productId]);
     
-    if (!product || product.length === 0) {
+    if (!product || product.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('CART.PRODUCT_NOT_FOUND')
       });
     }
     
-    if (product[0].stock < quantity) {
+    if (product.getFirstRow().stock < quantity) {
       return res.status(400).json({
         success: false,
         message: getMessage('CART.INSUFFICIENT_STOCK')
@@ -77,36 +76,35 @@ exports.addToCart = async (req, res) => {
     }
     
     // 检查购物车中是否已有该商品
-    const [existingItem] = await pool.query(
-      'SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ? AND deleted = 0',
+    const existingItem = await query(
+      'SELECT id, quantity FROM cart_items WHERE user_id = $1 AND product_id = $2 AND deleted = false',
       [userId, productId]
     );
     
-    if (existingItem && existingItem.length > 0) {
+    if (existingItem && existingItem.getRowCount() > 0) {
       // 更新数量
-      const newQuantity = existingItem[0].quantity + quantity;
-      await pool.query(
-        'UPDATE cart_items SET quantity = ?, updated_by = ?, updated_at = NOW() WHERE id = ?',
-        [newQuantity, userId, existingItem[0].id]
+      const newQuantity = existingItem.getFirstRow().quantity + quantity;
+      await query(
+        'UPDATE cart_items SET quantity = $1, updated_by = $2, updated_at = NOW() WHERE id = $3',
+        [newQuantity, userId, existingItem.getFirstRow().id]
       );
       
       return res.json({
         success: true,
         message: getMessage('CART.UPDATE_SUCCESS'),
-        data: { id: existingItem[0].id, quantity: newQuantity }
+        data: { id: existingItem.getFirstRow().id, quantity: newQuantity }
       });
     } else {
       // 添加新商品到购物车
-      const guid = uuidToBinary(uuidv4());
-      const [result] = await pool.query(
-        'INSERT INTO cart_items (guid, user_id, product_id, quantity, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)',
-        [guid, userId, productId, quantity, userId, userId]
+      const result = await query(
+        'INSERT INTO cart_items (user_id, product_id, quantity, created_by, updated_by) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [userId, productId, quantity, userId, userId]
       );
       
       return res.json({
         success: true,
         message: getMessage('CART.ADD_SUCCESS'),
-        data: { id: result.insertId, quantity }
+        data: { id: result.getFirstRow().id, quantity }
       });
     }
   } catch (error) {
@@ -133,15 +131,15 @@ exports.updateCartItem = async (req, res) => {
     }
     
     // 检查购物车项是否存在且属于当前用户
-    const [cartItem] = await pool.query(
+    const cartItem = await query(
       `SELECT ci.id, ci.product_id, p.stock 
        FROM cart_items ci 
        JOIN products p ON ci.product_id = p.id 
-       WHERE ci.id = ? AND ci.user_id = ? AND ci.deleted = 0`,
+       WHERE ci.id = $1 AND ci.user_id = $2 AND ci.deleted = false`,
       [cartItemId, userId]
     );
     
-    if (!cartItem || cartItem.length === 0) {
+    if (!cartItem || cartItem.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('CART.ITEM_NOT_FOUND')
@@ -149,7 +147,7 @@ exports.updateCartItem = async (req, res) => {
     }
     
     // 检查库存
-    if (cartItem[0].stock < quantity) {
+    if (cartItem.getFirstRow().stock < quantity) {
       return res.status(400).json({
         success: false,
         message: getMessage('CART.INSUFFICIENT_STOCK')
@@ -157,8 +155,8 @@ exports.updateCartItem = async (req, res) => {
     }
     
     // 更新数量
-    await pool.query(
-      'UPDATE cart_items SET quantity = ?, updated_by = ?, updated_at = NOW() WHERE id = ?',
+    await query(
+      'UPDATE cart_items SET quantity = $1, updated_by = $2, updated_at = NOW() WHERE id = $3',
       [quantity, userId, cartItemId]
     );
     
@@ -183,12 +181,12 @@ exports.removeFromCart = async (req, res) => {
     const { cartItemId } = req.params;
     
     // 检查购物车项是否存在且属于当前用户
-    const [cartItem] = await pool.query(
-      'SELECT id FROM cart_items WHERE id = ? AND user_id = ? AND deleted = 0',
+    const cartItem = await query(
+      'SELECT id FROM cart_items WHERE id = $1 AND user_id = $2 AND deleted = false',
       [cartItemId, userId]
     );
     
-    if (!cartItem || cartItem.length === 0) {
+    if (!cartItem || cartItem.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('CART.ITEM_NOT_FOUND')
@@ -196,8 +194,8 @@ exports.removeFromCart = async (req, res) => {
     }
     
     // 软删除购物车项
-    await pool.query(
-      'UPDATE cart_items SET deleted = 1, updated_by = ?, updated_at = NOW() WHERE id = ?',
+    await query(
+      'UPDATE cart_items SET deleted = true, updated_by = $1, updated_at = NOW() WHERE id = $2',
       [userId, cartItemId]
     );
     
@@ -220,8 +218,8 @@ exports.clearCart = async (req, res) => {
     const userId = req.userId;
     
     // 软删除用户的所有购物车项
-    await pool.query(
-      'UPDATE cart_items SET deleted = 1, updated_by = ?, updated_at = NOW() WHERE user_id = ? AND deleted = 0',
+    await query(
+      'UPDATE cart_items SET deleted = true, updated_by = $1, updated_at = NOW() WHERE user_id = $2 AND deleted = false',
       [userId, userId]
     );
     
@@ -243,14 +241,14 @@ exports.getCartCount = async (req, res) => {
   try {
     const userId = req.userId;
     
-    const [result] = await pool.query(
-      'SELECT COUNT(*) as count FROM cart_items WHERE user_id = ? AND deleted = 0',
+    const result = await query(
+      'SELECT COUNT(*) as count FROM cart_items WHERE user_id = $1 AND deleted = false',
       [userId]
     );
     
     return res.json({
       success: true,
-      data: { count: result[0].count }
+      data: { count: result.getFirstRow().count }
     });
   } catch (error) {
     console.error('获取购物车数量失败:', error);

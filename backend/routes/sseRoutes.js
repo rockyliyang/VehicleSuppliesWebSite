@@ -80,20 +80,20 @@ router.get('/events', verifyToken, async (req, res) => {
 async function getMissedMessages(userId, lastEventId) {
   try {
     // 查询用户相关的询价ID
-    const [userInquiries] = await db.query(
-      'SELECT id FROM inquiries WHERE user_id = ? AND deleted = 0',
+    const userInquiries = await db.query(
+      'SELECT id FROM inquiries WHERE user_id = $1 AND deleted = false',
       [userId]
     );
     
-    if (userInquiries.length === 0) {
+    if (userInquiries.rowCount === 0) {
       return [];
     }
     
-    const inquiryIds = userInquiries.map(inquiry => inquiry.id);
-    const placeholders = inquiryIds.map(() => '?').join(',');
+    const inquiryIds = userInquiries.rows.map(inquiry => inquiry.id);
+    const placeholders = inquiryIds.map((_, index) => `$${index + 2}`).join(',');
     
     // 查询在lastEventId之后的消息
-    const query = `
+    const queryStr = `
       SELECT 
         im.id,
         im.inquiry_id,
@@ -107,15 +107,15 @@ async function getMissedMessages(userId, lastEventId) {
       FROM inquiry_messages im
       LEFT JOIN users u ON im.sender_id = u.id
       WHERE im.inquiry_id IN (${placeholders})
-        AND im.deleted = 0
-        AND im.id > ?
+        AND im.deleted = false
+        AND im.id > $1
       ORDER BY im.created_at ASC
       LIMIT 50
     `;
     
-    const [messages] = await db.query(query, [...inquiryIds, lastEventId]);
+    const messages = await db.query(queryStr, [lastEventId, ...inquiryIds]);
     
-    return messages.map(message => ({
+    return messages.rows.map(message => ({
       eventId: message.id,
       type: 'new_message',
       inquiryId: message.inquiry_id,

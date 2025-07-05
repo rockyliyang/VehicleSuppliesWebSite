@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS inquiries (
     status VARCHAR(16) DEFAULT 'pending',
     total_amount DECIMAL(10,2) DEFAULT 0.00,
     
-    deleted SMALLINT DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT DEFAULT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS inquiry_items (
     quantity INTEGER DEFAULT NULL,
     unit_price DECIMAL(10,2) DEFAULT NULL,
     
-    deleted SMALLINT DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT DEFAULT NULL,
@@ -75,7 +75,7 @@ CREATE TRIGGER update_inquiry_items_updated_at BEFORE UPDATE ON inquiry_items
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 创建唯一索引（模拟MySQL的虚拟列uk_active_inquiry_product）
-CREATE UNIQUE INDEX uk_active_inquiry_product ON inquiry_items(inquiry_id, product_id) WHERE deleted = 0;
+CREATE UNIQUE INDEX uk_active_inquiry_product ON inquiry_items(inquiry_id, product_id) WHERE deleted = FALSE;
 
 -- 创建索引
 CREATE INDEX idx_inquiry_items_guid ON inquiry_items(guid);
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS inquiry_messages (
     content TEXT NOT NULL,
     is_read SMALLINT DEFAULT 0,
     
-    deleted SMALLINT DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT DEFAULT NULL,

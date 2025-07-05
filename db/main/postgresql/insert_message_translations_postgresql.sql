@@ -1595,7 +1595,7 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'EMAIL_TEMPLATE.USER_CONFIRMATION_SUBJECT', 'zh-CN', '消息已收到确认'),
 (gen_random_uuid(), 'EMAIL_TEMPLATE.USER_CONFIRMATION_SUBJECT', 'en', 'Message Received Confirmation')
 
-ON CONFLICT (code, lang) WHERE deleted = 0 DO UPDATE SET value= EXCLUDED.value;
+ON CONFLICT (code, lang) WHERE deleted = FALSE DO UPDATE SET value= EXCLUDED.value;
 
 -- 添加询价单创建相关的新翻译
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -1847,4 +1847,4 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'common.confirm', 'zh-CN', '确定'),
 (gen_random_uuid(), 'common.cancel', 'en', 'Cancel'),
 (gen_random_uuid(), 'common.cancel', 'zh-CN', '取消')
-ON CONFLICT (code, lang) WHERE deleted = 0 DO UPDATE SET value= EXCLUDED.value;
+ON CONFLICT (code, lang) WHERE deleted = FALSE DO UPDATE SET value= EXCLUDED.value;

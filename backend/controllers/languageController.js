@@ -1,6 +1,4 @@
-const { pool } = require('../db/db');
-const { v4: uuidv4 } = require('uuid');
-const { Buffer } = require('buffer');
+const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
 
 
@@ -14,34 +12,37 @@ exports.getAdminTranslations = async (req, res) => {
     const limit = parseInt(pageSize);
     
     // 构建查询条件
-    let whereConditions = ['deleted = 0'];
+    let whereConditions = ['deleted = false'];
     let queryParams = [];
+    let paramIndex = 1;
     
     // 语言过滤
     if (lang && lang !== '') {
-      whereConditions.push('lang = ?');
+      whereConditions.push(`lang = $${paramIndex}`);
       queryParams.push(lang);
+      paramIndex++;
     }
     
     // 搜索过滤（搜索翻译键或翻译内容）
     if (search && search.trim() !== '') {
-      whereConditions.push('(code LIKE ? OR value LIKE ?)');
+      whereConditions.push(`(code LIKE $${paramIndex} OR value LIKE $${paramIndex + 1})`);
       const searchPattern = `%${search.trim()}%`;
       queryParams.push(searchPattern, searchPattern);
+      paramIndex += 2;
     }
     
     const whereClause = whereConditions.join(' AND ');
     
     // 获取总数
-    const [countResult] = await pool.query(
+    const countResult = await query(
       `SELECT COUNT(*) as total FROM language_translations WHERE ${whereClause}`,
       queryParams
     );
-    const total = countResult[0].total;
+    const total = countResult.getFirstRow().total;
     
     // 获取分页数据
-    const [rows] = await pool.query(
-      `SELECT id, BIN_TO_UUID(guid) as guid, code, lang, value FROM language_translations WHERE ${whereClause} ORDER BY id DESC LIMIT ? OFFSET ?`,
+    const rows = await query(
+      `SELECT id, guid, code, lang, value FROM language_translations WHERE ${whereClause} ORDER BY id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...queryParams, limit, offset]
     );
     
@@ -49,7 +50,7 @@ exports.getAdminTranslations = async (req, res) => {
       success: true,
       message: getMessage('LANGUAGE.GET_SUCCESS'),
       data: {
-        translations: rows,
+        translations: rows.getRows(),
         total: total,
         page: parseInt(page),
         pageSize: limit
@@ -70,14 +71,14 @@ exports.getAdminTranslations = async (req, res) => {
  */
 exports.getAllTranslations = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      'SELECT id, BIN_TO_UUID(guid) as guid, code, lang, value FROM language_translations WHERE deleted = 0'
+    const rows = await query(
+      'SELECT id, guid, code, lang, value FROM language_translations WHERE deleted = false'
     );
     
     return res.json({
       success: true,
       message: getMessage('LANGUAGE.GET_SUCCESS'),
-      data: rows
+      data: rows.getRows()
     });
   } catch (error) {
     console.error('获取翻译失败:', error);
@@ -96,14 +97,14 @@ exports.getTranslationsByLang = async (req, res) => {
   try {
     const { lang } = req.params;
     
-    const [rows] = await pool.query(
-      'SELECT id, BIN_TO_UUID(guid) as guid, code, lang, value FROM language_translations WHERE lang = ? AND deleted = 0',
+    const rows = await query(
+      'SELECT id, guid, code, lang, value FROM language_translations WHERE lang = $1 AND deleted = false',
       [lang]
     );
     
     // 将结果转换为 {code: value} 格式的对象
     const translations = {};
-    rows.forEach(row => {
+    rows.getRows().forEach(row => {
       translations[row.code] = row.value;
     });
     
@@ -138,12 +139,12 @@ exports.addTranslation = async (req, res) => {
     }
     
     // 检查是否已存在相同的code和lang组合
-    const [existing] = await pool.query(
-      'SELECT id FROM language_translations WHERE code = ? AND lang = ? AND deleted = 0',
+    const existing = await query(
+      'SELECT id FROM language_translations WHERE code = $1 AND lang = $2 AND deleted = false',
       [code, lang]
     );
     
-    if (existing.length > 0) {
+    if (existing.getRowCount() > 0) {
       return res.status(400).json({
         success: false,
         message: getMessage('LANGUAGE.TRANSLATION_EXISTS'),
@@ -151,12 +152,9 @@ exports.addTranslation = async (req, res) => {
       });
     }
     
-    const uuid = uuidv4();
-    const guidBuffer = Buffer.from(uuid.replace(/-/g, ''), 'hex');
-    
-    await pool.query(
-      'INSERT INTO language_translations (guid, code, lang, value, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)',
-      [guidBuffer, code, lang, value, req.userId, req.userId]
+    await query(
+      'INSERT INTO language_translations (code, lang, value, created_by, updated_by) VALUES ($1, $2, $3, $4, $5)',
+      [code, lang, value, req.userId, req.userId]
     );
     
     return res.status(201).json({
@@ -190,12 +188,12 @@ exports.updateTranslation = async (req, res) => {
       });
     }
     
-    const [result] = await pool.query(
-      'UPDATE language_translations SET value = ?, updated_by = ? WHERE id = ? AND deleted = 0',
+    const result = await query(
+      'UPDATE language_translations SET value = $1, updated_by = $2 WHERE id = $3 AND deleted = false',
       [value, req.userId, id]
     );
     
-    if (result.affectedRows === 0) {
+    if (result.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('LANGUAGE.NOT_FOUND'),
@@ -225,12 +223,12 @@ exports.deleteTranslation = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const [result] = await pool.query(
-      'UPDATE language_translations SET deleted = 1, updated_by = ? WHERE id = ?',
+    const result = await query(
+      'UPDATE language_translations SET deleted = true, updated_by = $1 WHERE id = $2',
       [req.userId, id]
     );
     
-    if (result.affectedRows === 0) {
+    if (result.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('LANGUAGE.NOT_FOUND'),
@@ -258,11 +256,11 @@ exports.deleteTranslation = async (req, res) => {
  */
 exports.getSupportedLanguages = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      'SELECT DISTINCT lang FROM language_translations WHERE deleted = 0'
+    const rows = await query(
+      'SELECT DISTINCT lang FROM language_translations WHERE deleted = false'
     );
     
-    const languages = rows.map(row => row.lang);
+    const languages = rows.getRows().map(row => row.lang);
     
     return res.json({
       success: true,
@@ -301,13 +299,13 @@ exports.getLanguageByIp = async (req, res) => {
     }
     
     // 检查该语言是否在我们的翻译表中
-    const [langExists] = await pool.query(
-      'SELECT COUNT(*) as count FROM language_translations WHERE lang = ? AND deleted = 0 LIMIT 1',
+    const langExists = await query(
+      'SELECT COUNT(*) as count FROM language_translations WHERE lang = $1 AND deleted = false LIMIT 1',
       [defaultLang]
     );
     
     // 如果该语言不存在翻译，则使用英语
-    if (langExists[0].count === 0) {
+    if (langExists.getFirstRow().count === 0) {
       defaultLang = 'en';
     }
     

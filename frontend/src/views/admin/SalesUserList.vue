@@ -122,7 +122,7 @@
           <el-input v-model="createForm.email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password />
+          <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password autocomplete="off" />
         </el-form-item>
         <el-form-item label="业务组" prop="businessGroupId">
           <el-select v-model="createForm.businessGroupId" placeholder="请选择业务组" style="width: 100%">
@@ -148,7 +148,7 @@
           <el-input v-model="editForm.email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="editForm.password" type="password" placeholder="留空则不修改密码" show-password />
+          <el-input v-model="editForm.password" type="password" placeholder="留空则不修改密码" show-password autocomplete="off" />
         </el-form-item>
         <el-form-item label="业务组" v-if="canEditBusinessGroup">
           <el-select v-model="editForm.businessGroupIds" placeholder="请选择业务组" style="width: 100%" multiple clearable :disabled="!canEditBusinessGroup">

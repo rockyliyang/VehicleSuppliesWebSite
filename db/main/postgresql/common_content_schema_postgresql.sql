@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS common_content_nav (
     status SMALLINT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted SMALLINT DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT DEFAULT NULL,
     updated_by BIGINT DEFAULT NULL
 );
@@ -32,7 +32,7 @@ CREATE TRIGGER update_common_content_nav_updated_at BEFORE UPDATE ON common_cont
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 创建唯一索引（模拟MySQL的虚拟列uk_active_name_content_type）
-CREATE UNIQUE INDEX uk_active_name_content_type ON common_content_nav(name_key, content_type) WHERE deleted = 0;
+CREATE UNIQUE INDEX uk_active_name_content_type ON common_content_nav(name_key, content_type) WHERE deleted = FALSE;
 
 -- 创建索引
 CREATE INDEX idx_common_content_nav_content_type ON common_content_nav(content_type);
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS common_content (
     status SMALLINT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted SMALLINT DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT DEFAULT NULL,
     updated_by BIGINT DEFAULT NULL
 );
@@ -79,7 +79,7 @@ CREATE INDEX idx_common_content_created_by ON common_content(created_by);
 CREATE INDEX idx_common_content_updated_by ON common_content(updated_by);
 
 -- 创建通用内容图片表
-CREATE TABLE common_content_images (
+CREATE TABLE IF NOT EXISTS common_content_images (
     id SERIAL PRIMARY KEY,
     nav_id INTEGER NOT NULL,
     content_id INTEGER DEFAULT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE common_content_images (
     status SMALLINT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted SMALLINT DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT DEFAULT NULL,
     updated_by BIGINT DEFAULT NULL
 );
@@ -159,8 +159,8 @@ INSERT INTO common_content_nav (name_key, content_type, sort_order) VALUES
 ('about.honors', 'about_us', 4),
 ('news.industry', 'news', 1),
 ('news.company', 'news', 2)
-ON CONFLICT (name_key, content_type) WHERE deleted = 0 DO UPDATE SET sort_order = EXCLUDED.sort_order;
+ON CONFLICT (name_key, content_type) WHERE deleted = FALSE DO UPDATE SET sort_order = EXCLUDED.sort_order;
 
 INSERT INTO common_content_nav (name_key, content_type, sort_order) VALUES
 ('home.about_us', 'home', 1)
-ON CONFLICT (name_key, content_type) WHERE deleted = 0 DO UPDATE SET sort_order = EXCLUDED.sort_order;
+ON CONFLICT (name_key, content_type) WHERE deleted = FALSE DO UPDATE SET sort_order = EXCLUDED.sort_order;
