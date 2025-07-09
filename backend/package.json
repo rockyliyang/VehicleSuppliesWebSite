@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon --signal SIGTERM --inspect=9229 server.js --delay 500ms",
+    "dev": "nodemon --signal SIGTERM --inspect=9229 server.js --delay 2s",
     "start:prod": "cross-env NODE_ENV=production node server.js",
     "migrate": "node db/migrate.js",
     "migrate:prod": "cross-env NODE_ENV=production node db/migrate.js",
@@ -22,6 +22,7 @@
   "dependencies": {
     "@paypal/paypal-server-sdk": "^1.0.0",
     "alipay-sdk": "^4.14.0",
+    "apple-signin-auth": "^2.0.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
@@ -29,12 +30,18 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.18.2",
+    "express-rate-limit": "^7.5.1",
     "express-session": "^1.18.1",
+    "google-auth-library": "^10.1.0",
+    "https-proxy-agent": "^7.0.6",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.14.1",
     "nodemailer": "^7.0.3",
+    "passport-facebook": "^3.0.0",
     "pg": "^8.11.3",
+    "proxy-from-env": "^1.1.0",
     "qrcode": "^1.5.4",
     "stripe": "^14.14.0",
     "svg-captcha": "^1.4.0",
@@ -42,8 +49,8 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "nodemon": "^3.0.3",
     "jest": "^29.7.0",
+    "nodemon": "^3.0.3",
     "supertest": "^6.3.3"
   }
 }

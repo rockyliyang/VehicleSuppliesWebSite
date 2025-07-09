@@ -81,9 +81,32 @@
               {{ $t('login.socialLogin') || '或者使用以下方式登录' }}
             </p>
             <div class="social-login">
-              <i class="el-icon-s-platform"></i>
-              <i class="el-icon-s-promotion"></i>
-              <i class="el-icon-s-custom"></i>
+              <button 
+                @click="loginWithApple" 
+                :disabled="socialLoading.apple"
+                class="social-button apple-button"
+              >
+                <AppleIcon class="social-icon" />
+                <span>{{ $t('login.continueWithApple') || 'Continue With Apple' }}</span>
+              </button>
+              
+              <button 
+                @click="loginWithGoogle" 
+                :disabled="socialLoading.google"
+                class="social-button google-button"
+              >
+                <GoogleIcon class="social-icon" />
+                <span>{{ $t('login.continueWithGoogle') || 'Continue With Google' }}</span>
+              </button>
+              
+              <button 
+                @click="loginWithFacebook" 
+                :disabled="socialLoading.facebook"
+                class="social-button facebook-button"
+              >
+                <FacebookIcon class="social-icon" />
+                <span>{{ $t('login.continueWithFacebook') || 'Continue With Facebook' }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -94,18 +117,25 @@
 
 <script>
 /* eslint-disable no-unused-vars */
+/* global google */
 // 使用全局注册的$api替代axios
 import { ElMessage } from 'element-plus'
 import { User, Lock, PhoneFilled, Message } from '@element-plus/icons-vue'
 import FormInput from '@/components/common/FormInput.vue'
 import PageBanner from '@/components/common/PageBanner.vue'
+import AppleIcon from '@/components/icons/AppleIcon.vue'
+import GoogleIcon from '@/components/icons/GoogleIcon.vue'
+import FacebookIcon from '@/components/icons/FacebookIcon.vue'
 /* eslint-enable no-unused-vars */
 
 export default {
   name: 'UserLogin',
   components: {
     FormInput,
-    PageBanner
+    PageBanner,
+    AppleIcon,
+    GoogleIcon,
+    FacebookIcon
   },
   data() {
     return {
@@ -199,7 +229,12 @@ export default {
       codeSending: false,
       cooldown: 0,
       timer: null,
-      logoUrl: '/static/images/logo.png'
+      logoUrl: '/static/images/logo.png',
+      socialLoading: {
+        apple: false,
+        google: false,
+        facebook: false
+      }
     }
   },
   created() {
@@ -207,6 +242,7 @@ export default {
   },
   mounted() {
     // 登录状态现在通过store初始化时自动恢复
+    this.initThirdPartySDKs();
   },
   methods: {
     async fetchCompanyLogo() {
@@ -217,6 +253,43 @@ export default {
         }
       } catch (e) {
         // 保持默认logo
+      }
+    },
+    initThirdPartySDKs() {
+      // 初始化Apple Sign In
+      if (typeof AppleID !== 'undefined') {
+        AppleID.auth.init({
+          clientId: process.env.VUE_APP_APPLE_CLIENT_ID || 'your_apple_client_id',
+          scope: 'name email',
+          redirectURI: window.location.origin + '/login',
+          state: 'login',
+          usePopup: true
+        });
+      }
+      
+      // 初始化Google API
+      this.initGoogleAPI();
+      
+      // 初始化Facebook SDK
+      if (typeof FB !== 'undefined') {
+        FB.init({
+          appId: process.env.VUE_APP_FACEBOOK_APP_ID || 'your_facebook_app_id',
+          cookie: true,
+          xfbml: true,
+          version: 'v18.0'
+        });
+      }
+    },
+    
+    initGoogleAPI() {
+      // 检查Google Identity Services是否已加载
+      if (typeof google !== 'undefined' && google.accounts) {
+        console.log('Google Identity Services loaded successfully');
+      } else {
+        // 如果Google Identity Services还未加载，等待一段时间后重试
+        setTimeout(() => {
+          this.initGoogleAPI();
+        }, 500);
       }
     },
     submitLogin() {
@@ -293,6 +366,143 @@ export default {
         }
       }, 1000)
     },
+    // 第三方登录方法
+    async loginWithApple() {
+      try {
+        this.socialLoading.apple = true;
+        
+        // 检查Apple Sign In是否可用
+        if (typeof AppleID === 'undefined') {
+          throw new Error(this.$t('login.error.appleNotAvailable') || 'Apple Sign In not available');
+        }
+        
+        const response = await AppleID.auth.signIn();
+        
+        // 发送到后端验证
+        const result = await this.$api.postWithErrorHandler('/auth/apple/callback', {
+          authorizationCode: response.authorization.code,
+          identityToken: response.authorization.id_token,
+          user: response.user
+        }, {
+          fallbackKey: 'login.error.appleAuthFailed'
+        });
+        
+        this.handleLoginSuccess(result.data);
+      } catch (error) {
+        this.handleLoginError(error, 'Apple');
+      } finally {
+        this.socialLoading.apple = false;
+      }
+    },
+    
+    async loginWithGoogle() {
+      try {
+        this.socialLoading.google = true;
+        
+        // 检查Google Identity Services是否可用
+        if (typeof google === 'undefined' || !google.accounts) {
+          throw new Error(this.$t('login.error.googleNotAvailable') || 'Google Identity Services not loaded');
+        }
+        
+        // 使用Google OAuth2弹窗登录获取access token，然后获取用户信息
+        const tokenResponse = await new Promise((resolve, reject) => {
+          const client = google.accounts.oauth2.initTokenClient({
+            client_id: process.env.VUE_APP_GOOGLE_CLIENT_ID || 'your_google_client_id',
+            scope: 'email profile openid',
+            callback: (response) => {
+              if (response.access_token) {
+                resolve(response);
+              } else {
+                reject(new Error('No access token received'));
+              }
+            },
+            error_callback: (error) => {
+              reject(error);
+            }
+          });
+          
+          client.requestAccessToken();
+        });
+        
+        // 获取用户信息
+        const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenResponse.access_token}`);
+        const userInfo = await userInfoResponse.json();
+        
+        // 发送到后端验证（使用accessToken和userInfo的方式）
+        const result = await this.$api.postWithErrorHandler('/auth/google/callback', {
+          accessToken: tokenResponse.access_token,
+          userInfo: userInfo
+        }, {
+          fallbackKey: 'login.error.googleAuthFailed'
+        });
+        
+        this.handleLoginSuccess(result.data);
+        
+      } catch (error) {
+        this.handleLoginError(error, 'Google');
+      } finally {
+        this.socialLoading.google = false;
+      }
+    },
+    
+
+    
+    async loginWithFacebook() {
+      try {
+        this.socialLoading.facebook = true;
+        
+        // 检查Facebook SDK是否可用
+        if (typeof FB === 'undefined') {
+          throw new Error(this.$t('login.error.facebookNotAvailable') || 'Facebook Login not available');
+        }
+        
+        const response = await new Promise((resolve, reject) => {
+          FB.login((response) => {
+            if (response.authResponse) {
+              resolve(response);
+            } else {
+              reject(new Error(this.$t('login.error.facebookCancelled') || 'Facebook login cancelled'));
+            }
+          }, { scope: 'email,public_profile' });
+        });
+        
+        // 发送到后端验证
+        const result = await this.$api.postWithErrorHandler('/auth/facebook/callback', {
+          accessToken: response.authResponse.accessToken,
+          userID: response.authResponse.userID
+        }, {
+          fallbackKey: 'login.error.facebookAuthFailed'
+        });
+        
+        this.handleLoginSuccess(result.data);
+      } catch (error) {
+        this.handleLoginError(error, 'Facebook');
+      } finally {
+        this.socialLoading.facebook = false;
+      }
+    },
+    
+    handleLoginSuccess(data) {
+      // 登录成功，保存用户信息（token已通过cookie设置）
+      const { user } = data;
+      this.$store.commit('setUser', user);
+      this.$messageHandler.showSuccess(
+        this.$t('login.success.thirdPartyLogin') || '登录成功', 
+        'login.success.thirdPartyLogin'
+      );
+      this.$router.push(this.$route.query.redirect || '/');
+    },
+    
+    handleLoginError(error, provider) {
+      console.error(`${provider} login error:`, error);
+      let errorMessage = this.$t('login.error.thirdPartyFailed') || '第三方登录失败';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      this.$messageHandler.showError(errorMessage, 'login.error.thirdPartyFailed');
+    }
     // Token检查已移至Header组件统一处理
 
   },
@@ -533,24 +743,64 @@ export default {
 }
 
 .social-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-top: $spacing-lg;
-  @include flex-center;
-  gap: $spacing-md;
 }
 
-.social-login i {
-  font-size: $font-size-2xl;
-  color: $gray-400;
+.social-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 48px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: $transition-base;
-  padding: $spacing-sm;
-  border-radius: $border-radius-full;
-
+  transition: all 0.3s ease;
+  
   &:hover {
-    color: $primary-color;
-    background-color: rgba($primary-color, 0.1);
-    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.apple-button {
+  color: #000;
+  
+  &:hover {
+    background-color: #f8f8f8;
+  }
+}
+
+.google-button {
+  color: #757575;
+  
+  &:hover {
+    background-color: #f8f8f8;
+  }
+}
+
+.facebook-button {
+  color: #1877f2;
+  
+  &:hover {
+    background-color: #f0f2f5;
+  }
+}
+
+.social-icon {
+  width: 20px;
+  height: 20px;
 }
 
 /* Responsive Design */

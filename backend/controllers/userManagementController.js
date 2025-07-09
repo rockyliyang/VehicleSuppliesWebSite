@@ -269,7 +269,7 @@ class UserManagementController {
       `, [...queryParams, limit, offset]);
       
       // 格式化数据
-      const items = userRows.getAllRows().map(row => {
+      const items = userRows.getRows().map(row => {
         let businessGroups = [];
         if (row.business_groups) {
           businessGroups = row.business_groups.split('|').map(group => {

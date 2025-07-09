@@ -10,11 +10,9 @@
       <el-form :model="filters" inline>
         <el-form-item :label="$t('admin.inquiry.filter.status') || '状态'">
           <el-select v-model="filters.status" :placeholder="$t('inquiry.management.status_filter') || '选择状态'" clearable>
-            <el-option value="pending" :label="$t('inquiry.status.pending') || '待处理'" />
-            <el-option value="quoted" :label="$t('inquiry.status.quoted') || '已报价'" />
+            <el-option value="inquiried" :label="$t('inquiry.status.inquiried') || '已询价'" />
             <el-option value="approved" :label="$t('inquiry.status.approved') || '已批准'" />
             <el-option value="rejected" :label="$t('inquiry.status.rejected') || '已拒绝'" />
-            <el-option value="completed" :label="$t('inquiry.status.completed') || '已完成'" />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('admin.inquiry.filter.user') || '用户'">
@@ -73,27 +71,14 @@
             {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column :label="$t('inquiry.management.table.actions') || '操作'" width="200" fixed="right">
+        <el-table-column :label="$t('inquiry.management.table.actions') || '操作'" width="240" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="viewDetail(row.id)">{{ $t('inquiry.management.action.view')
               || '查看' }}</el-button>
-            <el-button type="success" size="small" @click="quickQuote(row)" :disabled="row.status === 'completed'">{{
-              $t('inquiry.management.action.quote') || '报价' }}</el-button>
-            <el-dropdown trigger="click">
-              <el-button type="info" size="small">{{ $t('admin.inquiry.action.more') || '更多' }}</el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="updateStatus(row, 'approved')" :disabled="row.status === 'completed'">{{
-                    $t('admin.inquiry.action.approve') || '批准' }}</el-dropdown-item>
-                  <el-dropdown-item @click="updateStatus(row, 'rejected')" :disabled="row.status === 'completed'">{{
-                    $t('admin.inquiry.action.reject') || '拒绝' }}</el-dropdown-item>
-                  <el-dropdown-item @click="updateStatus(row, 'completed')" :disabled="row.status === 'completed'">{{
-                    $t('admin.inquiry.action.complete') || '完成' }}</el-dropdown-item>
-                  <el-dropdown-item divided @click="deleteInquiry(row)" class="text-danger">{{
-                    $t('inquiry.management.action.delete') || '删除' }}</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <el-button type="success" size="small" @click="updateStatus(row, 'approved')" :disabled="row.status !== 'inquiried'">{{ 
+              $t('admin.inquiry.action.approve') || '批准' }}</el-button>
+            <el-button type="danger" size="small" @click="updateStatus(row, 'rejected')" :disabled="row.status !== 'inquiried'">{{ 
+              $t('admin.inquiry.action.reject') || '拒绝' }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -215,11 +200,6 @@ export default {
       this.detailDialogVisible = true
     },
     
-    async quickQuote(inquiry) {
-      // 快速报价功能 - 直接打开详情页面
-      this.viewDetail(inquiry.id)
-    },
-    
     async updateStatus(inquiry, newStatus) {
       try {
         await this.$api.putWithErrorHandler(`/admin/inquiries/${inquiry.id}/status`, {
@@ -238,34 +218,6 @@ export default {
       }
     },
     
-    async deleteInquiry(inquiry) {
-      try {
-        await this.$confirm(
-          this.$t('admin.inquiry.confirm.delete') || `确定要删除询价单 "${inquiry.title}" 吗？此操作不可恢复。`,
-          this.$t('admin.inquiry.confirm.deleteTitle') || '确认删除',
-          {
-            confirmButtonText: this.$t('common.confirm') || '确定',
-            cancelButtonText: this.$t('common.cancel') || '取消',
-            type: 'warning'
-          }
-        )
-        
-        await this.$api.deleteWithErrorHandler(`/admin/inquiries/${inquiry.id}`, {
-          fallbackKey: 'admin.inquiry.error.deleteFailed'
-        })
-        
-        this.$messageHandler.showSuccess(
-          this.$t('admin.inquiry.success.deleted') || '询价单删除成功',
-          'admin.inquiry.success.deleted'
-        )
-        this.loadInquiries()
-      } catch (error) {
-        if (error !== 'cancel') {
-          // 错误已经被统一处理
-        }
-      }
-    },
-    
     handleStatusUpdated() {
       this.loadInquiries()
     },
@@ -276,22 +228,18 @@ export default {
     
     getStatusType(status) {
       const statusMap = {
-        pending: 'warning',
-        quoted: 'info',
+        inquiried: 'warning',
         approved: 'success',
-        rejected: 'danger',
-        completed: 'success'
+        rejected: 'danger'
       }
       return statusMap[status] || 'info'
     },
     
     getStatusText(status) {
       const statusMap = {
-        pending: this.$t('inquiry.status.pending') || '待处理',
-        quoted: this.$t('inquiry.status.quoted') || '已报价',
+        inquiried: this.$t('inquiry.status.inquiried') || '已询价',
         approved: this.$t('inquiry.status.approved') || '已批准',
-        rejected: this.$t('inquiry.status.rejected') || '已拒绝',
-        completed: this.$t('inquiry.status.completed') || '已完成'
+        rejected: this.$t('inquiry.status.rejected') || '已拒绝'
       }
       return statusMap[status] || status
     },

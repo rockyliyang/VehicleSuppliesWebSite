@@ -65,7 +65,7 @@ exports.createProduct = async (req, res) => {
     } = req.body;
 
     // 验证产品类型
-    const validProductTypes = ['consignment', 'self_operated'];
+    const validProductTypes = ['physical', 'virtual', 'service'];
     if (!validProductTypes.includes(product_type)) {
       return res.status(400).json({
         success: false,
@@ -303,7 +303,7 @@ exports.updateProduct = async (req, res) => {
     } = req.body;
 
     // 验证产品类型
-    const validProductTypes = ['consignment', 'self_operated'];
+    const validProductTypes = ['physical', 'virtual', 'service'];
     if (!validProductTypes.includes(product_type)) {
       return res.status(400).json({
         success: false,

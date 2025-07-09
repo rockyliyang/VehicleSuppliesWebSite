@@ -424,22 +424,13 @@ export default {
 
     async loadMainImageForContent(contentId) {
       try {
-        const token = getAuthToken()
-        const response = await fetch(`/api/common-content/images/main/content/${contentId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        const result = await this.$api.getWithErrorHandler(`/common-content/images/main/content/${contentId}`, {
+          fallbackKey: 'admin.commonContent.error.loadMainImageFailed'
         })
         
-        if (response.ok) {
-          const result = await response.json()
-          if (result.success && result.data) {
-            this.mainImagePreview = result.data.image_url
-            this.mainImageUrl = result.data.image_url
-          } else {
-            this.mainImagePreview = null
-            this.mainImageUrl = null
-          }
+        if (result.success && result.data) {
+          this.mainImagePreview = result.data.image_url
+          this.mainImageUrl = result.data.image_url
         } else {
           this.mainImagePreview = null
           this.mainImageUrl = null
@@ -534,8 +525,6 @@ export default {
 
     async saveContent() {
       try {
-        const token = getAuthToken()
-        
         // 准备内容数据
         const contentData = {
           nav_id: this.selectedNav.id,
@@ -548,36 +537,14 @@ export default {
         
         if (this.showAddContentModal) {
           // 添加内容
-          const response = await fetch('/api/common-content/admin/content', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(contentData)
+          contentResult = await this.$api.postWithErrorHandler('/common-content/admin/content', contentData, {
+            fallbackKey: 'admin.commonContent.error.addContentFailed'
           })
-          
-          if (!response.ok) {
-            throw new Error('Network response was not ok')
-          }
-          
-          contentResult = await response.json()
         } else {
           // 更新内容
-          const response = await fetch(`/api/common-content/admin/content/${this.editingContentId}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(contentData)
+          contentResult = await this.$api.putWithErrorHandler(`/common-content/admin/content/${this.editingContentId}`, contentData, {
+            fallbackKey: 'admin.commonContent.error.updateContentFailed'
           })
-          
-          if (!response.ok) {
-            throw new Error('Network response was not ok')
-          }
-          
-          contentResult = await response.json()
         }
         
         if (!contentResult.success) {
@@ -696,32 +663,19 @@ export default {
       try {
         // 如果是编辑模式且有主图，需要调用后端删除
         if (!this.showAddContentModal && this.mainImagePreview && this.contentForm.id) {
-          const token = getAuthToken()
-          
           // 获取当前内容的主图ID
-          const response = await fetch(`/api/common-content/images/main/content/${this.contentForm.id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+          const result = await this.$api.getWithErrorHandler(`/common-content/images/main/content/${this.contentForm.id}`, {
+            fallbackKey: 'admin.commonContent.error.loadMainImageFailed'
           })
           
-          if (response.ok) {
-            const result = await response.json()
-            if (result.success && result.data) {
-              // 删除主图
-              const deleteResponse = await fetch(`/api/common-content/images/${result.data.id}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
-              })
-              
-              if (deleteResponse.ok) {
-                const deleteResult = await deleteResponse.json()
-                if (deleteResult.success) {
-                  this.$messageHandler.showSuccess('主图删除成功', 'admin.commonContent.success.imageDelete')
-                }
-              }
+          if (result.success && result.data) {
+            // 删除主图
+            const deleteResult = await this.$api.deleteWithErrorHandler(`/common-content/images/${result.data.id}`, {
+              fallbackKey: 'admin.commonContent.error.imageDeleteFailed'
+            })
+            
+            if (deleteResult.success) {
+              this.$messageHandler.showSuccess('主图删除成功', 'admin.commonContent.success.imageDelete')
             }
           }
         }
@@ -755,30 +709,18 @@ export default {
           throw new Error('必须先保存内容才能上传主图')
         }
         
-        const token = getAuthToken()
         const formData = new FormData()
         formData.append('images', this.mainImageFile)
         formData.append('nav_id', this.selectedNav.id)
         formData.append('content_id', this.contentForm.id)
         formData.append('image_type', 'main')
         
-        const response = await fetch('/api/common-content/images/upload', {
-          method: 'POST',
+        const result = await this.$api.postWithErrorHandler('/common-content/images/upload', formData, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'multipart/form-data'
           },
-          body: formData
+          fallbackKey: 'admin.commonContent.error.imageUploadFailed'
         })
-        
-        if (!response.ok) {
-          throw new Error('Network response was not ok')
-        }
-        
-        const result = await response.json()
-        
-        if (!result.success) {
-          throw new Error(result.message || '主图上传失败')
-        }
         
         console.log('主图上传成功:', result)
         

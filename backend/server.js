@@ -1,6 +1,7 @@
 // 加载环境变量
 const env = require('./config/env');
 const { getMessage } = require('./config/messages');
+const { pool } = require('./db/db');
 
 const express = require('express');
 const cors = require('cors');
@@ -27,12 +28,14 @@ const userManagementRoutes = require('./routes/userManagementRoutes');
 const inquiryRoutes = require('./routes/inquiryRoutes');
 const adminInquiryRoutes = require('./routes/adminInquiryRoutes');
 const sseRoutes = require('./routes/sseRoutes');
+const thirdPartyAuthRoutes = require('./routes/thirdPartyAuthRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 信任代理，以便正确获取客户端IP地址
-app.set('trust proxy', true);
+// 在开发环境中不信任代理，避免rate limit警告
+// 生产环境中如果使用反向代理（如nginx）则需要设置为true
+app.set('trust proxy', process.env.NODE_ENV === 'production');
 
 // 中间件
 app.use(cors());
@@ -76,6 +79,7 @@ app.use('/api/admin/users', userManagementRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/admin/inquiries', adminInquiryRoutes);
 app.use('/api/sse', sseRoutes);
+app.use('/api/auth', thirdPartyAuthRoutes);
 
 // 注册长轮询路由
 const pollingRoutes = require('./routes/pollingRoutes');
@@ -104,34 +108,58 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 });
 
 // 优雅关闭服务器
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
+  server.close(async () => {
     console.log('HTTP server closed');
+    try {
+      await pool.end();
+      console.log('Database pool closed');
+    } catch (err) {
+      console.error('Error closing database pool:', err);
+    }
     process.exit(0);
   });
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server');
-  server.close(() => {
+  server.close(async () => {
     console.log('HTTP server closed');
+    try {
+      await pool.end();
+      console.log('Database pool closed');
+    } catch (err) {
+      console.error('Error closing database pool:', err);
+    }
     process.exit(0);
   });
 });
 
 // 处理未捕获的异常
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', async (err) => {
   console.error('Uncaught Exception:', err);
-  server.close(() => {
+  server.close(async () => {
+    try {
+      await pool.end();
+      console.log('Database pool closed');
+    } catch (poolErr) {
+      console.error('Error closing database pool:', poolErr);
+    }
     process.exit(1);
   });
 });
 
 // 处理未处理的 Promise 拒绝
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', async (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  server.close(() => {
+  server.close(async () => {
+    try {
+      await pool.end();
+      console.log('Database pool closed');
+    } catch (poolErr) {
+      console.error('Error closing database pool:', poolErr);
+    }
     process.exit(1);
   });
 });

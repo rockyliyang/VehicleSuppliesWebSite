@@ -449,7 +449,7 @@ export default {
               name: item.product_name,
               imageUrl: item.image_url || require('@/assets/images/default-image.svg'),
               quantity: item.quantity,
-              expectedPrice: item.unit_price || ''
+              unit_price: item.unit_price || ''
             }));
             
             inquiry.messages = response.data.messages.map(msg => ({
@@ -708,6 +708,9 @@ export default {
     initPolling() {
       try {
         this.pollingConnection = InquiryPolling;
+        
+        // 设置API实例
+        this.pollingConnection.setApiInstance(this.$api);
         
         // 监听新消息
         this.pollingConnection.on('new_messages', (data) => {

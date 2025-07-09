@@ -36,7 +36,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-  
+              <el-dropdown-item v-if="isLoggedIn" command="settings">{{ $t('userSettings.title') || '账号设置' }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="orders">{{ $t('orders') }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="logout">{{ $t('logout') }}</el-dropdown-item>
               <el-dropdown-item v-if="!isLoggedIn" command="login">{{ $t('login') }}</el-dropdown-item>
@@ -309,7 +309,9 @@ export default {
     // 登录状态检查现在由store初始化时自动处理
     
     handleUserMenu(command) {
-      if (command === 'orders') {
+      if (command === 'settings') {
+        this.$router.push('/user/settings');
+      } else if (command === 'orders') {
         this.$router.push('/user/orders');
       } else if (command === 'logout') {
         this.handleLogout();

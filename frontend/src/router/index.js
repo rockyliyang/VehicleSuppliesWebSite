@@ -193,6 +193,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/user/settings',
+    name: 'UserSettings',
+    component: () => import('../views/UserSettings.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/unified-checkout',
     name: 'UnifiedCheckout',
     component: () => import('../views/UnifiedCheckout.vue'),

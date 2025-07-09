@@ -176,7 +176,7 @@ exports.createInquiry = async (req, res) => {
     
     // 检查用户当前询价数量限制
     const countResult = await query(
-      'SELECT COUNT(*) as count FROM inquiries WHERE user_id = $1 AND status IN (\'pending\', \'quoted\') AND deleted = false',
+      'SELECT COUNT(*) as count FROM inquiries WHERE user_id = $1 AND status = \'inquiried\' AND deleted = false',
       [userId]
     );
     
@@ -197,7 +197,7 @@ exports.createInquiry = async (req, res) => {
     const fullTitle = `${titlePrefix.trim()}${nextUserInquiryId}`;
     
     const result = await query(
-      'INSERT INTO inquiries (user_id, user_inquiry_id, title, status, created_by, updated_by) VALUES ($1, $2, $3, \'pending\', $4, $5) RETURNING id',
+      'INSERT INTO inquiries (user_id, user_inquiry_id, title, status, created_by, updated_by) VALUES ($1, $2, $3, \'inquiried\', $4, $5) RETURNING id',
       [userId, nextUserInquiryId, fullTitle, userId, userId]
     );
     
@@ -247,7 +247,7 @@ exports.addItemToInquiry = async (req, res) => {
       });
     }
     
-    if (inquiryResult.getFirstRow().status !== 'pending') {
+    if (inquiryResult.getFirstRow().status !== 'inquiried') {
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED')
@@ -423,7 +423,7 @@ exports.removeItemFromInquiry = async (req, res) => {
       });
     }
     
-    if (inquiryResult.getFirstRow().status !== 'pending') {
+    if (inquiryResult.getFirstRow().status !== 'inquiried') {
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED')

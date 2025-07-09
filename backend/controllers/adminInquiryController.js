@@ -279,7 +279,7 @@ exports.updateItemQuote = async (req, res) => {
       });
     }
     
-    if (itemResult.getFirstRow().inquiry_status === 'completed') {
+    if (itemResult.getFirstRow().inquiry_status === 'approved') {
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.BUSINESS.CANNOT_MODIFY_COMPLETED')
@@ -292,18 +292,7 @@ exports.updateItemQuote = async (req, res) => {
           [quotedPrice, adminId, itemId]
     );
     
-    // 检查是否所有商品都已报价，如果是则更新询价状态
-    const unquotedItems = await query(
-      'SELECT COUNT(*) as count FROM inquiry_items WHERE inquiry_id = $1 AND unit_price IS NULL AND deleted = false',
-      [itemResult.getFirstRow().inquiry_id]
-    );
-    
-    if (unquotedItems.getFirstRow().count === '0') {
-      await query(
-        'UPDATE inquiries SET status = $1, updated_by = $2, updated_at = NOW() WHERE id = $3',
-        ['quoted', adminId, itemResult.getFirstRow().inquiry_id]
-      );
-    }
+
     
     return res.json({
       success: true,
@@ -485,11 +474,11 @@ exports.updateInquiryStatus = async (req, res) => {
     const { inquiryId } = req.params;
     const { status } = req.body;
     
-    const validStatuses = ['pending', 'quoted', 'approved', 'rejected', 'completed'];
+    const validStatuses = ['inquiried', 'approved', 'rejected'];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: getMessage('INQUIRY.VALIDATION.INVALID_ID')
+        message: getMessage('INQUIRY.VALIDATION.INVALID_STATUS')
       });
     }
     
@@ -554,11 +543,9 @@ exports.getInquiryStats = async (req, res) => {
     const statsQuery = `
       SELECT 
         COUNT(*) as total_inquiries,
-        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
-        COUNT(CASE WHEN status = 'quoted' THEN 1 END) as quoted_count,
+        COUNT(CASE WHEN status = 'inquiried' THEN 1 END) as inquiried_count,
         COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
-        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count,
-        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count
+        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count
       FROM inquiries 
       ${dateFilter} AND deleted = false
     `;

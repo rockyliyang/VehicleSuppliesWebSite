@@ -16,7 +16,7 @@ if (DB_TYPE === 'postgresql') {
     ssl: process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false,
     max: 10, // 最大连接数
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000, // 连接超时时间增加到10秒
   });
 } else {
   // MySQL连接池

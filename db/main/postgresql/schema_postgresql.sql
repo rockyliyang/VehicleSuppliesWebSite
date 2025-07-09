@@ -32,6 +32,13 @@ CREATE TABLE IF NOT EXISTS users (
   user_role VARCHAR(10) NOT NULL DEFAULT 'user' CHECK (user_role IN ('admin', 'user', 'business')),
   business_group_id BIGINT DEFAULT NULL,
   language VARCHAR(10) DEFAULT NULL,
+  apple_id VARCHAR(256) DEFAULT NULL,
+  google_id VARCHAR(256) DEFAULT NULL,
+  facebook_id VARCHAR(256) DEFAULT NULL,
+  avatar_url VARCHAR(512) DEFAULT NULL,
+  third_party_email VARCHAR(64) DEFAULT NULL,
+  login_source VARCHAR(16) DEFAULT 'local' CHECK (login_source IN ('local', 'apple', 'google', 'facebook', 'mixed')),
+  is_email_verified BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -42,12 +49,22 @@ CREATE TABLE IF NOT EXISTS users (
 -- 添加注释
 COMMENT ON COLUMN users.business_group_id IS '普通用户关联的业务组ID（用于联系表单分配）';
 COMMENT ON COLUMN users.language IS 'User preferred language for emails, NULL means English';
+COMMENT ON COLUMN users.apple_id IS 'Apple用户唯一标识';
+COMMENT ON COLUMN users.google_id IS 'Google用户唯一标识';
+COMMENT ON COLUMN users.facebook_id IS 'Facebook用户唯一标识';
+COMMENT ON COLUMN users.avatar_url IS '用户头像URL';
+COMMENT ON COLUMN users.third_party_email IS '第三方平台邮箱';
+COMMENT ON COLUMN users.login_source IS '主要登录方式';
+COMMENT ON COLUMN users.is_email_verified IS '邮箱是否已验证';
 COMMENT ON COLUMN users.created_by IS '创建者用户ID';
 COMMENT ON COLUMN users.updated_by IS '最后更新者用户ID';
 
 -- 创建唯一索引（模拟MySQL的虚拟列）
 CREATE UNIQUE INDEX unique_active_username ON users (username) WHERE deleted = FALSE;
 CREATE UNIQUE INDEX unique_active_email ON users (email) WHERE deleted = FALSE;
+CREATE UNIQUE INDEX uk_users_apple_id ON users (apple_id) WHERE deleted = FALSE AND apple_id IS NOT NULL;
+CREATE UNIQUE INDEX uk_users_google_id ON users (google_id) WHERE deleted = FALSE AND google_id IS NOT NULL;
+CREATE UNIQUE INDEX uk_users_facebook_id ON users (facebook_id) WHERE deleted = FALSE AND facebook_id IS NOT NULL;
 
 -- 创建普通索引
 CREATE INDEX idx_created_by ON users (created_by);
@@ -454,6 +471,59 @@ INSERT INTO site_settings (guid, setting_key, setting_value, setting_group) VALU
 (gen_random_uuid(), 'site_logo', '/static/images/logo.png', 'general'),
 (gen_random_uuid(), 'site_title', 'AUTO EASE EXPERT CO., LTD', 'general'),
 (gen_random_uuid(), 'copyright_text', '© 2023 AUTO EASE EXPERT CO., LTD. All Rights Reserved', 'general');
+
+-- 第三方登录记录表
+CREATE TABLE IF NOT EXISTS third_party_logins (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  provider VARCHAR(16) NOT NULL CHECK (provider IN ('apple', 'google', 'facebook')),
+  provider_user_id VARCHAR(256) NOT NULL,
+  access_token TEXT,
+  refresh_token TEXT,
+  token_expires_at TIMESTAMP,
+  email VARCHAR(64),
+  name VARCHAR(64),
+  avatar_url VARCHAR(512),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON COLUMN third_party_logins.user_id IS '关联的用户ID';
+COMMENT ON COLUMN third_party_logins.provider IS '第三方登录提供商';
+COMMENT ON COLUMN third_party_logins.provider_user_id IS '第三方平台用户ID';
+COMMENT ON COLUMN third_party_logins.access_token IS '访问令牌';
+COMMENT ON COLUMN third_party_logins.refresh_token IS '刷新令牌';
+COMMENT ON COLUMN third_party_logins.token_expires_at IS '令牌过期时间';
+COMMENT ON COLUMN third_party_logins.email IS '第三方平台邮箱';
+COMMENT ON COLUMN third_party_logins.name IS '第三方平台用户名';
+COMMENT ON COLUMN third_party_logins.avatar_url IS '第三方平台头像URL';
+COMMENT ON COLUMN third_party_logins.created_by IS '创建者用户ID';
+COMMENT ON COLUMN third_party_logins.updated_by IS '最后更新者用户ID';
+
+-- 创建唯一索引
+CREATE UNIQUE INDEX uk_third_party_logins_provider_user ON third_party_logins (provider, provider_user_id) WHERE deleted = FALSE;
+
+-- 创建普通索引
+CREATE INDEX idx_third_party_logins_user_id ON third_party_logins (user_id);
+CREATE INDEX idx_third_party_logins_provider ON third_party_logins (provider);
+CREATE INDEX idx_third_party_logins_created_at ON third_party_logins (created_at);
+CREATE INDEX idx_third_party_logins_created_by ON third_party_logins (created_by);
+CREATE INDEX idx_third_party_logins_updated_by ON third_party_logins (updated_by);
+
+-- 添加外键约束
+ALTER TABLE third_party_logins ADD CONSTRAINT fk_third_party_logins_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE third_party_logins ADD CONSTRAINT fk_third_party_logins_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE third_party_logins ADD CONSTRAINT fk_third_party_logins_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_third_party_logins_modtime
+    BEFORE UPDATE ON third_party_logins
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
 
 -- 创建默认管理员用户 (密码: admin123)
 INSERT INTO users (guid, username, password, email, user_role) 

@@ -396,6 +396,65 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'payment.alipay.service_error', 'zh-CN', '支付宝服务异常');
 
 INSERT INTO language_translations (guid, code, lang, value) VALUES
+
+
+-- 第三方登录相关消息（来自thirdPartyAuthController.js）
+(gen_random_uuid(), 'APPLE_AUTH_FAILED', 'en', 'Apple authentication failed'),
+(gen_random_uuid(), 'APPLE_AUTH_FAILED', 'zh-CN', 'Apple认证失败'),
+(gen_random_uuid(), 'GOOGLE_AUTH_FAILED', 'en', 'Google authentication failed'),
+(gen_random_uuid(), 'GOOGLE_AUTH_FAILED', 'zh-CN', 'Google认证失败'),
+(gen_random_uuid(), 'FACEBOOK_AUTH_FAILED', 'en', 'Facebook authentication failed'),
+(gen_random_uuid(), 'FACEBOOK_AUTH_FAILED', 'zh-CN', 'Facebook认证失败'),
+(gen_random_uuid(), 'THIRD_PARTY_LOGIN_SUCCESS', 'en', 'Third party login successful'),
+(gen_random_uuid(), 'THIRD_PARTY_LOGIN_SUCCESS', 'zh-CN', '第三方登录成功'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_EXISTS', 'en', 'Third party account already exists'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_EXISTS', 'zh-CN', '第三方账号已存在'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_BIND_SUCCESS', 'en', 'Third party account bound successfully'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_BIND_SUCCESS', 'zh-CN', '第三方账号绑定成功'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_BIND_FAILED', 'en', 'Third party account binding failed'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_BIND_FAILED', 'zh-CN', '第三方账号绑定失败'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_UNBIND_SUCCESS', 'en', 'Third party account unbound successfully'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_UNBIND_SUCCESS', 'zh-CN', '第三方账号解绑成功'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_UNBIND_FAILED', 'en', 'Third party account unbinding failed'),
+(gen_random_uuid(), 'THIRD_PARTY_ACCOUNT_UNBIND_FAILED', 'zh-CN', '第三方账号解绑失败'),
+
+-- Login.vue中新增的第三方登录翻译键
+(gen_random_uuid(), 'login.thirdParty.apple', 'en', 'Sign in with Apple'),
+(gen_random_uuid(), 'login.thirdParty.apple', 'zh-CN', '使用Apple登录'),
+(gen_random_uuid(), 'login.thirdParty.google', 'en', 'Sign in with Google'),
+(gen_random_uuid(), 'login.thirdParty.google', 'zh-CN', '使用Google登录'),
+(gen_random_uuid(), 'login.thirdParty.facebook', 'en', 'Sign in with Facebook'),
+(gen_random_uuid(), 'login.thirdParty.facebook', 'zh-CN', '使用Facebook登录'),
+(gen_random_uuid(), 'login.thirdParty.or', 'en', 'Or'),
+(gen_random_uuid(), 'login.thirdParty.or', 'zh-CN', '或者'),
+
+-- UserSettings.vue中的第三方账号管理翻译键
+(gen_random_uuid(), 'userSettings.thirdParty.title', 'en', 'Third Party Accounts'),
+(gen_random_uuid(), 'userSettings.thirdParty.title', 'zh-CN', '第三方账号'),
+(gen_random_uuid(), 'userSettings.thirdParty.apple', 'en', 'Apple Account'),
+(gen_random_uuid(), 'userSettings.thirdParty.apple', 'zh-CN', 'Apple账号'),
+(gen_random_uuid(), 'userSettings.thirdParty.google', 'en', 'Google Account'),
+(gen_random_uuid(), 'userSettings.thirdParty.google', 'zh-CN', 'Google账号'),
+(gen_random_uuid(), 'userSettings.thirdParty.facebook', 'en', 'Facebook Account'),
+(gen_random_uuid(), 'userSettings.thirdParty.facebook', 'zh-CN', 'Facebook账号'),
+(gen_random_uuid(), 'userSettings.thirdParty.bind', 'en', 'Bind'),
+(gen_random_uuid(), 'userSettings.thirdParty.bind', 'zh-CN', '绑定'),
+(gen_random_uuid(), 'userSettings.thirdParty.unbind', 'en', 'Unbind'),
+(gen_random_uuid(), 'userSettings.thirdParty.unbind', 'zh-CN', '解绑'),
+(gen_random_uuid(), 'userSettings.thirdParty.bound', 'en', 'Bound'),
+(gen_random_uuid(), 'userSettings.thirdParty.bound', 'zh-CN', '已绑定'),
+(gen_random_uuid(), 'userSettings.thirdParty.notBound', 'en', 'Not Bound'),
+(gen_random_uuid(), 'userSettings.thirdParty.notBound', 'zh-CN', '未绑定'),
+(gen_random_uuid(), 'userSettings.thirdParty.confirmUnbind', 'en', 'Are you sure you want to unbind this account?'),
+(gen_random_uuid(), 'userSettings.thirdParty.confirmUnbind', 'zh-CN', '确定要解绑此账号吗？'),
+(gen_random_uuid(), 'userSettings.thirdParty.bindSuccess', 'en', 'Account bound successfully'),
+(gen_random_uuid(), 'userSettings.thirdParty.bindSuccess', 'zh-CN', '账号绑定成功'),
+(gen_random_uuid(), 'userSettings.thirdParty.bindFailed', 'en', 'Account binding failed'),
+(gen_random_uuid(), 'userSettings.thirdParty.bindFailed', 'zh-CN', '账号绑定失败'),
+(gen_random_uuid(), 'userSettings.thirdParty.unbindSuccess', 'en', 'Account unbound successfully'),
+(gen_random_uuid(), 'userSettings.thirdParty.unbindSuccess', 'zh-CN', '账号解绑成功'),
+(gen_random_uuid(), 'userSettings.thirdParty.unbindFailed', 'en', 'Account unbinding failed'),
+(gen_random_uuid(), 'userSettings.thirdParty.unbindFailed', 'zh-CN', '账号解绑失败'),
 -- PAYPAL相关
 (gen_random_uuid(), 'PAYPAL.CREATE_ORDER_FAILED', 'en', 'PayPal order creation failed'),
 (gen_random_uuid(), 'PAYPAL.CREATE_ORDER_FAILED', 'zh-CN', 'PayPal订单创建失败'),
@@ -1715,22 +1774,16 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'inquiry.detail.send_message', 'zh-CN', '发送消息'),
 
 -- 询价状态翻译键
-(gen_random_uuid(), 'inquiry.status.pending', 'en', 'Pending'),
-(gen_random_uuid(), 'inquiry.status.pending', 'zh-CN', '待处理'),
-(gen_random_uuid(), 'inquiry.status.processing', 'en', 'Processing'),
-(gen_random_uuid(), 'inquiry.status.processing', 'zh-CN', '处理中'),
-(gen_random_uuid(), 'inquiry.status.quoted', 'en', 'Quoted'),
-(gen_random_uuid(), 'inquiry.status.quoted', 'zh-CN', '已报价'),
+(gen_random_uuid(), 'inquiry.status.inquiried', 'en', 'Inquiried'),
+(gen_random_uuid(), 'inquiry.status.inquiried', 'zh-CN', '已询价'),
 (gen_random_uuid(), 'inquiry.status.approved', 'en', 'Approved'),
 (gen_random_uuid(), 'inquiry.status.approved', 'zh-CN', '已批准'),
 (gen_random_uuid(), 'inquiry.status.rejected', 'en', 'Rejected'),
 (gen_random_uuid(), 'inquiry.status.rejected', 'zh-CN', '已拒绝'),
-(gen_random_uuid(), 'inquiry.status.completed', 'en', 'Completed'),
-(gen_random_uuid(), 'inquiry.status.completed', 'zh-CN', '已完成'),
-(gen_random_uuid(), 'inquiry.status.cancelled', 'en', 'Cancelled'),
-(gen_random_uuid(), 'inquiry.status.cancelled', 'zh-CN', '已取消'),
-(gen_random_uuid(), 'inquiry.status.unknown', 'en', 'Unknown'),
-(gen_random_uuid(), 'inquiry.status.unknown', 'zh-CN', '未知'),
+
+-- 询价验证错误消息
+(gen_random_uuid(), 'INQUIRY.VALIDATION.INVALID_STATUS', 'en', 'Invalid inquiry status'),
+(gen_random_uuid(), 'INQUIRY.VALIDATION.INVALID_STATUS', 'zh-CN', '无效的询价状态'),
 
 -- 通用翻译键
 (gen_random_uuid(), 'common.search', 'en', 'Search'),
@@ -1789,12 +1842,7 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'admin.inquiry.action.approve', 'zh-CN', '批准'),
 (gen_random_uuid(), 'admin.inquiry.action.reject', 'en', 'Reject'),
 (gen_random_uuid(), 'admin.inquiry.action.reject', 'zh-CN', '拒绝'),
-(gen_random_uuid(), 'admin.inquiry.action.complete', 'en', 'Complete'),
-(gen_random_uuid(), 'admin.inquiry.action.complete', 'zh-CN', '完成'),
-(gen_random_uuid(), 'admin.inquiry.action.setPending', 'en', 'Set to Pending'),
-(gen_random_uuid(), 'admin.inquiry.action.setPending', 'zh-CN', '设为待处理'),
-(gen_random_uuid(), 'admin.inquiry.action.setQuoted', 'en', 'Set to Quoted'),
-(gen_random_uuid(), 'admin.inquiry.action.setQuoted', 'zh-CN', '设为已报价'),
+
 (gen_random_uuid(), 'admin.inquiry.detail.title', 'en', 'Inquiry Details'),
 (gen_random_uuid(), 'admin.inquiry.detail.title', 'zh-CN', '询价详情'),
 (gen_random_uuid(), 'admin.inquiry.detail.phone', 'en', 'Phone'),

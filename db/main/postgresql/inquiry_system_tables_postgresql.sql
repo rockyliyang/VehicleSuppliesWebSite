@@ -34,7 +34,9 @@ CREATE TRIGGER update_inquiries_updated_at BEFORE UPDATE ON inquiries
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 添加检查约束
-ALTER TABLE inquiries ADD CONSTRAINT chk_inquiry_status CHECK (status IN ('pending', 'quoted', 'completed', 'cancelled'));
+ALTER TABLE inquiries 
+    ADD CONSTRAINT chk_inquiry_status
+    CHECK (status IN ('inquiried',  'approved', 'rejected'));
 
 -- 创建索引
 CREATE INDEX idx_inquiries_guid ON inquiries(guid);
@@ -154,7 +156,7 @@ COMMENT ON COLUMN inquiries.guid IS '全局唯一标识符';
 COMMENT ON COLUMN inquiries.user_id IS '用户ID';
 COMMENT ON COLUMN inquiries.user_inquiry_id IS '用户级别的询价单编号';
 COMMENT ON COLUMN inquiries.title IS '询价单标题';
-COMMENT ON COLUMN inquiries.status IS '询价状态: pending-待处理, quoted-已报价, completed-已完成, cancelled-已取消';
+COMMENT ON COLUMN inquiries.status IS '询价状态: inquiried-已询价, approved-已批准, rejected-已拒绝';
 COMMENT ON COLUMN inquiries.total_amount IS '总金额';
 COMMENT ON COLUMN inquiries.deleted IS '软删除标记: 0-正常, 1-已删除';
 COMMENT ON COLUMN inquiries.created_at IS '创建时间';

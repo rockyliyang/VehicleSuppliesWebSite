@@ -160,7 +160,7 @@ class BusinessGroupController {
         LEFT JOIN users creator ON bg.created_by = creator.id
         LEFT JOIN user_business_groups ubg ON bg.id = ubg.business_group_id AND ubg.deleted = false
         WHERE ${whereClause}
-        GROUP BY bg.id
+        GROUP BY bg.id,bg.group_name,bg.group_email,bg.description,bg.is_default,bg.created_at,bg.updated_at,creator.username
         ORDER BY bg.is_default DESC, bg.created_at DESC
         LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
       `, [...queryParams, limit, offset]);
@@ -551,6 +551,7 @@ class BusinessGroupController {
       const insertResult = await query(`
         INSERT INTO user_business_groups (user_id, business_group_id, assigned_by, created_by)
         VALUES ($1, $2, $3, $4)
+        RETURNING id
       `, [user_id, id, req.userId, req.userId]);
       
       res.status(201).json({

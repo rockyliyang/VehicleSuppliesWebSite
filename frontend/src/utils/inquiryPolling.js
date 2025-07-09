@@ -13,6 +13,15 @@ class InquiryPolling {
     this.maxRetries = 3 // 最大重试次数
     this.retryDelay = 2000 // 重试延迟（毫秒）
     this.lastMessageIds = new Map() // 存储每个询价单的最后消息ID
+    this.apiInstance = null // API实例
+  }
+
+  /**
+   * 设置API实例
+   * @param {Object} apiInstance - Vue组件的$api实例
+   */
+  setApiInstance(apiInstance) {
+    this.apiInstance = apiInstance
   }
 
   /**
@@ -128,28 +137,38 @@ class InquiryPolling {
    */
   async fetchMessages(inquiryId) {
     try {
-      const token = this.getAuthToken()
-      if (!token) {
-        throw new Error('未找到身份验证令牌')
-      }
-
       // 构建请求URL，包含长轮询参数
       const lastMessageId = this.lastMessageIds.get(inquiryId) || 0
-      const url = `/api/inquiries/${inquiryId}/messages/poll?timeout=${this.longPollTimeout}&lastMessageId=${lastMessageId}`
+      const url = `/inquiries/${inquiryId}/messages/poll?timeout=${this.longPollTimeout}&lastMessageId=${lastMessageId}`
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      let data
+      if (this.apiInstance) {
+        // 使用$api实例，设置超时时间比长轮询超时时间长5秒
+        data = await this.apiInstance.getWithErrorHandler(url, {
+          fallbackKey: 'inquiry.polling.error.fetchMessagesFailed',
+          timeout: this.longPollTimeout + 5000 // 35秒超时，比长轮询30秒多5秒
+        })
+      } else {
+        // 降级到fetch（向后兼容）
+        const token = this.getAuthToken()
+        if (!token) {
+          throw new Error('未找到身份验证令牌')
         }
-      })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const response = await fetch(`/api${url}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        data = await response.json()
       }
-
-      const data = await response.json()
       
       if (data.success && data.data.hasNewMessages) {
         // 更新最后消息ID

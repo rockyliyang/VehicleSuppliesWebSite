@@ -43,24 +43,13 @@
         <!-- 状态操作 -->
         <div class="status-actions">
           <el-button-group>
-            <el-button type="warning" size="small" @click="updateStatus('pending')"
-              :disabled="inquiry.status === 'pending'">
-              {{ $t('admin.inquiry.action.setPending') || '设为待处理' }}
-            </el-button>
-            <el-button type="info" size="small" @click="updateStatus('quoted')" :disabled="inquiry.status === 'quoted'">
-              {{ $t('admin.inquiry.action.setQuoted') || '设为已报价' }}
-            </el-button>
             <el-button type="success" size="small" @click="updateStatus('approved')"
-              :disabled="inquiry.status === 'approved' || inquiry.status === 'completed'">
+              :disabled="inquiry.status !== 'inquiried'">
               {{ $t('admin.inquiry.action.approve') || '批准' }}
             </el-button>
             <el-button type="danger" size="small" @click="updateStatus('rejected')"
-              :disabled="inquiry.status === 'rejected' || inquiry.status === 'completed'">
+              :disabled="inquiry.status !== 'inquiried'">
               {{ $t('admin.inquiry.action.reject') || '拒绝' }}
-            </el-button>
-            <el-button type="primary" size="small" @click="updateStatus('completed')"
-              :disabled="inquiry.status === 'completed'">
-              {{ $t('admin.inquiry.action.complete') || '完成' }}
             </el-button>
           </el-button-group>
         </div>
@@ -97,7 +86,7 @@
           <el-table-column :label="$t('inquiry.detail.unit_price') || '单价'" width="120">
             <template #default="{ row }">
               <el-input-number v-model="row.unit_price" :min="0" :precision="2" :step="0.01" size="small"
-                @change="updateItemQuote(row)" :disabled="inquiry.status === 'completed'" />
+                @change="updateItemQuote(row)" :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'" />
             </template>
           </el-table-column>
           <el-table-column :label="$t('inquiry.detail.total_price') || '总价'" width="100">
@@ -157,10 +146,10 @@
         <div class="send-message-section">
           <el-input v-model="newMessage" type="textarea" :rows="3"
             :placeholder="$t('inquiry.detail.message_placeholder') || '输入回复消息...'"
-            :disabled="inquiry.status === 'completed'" />
+            :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'" />
           <div class="send-actions">
             <el-button type="primary" @click="sendMessage"
-              :disabled="!newMessage.trim() || inquiry.status === 'completed'" :loading="sendingMessage">
+              :disabled="!newMessage.trim() || inquiry.status === 'approved' || inquiry.status === 'rejected'" :loading="sendingMessage">
               {{ $t('inquiry.detail.send_message') || '发送消息' }}
             </el-button>
           </div>
@@ -345,6 +334,9 @@ export default {
       try {
         this.pollingConnection = InquiryPolling;
         
+        // 设置API实例
+        this.pollingConnection.setApiInstance(this.$api);
+        
         // 监听新消息
         this.pollingConnection.on('new_messages', (data) => {
           if (data.inquiryId === this.inquiry?.id) {
@@ -421,24 +413,18 @@ export default {
     
     getStatusType(status) {
       const statusMap = {
-        pending: 'warning',
-        quoted: 'info',
+        inquiried: 'warning',
         approved: 'success',
-        rejected: 'danger',
-        completed: 'success'
+        rejected: 'danger'
       }
       return statusMap[status] || 'info'
     },
     
     getStatusText(status) {
       const statusMap = {
-        'pending': this.$t('inquiry.status.pending') || '待处理',
-        'processing': this.$t('inquiry.status.processing') || '处理中',
-        'quoted': this.$t('inquiry.status.quoted') || '已报价',
+        'inquiried': this.$t('inquiry.status.inquiried') || '已询价',
         'approved': this.$t('inquiry.status.approved') || '已批准',
-        'rejected': this.$t('inquiry.status.rejected') || '已拒绝',
-        'completed': this.$t('inquiry.status.completed') || '已完成',
-        'cancelled': this.$t('inquiry.status.cancelled') || '已取消'
+        'rejected': this.$t('inquiry.status.rejected') || '已拒绝'
       }
       return statusMap[status] || status
     },

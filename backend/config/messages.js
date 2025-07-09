@@ -46,7 +46,24 @@ const MESSAGES = {
     INVALID_TOKEN: 'Invalid token, please login again',
     CAPTCHA_REQUIRED: 'Captcha is required',
     CAPTCHA_EXPIRED: 'Captcha expired, please refresh',
-    CAPTCHA_INVALID: 'Invalid captcha'
+    CAPTCHA_INVALID: 'Invalid captcha',
+    
+    // 第三方登录相关
+    THIRD_PARTY_LOGIN_SUCCESS: 'Third-party login successful',
+    THIRD_PARTY_LOGIN_FAILED: 'Third-party login failed',
+    THIRD_PARTY_ACCOUNT_BIND_SUCCESS: 'Third-party account bound successfully',
+    THIRD_PARTY_ACCOUNT_BIND_FAILED: 'Failed to bind third-party account',
+    THIRD_PARTY_ACCOUNT_UNBIND_SUCCESS: 'Third-party account unbound successfully',
+    THIRD_PARTY_ACCOUNT_UNBIND_FAILED: 'Failed to unbind third-party account',
+    THIRD_PARTY_ACCOUNT_EXISTS: 'Third-party account already exists',
+    THIRD_PARTY_TOKEN_INVALID: 'Invalid third-party token',
+    THIRD_PARTY_USER_INFO_FAILED: 'Failed to get third-party user information',
+    APPLE_AUTH_FAILED: 'Apple authentication failed',
+    GOOGLE_AUTH_FAILED: 'Google authentication failed',
+    FACEBOOK_AUTH_FAILED: 'Facebook authentication failed',
+    ACCOUNT_BINDING_REQUIRED: 'Account binding required',
+    PROVIDER_REQUIRED: 'Provider is required',
+    PROVIDER_USER_ID_REQUIRED: 'Provider user ID is required'
   },
   
   // 购物车相关

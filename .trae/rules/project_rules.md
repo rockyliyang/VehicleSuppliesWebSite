@@ -8,7 +8,7 @@ alwaysApply: true
 ## 项目概览
 
 ### 技术栈
-系统使用 vue 做前端，nodejs 做后端，mysql 做 DB。
+系统使用 vue 做前端，nodejs 做后端，postgresql 做 DB。
 - 前端目录: frontend
 - 后端目录: backend
 - DB 目录: db, db 下的main 目录存放主要的脚本, patch 下面存放做数据fix 的脚步

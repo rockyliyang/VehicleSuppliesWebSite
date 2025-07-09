@@ -171,7 +171,7 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
       const unreadCount = await query(
         `SELECT COUNT(*) as unread 
          FROM inquiry_messages 
-         WHERE inquiry_id = $1 AND deleted = false AND is_read = false 
+         WHERE inquiry_id = $1 AND deleted = false AND is_read = 0 
          AND sender_type != $2 AND sender_id != $3`,
         [inquiryId, userRole === 'admin' ? 'admin' : 'user', userId]
       );
@@ -343,7 +343,7 @@ router.put('/:inquiryId/messages/mark-read', verifyToken, async (req, res) => {
       const placeholders = messageIds.map((_, index) => `$${index + 3}`).join(',');
       updateQuery = `
         UPDATE inquiry_messages 
-        SET is_read = true, updated_by = $1, updated_at = NOW() 
+        SET is_read = 1, updated_by = $1, updated_at = NOW() 
         WHERE inquiry_id = $2 AND id IN (${placeholders}) AND deleted = false
       `;
       queryParams = [userId, inquiryId, ...messageIds];
@@ -351,8 +351,8 @@ router.put('/:inquiryId/messages/mark-read', verifyToken, async (req, res) => {
       // 标记所有未读消息为已读（排除自己发送的消息）
       updateQuery = `
         UPDATE inquiry_messages 
-        SET is_read = true, updated_by = $1, updated_at = NOW() 
-        WHERE inquiry_id = $2 AND sender_id != $3 AND is_read = false AND deleted = false
+        SET is_read = 1, updated_by = $1, updated_at = NOW() 
+        WHERE inquiry_id = $2 AND sender_id != $3 AND is_read = 0 AND deleted = false
       `;
       queryParams = [userId, inquiryId, userId];
     }
