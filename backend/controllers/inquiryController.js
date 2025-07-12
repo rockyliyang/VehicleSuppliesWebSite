@@ -52,11 +52,37 @@ exports.getUserInquiries = async (req, res) => {
     const countResult = await query(countQuery, queryParams.slice(0, -2));
     const total = countResult.getFirstRow().total;
     
+    // 为每个询价单查询商品预览图片（最多5张）
+    const inquiriesWithItems = [];
+    for (const inquiry of inquiries.getRows()) {
+      const itemsQuery = `
+        SELECT 
+          ii.id,
+          ii.product_id,
+          ii.quantity,
+          ii.unit_price,
+          p.name as product_name,
+          (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
+        FROM inquiry_items ii
+        JOIN products p ON ii.product_id = p.id
+        WHERE ii.inquiry_id = $1 AND ii.deleted = false
+        ORDER BY ii.created_at ASC
+        LIMIT 5
+      `;
+      
+      const items = await query(itemsQuery, [inquiry.id]);
+      
+      inquiriesWithItems.push({
+        ...inquiry,
+        items: items.getRows()
+      });
+    }
+    
     return res.json({
       success: true,
       message: getMessage('INQUIRY.FETCH.SUCCESS'),
       data: {
-        inquiries: inquiries.getRows(),
+        inquiries: inquiriesWithItems,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),

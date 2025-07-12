@@ -58,7 +58,7 @@ function getAlipayClient() {
 }
 
 // 统一订单初始化
-async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client) {
+async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client, orderSource = 'cart', inquiryId = null) {
   let totalAmount = 0;
   for (const item of cartItems) totalAmount += item.price * item.quantity;
   const orderResult = await client.query(
@@ -94,10 +94,21 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client)
       `UPDATE products SET stock = stock - $1, updated_by = $2 WHERE id = $3 AND deleted = false`,
       [item.quantity, userId, item.product_id]
     );
-    await client.query(
-      `UPDATE cart_items SET deleted = true, updated_by = $1 WHERE user_id = $2 AND deleted = false and product_id = $3`,
-      [userId, userId, item.product_id]
-    );
+    
+    // 根据订单来源执行不同的操作
+    if (orderSource === 'cart') {
+      // 从购物车生成订单：删除购物车中对应的商品
+      await client.query(
+        `UPDATE cart_items SET deleted = true, updated_by = $1 WHERE user_id = $2 AND deleted = false and product_id = $3`,
+        [userId, userId, item.product_id]
+      );
+    } else if (orderSource === 'inquiry' && inquiryId) {
+      // 从询价单生成订单：将询价单状态设置为paid
+      await client.query(
+        `UPDATE inquiries SET status = 'paid', updated_by = $1 WHERE id = $2 AND user_id = $3`,
+        [userId, inquiryId, userId]
+      );
+    }
   }
   return { orderId, orderGuid, totalAmount };
 }
@@ -105,14 +116,17 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client)
 // PayPal订单创建
 exports.createPayPalOrder = async (req, res) => {
   try {
-    const { shippingInfo, orderItems } = req.body;
+    const { shippingInfo, orderItems, orderSource, inquiryId } = req.body;
     const userId = req.userId;
     const connection = await getConnection();
     await connection.beginTransaction();
     try {
       let cartItems;
+      let source = orderSource || 'cart'; // 默认为购物车订单
+      
       if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
         cartItems = orderItems;
+        source = 'inquiry';
       } else {
         const dbCartItems = await connection.query(
           `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
@@ -122,13 +136,16 @@ exports.createPayPalOrder = async (req, res) => {
           [userId]
         );
         cartItems = dbCartItems.getRows();
+        source = 'cart';
       }
+      
       if (!cartItems || cartItems.length === 0) {
         await connection.rollback();
         connection.release();
         return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
-      const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, 'paypal', connection);
+      
+      const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, 'paypal', connection, source, inquiryId);
       const paypalClient = getPayPalClient();
       const ordersController = new OrdersController(paypalClient);
       const request = {
@@ -274,7 +291,7 @@ exports.repayPayPalOrder = async (req, res) => {
 // 创建普通订单（微信/支付宝）
 exports.createCommonOrder = async (req, res) => {
   try {
-    const { shippingInfo, paymentMethod, orderItems } = req.body;
+    const { shippingInfo, paymentMethod, orderItems, orderSource, inquiryId } = req.body;
     const userId = req.userId;
     if (!['wechat', 'alipay'].includes(paymentMethod)) {
       return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_METHOD'), data: null });
@@ -283,8 +300,11 @@ exports.createCommonOrder = async (req, res) => {
     await connection.beginTransaction();
     try {
       let cartItems;
+      let source = orderSource || 'cart'; // 默认为购物车订单
+      
       if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
         cartItems = orderItems;
+        source = 'inquiry';
       } else {
         const dbCartItems = await connection.query(
           `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
@@ -294,23 +314,18 @@ exports.createCommonOrder = async (req, res) => {
           [userId]
         );
         cartItems = dbCartItems.getRows();
+        source = 'cart';
       }
+      
       if (!cartItems || cartItems.length === 0) {
         await connection.rollback();
         connection.release();
         return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
-      const { orderId } = await initOrder(userId, cartItems, shippingInfo, paymentMethod, connection);
+      
+      const { orderId } = await initOrder(userId, cartItems, shippingInfo, paymentMethod, connection, source, inquiryId);
       await connection.commit();
       connection.release();
-      
-      // 如果是从购物车创建的订单，清空购物车
-      if (!orderItems || orderItems.length === 0) {
-        const clearCartResult = await query(
-          `UPDATE cart_items SET deleted = true, updated_by = $1 WHERE user_id = $2 AND deleted = false`,
-          [userId, userId]
-        );
-      }
       
       return res.json({ success: true, message: getMessage('PAYMENT.ORDER_CREATE_SUCCESS'), data: { orderId } });
     } catch (error) {

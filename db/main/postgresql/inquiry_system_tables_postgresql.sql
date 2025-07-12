@@ -36,7 +36,7 @@ CREATE TRIGGER update_inquiries_updated_at BEFORE UPDATE ON inquiries
 -- 添加检查约束
 ALTER TABLE inquiries 
     ADD CONSTRAINT chk_inquiry_status
-    CHECK (status IN ('inquiried',  'approved', 'rejected'));
+    CHECK (status IN ('inquiried',  'approved', 'rejected', 'paid'));
 
 -- 创建索引
 CREATE INDEX idx_inquiries_guid ON inquiries(guid);

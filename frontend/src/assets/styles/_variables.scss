@@ -91,6 +91,7 @@ $line-height-normal: 1.5;
 $line-height-relaxed: 1.75;
 
 // 圆角 (紧凑模式 - 80%缩放)
+$border-radius-xs: 2px;  // 3px * 0.8
 $border-radius-sm: 3px;  // 4px * 0.8
 $border-radius-md: 6px;  // 8px * 0.8
 $border-radius-lg: 10px; // 12px * 0.8

@@ -244,6 +244,8 @@ export default {
       isOrderDetail: false, // 是否为订单详情模式
       orderData: null, // 订单详情数据
       isOrderPaid: false, // 订单是否已支付
+      orderSource: 'cart', // 订单来源：'cart' 或 'inquiry'
+      inquiryId: null, // 询价单ID（当orderSource为'inquiry'时使用）
       shippingRules: {
         name: [
           { required: true, message: this.$t('checkout.nameRequired') || '请输入收货人姓名', trigger: 'blur' },
@@ -333,6 +335,20 @@ export default {
         try {
           this.orderItems = JSON.parse(selectedItemsStr);
           this.calculateTotal();
+          
+          // 检查是否来自询价单（通过检查商品数据结构或特殊标识）
+          // 如果商品有inquiry相关字段或者URL中有inquiry参数，则认为是询价单订单
+          const inquiryIdFromUrl = this.$route.query.inquiryId;
+          const isFromInquiry = inquiryIdFromUrl || this.orderItems.some(item => item.inquiry_id);
+          
+          if (isFromInquiry) {
+            this.orderSource = 'inquiry';
+            this.inquiryId = inquiryIdFromUrl || this.orderItems[0]?.inquiry_id;
+          } else {
+            this.orderSource = 'cart';
+            this.inquiryId = null;
+          }
+          
           // 使用后清除sessionStorage中的数据
           sessionStorage.removeItem('selectedCartItems');
           return;
@@ -522,7 +538,7 @@ export default {
               });
             } else {
               // 新订单，调用创建订单接口
-              response = await this.$api.postWithErrorHandler('/payment/paypal/create', {
+              const requestData = {
                 shippingInfo: {
                   name: this.shippingInfo.name,
                   phone: this.shippingInfo.phone,
@@ -537,7 +553,15 @@ export default {
                   quantity: item.quantity,
                   price: item.price
                 }))
-              });
+              };
+              
+              // 如果是询价单订单，添加orderSource和inquiryId参数
+              if (this.orderSource === 'inquiry' && this.inquiryId) {
+                requestData.orderSource = this.orderSource;
+                requestData.inquiryId = this.inquiryId;
+              }
+              
+              response = await this.$api.postWithErrorHandler('/payment/paypal/create', requestData);
             }
             
             if (response.success) {
@@ -607,7 +631,7 @@ export default {
         
         // 如果不是订单详情页面，需要先创建订单
         if (!this.isOrderDetail) {
-          const orderRes = await this.$api.postWithErrorHandler('/payment/common/create', {
+          const requestData = {
             shippingInfo: {
               name: this.shippingInfo.name,
               phone: this.shippingInfo.phone,
@@ -623,7 +647,15 @@ export default {
               quantity: item.quantity,
               price: item.price
             }))
-          });
+          };
+          
+          // 如果是询价单订单，添加orderSource和inquiryId参数
+          if (this.orderSource === 'inquiry' && this.inquiryId) {
+            requestData.orderSource = this.orderSource;
+            requestData.inquiryId = this.inquiryId;
+          }
+          
+          const orderRes = await this.$api.postWithErrorHandler('/payment/common/create', requestData);
           
           if (!orderRes.success) {
             this.$messageHandler.showError('创建订单失败: ' + orderRes.message, 'checkout.error.createOrderFailed');
