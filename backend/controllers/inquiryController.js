@@ -535,3 +535,86 @@ exports.deleteInquiry = async (req, res) => {
     });
   }
 };
+
+// 查找包含特定商品的询价单
+exports.findInquiryByProduct = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { productId } = req.params;
+    
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.INVALID_ID')
+      });
+    }
+    
+    // 查找包含指定商品且只有这一个商品的询价单
+    const queryStr = `
+      SELECT 
+        i.id,
+        i.guid,
+        i.user_inquiry_id,
+        i.title,
+        i.status,
+        i.created_at,
+        i.updated_at,
+        COUNT(ii.id) as item_count
+      FROM inquiries i
+      INNER JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = false
+      WHERE i.user_id = $1 
+        AND i.deleted = false 
+        AND i.status = 'inquiried'
+        AND ii.product_id = $2
+      GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.created_at, i.updated_at
+      HAVING COUNT(ii.id) = 1
+      ORDER BY i.created_at DESC
+      LIMIT 1
+    `;
+    
+    const result = await query(queryStr, [userId, productId]);
+    
+    if (result && result.getRowCount() > 0) {
+      const inquiry = result.getFirstRow();
+      
+      // 获取商品详情
+      const itemQuery = `
+        SELECT 
+          ii.id,
+          ii.product_id,
+          ii.quantity,
+          ii.unit_price,
+          p.name as product_name,
+          p.product_code,
+          p.price as original_price,
+          (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
+        FROM inquiry_items ii
+        JOIN products p ON ii.product_id = p.id
+        WHERE ii.inquiry_id = $1 AND ii.deleted = false
+      `;
+      
+      const items = await query(itemQuery, [inquiry.id]);
+      
+      return res.json({
+        success: true,
+        message: getMessage('INQUIRY.FETCH.SUCCESS'),
+        data: {
+          inquiry,
+          items: items.getRows()
+        }
+      });
+    } else {
+      return res.json({
+        success: true,
+        message: 'No matching inquiry found',
+        data: null
+      });
+    }
+  } catch (error) {
+    console.error('查找包含特定商品的询价单失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('INQUIRY.FETCH.FAILED')
+    });
+  }
+};

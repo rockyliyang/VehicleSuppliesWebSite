@@ -13,15 +13,16 @@
             <div class="main-image" ref="mainImage" @mousemove="handleMouseMove" @mouseenter="showZoom = true"
               @mouseleave="showZoom = false">
               <!-- 显示视频或图片 -->
-              <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted
-                ref="mainVideoEl" class="main-video" @loadedmetadata="updateMainImgSize">
+              <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted ref="mainVideoEl"
+                class="main-video" @loadedmetadata="updateMainImgSize">
                 您的浏览器不支持视频播放。
               </video>
               <img v-else :src="activeImage || product.thumbnail_url" :alt="product.name" @error="handleImageError"
                 ref="mainImgEl" @load="updateMainImgSize">
               <div v-if="showZoom && !isActiveMediaVideo" class="zoom-lens" :style="zoomLensStyle"></div>
             </div>
-            <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0 && !isActiveMediaVideo" class="zoom-window" :style="zoomWindowStyle">
+            <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0 && !isActiveMediaVideo" class="zoom-window"
+              :style="zoomWindowStyle">
               <img :src="activeImage || product.thumbnail_url" :style="zoomImgStyle" />
             </div>
             <div class="thumbnail-container">
@@ -43,18 +44,12 @@
                 </div>
               </div>
               <div v-if="showScrollArrows" class="scroll-arrows">
-                <button 
-                  class="scroll-arrow scroll-arrow-left" 
-                  @mouseenter="startScrolling('left')"
-                  @mouseleave="stopScrolling"
-                  :disabled="!canScrollLeft">
+                <button class="scroll-arrow scroll-arrow-left" @mouseenter="startScrolling('left')"
+                  @mouseleave="stopScrolling" :disabled="!canScrollLeft">
                   ‹
                 </button>
-                <button 
-                  class="scroll-arrow scroll-arrow-right" 
-                  @mouseenter="startScrolling('right')"
-                  @mouseleave="stopScrolling"
-                  :disabled="!canScrollRight">
+                <button class="scroll-arrow scroll-arrow-right" @mouseenter="startScrolling('right')"
+                  @mouseleave="stopScrolling" :disabled="!canScrollRight">
                   ›
                 </button>
               </div>
@@ -90,7 +85,8 @@
                   <span v-if="!addingToCart">{{ $t('buttons.addToCart') }}</span>
                   <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
                 </el-button>
-                <el-button class="inquiry-button" @click="addToInquiry" :disabled="product.stock <= 0">{{ $t('buttons.addToInquiry') }}</el-button>
+                <el-button class="inquiry-button" @click="createInquiry" :disabled="product.stock <= 0">{{
+                  $t('buttons.inquiry') || 'Inquiry' }}</el-button>
               </div>
             </div>
             <div class="product-share">
@@ -135,6 +131,33 @@
       </div>
 
     </div>
+
+    <!-- 询价浮动窗口 -->
+    <div v-if="showInquiryDialog" class="inquiry-floating-window" :class="{ 'show': showInquiryDialog }">
+      <div class="inquiry-window-content">
+        <div class="inquiry-window-header">
+          <h4 class="header-title">{{ $t('cart.salesCommunication') || 'Sales Communication' }}</h4>
+          <div class="header-buttons">
+            <button class="expand-btn" @click="expandInquiryDialog" title="放大窗口">
+              <el-icon>
+                <FullScreen />
+              </el-icon>
+            </button>
+            <button class="close-btn" @click="closeInquiryDialog" title="关闭窗口">
+              <el-icon>
+                <Close />
+              </el-icon>
+            </button>
+          </div>
+        </div>
+        <div class="inquiry-window-body">
+          <!-- 沟通组件 -->
+          <CommunicationSection :messages="inquiryMessages" :inquiry-id="currentInquiryId" :items-count="1"
+            :status="inquiryStatus" :initial-message="initialInquiryMessage" @send-message="handleSendInquiryMessage"
+            @update-message="handleUpdateInquiryMessage" @checkout="handleInquiryCheckout" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -145,12 +168,17 @@ import { formatPrice } from '../utils/format';
 import { addToCart } from '../utils/cartUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
+import CommunicationSection from '@/components/common/CommunicationSection.vue';
+import { FullScreen, Close } from '@element-plus/icons-vue';
 
 export default {
   name: 'ProductDetail',
   components: {
     PageBanner,
-    NavigationMenu
+    NavigationMenu,
+    CommunicationSection,
+    FullScreen,
+    Close
   },
   data() {
     return {
@@ -197,6 +225,12 @@ export default {
       canScrollLeft: false,
       canScrollRight: false,
       scrollInterval: null,
+      // 询价相关数据
+      showInquiryDialog: false,
+      currentInquiryId: null,
+      inquiryMessages: [],
+      inquiryStatus: 'pending',
+      initialInquiryMessage: ''
     }
   },
   computed: {
@@ -323,6 +357,9 @@ export default {
     this.fetchProduct()
   },
   mounted() {
+    // 确保页面从顶部开始显示
+    window.scrollTo(0, 0);
+    
     this.updateMainImgSize();
     window.addEventListener('resize', this.updateMainImgSize);
     this.$nextTick(() => {
@@ -382,11 +419,57 @@ export default {
         this.$messageHandler.showError(error, 'product.error.fetchRelatedFailed')
       }
     },
-    addToInquiry() {
-      // 在这里添加添加到询价的逻辑      
-      this.$messageHandler.showSuccess(this.$t('messages.addToInquirySuccess', { quantity: this.quantity, name: this.product.name }), 'product.success.addToInquirySuccess')
-        // 触发购物车更新事件
-        this.$bus.emit('cart-updated')
+    async createInquiry() {
+      try {
+        // 第一步：查找是否存在只包含当前商品的询价单
+        const findResponse = await this.$api.get(`/inquiries/product/${this.product.id}`);
+        
+        console.log('查询现有询价单响应:', findResponse.data);
+        
+        if (findResponse.success && findResponse.data && findResponse.data.inquiry) {
+          // 找到现有询价单，直接使用
+          const existingInquiry = findResponse.data.inquiry;
+          this.currentInquiryId = existingInquiry.id;
+          
+          // 加载现有消息
+          await this.loadInquiryMessages();
+          
+          // 清空初始消息，不显示默认信息
+          this.initialInquiryMessage = '';
+          
+          // 显示浮动窗口
+          this.showInquiryDialog = true;
+          
+          this.$messageHandler.showSuccess('已打开现有询价单', 'product.success.inquiryOpened');
+        } else {
+          // 没有找到现有询价单，创建新的
+          const titlePrefix = this.$t('cart.inquiryTitlePrefix') || '询价单';
+          const createInquiryResponse = await this.$api.post('/inquiries', {
+            titlePrefix: titlePrefix
+          });
+          
+          this.currentInquiryId = createInquiryResponse.data.id;
+          
+          // 添加商品到询价单
+          await this.$api.post(`/inquiries/${this.currentInquiryId}/items`, {
+            productId: this.product.id,
+            quantity: this.quantity || 1,
+            unitPrice: this.product.price
+          });
+          
+          // 清空初始消息，不显示默认信息
+          this.initialInquiryMessage = '';
+          this.inquiryMessages = [];
+          
+          // 显示浮动窗口
+          this.showInquiryDialog = true;
+          
+          this.$messageHandler.showSuccess(this.$t('messages.inquiryCreated') || '询价单创建成功', 'product.success.inquiryCreated');
+        }
+      } catch (error) {
+        console.error('创建询价单失败:', error);
+        this.$messageHandler.showError(error, 'product.error.createInquiryFailed');
+      }
     },
     contactUs() {
       this.$router.push('/contact');
@@ -560,6 +643,87 @@ export default {
         this.scrollInterval = null;
       }
     },
+    // 关闭询价对话框
+    closeInquiryDialog() {
+      this.showInquiryDialog = false;
+      // 清理数据
+      this.currentInquiryId = null;
+      this.inquiryMessages = [];
+      this.inquiryStatus = 'pending';
+      this.initialInquiryMessage = '';
+    },
+    // 处理发送询价消息
+    async handleSendInquiryMessage(inquiryId, message) {
+      try {
+        const messageData = {
+          inquiry_id: inquiryId,
+          content: message,
+          sender: 'user'
+        };
+        
+        const response = await this.$api.post(`inquiries/${inquiryId}/messages`, messageData);
+        
+        // 添加消息到本地列表
+        this.inquiryMessages.push({
+          id: response.data.id,
+          content: message,
+          sender: this.$store.getters.user?.name || '用户',
+          timestamp: new Date().toISOString(),
+          isUser: true
+        });
+        
+        this.$messageHandler.showSuccess(this.$t('messages.messageSent') || '消息发送成功', 'inquiry.success.messageSent');
+      } catch (error) {
+        console.error('发送消息失败:', error);
+        this.$messageHandler.showError(error, 'inquiry.error.sendMessageFailed');
+      }
+    },
+    // 处理更新询价消息
+    handleUpdateInquiryMessage(inquiryId, message) {
+      // 实时更新消息内容（可用于草稿保存等功能）
+      console.log('Message updated:', inquiryId, message);
+    },
+    // 处理询价结账
+    async handleInquiryCheckout(inquiryId) {
+      try {
+        await this.$api.post(`inquiries/${inquiryId}/checkout`);
+        this.inquiryStatus = 'Checkouted';
+        this.$messageHandler.showSuccess(this.$t('messages.checkoutSuccess') || '结账成功', 'inquiry.success.checkout');
+        
+        // 可以选择关闭对话框或跳转到订单页面
+        setTimeout(() => {
+          this.closeInquiryDialog();
+        }, 2000);
+      } catch (error) {
+        console.error('结账失败:', error);
+        this.$messageHandler.showError(error, 'inquiry.error.checkoutFailed');
+      }
+    },
+    // 加载询价消息
+    async loadInquiryMessages() {
+      try {
+        const response = await this.$api.get(`/inquiries/${this.currentInquiryId}`);
+        if (response.data && response.data.data) {
+          const messages = response.data.data.messages || [];
+          this.inquiryMessages = messages.map(msg => ({
+            id: msg.id,
+            content: msg.message,
+            sender: msg.sender_name || (msg.sender_type === 'user' ? '用户' : '客服'),
+            timestamp: msg.created_at,
+            isUser: msg.sender_type === 'user'
+          }));
+          this.inquiryStatus = response.data.data.inquiry.status || 'pending';
+        }
+      } catch (error) {
+        console.error('加载询价消息失败:', error);
+        this.inquiryMessages = [];
+      }
+    },
+    // 放大询价窗口（预留功能）
+    expandInquiryDialog() {
+      // 预留放大功能，暂时显示提示
+      this.$messageHandler.showInfo('放大功能正在开发中', 'inquiry.info.expandFeature');
+    }
   }
 }
 </script>
@@ -594,6 +758,112 @@ export default {
   background-image: url('@/assets/images/banner1.jpg');
   background-size: cover;
   background-position: center;
+}
+
+/* 询价浮动窗口样式 */
+.inquiry-floating-window {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 380px;
+  height: 500px;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 9999;
+  transform: translateY(100%) scale(0.8);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  border: 1px solid $border-light;
+
+  &.show {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.inquiry-window-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.inquiry-window-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+  border-bottom: $border-width-sm solid $border-light;
+  background: $gray-50;
+  min-height: 50px;
+
+  .header-title {
+    margin: 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+  }
+
+  .header-buttons {
+    display: flex;
+    gap: $spacing-xs;
+
+    .expand-btn,
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: $font-size-lg;
+      color: $text-secondary;
+      cursor: pointer;
+      padding: $spacing-xs;
+      border-radius: $border-radius-sm;
+      transition: all 0.2s ease;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: $gray-200;
+        color: $text-primary;
+      }
+    }
+  }
+}
+
+.inquiry-window-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .inquiry-floating-window {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    height: 400px;
+
+    &.show {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .inquiry-window-header {
+    padding: $spacing-md;
+
+    h3 {
+      font-size: $font-size-lg;
+    }
+  }
 }
 
 
@@ -724,7 +994,8 @@ export default {
 }
 
 .play-icon i {
-  margin-left: 2px; /* 调整播放图标位置 */
+  margin-left: 2px;
+  /* 调整播放图标位置 */
 }
 
 .thumbnail-container {
@@ -735,11 +1006,14 @@ export default {
 .thumbnail-scroll-wrapper {
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+
   &::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
+    /* Chrome, Safari and Opera */
   }
 }
 
@@ -758,7 +1032,8 @@ export default {
   border-radius: $border-radius-sm;
   display: flex;
   align-items: center;
-  flex-shrink: 0; /* 防止缩略图被压缩 */
+  flex-shrink: 0;
+  /* 防止缩略图被压缩 */
   justify-content: center;
   cursor: pointer;
   transition: $transition-base;
@@ -810,12 +1085,12 @@ export default {
   pointer-events: auto;
   font-size: 18px;
   font-weight: bold;
-  
+
   &:hover:not(:disabled) {
     background: rgba(0, 0, 0, 0.7);
     transform: scale(1.1);
   }
-  
+
   &:disabled {
     opacity: 0.3;
     cursor: not-allowed;
