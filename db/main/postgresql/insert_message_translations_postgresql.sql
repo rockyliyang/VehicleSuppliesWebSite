@@ -18,6 +18,11 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'SERVER.INTERNAL_ERROR', 'en', 'Internal server error'),
 (gen_random_uuid(), 'SERVER.INTERNAL_ERROR', 'zh-CN', '服务器内部错误');
 
+-- FLOATING_ACTION_BAR相关 - 新增
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.WHATSAPP_MESSAGE', 'en', 'Hello, I need to inquire about product information'),
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.WHATSAPP_MESSAGE', 'zh-CN', '您好，我需要咨询产品信息');
+
 -- USER相关
 INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'USER.EMAIL_PASSWORD_REQUIRED', 'en', 'Email and password are required'),
@@ -209,6 +214,24 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'ADMIN.CONTACT.ERROR.ASSIGNFAILED', 'zh-CN', '分配消息失败'),
 (gen_random_uuid(), 'ADMIN.CONTACT.ERROR.STATUSCHANGEFAILED', 'en', 'Failed to change message status'),
 (gen_random_uuid(), 'ADMIN.CONTACT.ERROR.STATUSCHANGEFAILED', 'zh-CN', '更改消息状态失败'),
+
+-- PRODUCT DETAIL BUTTONS相关
+(gen_random_uuid(), 'buttons.chat', 'en', 'Chat'),
+(gen_random_uuid(), 'buttons.chat', 'zh-CN', '聊天'),
+(gen_random_uuid(), 'buttons.message', 'en', 'Message'),
+(gen_random_uuid(), 'buttons.message', 'zh-CN', '消息'),
+(gen_random_uuid(), 'productDetail.emailDialog.title', 'en', 'Send Email Inquiry'),
+(gen_random_uuid(), 'productDetail.emailDialog.title', 'zh-CN', '发送邮件询价'),
+(gen_random_uuid(), 'productDetail.emailDialog.productInfo', 'en', 'Product Information'),
+(gen_random_uuid(), 'productDetail.emailDialog.productInfo', 'zh-CN', '产品信息'),
+(gen_random_uuid(), 'productDetail.emailDialog.send', 'en', 'Send Email'),
+(gen_random_uuid(), 'productDetail.emailDialog.send', 'zh-CN', '发送邮件'),
+(gen_random_uuid(), 'productDetail.emailDialog.sending', 'en', 'Sending...'),
+(gen_random_uuid(), 'productDetail.emailDialog.sending', 'zh-CN', '发送中...'),
+(gen_random_uuid(), 'productDetail.emailDialog.success', 'en', 'Email sent successfully'),
+(gen_random_uuid(), 'productDetail.emailDialog.success', 'zh-CN', '邮件发送成功'),
+(gen_random_uuid(), 'productDetail.emailDialog.failed', 'en', 'Failed to send email'),
+(gen_random_uuid(), 'productDetail.emailDialog.failed', 'zh-CN', '邮件发送失败'),
 
 -- USER_MANAGEMENT相关
 (gen_random_uuid(), 'USER_MANAGEMENT.REQUIRED_FIELDS_MISSING', 'en', 'Required fields are missing'),

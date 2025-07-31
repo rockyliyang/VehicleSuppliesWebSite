@@ -36,8 +36,11 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item v-if="isLoggedIn" command="settings">{{ $t('userSettings.title') || '账号设置' }}</el-dropdown-item>
+              <el-dropdown-item v-if="isLoggedIn" command="settings">{{ $t('userSettings.title') || '账号设置'
+                }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="orders">{{ $t('orders') }}</el-dropdown-item>
+              <el-dropdown-item v-if="isLoggedIn" command="inquiries">{{ $t('inquiry.management.title') || '询价单管理'
+                }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="logout">{{ $t('logout') }}</el-dropdown-item>
               <el-dropdown-item v-if="!isLoggedIn" command="login">{{ $t('login') }}</el-dropdown-item>
             </el-dropdown-menu>
@@ -313,6 +316,8 @@ export default {
         this.$router.push('/user/settings');
       } else if (command === 'orders') {
         this.$router.push('/user/orders');
+      } else if (command === 'inquiries') {
+        this.$router.push('/inquiry-management');
       } else if (command === 'logout') {
         this.handleLogout();
       } else if (command === 'login') {

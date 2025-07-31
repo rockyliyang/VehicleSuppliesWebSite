@@ -3,18 +3,22 @@
     <SiteHeader v-if="!isAdminRoute " />
     <router-view />
     <SiteFooter v-if="!isAdminRoute " />
+    <!-- 浮动功能栏 - 在非管理员页面显示 -->
+    <FloatingActionBar v-if="!isAdminRoute" />
   </div>
 </template>
 
 <script>
 import SiteHeader from './components/common/Header.vue'
 import SiteFooter from './components/common/Footer.vue'
+import FloatingActionBar from './components/common/FloatingActionBar.vue'
 
 export default {
   name: 'App',
   components: {
     SiteHeader,
-    SiteFooter
+    SiteFooter,
+    FloatingActionBar
   },
   computed: {
     isAdminRoute() {

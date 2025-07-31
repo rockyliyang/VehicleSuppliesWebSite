@@ -1,13 +1,18 @@
 <template>
   <div class="login-card">
     <div class="login-header">
-      <img :src="logoUrl" alt="AUTO EASE EXPERT CO., LTD" class="logo">
-      <h2 class="login-title">
-        {{ $t('login.welcome') || '欢迎回来' }}
-      </h2>
-      <p class="login-subtitle">
-        {{ $t('login.subtitle') || '请登录您的账户' }}
-      </p>
+      <div class="header-content">
+        <img :src="logoUrl" alt="AUTO EASE EXPERT CO., LTD" class="logo">
+        <h2 class="login-title">
+          {{ $t('login.welcome') || '欢迎回来' }}
+        </h2>
+        <p class="login-subtitle">
+          {{ $t('login.subtitle') || '请登录您的账户' }}
+        </p>
+      </div>
+      <button v-if="showCloseButton" @click="closeDialog" class="close-button">
+        <el-icon><Close /></el-icon>
+      </button>
     </div>
 
     <el-tabs v-model="activeTab" class="login-tabs">
@@ -110,7 +115,7 @@
 /* global google */
 // 使用全局注册的$api替代axios
 import { ElMessage } from 'element-plus'
-import { User, Lock, PhoneFilled, Message } from '@element-plus/icons-vue'
+import { User, Lock, PhoneFilled, Message, Close } from '@element-plus/icons-vue'
 import FormInput from '@/components/common/FormInput.vue'
 import AppleIcon from '@/components/icons/AppleIcon.vue'
 import GoogleIcon from '@/components/icons/GoogleIcon.vue'
@@ -125,6 +130,16 @@ export default {
     GoogleIcon,
     FacebookIcon
   },
+  props: {
+    showCloseButton: {
+      type: Boolean,
+      default: false
+    },
+    autoRedirect: {
+      type: Boolean,
+      default: false
+    }
+  },
   data() {
     return {
       activeTab: 'account',
@@ -133,6 +148,7 @@ export default {
       Lock,
       PhoneFilled,
       Message,
+      Close,
       loginForm: {
         username: '',
         password: ''
@@ -233,6 +249,9 @@ export default {
     this.initThirdPartySDKs();
   },
   methods: {
+    closeDialog() {
+      this.$emit('close')
+    },
     async fetchCompanyLogo() {
       try {
         const res = await this.$api.get('company');
@@ -295,7 +314,11 @@ export default {
             this.$messageHandler.showSuccess(response.message || this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
             // Header组件已经启动了全局token检查，这里不需要重复启动
             this.$emit('login-success', { user })
-            this.$router.push(this.$route.query.redirect || '/')
+            
+            // 根据autoRedirect属性决定是否进行页面跳转
+            if (this.autoRedirect) {
+              this.$router.push(this.$route.query.redirect || '/')
+            }
           } catch (error) {
             this.$messageHandler.showError(error, 'login.error.loginFailed')
           } finally {
@@ -320,7 +343,11 @@ export default {
             this.loading = false
             this.$messageHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
             this.$emit('login-success', { user: null }) // 手机登录暂时传递空用户数据
-            this.$router.push('/')
+            
+            // 根据autoRedirect属性决定是否进行页面跳转
+            if (this.autoRedirect) {
+              this.$router.push('/')
+            }
           }, 1500)
         } else {
           console.log('手机登录表单验证失败:', fields)
@@ -454,7 +481,11 @@ export default {
       this.$store.commit('setUser', data.user);
       this.$messageHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess');
       this.$emit('login-success', data);
-      this.$router.push(this.$route.query.redirect || '/');
+      
+      // 根据autoRedirect属性决定是否进行页面跳转
+      if (this.autoRedirect) {
+        this.$router.push(this.$route.query.redirect || '/');
+      }
     },
     
     handleLoginError(error, provider) {
@@ -490,8 +521,32 @@ export default {
 }
 
 .login-header {
+  position: relative;
   text-align: center;
-  margin-bottom: $spacing-lg;
+  margin-bottom: $spacing-xl;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.close-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: #666;
+    background-color: #f5f5f5;
+  }
 }
 
 .logo {

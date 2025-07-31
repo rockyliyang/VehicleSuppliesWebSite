@@ -204,7 +204,12 @@ const routes = [
     component: () => import('../views/UnifiedCheckout.vue'),
     meta: { requiresAuth: true }
   },
-  
+  {
+    path: '/inquiry-management',
+    name: 'InquiryManagement',
+    component: () => import('../views/InquiryManagement.vue'),
+    meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({

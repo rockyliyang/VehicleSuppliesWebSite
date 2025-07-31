@@ -85,8 +85,10 @@
                   <span v-if="!addingToCart">{{ $t('buttons.addToCart') }}</span>
                   <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
                 </el-button>
-                <el-button class="inquiry-button" @click="createInquiry" :disabled="product.stock <= 0">{{
-                  $t('buttons.inquiry') || 'Inquiry' }}</el-button>
+                <el-button class="chat-button" @click="createInquiry" :disabled="product.stock <= 0">{{
+                  $t('buttons.chat') || 'Chat' }}</el-button>
+                <el-button class="email-button" @click="openEmailDialog" :disabled="product.stock <= 0">{{
+                  $t('buttons.message') || 'Message' }}</el-button>
               </div>
             </div>
             <div class="product-share">
@@ -158,6 +160,81 @@
         </div>
       </div>
     </div>
+
+    <!-- 邮件对话框 -->
+    <el-dialog v-model="showEmailDialog" :title="$t('productDetail.emailDialog.title')" width="600px" center>
+      <div class="email-dialog-content">
+        <!-- 显示当前用户信息（如果已登录） -->
+        <div v-if="isLoggedIn" class="user-info">
+          <el-tag type="info">{{ $t('contact.currentUser') }}: {{ userInfo.username }} ({{ userInfo.email }})</el-tag>
+        </div>
+
+        <!-- 邮件表单 -->
+        <el-form ref="emailFormRef" :model="emailForm" :rules="emailRules" label-width="0px">
+          <div class="form-row">
+            <div class="form-col">
+              <el-form-item prop="name">
+                <FormInput v-model="emailForm.name" :placeholder="getPlaceholderWithRequired('contact.name')"
+                  :disabled="isLoggedIn" maxlength="50" show-word-limit />
+              </el-form-item>
+            </div>
+            <div class="form-col">
+              <el-form-item prop="email">
+                <FormInput v-model="emailForm.email" :placeholder="getPlaceholderWithRequired('contact.email')"
+                  :disabled="isLoggedIn" maxlength="100" />
+              </el-form-item>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <el-form-item prop="phone">
+                <FormInput v-model="emailForm.phone" :placeholder="getPlaceholderWithRequired('contact.phone')"
+                  :disabled="isLoggedIn" maxlength="20" />
+              </el-form-item>
+            </div>
+            <div class="form-col">
+              <el-form-item prop="captcha">
+                <div class="captcha-container">
+                  <FormInput v-model="emailForm.captcha" :placeholder="getPlaceholderWithRequired('contact.captcha')"
+                    class="captcha-input" />
+                  <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img" :alt="$t('contact.captcha.alt')"
+                    :title="$t('contact.captcha.refresh')" />
+                </div>
+              </el-form-item>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col-full">
+              <el-form-item prop="subject">
+                <FormInput v-model="emailForm.subject" :placeholder="getPlaceholderWithRequired('contact.subject')"
+                  maxlength="128" show-word-limit />
+              </el-form-item>
+            </div>
+          </div>
+          <el-form-item prop="message">
+            <FormInput v-model="emailForm.message" type="textarea" :rows="6"
+              :placeholder="getPlaceholderWithRequired('contact.message')" maxlength="2000" show-word-limit />
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showEmailDialog = false">{{ $t('buttons.cancel') }}</el-button>
+          <el-button type="primary" @click="submitEmailForm" :loading="isSubmittingEmail">
+            {{ isSubmittingEmail ? $t('productDetail.emailDialog.sending') : $t('productDetail.emailDialog.send') }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 登录对话框 -->
+    <div v-if="loginDialogVisible" class="login-dialog-overlay">
+      <div class="login-dialog-container">
+        <LoginDialog :show-close-button="true" @login-success="handleLoginSuccess"
+          @close="loginDialogVisible = false" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -168,7 +245,9 @@ import { formatPrice } from '../utils/format';
 import { addToCart } from '../utils/cartUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
-import CommunicationSection from '@/components/common/CommunicationSection.vue';
+import CommunicationSection from '../components/common/CommunicationSection.vue'
+import LoginDialog from '../components/common/LoginDialog.vue'
+import FormInput from '@/components/common/FormInput.vue'
 import { FullScreen, Close } from '@element-plus/icons-vue';
 
 export default {
@@ -177,6 +256,8 @@ export default {
     PageBanner,
     NavigationMenu,
     CommunicationSection,
+    LoginDialog,
+    FormInput,
     FullScreen,
     Close
   },
@@ -230,11 +311,57 @@ export default {
       currentInquiryId: null,
       inquiryMessages: [],
       inquiryStatus: 'pending',
-      initialInquiryMessage: ''
+      initialInquiryMessage: '',
+      loginDialogVisible: false,
+      pendingAction: null, // 'inquiry' 或 'addToCart'
+      // 邮件对话框相关数据
+      showEmailDialog: false,
+      isSubmittingEmail: false,
+      captchaUrl: '/api/users/captcha?' + Date.now(),
+      emailForm: {
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+        captcha: ''
+      },
+      emailRules: {
+        name: [
+          { required: true, message: this.$t('contact.name.required'), trigger: 'blur' },
+          { max: 50, message: this.$t('contact.name.tooLong'), trigger: 'blur' }
+        ],
+        email: [
+          { required: true, message: this.$t('contact.email.required'), trigger: 'blur' },
+          { type: 'email', message: this.$t('contact.email.invalid'), trigger: 'blur' },
+          { max: 100, message: this.$t('contact.email.tooLong'), trigger: 'blur' }
+        ],
+        phone: [
+          { required: true, message: this.$t('contact.phone.required'), trigger: 'blur' },
+          { pattern: /^[\d\s\-+()]+$/, message: this.$t('contact.phone.invalid'), trigger: 'blur' },
+          { max: 20, message: this.$t('contact.phone.tooLong'), trigger: 'blur' }
+        ],
+        subject: [
+          { required: true, message: this.$t('contact.subject.required'), trigger: 'blur' },
+          { max: 128, message: this.$t('contact.subject.tooLong'), trigger: 'blur' }
+        ],
+        message: [
+          { required: true, message: this.$t('contact.message.required'), trigger: 'blur' },
+          { max: 2000, message: this.$t('contact.message.tooLong'), trigger: 'blur' }
+        ],
+        captcha: [
+          { required: true, message: this.$t('contact.captcha.required'), trigger: 'blur' }
+        ]
+      }
     }
   },
   computed: {
-
+    isLoggedIn() {
+      return this.$store.getters['auth/isAuthenticated'];
+    },
+    userInfo() {
+      return this.$store.getters['auth/userInfo'] || {};
+    },
     categoryName() {
       if (!this.product.category_id || !this.categories.length) return ''
       const category = this.categories.find(cat => cat.id === this.product.category_id)
@@ -420,6 +547,13 @@ export default {
       }
     },
     async createInquiry() {
+       // 检查用户是否已登录
+       if (!this.$store.getters.isLoggedIn) {
+         this.pendingAction = 'inquiry';
+         this.loginDialogVisible = true;
+         return;
+       }
+
       try {
         // 第一步：查找是否存在只包含当前商品的询价单
         const findResponse = await this.$api.get(`/inquiries/product/${this.product.id}`);
@@ -477,6 +611,13 @@ export default {
     
     async addToCart() {
       if (this.addingToCart) return;
+      
+      // 检查用户是否已登录
+      if (!this.$store.getters.isLoggedIn) {
+        this.pendingAction = 'inquiry';
+        this.loginDialogVisible = true;
+        return;
+      }
       
       this.addingToCart = true;
       
@@ -723,7 +864,124 @@ export default {
     expandInquiryDialog() {
       // 预留放大功能，暂时显示提示
       this.$messageHandler.showInfo('放大功能正在开发中', 'inquiry.info.expandFeature');
-    }
+    },
+    // 邮件对话框相关方法
+    getPlaceholderWithRequired(key) {
+      // 获取字段名（去掉contact.前缀）
+      const fieldName = key.replace('contact.', '');
+      // 检查该字段是否在验证规则中标记为必填
+      const isRequired = this.emailRules[fieldName] && 
+        this.emailRules[fieldName].some(rule => rule.required === true);
+      
+      const fieldText = this.$t(key);
+      return isRequired ? `* ${fieldText}` : fieldText;
+    },
+    openEmailDialog() {
+       // 检查用户是否已登录
+       if (!this.isLoggedIn) {
+         this.pendingAction = 'email';
+         this.loginDialogVisible = true;
+         return;
+       }
+       
+       // 填充用户信息（如果已登录）
+       this.fillEmailUserInfo();
+       
+       // 设置默认主题
+       this.emailForm.subject = this.$t('productDetail.emailDialog.title');
+       
+       // 设置默认消息内容
+       this.emailForm.message = '';
+       
+       this.showEmailDialog = true;
+       this.refreshCaptcha();
+     },
+    fillEmailUserInfo() {
+      if (this.userInfo) {
+        this.emailForm.name = this.userInfo.name || '';
+        this.emailForm.email = this.userInfo.email || '';
+        this.emailForm.phone = this.userInfo.phone || '';
+      }
+    },
+    clearEmailUserInfo() {
+      this.emailForm.name = '';
+      this.emailForm.email = '';
+      this.emailForm.phone = '';
+    },
+    refreshCaptcha() {
+      this.captchaUrl = '/api/users/captcha?' + Date.now();
+      this.emailForm.captcha = ''; // 清空验证码输入框
+    },
+    async submitEmailForm() {
+      this.$refs.emailFormRef.validate(async (valid) => {
+        if (valid) {
+          this.isSubmittingEmail = true;
+          try {
+            const submitData = {
+              name: this.emailForm.name,
+              email: this.emailForm.email,
+              phone: this.emailForm.phone,
+              subject: this.emailForm.subject,
+              message: this.emailForm.message,
+              captcha: this.emailForm.captcha,
+              // 添加产品相关信息
+              productId: this.product.id,
+              productName: this.product.name,
+              productPrice: this.product.price
+            };
+            
+            await this.$api.postWithErrorHandler('contact/messages', submitData);
+            
+            this.$messageHandler.showSuccess(
+              this.$t('productDetail.emailDialog.success'), 
+              'productDetail.emailDialog.success'
+            );
+            
+            // 重置表单，但保留用户信息（如果已登录）
+            this.emailForm.subject = '';
+            this.emailForm.message = '';
+            this.emailForm.captcha = '';
+            this.refreshCaptcha(); // 重置后刷新验证码
+            if (!this.isLoggedIn) {
+              this.clearEmailUserInfo();
+            }
+            this.$refs.emailFormRef.clearValidate();
+            this.showEmailDialog = false;
+          
+          } catch (error) {
+            // postWithErrorHandler 已经处理了错误显示，这里只需要处理一些特殊逻辑
+            console.error('Submit email form error:', error);
+            this.$messageHandler.showError(
+              this.$t('productDetail.emailDialog.failed'), 
+              'productDetail.emailDialog.failed'
+            );
+          } finally {
+            this.isSubmittingEmail = false;
+          }
+        } else {
+          this.$messageHandler.showError(
+            this.$t('contact.error.formIncomplete'), 
+            'contact.error.formIncomplete'
+          );
+        }
+      });
+    },
+    // 处理登录成功
+     handleLoginSuccess() {
+       this.loginDialogVisible = false;
+       
+       // 根据用户之前的操作执行相应的功能
+       if (this.pendingAction === 'inquiry') {
+         this.createInquiry();
+       } else if (this.pendingAction === 'addToCart') {
+         this.addToCart();
+       } else if (this.pendingAction === 'email') {
+         this.openEmailDialog();
+       }
+       
+       // 清除待执行的操作
+       this.pendingAction = null;
+     }
   }
 }
 </script>
@@ -1613,5 +1871,29 @@ export default {
   }
 
   /* 移动端对话框样式已移至全局样式文件 elegant-messages.scss */
+}
+
+/* 登录对话框样式 */
+.login-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.login-dialog-container {
+  width: 500px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>

@@ -4,9 +4,10 @@
       <!-- 桌面端布局 -->
       <div class="footer-grid desktop-footer">
         <div>
-          <img
-            :src="companyInfo.logo_url || 'https://static.readdy.ai/image/01b5af88fa941f59119e27a41ea4862d/63b7adac1fa1c8b6813bfaf6742a426b.png'"
-            :alt="companyInfo.company_name || 'Auto Ease Tech X Logo'" class="h-8 w-auto mb-6" />
+        <img 
+          class="footer-logo h-8 w-auto mb-6" 
+          :src="companyInfo.logo_url || require('@/assets/images/logo.png')"
+          :alt="companyInfo.company_name || 'Auto Ease Tech X Logo'" />
           <p class="footer-intro mb-6">
             {{ companyInfo.company_intro || defaultCompanyIntro }}
           </p>

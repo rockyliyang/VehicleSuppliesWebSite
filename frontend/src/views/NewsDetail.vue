@@ -131,7 +131,7 @@ export default {
       contentList: [],
       loading: false,
       currentLanguage: 'zh-CN',
-      defaultImage: 'https://via.placeholder.com/800x400/f3f4f6/6b7280?text=News+Image'
+      defaultImage: require('@/assets/images/news1.jpg')
     }
   },
   computed: {

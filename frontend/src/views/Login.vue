@@ -6,7 +6,11 @@
     <!-- Login Form Section -->
     <div class="login-container">
       <div class="form-wrapper">
-        <LoginDialog @login-success="handleLoginSuccess" />
+        <LoginDialog
+          :show-close-button="false"
+          :auto-redirect="true"
+          @login-success="handleLoginSuccess"
+        />
       </div>
     </div>
   </div>
@@ -33,8 +37,7 @@ export default {
       if (data && data.user) {
         this.$store.commit('setUser', data.user);
       }
-      this.$messageHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess');
-      this.$router.push(this.$route.query.redirect || '/');
+      // 页面跳转由LoginDialog组件处理（autoRedirect=true）
     }
   }
 }

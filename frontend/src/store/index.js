@@ -8,7 +8,11 @@ export default createStore({
     user: null,
     isLoggedIn: false,
     isAdminLoggedIn: false,
-    categories: []
+    categories: [],
+    // 购物车状态
+    cartItems: [],
+    // 登录对话框状态
+    showLoginDialog: false
   },
   mutations: {
     
@@ -29,6 +33,31 @@ export default createStore({
     setCategories(state, categories) {
       state.categories = categories
     },
+    // 购物车相关mutations
+    addToCart(state, item) {
+      const existingItem = state.cartItems.find(cartItem => cartItem.id === item.id)
+      if (existingItem) {
+        existingItem.quantity += item.quantity || 1
+      } else {
+        state.cartItems.push({ ...item, quantity: item.quantity || 1 })
+      }
+    },
+    removeFromCart(state, itemId) {
+      state.cartItems = state.cartItems.filter(item => item.id !== itemId)
+    },
+    updateCartItemQuantity(state, { itemId, quantity }) {
+      const item = state.cartItems.find(cartItem => cartItem.id === itemId)
+      if (item) {
+        item.quantity = quantity
+      }
+    },
+    clearCart(state) {
+      state.cartItems = []
+    },
+    // 登录对话框相关mutations
+    setShowLoginDialog(state, show) {
+      state.showLoginDialog = show
+    }
     
 
   },
@@ -65,6 +94,26 @@ export default createStore({
  
     logout({ commit }) {
       commit('setUser', null)
+      // 登出时清空购物车
+      commit('clearCart')
+    },
+    // 显示登录对话框
+    showLoginDialog({ commit }) {
+      commit('setShowLoginDialog', true)
+    },
+    // 隐藏登录对话框
+    hideLoginDialog({ commit }) {
+      commit('setShowLoginDialog', false)
+    },
+    // 购物车相关actions
+    addToCart({ commit }, item) {
+      commit('addToCart', item)
+    },
+    removeFromCart({ commit }, itemId) {
+      commit('removeFromCart', itemId)
+    },
+    updateCartItemQuantity({ commit }, payload) {
+      commit('updateCartItemQuantity', payload)
     },
     fetchCategories({ commit }) {
       // 实际项目中这里会调用API
@@ -85,7 +134,13 @@ export default createStore({
   },
   getters: {
     isLoggedIn: state => state.isLoggedIn,
-    user: state => state.user
+    user: state => state.user,
+    // 购物车相关getters
+    cartItems: state => state.cartItems,
+    cartItemCount: state => state.cartItems.reduce((total, item) => total + item.quantity, 0),
+    cartTotal: state => state.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0),
+    // 登录对话框状态
+    showLoginDialog: state => state.showLoginDialog
   },
   modules: {
     language: languageModule

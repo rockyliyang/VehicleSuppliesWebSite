@@ -81,7 +81,7 @@
             </div>
           </div>
           <div class="about-image">
-            <img :src="aboutImageUrl || 'https://via.placeholder.com/600x400/f3f4f6/6b7280?text=About+Us'"
+            <img :src="aboutImageUrl || require('@/assets/images/about-company.jpg')"
               alt="About Us" @error="handleImageError" />
           </div>
         </div>
@@ -355,7 +355,7 @@ export default {
 
 /* 产品分类按钮 */
 .category-button {
-  @include button-primary;
+  @include button-secondary;
   @include button-lg;
   white-space: nowrap;
   font-weight: $font-weight-medium;
@@ -383,28 +383,60 @@ export default {
   }
 }
 
-/* More按钮样式 - 与category-button保持一致 */
+/* More按钮样式 - 与非激活按钮底色一致但有独特样式 */
 .more-button {
-  @include button-base;
+  @include button-secondary;
   @include button-lg;
-  background-color: $gray-200;
-  color: $gray-700;
-
   white-space: nowrap;
-  font-size: $font-size-lg;
   font-weight: $font-weight-semibold;
-  border-radius: $border-radius-md;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: none;
 
+  // 简洁的背景，去掉内阴影和边框
+  background: $gray-100;
+
+  // 使用更短更粗的箭头
+  &::after {
+    content: '▶';
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    margin-left: $spacing-xs;
+    color: $gray-600;
+    transition: all 0.3s ease;
+    display: inline-block;
+    transform: scale(0.8);
+  }
 
   @include mobile {
     padding: $spacing-xs $spacing-sm;
     font-size: $font-size-sm;
     min-height: $spacing-2xl;
     margin: 0 $spacing-xs/2;
+
+    &::after {
+      font-size: $font-size-xs;
+      margin-left: $spacing-xs/2;
+      transform: scale(0.7);
+    }
   }
 
   &:hover:not(:disabled) {
-    background-color: $gray-300;
+    background: $gray-200;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    &::after {
+      color: $primary-color;
+      transform: scale(0.8) translateX(2px);
+    }
+  }
+
+  // 简化聚焦状态
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.3);
   }
 }
 
