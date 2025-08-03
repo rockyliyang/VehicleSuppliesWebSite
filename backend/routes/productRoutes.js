@@ -5,6 +5,7 @@ const { verifyToken } = require('../middleware/jwt');
 
 // Public routes - no JWT auth required
 router.get('/', productController.getAllProducts);
+router.get('/search', productController.searchProducts);
 router.get('/:id', productController.getProductById);
 router.get('/generate-code', productController.generateProductCode);
 

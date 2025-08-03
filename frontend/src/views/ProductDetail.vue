@@ -362,6 +362,9 @@ export default {
     userInfo() {
       return this.$store.getters['auth/userInfo'] || {};
     },
+    isMobile() {
+      return window.innerWidth <= 768;
+    },
     categoryName() {
       if (!this.product.category_id || !this.categories.length) return ''
       const category = this.categories.find(cat => cat.id === this.product.category_id)
@@ -549,6 +552,7 @@ export default {
     async createInquiry() {
        // 检查用户是否已登录
        if (!this.$store.getters.isLoggedIn) {
+         // 显示登录对话框（覆盖整个屏幕）
          this.pendingAction = 'inquiry';
          this.loginDialogVisible = true;
          return;
@@ -614,7 +618,8 @@ export default {
       
       // 检查用户是否已登录
       if (!this.$store.getters.isLoggedIn) {
-        this.pendingAction = 'inquiry';
+        // 显示登录对话框（覆盖整个屏幕）
+        this.pendingAction = 'addToCart';
         this.loginDialogVisible = true;
         return;
       }
@@ -877,15 +882,12 @@ export default {
       return isRequired ? `* ${fieldText}` : fieldText;
     },
     openEmailDialog() {
-       // 检查用户是否已登录
-       if (!this.isLoggedIn) {
-         this.pendingAction = 'email';
-         this.loginDialogVisible = true;
-         return;
-       }
-       
        // 填充用户信息（如果已登录）
-       this.fillEmailUserInfo();
+       if (this.isLoggedIn) {
+         this.fillEmailUserInfo();
+       } else {
+         this.clearEmailUserInfo();
+       }
        
        // 设置默认主题
        this.emailForm.subject = this.$t('productDetail.emailDialog.title');
@@ -1178,8 +1180,6 @@ export default {
   gap: $spacing-4xl;
   margin-bottom: $spacing-4xl;
 }
-
-
 
 .product-detail-content {
   flex: 1;
@@ -1840,12 +1840,73 @@ export default {
 /* 确认对话框样式已移至全局样式文件 elegant-messages.scss */
 
 @media (max-width: 768px) {
+  .container {
+    padding: 0 $spacing-md;
+  }
+
   .product-detail-main {
     flex-direction: column;
+    gap: $spacing-lg;
+    margin-bottom: $spacing-lg;
+  }
+
+  .product-detail-content {
+    flex-direction: column;
+    gap: $spacing-lg;
   }
 
   .product-gallery-block {
+    width: 100%;
     max-width: 100%;
+  }
+
+  .main-image {
+    height: 250px;
+    margin-bottom: $spacing-md;
+  }
+
+  .thumbnail-container {
+    .thumbnail-list {
+      gap: $spacing-xs;
+    }
+
+    .thumbnail {
+      width: 60px;
+      height: 60px;
+    }
+  }
+
+  .product-info-block {
+    padding: $spacing-md;
+  }
+
+  .product-title {
+    font-size: $font-size-2xl;
+    margin-bottom: $spacing-md;
+    line-height: $line-height-normal;
+  }
+
+  .product-meta {
+    font-size: $font-size-md;
+    margin-bottom: $spacing-md;
+    flex-direction: column;
+    gap: $spacing-xs;
+  }
+
+  .product-price {
+    font-size: $font-size-2xl;
+    margin-bottom: $spacing-md;
+  }
+
+  .product-stock {
+    margin-bottom: $spacing-md;
+    font-size: $font-size-sm;
+  }
+
+  .product-short-desc {
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-md;
+    line-height: $line-height-relaxed;
   }
 
   .product-actions {
@@ -1853,20 +1914,95 @@ export default {
       flex-direction: column;
       align-items: flex-start;
       gap: $spacing-sm;
+      margin-bottom: $spacing-md;
 
       .quantity-label {
         min-width: auto;
+        font-size: $font-size-md;
       }
     }
 
     .action-buttons {
       flex-direction: column;
       align-items: stretch;
+      gap: $spacing-sm;
 
       .el-button {
         width: 100%;
-        margin-bottom: $spacing-sm;
+        font-size: $font-size-sm;
+        padding: $spacing-sm $spacing-md;
       }
+    }
+  }
+
+  .product-share {
+    margin-top: $spacing-md;
+    font-size: $font-size-sm;
+
+    .share-icons {
+      gap: $spacing-sm;
+
+      i {
+        font-size: $font-size-lg;
+      }
+    }
+  }
+
+  .description-section {
+    padding: $spacing-md;
+    margin-top: $spacing-lg;
+  }
+
+  .description-title {
+    font-size: $font-size-xl;
+    margin-bottom: $spacing-sm;
+  }
+
+  .product-description {
+    font-size: $font-size-sm;
+    line-height: $line-height-relaxed;
+
+    :deep(h1), :deep(h2), :deep(h3) {
+      font-size: $font-size-lg;
+      margin: $spacing-md 0 $spacing-sm 0;
+    }
+
+    :deep(p) {
+      margin-bottom: $spacing-sm;
+      font-size: $font-size-sm;
+    }
+
+    :deep(img) {
+      max-width: 100%;
+      height: auto;
+      margin: $spacing-sm 0;
+    }
+  }
+
+  .related-products {
+    margin-top: $spacing-xl;
+    padding: $spacing-md;
+  }
+
+  .related-title {
+    font-size: $font-size-xl;
+    margin-bottom: $spacing-sm;
+  }
+
+  .related-products-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-md;
+  }
+
+  .related-product-card {
+    .related-product-image {
+      height: 120px;
+    }
+
+    .related-product-title {
+      font-size: $font-size-xs;
+      padding: $spacing-xs;
+      line-height: $line-height-normal;
     }
   }
 
@@ -1878,22 +2014,37 @@ export default {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
 }
 
 .login-dialog-container {
-  width: 500px;
-  max-width: 90vw;
+  width: 90%;
+  max-width: 500px;
   max-height: 90vh;
   overflow: auto;
   border-radius: 12px;
   background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 移动端登录对话框覆盖整个屏幕 */
+@include mobile {
+  .login-dialog-container {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 </style>

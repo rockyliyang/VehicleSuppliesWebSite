@@ -207,7 +207,7 @@ const routes = [
   {
     path: '/inquiry-management',
     name: 'InquiryManagement',
-    component: () => import('../views/InquiryManagement.vue'),
+    component: () => import('../views/Inquiries.vue'),
     meta: { requiresAuth: true }
   },
 ]

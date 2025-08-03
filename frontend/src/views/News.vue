@@ -6,7 +6,8 @@
     <NavigationMenu :breadcrumb-items="breadcrumbItems" />
 
     <div class="container">
-      <div class="news-layout">
+      <!-- 桌面端布局 -->
+      <div class="news-layout desktop-layout">
         <!-- 侧边导航 -->
         <div class="sidebar-nav">
           <div class="nav-title">
@@ -58,6 +59,44 @@
           </div>
         </div>
       </div>
+
+      <!-- 移动端卡片布局 -->
+      <div class="mobile-layout">
+        <!-- 移动端新闻类型卡片 -->
+        <div v-if="loading" class="loading-container" v-loading="loading" element-loading-text="加载中...">
+          <div style="height: 200px;"></div>
+        </div>
+        
+        <div v-else class="mobile-news-container">
+          <div v-for="nav in navList" :key="nav.id" class="news-category-card">
+            <div class="category-header">
+              <h3 class="category-title">{{ $t(nav.name_key) }}</h3>
+              <span class="category-count">{{ getCategoryNewsCount(nav.name_key) }}</span>
+            </div>
+            
+            <div class="category-news-grid">
+              <div v-for="content in getCategoryNews(nav.name_key, 4)" 
+                   :key="content.id" 
+                   class="news-card" 
+                   @click="goToDetail(content)">
+                <div class="news-image">
+                  <img :src="content.main_image || defaultImage" :alt="content.title" @error="handleImageError">
+                </div>
+                <div class="news-content">
+                  <h3 class="news-title">{{ content.title }}</h3>
+                  <div class="news-meta">
+                    <span><i class="el-icon-date"></i> {{ formatDate(content.created_at) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div v-if="getCategoryNewsCount(nav.name_key) > 4" class="view-more-button" @click="viewMoreNews(nav.id)">
+              {{ $t('news.viewMore') }} <i class="el-icon-arrow-right"></i>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -81,7 +120,8 @@ export default {
       currentLanguage: 'zh-CN',
       currentPage: 1,
       pageSize: 6,
-      defaultImage: require('@/assets/images/news1.jpg')
+      defaultImage: require('@/assets/images/news1.jpg'),
+      allCategoryNews: {} // 存储所有分类的新闻数据
     }
   },
   computed: {
@@ -232,10 +272,70 @@ export default {
           await this.fetchContentList(selectedNav.name_key);
         }
       }
+      // 重新加载移动端数据
+      await this.loadAllCategoryNews();
+    },
+
+    // 获取指定分类的新闻（移动端使用）
+    getCategoryNews(nameKey, limit = 4) {
+      const categoryNews = this.allCategoryNews[nameKey] || [];
+      return categoryNews.slice(0, limit);
+    },
+
+    // 获取指定分类的新闻数量
+    getCategoryNewsCount(nameKey) {
+      const categoryNews = this.allCategoryNews[nameKey] || [];
+      return categoryNews.length;
+    },
+
+    // 加载所有分类的新闻数据（移动端使用）
+    async loadAllCategoryNews() {
+      if (!this.navList || this.navList.length === 0) return;
+      
+      try {
+        const promises = this.navList.map(async (nav) => {
+          try {
+            const response = await this.$api.get(`common-content/content/${nav.name_key}/${this.lang}`);
+            const { contentList } = response.data;
+            return { nameKey: nav.name_key, contentList: contentList || [] };
+          } catch (error) {
+            console.error(`获取分类 ${nav.name_key} 新闻失败:`, error);
+            return { nameKey: nav.name_key, contentList: [] };
+          }
+        });
+
+        const results = await Promise.all(promises);
+        
+        // 重置数据
+        this.allCategoryNews = {};
+        
+        // 存储所有分类的新闻数据
+        results.forEach(result => {
+          this.allCategoryNews[result.nameKey] = result.contentList;
+        });
+      } catch (error) {
+        console.error('加载所有分类新闻失败:', error);
+      }
+    },
+
+    // 查看更多新闻（移动端使用）
+    viewMoreNews(navId) {
+      // 切换到桌面端布局并选择对应分类
+      this.selectNav(navId);
+      
+      // 滚动到内容顶部
+      this.$nextTick(() => {
+        const contentSection = document.querySelector('.main-content');
+        if (contentSection) {
+          contentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
     }
   },
   async created() {
+    this.currentLanguage = this.$store.getters['language/currentLanguage'] || 'zh-CN';
     await this.fetchNavList();
+    await this.loadAllCategoryNews();
     
     // 监听全局语言切换事件
     this.$bus.on('language-changed', this.onLanguageChange);
@@ -545,6 +645,141 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
   text-align: $no-content-text-align;
 }
 
+/* 移动端卡片布局样式 */
+.mobile-layout {
+  display: none; // 默认隐藏，只在移动端显示
+}
+
+.mobile-news-container {
+  padding: 20px 0;
+}
+
+.news-category-card {
+  background: $main-content-background;
+  border-radius: $main-content-border-radius;
+  box-shadow: $main-content-shadow;
+  margin-bottom: 24px;
+  overflow: hidden;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: $news-tech-gradient;
+  color: white;
+}
+
+.category-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.category-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.category-news-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; // 每行两个新闻
+  gap: 16px;
+  padding: 20px;
+  
+  .news-card {
+    background: white;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: $news-primary;
+    }
+  }
+  
+  .news-image {
+    width: 100%;
+    height: 120px;
+    overflow: hidden;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+  }
+  
+  .news-content {
+    padding: 12px;
+  }
+  
+  .news-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .news-meta {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 0;
+    
+    i {
+      color: $news-primary;
+      margin-right: 4px;
+    }
+  }
+}
+
+.view-more-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: rgba($news-primary, 0.05);
+  color: $news-primary;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-top: 1px solid rgba($news-primary, 0.1);
+  
+  &:hover {
+    background: rgba($news-primary, 0.1);
+    
+    i {
+      transform: translateX(4px);
+    }
+  }
+  
+  i {
+    transition: transform 0.3s ease;
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: $content-tablet-breakpoint) {
   .news-grid {
@@ -559,118 +794,109 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 }
 
 @media (max-width: $content-mobile-breakpoint) {
-  .news-layout {
-    flex-direction: column;
-    gap: $content-mobile-layout-gap;
-    padding: $content-mobile-layout-padding;
+  // 隐藏桌面端布局
+  .desktop-layout {
+    display: none;
   }
-
-  .sidebar-nav {
-    width: 100%;
-    position: static;
-    margin-top: $content-layout-gap;
-    order: 2;
+  
+  // 显示移动端布局
+  .mobile-layout {
+    display: block;
   }
-
-  .main-content {
-    order: 1;
+  
+  // 移动端卡片布局优化
+  .mobile-news-container {
+    padding: 16px 0;
   }
-
-  .nav-menu {
-    display: flex;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  .nav-menu li {
-    flex-shrink: 0;
-    border-bottom: none;
-    border-right: $nav-menu-border-bottom;
-  }
-
-  .nav-menu li:last-child {
-    border-right: none;
-  }
-
-  .nav-menu li a {
-    padding: $content-mobile-nav-menu-padding;
-    font-size: $content-mobile-nav-menu-font-size;
-  }
-
-  .news-section {
-    padding: $news-mobile-section-padding;
-  }
-
-  .news-grid {
-    grid-template-columns: 1fr;
-    gap: $news-mobile-grid-gap;
-  }
-
-  .news-content {
-    padding: $news-mobile-content-padding;
-  }
-
-  .news-title {
-    font-size: $news-mobile-title-font-size;
-  }
-
-  .news-summary {
-    font-size: $news-mobile-summary-font-size;
-  }
-
-  .pagination-container {
-    margin-top: $news-mobile-pagination-margin-top;
-
-    :deep(.el-pagination) {
-      padding: $news-mobile-pagination-padding;
+  
+  .category-news-grid {
+    gap: 12px;
+    padding: 16px;
+    
+    .news-image {
+      height: 100px;
+    }
+    
+    .news-content {
+      padding: 10px;
+    }
+    
+    .news-title {
+      font-size: 13px;
+      -webkit-line-clamp: 2;
+    }
+    
+    .news-meta {
+      font-size: 11px;
     }
   }
+  
+  .category-header {
+    padding: 16px 20px;
+  }
+  
+  .category-title {
+    font-size: 16px;
+  }
+  
+  .category-count {
+    font-size: 13px;
+    padding: 3px 10px;
+  }
+  
+  .news-category-card {
+    margin-bottom: 20px;
+  }
+
+
 }
 
 @media (max-width: $content-small-mobile-breakpoint) {
   .container {
-    padding: $content-small-mobile-container-padding;
+    padding: 12px;
   }
 
-  .news-layout {
-    gap: $news-mobile-grid-gap;
+  .mobile-news-container {
+    padding: 12px 0;
   }
 
-  .news-section {
-    padding: $news-small-mobile-section-padding;
-  }
-
-  .news-content {
-    padding: $news-small-mobile-content-padding;
-  }
-
-  .nav-title {
-    padding: $news-small-mobile-nav-title-padding;
-
-    h3 {
-      font-size: $news-small-mobile-nav-title-font-size;
+  .category-news-grid {
+    gap: 10px;
+    padding: 12px;
+    
+    .news-image {
+      height: 80px;
+    }
+    
+    .news-content {
+      padding: 8px;
+    }
+    
+    .news-title {
+      font-size: 12px;
+      -webkit-line-clamp: 2;
+    }
+    
+    .news-meta {
+      font-size: 10px;
     }
   }
-
-  .nav-menu li a {
-    padding: $content-mobile-nav-menu-padding;
-    font-size: $content-mobile-nav-menu-font-size;
+  
+  .category-header {
+    padding: 12px 16px;
   }
-
-  .news-title {
-    font-size: $news-mobile-title-font-size;
+  
+  .category-title {
+    font-size: 14px;
   }
-
-  .news-summary {
-    font-size: $news-mobile-summary-font-size;
+  
+  .category-count {
+    font-size: 12px;
+    padding: 2px 8px;
   }
-
-  .news-grid {
-    gap: $news-mobile-grid-gap;
-  }
-
-  .no-content {
-    padding: $news-small-mobile-no-content-padding;
+  
+  .news-category-card {
+    margin-bottom: 16px;
   }
 }
 </style>

@@ -3,51 +3,44 @@
     <!-- Modern Banner Section -->
     <PageBanner :title="$t('products.title') || '产品中心'" />
     <NavigationMenu :breadcrumb-items="breadcrumbItems" />
-    <!-- Category Navigation -->
-    <div class="category-navigation-wrapper">
-      <div class="container mx-auto">
-        <div class="flex justify-center py-12">
-          <div class="flex space-x-8 category-tabs">
-            <button :class="selectedCategory === null ? 'category-tab active ' : 'category-tab '"
-              @click="selectCategory(null)">
-              {{ $t('products.allCategories') || '全部产品' }}
-            </button>
-            <button v-for="category in categories" :key="category.id"
-              :class="selectedCategory === category.id.toString() ? 'category-tab active' : 'category-tab'"
-              @click="selectCategory(category.id.toString())">
-              {{ category.name }}
-            </button>
-          </div>
+    <!-- Category Navigation & Products Container -->
+    <div class="container mx-auto px-4">
+      <!-- Category Navigation -->
+      <div class="category-navigation-section">
+        <div class="flex justify-center category-tabs">
+          <button :class="selectedCategory === null ? 'category-tab active' : 'category-tab'"
+            @click="selectCategory(null)">
+            {{ $t('products.allCategories') || '全部产品' }}
+          </button>
+          <button v-for="category in categories" :key="category.id"
+            :class="selectedCategory === category.id.toString() ? 'category-tab active' : 'category-tab'"
+            @click="selectCategory(category.id.toString())">
+            {{ category.name }}
+          </button>
         </div>
       </div>
-    </div>
 
-    <div class="container mx-auto px-4 pt-16 pb-24">
+      <!-- Products Content -->
+      <div class="products-section">
+        <!-- Modern Products Grid -->
+        <div class="products-grid">
+          <ProductCard v-for="product in products" :key="product.id" :product="product" :show-description="true"
+            :show-arrow="true" :default-description="'Powerful suction with long battery life'" card-style="products"
+            @card-click="handleProductClick" @title-click="handleProductClick" />
+        </div>
 
-      <div class="products-container">
-        <!-- Products Content -->
-        <div class="products-content">
+        <!-- No Products Message -->
+        <div v-if="products.length === 0" class="no-products">
+          <i class="fas fa-search text-6xl text-gray-400 mb-4"></i>
+          <p class="text-xl text-gray-500">{{ $t('products.noProducts') || '暂无相关产品' }}</p>
+        </div>
 
-          <!-- Modern Products Grid -->
-          <div class="products-grid">
-            <ProductCard v-for="product in products" :key="product.id" :product="product" :show-description="true"
-              :show-arrow="true" :default-description="'Powerful suction with long battery life'" card-style="products"
-              @card-click="handleProductClick" @title-click="handleProductClick" />
-          </div>
-
-          <!-- No Products Message -->
-          <div v-if="products.length === 0" class="no-products">
-            <i class="fas fa-search text-6xl text-gray-400 mb-4"></i>
-            <p class="text-xl text-gray-500">{{ $t('products.noProducts') || '暂无相关产品' }}</p>
-          </div>
-
-          <!-- Modern Pagination -->
-          <div class="pagination-container" v-if="totalProducts > pageSize">
-            <el-pagination background layout="total, prev, pager, next, jumper" :total="totalProducts"
-              :page-size="pageSize" :current-page="currentPage" @current-change="handlePageChange"
-              class="modern-pagination">
-            </el-pagination>
-          </div>
+        <!-- Modern Pagination -->
+        <div class="pagination-container" v-if="totalProducts > pageSize">
+          <el-pagination background layout="total, prev, pager, next, jumper" :total="totalProducts"
+            :page-size="pageSize" :current-page="currentPage" @current-change="handlePageChange"
+            class="modern-pagination">
+          </el-pagination>
         </div>
       </div>
     </div>
@@ -270,13 +263,21 @@ export default {
   margin-bottom: $spacing-xl;
 }
 
-/* Category Navigation */
-.category-navigation {
+/* Category Navigation Section */
+.category-navigation-section {
   background: $white;
-  border-radius: $border-radius-lg;
-  padding: $spacing-xl;
-  box-shadow: $shadow-md;
-  border: 1px solid $gray-200;
+  padding: $spacing-lg 0 $spacing-md 0;
+}
+
+.category-tabs {
+  display: flex;
+  gap: $spacing-lg;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .category-tab {
@@ -311,24 +312,9 @@ export default {
   border-radius: $border-radius-sm;
 }
 
-.category-navigation-wrapper {
-  background: $white !important;
-  background-color: $white !important;
-  padding-bottom: $spacing-xl;
-}
-
-.category-tabs {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.category-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-/* Products Content */
-.products-content {
-  padding: 0;
+/* Products Section */
+.products-section {
+  padding: $spacing-md 0 $spacing-4xl 0;
 }
 
 /* Modern Products Grid */
@@ -422,8 +408,9 @@ export default {
   }
 
   .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: $spacing-lg;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-sm;
+    margin-bottom: $spacing-xl;
   }
 
   .product-footer {
@@ -434,6 +421,50 @@ export default {
   .add-to-cart-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  /* 移动端分类导航容器优化 */
+  .category-navigation-section {
+    padding: $spacing-md 0 $spacing-sm 0 !important;
+  }
+
+  /* 移动端分类标签样式优化 */
+  .category-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    justify-content: flex-start !important;
+    padding: 0 $spacing-md $spacing-sm $spacing-md !important;
+    gap: $spacing-md !important;
+    min-height: 50px !important;
+  }
+
+  .category-tab {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: $spacing-sm $spacing-md !important;
+    font-size: $font-size-lg !important;
+    min-width: auto !important;
+    position: relative !important;
+    margin-bottom: $spacing-sm !important;
+  }
+
+  .category-tab.active::after {
+    content: "" !important;
+    position: absolute !important;
+    bottom: -8px !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 3px !important;
+    background-color: $primary-color !important;
+    border-radius: $border-radius-sm !important;
+    display: block !important;
+    z-index: 10 !important;
+  }
+
+  /* 移动端产品区域间距调整 */
+  .products-section {
+    padding: $spacing-sm 0 $spacing-4xl 0 !important;
   }
 }
 

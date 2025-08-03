@@ -306,4 +306,66 @@ export default {
     }
   }
 }
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+  .form-input {
+    :deep(.el-input__wrapper) {
+      height: 52px; /* 增加触摸区域 */
+      padding: 0 16px;
+    }
+
+    :deep(.el-input__inner) {
+      font-size: 16px; /* 防止iOS缩放 */
+      line-height: 52px;
+    }
+
+    :deep(.el-input__prefix) {
+      margin-right: 10px;
+      
+      .el-icon {
+        font-size: 20px;
+      }
+    }
+
+    :deep(.el-input__suffix) {
+      margin-left: 10px;
+      
+      .el-icon {
+        font-size: 20px;
+      }
+    }
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 480px) {
+  .form-input {
+    :deep(.el-input__wrapper) {
+      height: 48px;
+      padding: 0 14px;
+    }
+
+    :deep(.el-input__inner) {
+      font-size: 16px;
+      line-height: 48px;
+    }
+
+    :deep(.el-input__prefix) {
+      margin-right: 8px;
+      
+      .el-icon {
+        font-size: 18px;
+      }
+    }
+
+    :deep(.el-input__suffix) {
+      margin-left: 8px;
+      
+      .el-icon {
+        font-size: 18px;
+      }
+    }
+  }
+}
 </style>

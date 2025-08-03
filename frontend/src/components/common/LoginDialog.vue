@@ -799,23 +799,116 @@ export default {
 /* Responsive Design */
 @include mobile {
   .login-card {
-    margin: $spacing-lg;
-    padding: $spacing-xl $spacing-lg;
+    margin: 0;
+    padding: $spacing-lg $spacing-md;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: auto;
+  }
+
+  .login-header {
+    margin-bottom: $spacing-lg;
+  }
+
+  .logo {
+    width: 120px;
+    max-height: 60px;
+  }
+
+  .login-title {
+    font-size: $font-size-3xl;
+    margin: $spacing-md 0 $spacing-sm 0;
+  }
+
+  .login-subtitle {
+    font-size: $font-size-lg;
+    margin-bottom: $spacing-lg;
+  }
+
+  .login-tabs :deep(.el-tabs__item) {
+    font-size: $font-size-lg;
+    padding: 0 $spacing-md;
+  }
+
+  .login-form :deep(.el-form-item) {
+    margin-bottom: $spacing-lg;
+  }
+
+  .remember-forgot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-lg;
   }
 
   .code-container {
     flex-direction: column;
-    gap: $spacing-sm;
+    gap: $spacing-md;
   }
 
   .code-button {
     width: 100%;
     min-width: auto;
+    height: 48px;
+    font-size: $font-size-lg;
   }
 
+  .login-button {
+    height: 48px;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+  }
+
+  .social-login {
+    gap: $spacing-md;
+  }
+
+  .social-button {
+    height: 52px;
+    font-size: $font-size-lg;
+    padding: 0 $spacing-lg;
+  }
+
+  .footer-text {
+    font-size: $font-size-lg;
+    line-height: 1.6;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 480px) {
   .login-card {
-    margin: $spacing-sm;
-    padding: $spacing-lg $spacing-md;
+    padding: $spacing-md $spacing-sm;
+  }
+
+  .logo {
+    width: 100px;
+    max-height: 50px;
+  }
+
+  .login-title {
+    font-size: $font-size-2xl;
+  }
+
+  .login-subtitle {
+    font-size: $font-size-md;
+  }
+
+  .login-tabs :deep(.el-tabs__item) {
+    font-size: $font-size-md;
+    padding: 0 $spacing-sm;
+  }
+
+  .social-button {
+    height: 48px;
+    font-size: $font-size-md;
+    gap: 8px;
+  }
+
+  .social-icon {
+    width: 18px;
+    height: 18px;
   }
 }
 </style>

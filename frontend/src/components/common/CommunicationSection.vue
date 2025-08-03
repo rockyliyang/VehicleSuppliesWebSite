@@ -1,5 +1,5 @@
 <template>
-  <div class="communication-section">
+  <div class="communication-section" :class="{ 'mobile-communication': isMobile }">
     <div class="chat-history" ref="chatHistory">
       <div v-for="message in messages" :key="message.id" class="chat-message"
         :class="{ 'user-message': message.isUser }">
@@ -54,6 +54,10 @@ export default {
     initialMessage: {
       type: String,
       default: ''
+    },
+    isMobile: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['send-message', 'update-message', 'checkout'],
@@ -276,6 +280,54 @@ export default {
 
 .checkout-btn .material-icons {
   font-size: $font-size-xl;
+}
+
+/* 手机端专用样式 */
+.mobile-communication {
+  height: 100%;
+  padding: $spacing-sm;
+  
+  .chat-history {
+    flex: 1;
+    min-height: 200px;
+    margin-bottom: $spacing-sm;
+    border-radius: $border-radius-sm;
+  }
+  
+  .chat-input-section {
+    margin-bottom: $spacing-sm;
+  }
+  
+  .chat-input {
+    height: 50px;
+    font-size: $font-size-sm;
+  }
+  
+  .action-buttons-section {
+    padding: 0;
+    gap: $spacing-xs;
+  }
+  
+  .send-btn,
+  .checkout-btn {
+    min-height: 40px;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
+  }
+  
+  .chat-message {
+    max-width: 85%;
+    padding: $spacing-xs $spacing-sm;
+    margin-bottom: $spacing-xs;
+  }
+  
+  .message-sender {
+    font-size: $font-size-xs;
+  }
+  
+  .message-content {
+    font-size: $font-size-xs;
+  }
 }
 
 /* 响应式设计 */

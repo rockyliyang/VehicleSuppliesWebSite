@@ -91,37 +91,6 @@
                 <div id="paypal-button-container" ref="paypalButtonContainer"></div>
               </div>
             </el-tab-pane>
-            <el-tab-pane :label="$t('checkout.wechat') || '微信支付'" name="wechat">
-              <div class="qrcode-container">
-                <div class="qrcode-content">
-                  <div v-if="qrcodeUrl" class="qrcode-display">
-                    <div class="qrcode-image">
-                      <img :src="qrcodeUrl" :alt="$t('checkout.wechatQrcode') || '微信支付二维码'">
-                    </div>
-                    <div class="qrcode-actions">
-                      <el-button @click="refreshQrcode('wechat')" type="primary" class="refresh-qr-btn"
-                        :loading="refreshing">
-                        <i class="el-icon-refresh"></i>
-                        {{ $t('checkout.refreshQrcode') || '刷新二维码' }}
-                      </el-button>
-                      <div class="qrcode-timer" v-if="qrcodeTimer > 0">
-                        {{ $t('checkout.qrcodeExpire') || '二维码将在' }} {{ qrcodeTimer }}{{ $t('checkout.secondsExpire') ||
-                        '秒后过期'
-                        }}
-                      </div>
-                    </div>
-                  </div>
-                  <div v-else class="qrcode-placeholder">
-                    <i class="el-icon-picture-outline qrcode-placeholder-icon"></i>
-                    <p class="qrcode-placeholder-text">{{ $t('checkout.clickToGenerate') || '点击下方按钮生成支付二维码' }}</p>
-                    <el-button @click="generateQrcode('wechat')" type="primary" class="generate-qr-btn"
-                      :loading="generating">
-                      {{ $t('checkout.generateQrcode') || '生成支付二维码' }}
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </el-tab-pane>
             <el-tab-pane :label="$t('checkout.alipay') || '支付宝'" name="alipay">
               <div class="qrcode-container">
                 <div class="qrcode-content">
@@ -383,7 +352,6 @@ export default {
     getPaymentMethodText(method) {
       const methodMap = {
         'paypal': 'PayPal',
-        'wechat': this.$t('checkout.wechat') || '微信支付',
         'alipay': this.$t('checkout.alipay') || '支付宝',
         'credit_card': this.$t('checkout.creditCard') || '信用卡'
       };
@@ -1441,48 +1409,269 @@ export default {
 /* 响应式设计 */
 @media (max-width: $breakpoint-mobile) {
   .banner-content h1 {
-    font-size: $font-size-2xl;
+    font-size: $font-size-xl;
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 0 $spacing-xs;
   }
 
   .checkout-content {
-    padding: 0 $spacing-md;
+    padding: 0;
   }
 
   .order-summary,
   .shipping-info,
   .payment-methods {
-    padding: $spacing-lg;
-    margin-bottom: $spacing-lg;
+    padding: $spacing-sm;
+    margin-bottom: $spacing-md;
+    margin-left: $spacing-xs;
+    margin-right: $spacing-xs;
   }
 
   .form-row {
     grid-template-columns: 1fr;
-    gap: $spacing-md;
-  }
-
-  .order-total {
-    font-size: $font-size-lg;
-    flex-direction: column;
     gap: $spacing-sm;
   }
 
+  .order-total {
+    font-size: $font-size-md;
+    flex-direction: row;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-md;
+    margin-top: $spacing-md;
+  }
+
   .total-price {
-    font-size: $font-size-xl;
+    font-size: $font-size-lg;
   }
 
   .product-info {
-    flex-direction: column;
-    text-align: center;
+    flex-direction: row;
+    text-align: left;
+    align-items: flex-start;
+    gap: $spacing-sm;
   }
 
   .product-image {
-    width: $success-icon-size;
-    height: $success-icon-size;
-    margin: 0 auto;
+    width: 60px;
+    height: 60px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .product-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .product-name {
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-xs;
+    line-height: 1.3;
+  }
+
+  .product-code {
+    font-size: $font-size-xs;
+    line-height: 1.2;
   }
 
   .section-title {
+    font-size: $font-size-lg;
+    margin-bottom: $spacing-sm;
+  }
+
+  /* 优化表格在手机端的显示 */
+  .order-table {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .order-table :deep(.el-table) {
+    font-size: $font-size-xs;
+    min-width: 100%;
+  }
+
+  .order-table :deep(.el-table th) {
+    padding: $spacing-xs $spacing-xs;
+    font-size: $font-size-xs;
+    white-space: nowrap;
+  }
+
+  .order-table :deep(.el-table td) {
+    padding: $spacing-xs $spacing-xs;
+  }
+
+  .order-table :deep(.el-table .cell) {
+    padding: 0;
+    line-height: 1.3;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  /* 确保产品信息列有足够宽度 */
+  .order-table :deep(.el-table-column--selection) {
+    width: auto;
+  }
+
+  .order-table :deep(.el-table th:first-child),
+  .order-table :deep(.el-table td:first-child) {
+    min-width: 180px;
+  }
+
+  .subtotal-price {
+    font-size: $font-size-sm;
+  }
+
+  /* 移动端表单优化 */
+  .shipping-form :deep(.el-form-item) {
+    display: block;
+    margin-bottom: $spacing-md;
+  }
+
+  .shipping-form :deep(.el-form-item__label) {
+    width: 100% !important;
+    text-align: left;
+    margin-bottom: $spacing-xs;
+    padding-right: 0;
+    line-height: 1.3;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+  }
+
+  .shipping-form :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+    line-height: 1.3;
+  }
+
+  .shipping-form :deep(.el-input__wrapper) {
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
+    min-height: 40px; /* 减小高度但保持触摸友好 */
+  }
+
+  .shipping-form :deep(.el-textarea__inner) {
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
+    min-height: 80px; /* 减小文本域高度 */
+    line-height: 1.4;
+  }
+
+  /* 移动端支付方式优化 */
+  .payment-tabs :deep(.el-tabs__item) {
+    font-size: $font-size-sm;
+    padding: 0 $spacing-sm;
+    height: 40px;
+    line-height: 40px;
+  }
+
+  .qrcode-container {
+    padding: $spacing-md;
+  }
+
+  .qrcode-image {
+    padding: $spacing-sm;
+  }
+
+  .qrcode-image img {
+    max-width: 180px;
+  }
+
+  .generate-qr-btn,
+  .refresh-qr-btn {
+    width: 100%;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
+    min-height: 40px;
+  }
+
+  /* 移动端订单状态优化 */
+  .status-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-xs;
+    padding: $spacing-sm 0;
+  }
+
+  .status-label,
+  .status-value {
+    font-size: $font-size-xs;
+    line-height: 1.3;
+  }
+
+  .status-card {
+    padding: $spacing-md;
+  }
+
+  /* 移动端对话框优化 */
+  .success-dialog :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 400px !important;
+    margin: 0 auto;
+    border-radius: $border-radius-lg;
+  }
+
+  .success-dialog :deep(.el-dialog__header) {
+    padding: $spacing-lg $spacing-md;
+  }
+
+  .success-dialog :deep(.el-dialog__title) {
+    font-size: $font-size-lg;
+  }
+
+  .success-content {
+    padding: $spacing-lg $spacing-md $spacing-md;
+  }
+
+  .success-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto $spacing-md;
+  }
+
+  .success-icon {
+    font-size: $font-size-2xl;
+  }
+
+  .success-title {
     font-size: $font-size-xl;
+    margin: 0 0 $spacing-sm 0;
+  }
+
+  .success-message {
+    font-size: $font-size-sm;
+    margin: 0 0 $spacing-md 0;
+  }
+
+  .order-info {
+    padding: $spacing-sm $spacing-md;
+    margin: 0 auto $spacing-md;
+  }
+
+  .order-label {
+    font-size: $font-size-xs;
+  }
+
+  .order-id {
+    font-size: $font-size-sm;
+    word-break: break-all;
+  }
+
+  .dialog-footer {
+    flex-direction: column;
+    gap: $spacing-sm;
+    padding: 0 $spacing-md $spacing-lg;
+  }
+
+  .home-btn,
+  .orders-btn {
+    width: 100%;
+    min-height: 44px;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
   }
 }
 </style>

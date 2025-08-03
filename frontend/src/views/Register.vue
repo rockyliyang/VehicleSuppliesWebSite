@@ -1,12 +1,12 @@
 <template>
-  <div class="register-page">
+  <div class="register-page" :class="{ 'page-ready': pageReady }">
     <!-- Page Banner -->
     <PageBanner :title="$t('register.title') || '用户注册'" />
 
     <!-- Register Form Section -->
     <div class="register-container">
       <div class="form-wrapper">
-        <div class="register-card">
+        <div class="register-card" ref="registerCard">
           <div class="register-header">
             <img :src="logoUrl" alt="AUTO EASE EXPERT CO., LTD" class="logo">
             <h2 class="register-title">
@@ -93,6 +93,7 @@ export default {
   },
   data() {
     return {
+      pageReady: false,
       form: {
         email: '',
         password: '',
@@ -145,7 +146,91 @@ export default {
       PictureIcon
     }
   },
+  mounted() {
+    // 立即计算并设置初始滚动位置，避免闪烁
+    this.$nextTick(() => {
+      this.setInitialPosition();
+    });
+  },
   methods: {
+    setInitialPosition() {
+      try {
+        // 等待DOM完全渲染
+        setTimeout(() => {
+          const registerCard = this.$refs.registerCard;
+          
+          if (registerCard) {
+            // 计算表单位置
+            const cardRect = registerCard.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const cardHeight = cardRect.height;
+            
+            // 计算目标滚动位置
+            let targetScrollTop;
+            
+            if (window.innerWidth <= 767) {
+              // 移动端：滚动到表单顶部，留出一些空间
+              targetScrollTop = window.pageYOffset + cardRect.top - 50;
+            } else {
+              // 桌面端：让表单在视窗中居中
+              targetScrollTop = window.pageYOffset + cardRect.top - (viewportHeight - cardHeight) / 2;
+            }
+            
+            // 确保滚动位置在有效范围内
+            const maxScrollTop = document.documentElement.scrollHeight - viewportHeight;
+            targetScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+            
+            // 立即设置滚动位置（无动画）
+            window.scrollTo(0, targetScrollTop);
+            
+            // 显示页面内容
+            this.pageReady = true;
+          }
+        }, 100); // 减少延迟时间
+      } catch (error) {
+        console.warn('设置初始位置失败:', error);
+        // 即使失败也要显示页面
+        this.pageReady = true;
+      }
+    },
+    jumpToRegisterForm() {
+      try {
+        // 查找注册表单容器
+        const registerContainer = document.querySelector('.register-container');
+        const registerCard = document.querySelector('.register-card');
+        
+        if (registerContainer && registerCard) {
+          // 计算滚动位置 - 让表单在视窗中居中
+          const cardRect = registerCard.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const cardHeight = cardRect.height;
+          
+          // 计算目标滚动位置
+          let targetScrollTop;
+          
+          // 移动端和桌面端使用不同的滚动策略
+          if (window.innerWidth <= 767) {
+            // 移动端：滚动到表单顶部，留出一些空间
+            targetScrollTop = window.pageYOffset + cardRect.top - 50;
+          } else {
+            // 桌面端：让表单在视窗中居中
+            targetScrollTop = window.pageYOffset + cardRect.top - (viewportHeight - cardHeight) / 2;
+          }
+          
+          // 确保滚动位置不会超出页面范围
+          const maxScrollTop = document.documentElement.scrollHeight - viewportHeight;
+          targetScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+          
+          // 瞬间跳转到目标位置（移除 behavior: 'smooth'）
+          window.scrollTo({
+            top: targetScrollTop,
+            behavior: 'auto'
+          });
+        }
+      } catch (error) {
+        console.warn('自动跳转失败:', error);
+      }
+    },
     refreshCaptcha() {
       this.captchaUrl = '/api/users/captcha?' + Date.now();
     },
@@ -188,6 +273,22 @@ export default {
 <style lang="scss" scoped>
 @import '@/assets/styles/_variables.scss';
 @import '@/assets/styles/_mixins.scss';
+
+/* Register Page */
+.register-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  @include flex-column;
+  
+  /* 防闪烁：初始状态隐藏内容 */
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  
+  /* 页面就绪后显示内容 */
+  &.page-ready {
+    opacity: 1;
+  }
+}
 
 /* Register Container */
 .register-container {
@@ -484,15 +585,109 @@ export default {
 }
 
 /* Responsive Design */
-@media (max-width: 640px) {
-  .register-card {
-    margin: $auth-mobile-card-margin;
-    padding: $auth-mobile-card-padding;
+@include mobile {
+  .register-container {
+    padding: $spacing-lg $spacing-sm;
+    min-height: calc(100vh - 200px);
   }
 
+  .form-wrapper {
+    padding: 0;
+    max-width: 100%;
+  }
 
+  .register-card {
+    margin: 0;
+    padding: $spacing-lg $spacing-md;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .logo {
+    width: 120px;
+    max-height: 60px;
+  }
+
+  .register-title {
+    font-size: $font-size-3xl;
+    margin: $spacing-md 0 $spacing-sm 0;
+  }
+
+  .register-subtitle {
+    font-size: $font-size-lg;
+    margin-bottom: $spacing-lg;
+  }
+
+  .register-form :deep(.el-form-item) {
+    margin-bottom: $spacing-lg;
+  }
+
+  .captcha-container {
+    flex-direction: column;
+    gap: $spacing-md;
+    align-items: stretch;
+  }
+
+  .captcha-img {
+    width: 100%;
+    height: 48px;
+    max-width: 200px;
+    align-self: center;
+  }
+
+  .agreement-checkbox :deep(.el-checkbox__label) {
+    font-size: $font-size-lg !important;
+    line-height: 1.6;
+  }
+
+  .register-button {
+    height: 48px;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+  }
+
+  .footer-text {
+    font-size: $font-size-lg;
+    line-height: 1.6;
+    margin: $spacing-md 0;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 480px) {
   .register-container {
-    padding: $auth-mobile-container-padding;
+    padding: $spacing-md $spacing-xs;
+  }
+
+  .register-card {
+    padding: $spacing-md $spacing-sm;
+  }
+
+  .logo {
+    width: 100px;
+    max-height: 50px;
+  }
+
+  .register-title {
+    font-size: $font-size-2xl;
+  }
+
+  .register-subtitle {
+    font-size: $font-size-md;
+  }
+
+  .agreement-checkbox :deep(.el-checkbox__label) {
+    font-size: $font-size-md !important;
+  }
+
+  .register-button {
+    height: 44px;
+    font-size: $font-size-md;
+  }
+
+  .footer-text {
+    font-size: $font-size-md;
   }
 }
 </style>

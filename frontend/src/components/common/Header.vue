@@ -76,7 +76,7 @@
             <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
           </a>
           <!-- Mobile User Button -->
-          <button @click="showLoginDialog = true" class="mobile-user-btn" :class="{ 'user-logged-in': isLoggedIn }">
+          <button @click="handleMobileUserClick" class="mobile-user-btn" :class="{ 'user-logged-in': isLoggedIn }">
             <i class="fas fa-user"></i>
           </button>
         </div>
@@ -95,6 +95,41 @@
             :class="{ 'nav-active': $route.path === '/news' }">{{$t('news')}}</router-link>
           <router-link to="/contact" class="mobile-nav-btn"
             :class="{ 'nav-active': $route.path === '/contact' }">{{$t('contact')}}</router-link>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile User Menu -->
+    <div class="mobile-user-menu" v-show="mobileUserMenuOpen">
+      <div class="mobile-user-menu-overlay" @click="closeMobileUserMenu"></div>
+      <div class="mobile-user-menu-content">
+        <div class="mobile-user-menu-header">
+          <h3>用户菜单</h3>
+          <button @click="closeMobileUserMenu" class="close-btn">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mobile-user-menu-list">
+          <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('settings')">
+            <i class="fas fa-cog"></i>
+            <span>{{ $t('userSettings.title') || '账号设置' }}</span>
+          </div>
+          <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('orders')">
+            <i class="fas fa-shopping-bag"></i>
+            <span>{{ $t('orders') || '我的订单' }}</span>
+          </div>
+          <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('inquiries')">
+            <i class="fas fa-file-alt"></i>
+            <span>{{ $t('inquiry.management.title') || '询价单管理' }}</span>
+          </div>
+          <div v-if="isLoggedIn" class="menu-item logout-item" @click="handleMobileMenuCommand('logout')">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>{{ $t('logout') || '退出登录' }}</span>
+          </div>
+          <div v-if="!isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('login')">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>{{ $t('login') || '登录' }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -356,10 +391,21 @@ export default {
     // 移动端用户按钮点击
     handleMobileUserClick() {
       if (this.isLoggedIn) {
-        this.$router.push('/user/orders');
+        this.mobileUserMenuOpen = true;
       } else {
         this.$router.push('/login');
       }
+    },
+    
+    // 关闭移动端用户菜单
+    closeMobileUserMenu() {
+      this.mobileUserMenuOpen = false;
+    },
+    
+    // 处理移动端菜单命令
+    handleMobileMenuCommand(command) {
+      this.closeMobileUserMenu();
+      this.handleUserMenu(command);
     },
     
     // 获取语言显示名称
@@ -421,33 +467,52 @@ export default {
   padding: $spacing-md $spacing-lg;
 }
 
-/* Logo */
+/* Logo - 统一管理所有logo相关样式 */
 .logo {
   flex: 0 0 auto;
-  min-width: 120px;
-  max-width: 200px;
-  height: 40px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  
+  /* 默认桌面端样式 */
+  min-width: $spacing-6xl - $spacing-lg; // 约120px
+  max-width: $auth-logo-width + $spacing-lg; // 约200px  
+  height: $spacing-5xl - $spacing-4xl; // 约40px
 
-  @include mobile {
-    min-width: 100px;
-    max-width: 140px;
-    height: 32px;
+  /* 平板端样式 */
+  @include tablet {
+    min-width: $auth-logo-width; // 160px
   }
-}
 
-.logo img {
-  height: 100%;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
+  /* 平板到桌面端之间的样式 */
+  @media (min-width: $breakpoint-tablet) and (max-width: $breakpoint-desktop) {
+    min-width: $spacing-8xl - $spacing-2xl; // 218px
+  }
+
+  /* 手机端样式 */
+  @include mobile {
+    min-width: $spacing-4xl + $spacing-md; // 约80px
+    max-width: $spacing-6xl - $spacing-3xl; // 约110px
+    height: $mobile-logo-height - $spacing-xs; // 约28px
+  }
+
+  /* Logo图片样式 */
+  img {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+
+    /* 手机端图片高度 */
+    @include mobile {
+      height: $mobile-logo-height;
+    }
+  }
 }
 
 /* Desktop/Mobile Header Display */
 .desktop-header {
-  @media (max-width: 900px) {
+  @media (max-width: $mobile-breakpoint-lg) {
     display: none;
   }
 }
@@ -455,9 +520,8 @@ export default {
 .mobile-header {
   display: none;
 
-  @media (max-width: 900px) {
+  @media (max-width: $mobile-breakpoint-lg) {
     display: block;
-
   }
 }
 
@@ -476,7 +540,7 @@ export default {
 
 .mobile-nav-row {
   background: $white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: $shadow-sm;
   margin: 0;
   padding: 0;
   width: 100%;
@@ -488,7 +552,7 @@ export default {
   overflow-x: auto;
   padding: 0;
   justify-content: space-around;
-  min-height: 60px;
+  min-height: $spacing-4xl - $spacing-md; // 约51px (64px - 13px)
   align-items: stretch;
   width: 100%;
 
@@ -503,7 +567,7 @@ export default {
     justify-content: space-around;
     gap: 0;
     padding: 0;
-    min-height: 60px;
+    min-height: $spacing-4xl - $spacing-md; // 约51px (64px - 13px)
   }
 }
 
@@ -522,7 +586,7 @@ export default {
   transition: $transition-base;
   white-space: nowrap;
   position: relative;
-  min-height: 60px;
+  min-height: $spacing-4xl - $spacing-md; // 约51px (64px - 13px)
   text-align: center;
   border: none;
 
@@ -542,7 +606,7 @@ export default {
     min-width: auto;
     font-size: $font-size-sm;
     padding: $spacing-sm $spacing-xs;
-    min-height: 60px;
+    min-height: $spacing-4xl - $spacing-md; // 约51px (64px - 13px)
   }
 }
 
@@ -550,7 +614,7 @@ export default {
 .language-selector {
   .language-select {
     padding: $spacing-xs $spacing-sm;
-    border: 1px solid $gray-300;
+    border: $border-width-sm solid $gray-300;
     border-radius: $border-radius-sm;
     background: $white;
     color: $text-primary;
@@ -565,7 +629,7 @@ export default {
     &:focus {
       outline: none;
       border-color: $primary-color;
-      box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+      box-shadow: 0 0 0 $border-width-md rgba($primary-color, 0.1);
     }
   }
 }
@@ -576,7 +640,7 @@ export default {
   gap: $spacing-xs;
   padding: $spacing-xs $spacing-sm;
   background: none;
-  border: 1px solid $gray-300;
+  border: $border-width-sm solid $gray-300;
   border-radius: $border-radius-md;
   color: $text-primary;
   cursor: pointer;
@@ -724,7 +788,7 @@ export default {
 /* User Actions */
 .user-actions {
   flex: 0 0 auto;
-  min-width: 140px;
+  min-width: $spacing-6xl + $spacing-lg; // 约140px
   @include flex-center;
   gap: $spacing-md;
 
@@ -746,6 +810,132 @@ export default {
 
   &:hover {
     color: $primary-color;
+  }
+}
+
+/* Mobile User Menu */
+.mobile-user-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: $z-index-mobile-nav + 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mobile-user-menu-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.mobile-user-menu-content {
+  position: relative;
+  z-index: 2;
+  background: $white;
+  width: 100%;
+  max-width: 400px;
+  margin: $spacing-lg;
+  border-radius: $border-radius-lg $border-radius-lg 0 0;
+  box-shadow: $shadow-lg;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.mobile-user-menu-header {
+  @include flex-between;
+  align-items: center;
+  padding: $spacing-lg $spacing-xl;
+  border-bottom: $border-width-sm solid $gray-200;
+  
+  h3 {
+    margin: 0;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+  }
+  
+  .close-btn {
+    @include flex-center;
+    width: $spacing-3xl;
+    height: $spacing-3xl;
+    background: none;
+    border: none;
+    color: $text-secondary;
+    cursor: pointer;
+    border-radius: $border-radius-full;
+    transition: $transition-base;
+    
+    &:hover {
+      background: $gray-100;
+      color: $text-primary;
+    }
+    
+    i {
+      font-size: $font-size-lg;
+    }
+  }
+}
+
+.mobile-user-menu-list {
+  padding: $spacing-md 0;
+}
+
+.menu-item {
+  @include flex-center;
+  justify-content: flex-start;
+  gap: $spacing-lg;
+  padding: $spacing-lg $spacing-xl;
+  color: $text-primary;
+  cursor: pointer;
+  transition: $transition-base;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  
+  &:hover {
+    background: $gray-50;
+    color: $primary-color;
+  }
+  
+  &.logout-item {
+    color: $error-color;
+    
+    &:hover {
+      background: rgba($error-color, 0.05);
+      color: $error-color;
+    }
+  }
+  
+  i {
+    font-size: $font-size-lg;
+    width: $spacing-xl;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  
+  span {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-medium;
+    flex: 1;
   }
 }
 
@@ -790,7 +980,7 @@ export default {
   line-height: $mobile-cart-badge-size;
   text-align: center;
   border-radius: $border-radius-full;
-  box-shadow: 0 2px 4px rgba($primary-color, 0.2);
+  box-shadow: $shadow-sm;
 }
 
 .user-btn {
@@ -840,29 +1030,17 @@ export default {
     padding: $spacing-sm $spacing-md;
     gap: $spacing-lg;
   }
-
-  .logo {
-    min-width: 160px;
-  }
 }
 
-@media (max-width: $breakpoint-desktop) {
+@media (min-width: $breakpoint-tablet) and (max-width: $breakpoint-desktop) {
   .container {
     justify-content: space-between;
-  }
-
-  .logo {
-    min-width: $spacing-8xl - $spacing-2xl;
   }
 }
 
 @include mobile {
   .container {
     padding: $spacing-sm $spacing-sm;
-  }
-
-  .logo img {
-    height: $mobile-logo-height;
   }
 
   .user-actions {

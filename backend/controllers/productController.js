@@ -613,3 +613,66 @@ exports.getProductsByCategory = async (req, res) => {
     });
   }
 };
+
+// 模糊查询产品（用于询价单添加产品）
+exports.searchProducts = async (req, res) => {
+  try {
+    const { keyword, limit = 10 } = req.query;
+    
+    if (!keyword || keyword.trim().length === 0) {
+      return res.json({
+        success: true,
+        message: getMessage('PRODUCT.SEARCH_SUCCESS'),
+        data: []
+      });
+    }
+
+    const trimmedKeyword = keyword.trim();
+    const searchLimit = Math.min(parseInt(limit), 50); // 限制最大返回50条
+
+    const rows = await query(`
+      SELECT p.id, p.guid, p.name, p.product_code, p.price, p.stock, p.status,
+        c.name as category_name,
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1) as thumbnail_url
+      FROM products p
+      LEFT JOIN product_categories c ON p.category_id = c.id
+      WHERE p.deleted = false 
+        AND p.status = 'on_shelf'
+        AND (p.name ILIKE $1 OR p.product_code ILIKE $1)
+      ORDER BY 
+        CASE 
+          WHEN p.name ILIKE $2 THEN 1
+          WHEN p.product_code ILIKE $2 THEN 2
+          ELSE 3
+        END,
+        p.sort_order DESC,
+        p.id DESC
+      LIMIT $3
+    `, [`%${trimmedKeyword}%`, `${trimmedKeyword}%`, searchLimit]);
+
+    const products = rows.getRows().map(product => ({
+      id: product.id,
+      guid: product.guid,
+      name: product.name,
+      product_code: product.product_code,
+      price: product.price,
+      stock: product.stock,
+      status: product.status,
+      category_name: product.category_name,
+      thumbnail_url: product.thumbnail_url || ''
+    }));
+
+    res.json({
+      success: true,
+      message: getMessage('PRODUCT.SEARCH_SUCCESS'),
+      data: products
+    });
+  } catch (error) {
+    console.error('产品搜索失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('PRODUCT.SEARCH_FAILED'),
+      data: []
+    });
+  }
+};

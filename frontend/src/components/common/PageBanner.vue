@@ -82,4 +82,38 @@ export default {
   margin: 0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
+
+/* 移动端适配 */
+@include mobile {
+  .page-banner {
+    height: $banner-height-mobile; /* 使用变量定义的移动端高度 */
+  }
+
+  .banner-title {
+    font-size: $font-size-2xl; /* 减小移动端标题字体 */
+    margin: 0 0 $spacing-md 0;
+    line-height: 1.2;
+  }
+
+  .banner-subtitle {
+    font-size: $font-size-base;
+    line-height: 1.4;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: $mobile-breakpoint-sm) {
+  .page-banner {
+    height: $mobile-banner-height-sm;
+  }
+
+  .banner-title {
+    font-size: $font-size-xl;
+    margin: 0 0 $spacing-sm 0;
+  }
+
+  .banner-subtitle {
+    font-size: $font-size-sm;
+  }
+}
 </style>

@@ -430,6 +430,76 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
+// 更新询价单中的商品数量
+exports.updateItemInInquiry = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { inquiryId, itemId } = req.params;
+    const { quantity } = req.body;
+    
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.INVALID_QUANTITY')
+      });
+    }
+    
+    // 验证询价是否存在且属于当前用户
+    const inquiryResult = await query(
+      'SELECT id, status FROM inquiries WHERE id = $1 AND user_id = $2 AND deleted = false',
+      [inquiryId, userId]
+    );
+    
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
+      });
+    }
+    
+    if (inquiryResult.getFirstRow().status !== 'inquiried') {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED')
+      });
+    }
+    
+    // 验证商品是否存在于询价中
+    const itemResult = await query(
+      'SELECT id, product_id FROM inquiry_items WHERE id = $1 AND inquiry_id = $2 AND deleted = false',
+      [itemId, inquiryId]
+    );
+    
+    if (!itemResult || itemResult.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
+      });
+    }
+    
+    // 更新商品数量
+    await query(
+      'UPDATE inquiry_items SET quantity = $1, updated_by = $2, updated_at = NOW() WHERE id = $3',
+      [quantity, userId, itemId]
+    );
+    
+    return res.json({
+      success: true,
+      message: getMessage('INQUIRY.ITEM.UPDATE_SUCCESS'),
+      data: {
+        itemId,
+        quantity
+      }
+    });
+  } catch (error) {
+    console.error('更新询价商品数量失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('INQUIRY.ITEM.UPDATE_FAILED')
+    });
+  }
+};
+
 // 删除询价单中的商品
 exports.removeItemFromInquiry = async (req, res) => {
   try {

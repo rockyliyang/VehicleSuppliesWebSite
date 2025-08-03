@@ -1,5 +1,5 @@
 <template>
-  把 <div class="orders-page">
+  <div class="orders-page">
     <PageBanner :title="$t('orders.title') || '我的订单'" />
 
     <!-- Navigation Menu -->
@@ -8,39 +8,80 @@
     <div class="container mx-auto px-4">
       <div class="orders-content" v-loading="loading">
         <div v-if="orders.length > 0" class="orders-list">
-          <el-table :data="orders" style="width: 100%" v-loading="loading" @row-click="handleRowClick"
-            class="clickable-table">
-            <el-table-column prop="id" :label="$t('orders.orderNumber') || 'Order Number'" width="200">
-              <template #default="scope">
-                <span class="order-number">{{ scope.row.id }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column :label="$t('orders.orderDate') || '下单时间'" width="260">
-              <template #default="{row}">
-                <span class="order-date">{{ formatDate(row.created_at) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column :label="$t('orders.totalAmount') || '订单金额'" width="220">
-              <template #default="{row}">
-                <span class="order-amount">¥{{ formatPrice(row.total_amount) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column :label="$t('orders.status') || '订单状态'" width="200">
-              <template #default="{row}">
-                <el-tag :type="getStatusType(row.status)" class="status-tag">{{ getStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column :label="$t('orders.paymentMethod') || '支付方式'">
-              <template #default="{row}">
-                <span class="payment-method">{{ getPaymentMethodText(row.payment_method) }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
+          <!-- Desktop Table View -->
+          <div class="desktop-only">
+            <el-table :data="orders" style="width: 100%" v-loading="loading" @row-click="handleRowClick"
+              class="clickable-table">
+              <el-table-column prop="id" :label="$t('orders.orderNumber') || 'Order Number'" width="200">
+                <template #default="scope">
+                  <span class="order-number">{{ scope.row.id }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('orders.orderDate') || '下单时间'" width="260">
+                <template #default="{row}">
+                  <span class="order-date">{{ formatDate(row.created_at) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('orders.totalAmount') || '订单金额'" width="220">
+                <template #default="{row}">
+                  <span class="order-amount">¥{{ formatPrice(row.total_amount) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('orders.status') || '订单状态'" width="200">
+                <template #default="{row}">
+                  <el-tag :type="getStatusType(row.status)" class="status-tag">{{ getStatusText(row.status) }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('orders.paymentMethod') || '支付方式'">
+                <template #default="{row}">
+                  <span class="payment-method">{{ getPaymentMethodText(row.payment_method) }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- Mobile Card View -->
+          <div class="mobile-only">
+            <div class="orders-cards">
+              <div v-for="order in orders" :key="order.id" class="order-card" @click="handleRowClick(order)">
+                <div class="order-card-header">
+                  <div class="order-number">{{ order.id }}</div>
+                  <el-tag :type="getStatusType(order.status)" class="status-tag">{{ getStatusText(order.status) }}</el-tag>
+                </div>
+                <div class="order-card-body">
+                  <div class="order-info-row">
+                    <span class="label">下单时间:</span>
+                    <span class="value">{{ formatDate(order.created_at) }}</span>
+                  </div>
+                  <div class="order-info-row">
+                    <span class="label">订单金额:</span>
+                    <span class="value amount">¥{{ formatPrice(order.total_amount) }}</span>
+                  </div>
+                  <div class="order-info-row">
+                    <span class="label">支付方式:</span>
+                    <span class="value">{{ getPaymentMethodText(order.payment_method) }}</span>
+                  </div>
+                </div>
+                <div class="order-card-footer">
+                  <i class="el-icon-arrow-right"></i>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="pagination-container">
-            <el-pagination @current-change="handlePageChange" :current-page="currentPage" :page-size="pageSize"
-              layout="total, prev, pager, next, jumper" :total="total" class="modern-pagination">
-            </el-pagination>
+            <!-- Desktop Pagination -->
+            <div class="desktop-only">
+              <el-pagination @current-change="handlePageChange" :current-page="currentPage" :page-size="pageSize"
+                layout="total, prev, pager, next, jumper" :total="total" class="modern-pagination">
+              </el-pagination>
+            </div>
+            <!-- Mobile Pagination -->
+            <div class="mobile-only">
+              <el-pagination @current-change="handlePageChange" :current-page="currentPage" :page-size="pageSize"
+                layout="prev, pager, next" :total="total" class="modern-pagination mobile-pagination">
+              </el-pagination>
+            </div>
           </div>
         </div>
 
@@ -52,8 +93,6 @@
         </div>
       </div>
     </div>
-
-
   </div>
 </template>
 
@@ -310,14 +349,121 @@ export default {
   padding: $spacing-5xl 0;
 }
 
+/* 桌面端和移动端显示控制 */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* 移动端卡片样式 */
+.orders-cards {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.order-card {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  padding: $spacing-lg;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: $shadow-sm;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+    border-color: $primary-color;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $gray-100;
+
+  .order-number {
+    font-weight: $font-weight-semibold;
+    color: $primary-color;
+    font-size: $font-size-lg;
+  }
+}
+
+.order-card-body {
+  margin-bottom: $spacing-md;
+}
+
+.order-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .label {
+    color: $text-secondary;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+  }
+
+  .value {
+    color: $text-primary;
+    font-size: $font-size-sm;
+    text-align: right;
+    flex: 1;
+    margin-left: $spacing-md;
+
+    &.amount {
+      color: $success-color;
+      font-weight: $font-weight-semibold;
+      font-size: $font-size-md;
+    }
+  }
+}
+
+.order-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: $spacing-md;
+  border-top: 1px solid $gray-100;
+
+  i {
+    color: $text-secondary;
+    font-size: $font-size-lg;
+  }
+}
+
 /* 响应式设计 */
 @include mobile {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
   .container {
-    padding: $spacing-xl $spacing-sm;
+    padding: $spacing-lg $spacing-sm;
   }
 
   .orders-content {
-    padding: $spacing-xl;
+    padding: $spacing-lg;
     border-radius: $border-radius-md;
   }
 
@@ -325,37 +471,109 @@ export default {
     margin-top: $spacing-xl;
   }
 
-  :deep(.el-table) {
-    font-size: $font-size-sm;
+  .orders-cards {
+    gap: $spacing-md;
   }
 
-  :deep(.el-table th) {
-    padding: $spacing-md $spacing-sm;
-    font-size: $font-size-md;
+  .order-card {
+    padding: $spacing-md;
+    border-radius: $border-radius-md;
   }
 
-  :deep(.el-table td) {
-    padding: $spacing-md $spacing-sm;
-    font-size: $font-size-sm;
+  .order-card-header {
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-sm;
+
+    .order-number {
+      font-size: $font-size-md;
+    }
   }
 
-  .order-number,
-  .order-date,
-  .order-amount,
-  .payment-method {
-    font-size: $font-size-sm;
+  .order-card-body {
+    margin-bottom: $spacing-sm;
   }
 
-  .action-btn {
-    font-size: $font-size-xs;
-    padding: $spacing-xs $spacing-sm;
+  .order-info-row {
+    margin-bottom: $spacing-xs;
+
+    .label {
+      font-size: $font-size-xs;
+    }
+
+    .value {
+      font-size: $font-size-xs;
+
+      &.amount {
+        font-size: $font-size-sm;
+      }
+    }
+  }
+
+  .order-card-footer {
+    padding-top: $spacing-sm;
+
+    i {
+      font-size: $font-size-md;
+    }
   }
 
   :deep(.modern-pagination) {
-
     .el-pagination__total,
     .el-pagination__jump {
       font-size: $font-size-sm;
+    }
+
+    .el-pager li {
+      min-width: 32px;
+      height: 32px;
+      line-height: 30px;
+      font-size: $font-size-sm;
+    }
+
+    .btn-prev,
+    .btn-next {
+      min-width: 32px;
+      height: 32px;
+      line-height: 30px;
+      font-size: $font-size-sm;
+    }
+
+    &.mobile-pagination {
+      .el-pager {
+        li {
+          min-width: 28px;
+          height: 28px;
+          line-height: 26px;
+          font-size: $font-size-xs;
+          margin: 0 1px;
+        }
+      }
+
+      .btn-prev,
+      .btn-next {
+        min-width: 28px;
+        height: 28px;
+        line-height: 26px;
+        font-size: $font-size-xs;
+        padding: 0;
+
+        .el-icon {
+          font-size: $font-size-xs;
+        }
+      }
+    }
+  }
+
+  .empty-orders {
+    padding: $spacing-3xl 0;
+
+    :deep(.el-empty__description) {
+      font-size: $font-size-sm;
+    }
+
+    :deep(.el-button) {
+      font-size: $font-size-sm;
+      padding: $spacing-sm $spacing-lg;
     }
   }
 }

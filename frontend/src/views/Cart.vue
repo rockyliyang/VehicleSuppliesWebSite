@@ -9,8 +9,8 @@
       <!-- Shopping Cart Section -->
       <div class="cart-content" v-loading="loading">
         <div v-if="cartItems.length > 0" class="cart-items">
-          <!-- Cart Table -->
-          <div class="cart-table-wrapper">
+          <!-- Desktop Table View -->
+          <div class="cart-table-wrapper desktop-only">
             <table class="cart-table">
               <thead>
                 <tr class="cart-table-header">
@@ -21,7 +21,6 @@
                   <th class="price-column">{{ $t('cart.unitPrice') || '单价' }}</th>
                   <th class="quantity-column">{{ $t('cart.quantity') || '数量' }}</th>
                   <th class="subtotal-column">{{ $t('cart.subtotal') || '小计' }}</th>
-                  <th class="actions-column">{{ $t('cart.actions') || '操作' }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -55,16 +54,58 @@
                     </div>
                   </td>
                   <td class="subtotal-cell">¥{{ formatPrice(item.price * item.quantity) }}</td>
-                  <td class="actions-cell">
-                    <div class="action-buttons">
-                      <button class="remove-btn" @click="removeItem(item.id)">
-                        {{ $t('cart.remove') || '删除' }}
-                      </button>
-                    </div>
-                  </td>
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Mobile Card View -->
+          <div class="cart-cards mobile-only">
+            <div class="select-all-mobile">
+              <input type="checkbox" class="cart-checkbox" @change="selectAll" v-model="allSelected">
+              <span>{{ $t('cart.selectAll') || '全选' }}</span>
+            </div>
+            <div v-for="item in cartItems" :key="item.id" class="cart-card">
+              <div class="card-header">
+                <input type="checkbox" class="cart-checkbox" v-model="item.selected" @change="updateSelectedItems">
+                <div class="product-info-mobile">
+                  <div class="product-image-mobile">
+                    <img :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.name"
+                      @error="handleImageError">
+                  </div>
+                  <div class="product-details-mobile">
+                    <router-link :to="`/product/${item.product_id}`" class="product-name-mobile">
+                      {{ item.name }}
+                    </router-link>
+                    <div class="product-code-mobile">
+                      {{ $t('cart.productCode') || '产品编号' }}: {{ item.product_code }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="price-info">
+                  <span class="price-label">{{ $t('cart.unitPrice') || '单价' }}:</span>
+                  <span class="price-value">¥{{ formatPrice(item.price) }}</span>
+                </div>
+                <div class="quantity-section">
+                  <span class="quantity-label">{{ $t('cart.quantity') || '数量' }}:</span>
+                  <div class="quantity-controls">
+                    <button class="quantity-btn" @click="decreaseQuantity(item)">-</button>
+                    <input type="text" class="quantity-input" v-model="item.quantity"
+                      @blur="updateQuantity(item.id, item.quantity)">
+                    <button class="quantity-btn" @click="increaseQuantity(item)">+</button>
+                  </div>
+                </div>
+                <div class="subtotal-info">
+                  <span class="subtotal-label">{{ $t('cart.subtotal') || '小计' }}:</span>
+                  <span class="subtotal-value">¥{{ formatPrice(item.price * item.quantity) }}</span>
+                </div>
+              </div>
+              <!-- 移除手机端单个商品的删除按钮 -->
+              <div class="card-footer" style="display: none;">
+              </div>
+            </div>
           </div>
 
           <!-- Cart Summary -->
@@ -77,8 +118,8 @@
               <button class="continue-shopping-btn" @click="$router.push('/products')">
                 {{ $t('cart.continueShopping') || '继续购物' }}
               </button>
-              <button class="clear-cart-btn" @click="clearCart">
-                {{ $t('cart.clearCart') || '清空购物车' }}
+              <button class="remove-selected-btn" @click="removeSelectedItems">
+                {{ $t('cart.removeSelected') || '删除选中商品' }}
               </button>
               <button class="inquiry-btn" @click="addSelectedToInquiry">
                 {{ $t('cart.inquiry') || '询价' }}
@@ -101,10 +142,12 @@
         </div>
       </div>
 
-      <!-- Inquiries Section -->
-      <InquiryPanel :cart-items="cartItems" :inquired-product-ids="inquiredProductIds"
-        @update-inquired-products="updateInquiredProductIds" @inquiry-created="handleInquiryCreated"
-        ref="inquiryPanel" />
+      <!-- Inquiries Section - 仅在桌面端显示 -->
+      <div class="desktop-only">
+        <InquiryPanel :cart-items="cartItems" :inquired-product-ids="inquiredProductIds"
+          @update-inquired-products="updateInquiredProductIds" @inquiry-created="handleInquiryCreated"
+          ref="inquiryPanel" />
+      </div>
     </div>
   </div>
 </template>
@@ -248,6 +291,52 @@ export default {
         // 用户取消操作
       }
     },
+    
+    async removeSelectedItems() {
+      if (!this.selectedItems.length) {
+        this.$messageHandler.showWarning(this.$t('cart.selectItemsFirst') || '请先选择要删除的商品', 'cart.warning.selectItemsFirst');
+        return;
+      }
+      
+      try {
+        await this.$messageHandler.confirm({
+          message: this.$t('cart.removeSelectedConfirmMessage') || `确定要删除选中的 ${this.selectedItems.length} 个商品吗？此操作不可撤销。`,
+          translationKey: 'cart.confirm.removeSelected'
+        });
+        
+        try {
+          // 批量删除选中的商品
+          const deletePromises = this.selectedItems.map(item => 
+            this.$api.delete(`/cart/item/${item.id}`)
+          );
+          
+          await Promise.all(deletePromises);
+          
+          this.$messageHandler.showSuccess(
+            this.$t('cart.removeSelectedSuccess') || `已成功删除 ${this.selectedItems.length} 个商品`, 
+            'cart.success.removeSelectedSuccess'
+          );
+          
+          // 从本地数组中移除已删除的商品
+          const selectedIds = this.selectedItems.map(item => item.id);
+          this.cartItems = this.cartItems.filter(item => !selectedIds.includes(item.id));
+          this.selectedItems = [];
+          this.calculateTotal();
+          this.$bus.emit('cart-updated');
+          
+        } catch (error) {
+          console.error('删除选中商品失败:', error);
+          this.$messageHandler.showError(
+            error.response?.data?.message || this.$t('cart.removeSelectedError') || '删除选中商品失败', 
+            'cart.error.removeSelectedFailed'
+          );
+          // 重新获取购物车数据以确保数据一致性
+          this.fetchCart();
+        }
+      } catch {
+        // 用户取消操作
+      }
+    },
     calculateTotal() {
       // 更新选中的商品列表
       this.updateSelectedItems();
@@ -312,6 +401,15 @@ export default {
     
     // Add product to inquiry
     addToInquiry(item) {
+      const isMobile = window.innerWidth <= 767;
+      
+      if (isMobile) {
+        // 移动端：直接跳转到询价管理页面
+        this.$router.push('/inquiry-management');
+        return;
+      }
+      
+      // 桌面端：检查商品是否已在询价单中
       if (this.isProductInInquiry(item.product_id)) {
         this.$messageHandler.showWarning(
           this.$t('cart.productAlreadyInInquiry') || '该商品已在询价单中',
@@ -320,7 +418,7 @@ export default {
         return;
       }
       
-      // Delegate to InquiryPanel component
+      // 桌面端：使用InquiryPanel组件
       if (this.$refs.inquiryPanel) {
         this.$refs.inquiryPanel.addToInquiry(item);
       }
@@ -336,10 +434,56 @@ export default {
         return;
       }
       
-      // Delegate to InquiryPanel component to add multiple items
-      // Let InquiryPanel handle the logic of checking current inquiry
-      if (this.$refs.inquiryPanel) {
-        await this.$refs.inquiryPanel.addMultipleToInquiry(this.selectedItems);
+      // 检查是否为移动端
+      const isMobile = window.innerWidth <= 767;
+      
+      if (isMobile) {
+        // 移动端：直接创建询价单并跳转
+        try {
+          // 创建新的询价单
+          const titlePrefix = this.$t('cart.inquiryTitlePrefix') || '询价单';
+          const response = await this.$api.postWithErrorHandler('/inquiries', {
+            titlePrefix: titlePrefix
+          }, {
+            fallbackKey: 'INQUIRY.CREATE.FAILED'
+          });
+          
+          if (response.success) {
+            const inquiryId = response.data.id;
+            
+            // 将选中的商品添加到询价单
+            const addPromises = this.selectedItems.map(item => 
+              this.$api.postWithErrorHandler(`/inquiries/${inquiryId}/items`, {
+                product_id: item.product_id,
+                quantity: item.quantity,
+                unit_price: item.price
+              }, {
+                fallbackKey: 'INQUIRY.ADD_ITEM.FAILED'
+              })
+            );
+            
+            await Promise.all(addPromises);
+            
+            this.$messageHandler.showSuccess(
+              this.$t('cart.inquiryCreatedSuccess') || '询价单创建成功，正在跳转...',
+              'CART.INQUIRY.CREATED_SUCCESS'
+            );
+            
+            // 跳转到询价管理页面
+            this.$router.push('/inquiry-management');
+          }
+        } catch (error) {
+          console.error('创建询价单失败:', error);
+          this.$messageHandler.showError(
+            error.response?.data?.message || this.$t('cart.inquiryCreateError') || '创建询价单失败',
+            'CART.INQUIRY.CREATE_FAILED'
+          );
+        }
+      } else {
+        // 桌面端：使用原有的InquiryPanel逻辑
+        if (this.$refs.inquiryPanel) {
+          await this.$refs.inquiryPanel.addMultipleToInquiry(this.selectedItems);
+        }
       }
     }
   }
@@ -407,19 +551,22 @@ export default {
     }
 
     &.product-column {
-      width: 40%;
+      width: 45%;
     }
 
-    &.price-column,
-    &.quantity-column,
-    &.subtotal-column,
-    &.actions-column {
-      width: 15%;
+    &.price-column {
+      width: 18%;
     }
 
-    &.actions-column {
-      text-align: center;
+    &.quantity-column {
+      width: 18%;
     }
+
+    &.subtotal-column {
+      width: 19%;
+    }
+
+
   }
 }
 
@@ -641,7 +788,7 @@ export default {
 }
 
 .continue-shopping-btn,
-.clear-cart-btn,
+.remove-selected-btn,
 .inquiry-btn,
 .checkout-btn {
   padding: 12px 24px;
@@ -663,12 +810,18 @@ export default {
   }
 }
 
-.clear-cart-btn {
-  background: $primary-color;
+.remove-selected-btn {
+  background: #ef4444;
   color: $white;
 
   &:hover {
-    background: darken($primary-color, 10%);
+    background: #dc2626;
+  }
+  
+  &:disabled {
+    background: $gray-400;
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 }
 
@@ -747,30 +900,61 @@ export default {
 
 // Responsive design
 @include mobile {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
+  .cart-table-wrapper {
+    display: none !important;
+  }
+
+  .cart-cards {
+    display: flex !important;
+  }
+
+  .cart-page {
+    overflow-x: hidden;
+  }
+
   .cart-container {
-    padding: 16px;
+    padding: 12px;
     grid-template-columns: 1fr;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 
   .cart-content {
-    padding: 16px;
+    padding: 12px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .cart-summary {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .cart-actions {
     flex-direction: column;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .continue-shopping-btn,
-  .clear-cart-btn,
+  .remove-selected-btn,
+  .inquiry-btn,
   .checkout-btn {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .product-info {
@@ -805,6 +989,207 @@ export default {
   .item-actions {
     margin-top: 8px;
     justify-content: center;
+  }
+}
+
+// Desktop only styles
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+// 确保在桌面端正确显示
+@include desktop {
+  .desktop-only {
+    display: block !important;
+  }
+
+  .mobile-only {
+    display: none !important;
+  }
+  
+  .cart-table-wrapper {
+    display: block !important;
+  }
+  
+  .cart-cards {
+    display: none !important;
+  }
+}
+
+// Mobile card styles
+.cart-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.select-all-mobile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: $gray-50;
+  border-radius: 8px;
+  border: 1px solid $gray-200;
+  font-weight: 500;
+  color: $text-primary;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.cart-card {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid $gray-200;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.product-info-mobile {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0; // 允许flex子元素收缩
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.product-image-mobile {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid $gray-200;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.product-details-mobile {
+  flex: 1;
+  min-width: 0; // 允许文本截断
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.product-name-mobile {
+  font-size: 16px;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: 6px;
+  line-height: 1.3;
+  text-decoration: none;
+  display: block;
+  transition: color 0.15s ease-in-out;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+.product-code-mobile {
+  font-size: 13px;
+  color: $text-secondary;
+  font-weight: 400;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.price-info,
+.quantity-section,
+.subtotal-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.price-label,
+.quantity-label,
+.subtotal-label {
+  font-size: 14px;
+  color: $text-secondary;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.price-value,
+.subtotal-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: $primary-color;
+  flex-shrink: 0;
+}
+
+.quantity-section {
+  .quantity-controls {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+}
+
+.card-footer {
+  padding: 12px 16px;
+  background: $gray-50;
+  border-top: 1px solid $gray-200;
+  display: flex;
+  justify-content: flex-end;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.remove-btn-mobile {
+  background: #ef4444;
+  color: $white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
   }
 }
 </style>

@@ -372,40 +372,146 @@ export default {
   .about-layout {
     flex-direction: column;
     gap: $content-mobile-layout-gap;
+    padding: $content-mobile-layout-padding;
   }
 
   .sidebar-nav {
     width: 100%;
     position: static;
+    margin-bottom: $spacing-md;
+    box-shadow: $shadow-sm;
+  }
+
+  .nav-title {
+    padding: $spacing-md $spacing-lg;
+    border-radius: $border-radius-md;
+  }
+
+  .nav-title h3 {
+    font-size: $font-size-base;
+    text-align: center;
   }
 
   .nav-menu {
     display: flex;
     overflow-x: auto;
     white-space: nowrap;
+    padding: $spacing-sm 0;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    
+    &::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
   }
 
   .nav-menu li {
     flex-shrink: 0;
     border-bottom: none;
     border-right: $nav-menu-border-bottom;
+    min-width: fit-content;
+  }
+
+  .nav-menu li:first-child a {
+    margin-left: $spacing-md;
   }
 
   .nav-menu li:last-child {
     border-right: none;
   }
 
+  .nav-menu li:last-child a {
+    margin-right: $spacing-md;
+  }
+
   .nav-menu li a {
     padding: $content-mobile-nav-menu-padding;
     font-size: $content-mobile-nav-menu-font-size;
+    display: block;
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .nav-menu li.active {
+    border-left: none;
+    background-color: rgba($primary-color, 0.1);
+    border-radius: $border-radius-sm;
+  }
+
+  .nav-menu li.active a {
+    color: $primary-color;
+    font-weight: $nav-menu-active-font-weight;
+  }
+
+  .main-content {
+    margin-top: 0;
   }
 
   .content-section {
     padding: $content-mobile-section-padding;
   }
 
+  .content-header {
+    margin-bottom: $spacing-lg;
+  }
+
   .content-header h2 {
     font-size: $content-mobile-header-title-font-size;
+    margin-bottom: $spacing-sm;
+  }
+
+  .title-underline {
+    width: 60px;
+    height: 2px;
+  }
+
+  .content-body {
+    font-size: $font-size-sm;
+    line-height: $line-height-relaxed;
+  }
+
+  .content-body :deep(h1),
+  .content-body :deep(h2),
+  .content-body :deep(h3) {
+    font-size: $font-size-lg;
+    margin: $spacing-lg 0 $spacing-sm 0;
+  }
+
+  .content-body :deep(h4),
+  .content-body :deep(h5),
+  .content-body :deep(h6) {
+    font-size: $font-size-base;
+    margin: $spacing-md 0 $spacing-sm 0;
+  }
+
+  .content-body :deep(p) {
+    margin-bottom: $spacing-sm;
+    text-align: left;
+  }
+
+  .content-body :deep(img) {
+    margin: $spacing-sm 0;
+    border-radius: $border-radius-sm;
+  }
+
+  .content-body :deep(ul),
+  .content-body :deep(ol) {
+    padding-left: $spacing-md;
+    margin-bottom: $spacing-sm;
+  }
+
+  .content-body :deep(blockquote) {
+    padding: $spacing-sm;
+    margin: $spacing-sm 0;
+    font-size: $font-size-xs;
+  }
+
+  .loading-container {
+    padding: $spacing-xl;
+  }
+
+  .no-content {
+    padding: $spacing-xl;
   }
 }
 
@@ -416,14 +522,92 @@ export default {
 
   .about-layout {
     padding: $content-small-mobile-layout-padding;
+    gap: $spacing-sm;
+  }
+
+  .nav-title {
+    padding: $spacing-sm $spacing-md;
+  }
+
+  .nav-title h3 {
+    font-size: $font-size-sm;
+  }
+
+  .nav-menu li a {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+    min-width: 70px;
   }
 
   .content-section {
     padding: $content-small-mobile-section-padding;
   }
 
+  .content-header h2 {
+    font-size: $font-size-xl;
+  }
+
   .content-body {
     font-size: $content-small-mobile-body-font-size;
+  }
+
+  .content-body :deep(h1),
+  .content-body :deep(h2),
+  .content-body :deep(h3) {
+    font-size: $font-size-base;
+  }
+
+  .content-body :deep(h4),
+  .content-body :deep(h5),
+  .content-body :deep(h6) {
+    font-size: $font-size-sm;
+  }
+
+  .content-body :deep(blockquote) {
+    padding: $spacing-xs;
+    margin: $spacing-xs 0;
+  }
+
+  .loading-container {
+    padding: $spacing-lg;
+  }
+
+  .no-content {
+    padding: $spacing-lg;
+  }
+}
+
+/* 平板设备优化 */
+@media (min-width: $content-mobile-breakpoint + 1px) and (max-width: $content-tablet-breakpoint) {
+  .about-layout {
+    gap: $spacing-lg;
+  }
+
+  .sidebar-nav {
+    width: 240px;
+  }
+
+  .content-section {
+    padding: $spacing-lg;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .nav-menu li a {
+    padding: $spacing-md $spacing-lg;
+    min-height: 44px; /* 确保触摸目标足够大 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-menu li:hover {
+    background-color: transparent;
+  }
+
+  .nav-menu li:active {
+    background-color: rgba($primary-color, 0.1);
   }
 }
 </style>

@@ -1,7 +1,5 @@
 <template>
   <div class="inquiries-section">
-    <h2 class="inquiries-title">{{ $t('cart.inquiries') || '询价单' }}</h2>
-
     <div class="inquiry-layout">
       <!-- Inquiry List Sidebar -->
       <div class="inquiry-sidebar">
@@ -66,7 +64,7 @@
       </div>
 
       <!-- Inquiry Detail Panel -->
-      <InquiryDetailPanel :inquiry="activeInquiry" @remove-item="removeFromInquiry" @send-message="sendMessage"
+      <InquiryDetailPanel :inquiry="activeInquiry" @remove-item="removeFromInquiry" @send-message="sendMessage" @item-added="handleItemAdded"
         @update-message="updateInquiryMessage" @checkout-inquiry="handleCheckoutInquiry" />
     </div>
   </div>
@@ -161,9 +159,14 @@ export default {
             items: (inquiry.items || []).map(item => ({
               id: item.id,
               productId: item.product_id,
+              product_id: item.product_id,
               name: item.product_name,
+              product_name: item.product_name,
               imageUrl: item.image_url || require('@/assets/images/default-image.svg'),
-              quantity: item.quantity
+              image_url: item.image_url,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              price: item.price || item.unit_price
             })),
             messages: [],
             newMessage: ''
@@ -202,10 +205,14 @@ export default {
             inquiry.items = response.data.items.map(item => ({
               id: item.id,
               productId: item.product_id,
+              product_id: item.product_id,
               name: item.product_name,
+              product_name: item.product_name,
               imageUrl: item.image_url || require('@/assets/images/default-image.svg'),
+              image_url: item.image_url,
               quantity: item.quantity,
-              unit_price: item.unit_price || ''
+              unit_price: item.unit_price,
+              price: item.price || item.unit_price
             }));
             
             inquiry.messages = response.data.messages.map(msg => ({
@@ -468,6 +475,19 @@ export default {
           this.$t('cart.someItemsFailedToAdd', { items: failedItems.join(', ') }) || `以下商品添加失败: ${failedItems.join(', ')}`,
           'INQUIRY.ADD_MULTIPLE_ITEMS.PARTIAL_FAILED'
         );
+      }
+    },
+    
+    // 处理添加商品事件
+    handleItemAdded(newItem) {
+      const activeInquiry = this.inquiries.find(inquiry => inquiry.id === this.activeInquiryId);
+      if (activeInquiry) {
+        activeInquiry.items.push(newItem);
+        
+        // 更新已询价商品ID集合并通知父组件
+        const updatedInquiredProductIds = new Set(this.inquiredProductIds);
+        updatedInquiredProductIds.add(newItem.productId);
+        this.$emit('update-inquired-products', updatedInquiredProductIds);
       }
     },
     
