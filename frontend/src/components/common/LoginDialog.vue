@@ -11,7 +11,9 @@
         </p>
       </div>
       <button v-if="showCloseButton" @click="closeDialog" class="close-button">
-        <el-icon><Close /></el-icon>
+        <el-icon>
+          <Close />
+        </el-icon>
       </button>
     </div>
 
@@ -79,29 +81,17 @@
         {{ $t('login.socialLogin') || '或者使用以下方式登录' }}
       </p>
       <div class="social-login">
-        <button 
-          @click="loginWithApple" 
-          :disabled="socialLoading.apple"
-          class="social-button apple-button"
-        >
+        <button @click="loginWithApple" :disabled="socialLoading.apple" class="social-button apple-button">
           <AppleIcon class="social-icon" />
           <span>{{ $t('login.continueWithApple') || 'Continue With Apple' }}</span>
         </button>
-        
-        <button 
-          @click="loginWithGoogle" 
-          :disabled="socialLoading.google"
-          class="social-button google-button"
-        >
+
+        <button @click="loginWithGoogle" :disabled="socialLoading.google" class="social-button google-button">
           <GoogleIcon class="social-icon" />
           <span>{{ $t('login.continueWithGoogle') || 'Continue With Google' }}</span>
         </button>
-        
-        <button 
-          @click="loginWithFacebook" 
-          :disabled="socialLoading.facebook"
-          class="social-button facebook-button"
-        >
+
+        <button @click="loginWithFacebook" :disabled="socialLoading.facebook" class="social-button facebook-button">
           <FacebookIcon class="social-icon" />
           <span>{{ $t('login.continueWithFacebook') || 'Continue With Facebook' }}</span>
         </button>
@@ -412,22 +402,83 @@ export default {
       }
     },
     
+   
     async loginWithGoogle() {
       try {
         this.socialLoading.google = true;
         
         // 检查Google Identity Services是否可用
         if (typeof google === 'undefined' || !google.accounts) {
-          throw new Error(this.$t('login.error.googleNotAvailable') || 'Google Sign In not available');
+          throw new Error(this.$t('login.error.googleNotAvailable') || 'Google Identity Services not loaded');
         }
         
-        // 使用Google Identity Services
-        google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // 如果自动提示失败，显示手动登录按钮
-            this.showGoogleSignInButton();
-          }
+        // 使用Google Sign-In方式，避免重定向URI问题
+        const credential = await new Promise((resolve, reject) => {
+          google.accounts.id.initialize({
+            client_id: process.env.VUE_APP_GOOGLE_CLIENT_ID || 'your_google_client_id',
+            callback: (response) => {
+              if (response.credential) {
+                resolve(response.credential);
+              } else {
+                reject(new Error('No credential received'));
+              }
+            },
+            error_callback: (error) => {
+              reject(error);
+            }
+          });
+          
+          // 使用One Tap或弹窗登录
+          google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              // 如果One Tap不可用，使用弹窗登录
+              const popup = google.accounts.oauth2.initTokenClient({
+                client_id: process.env.VUE_APP_GOOGLE_CLIENT_ID || 'your_google_client_id',
+                scope: 'email profile openid',
+                callback: async (tokenResponse) => {
+                  if (tokenResponse.access_token) {
+                    try {
+                      // 获取用户信息
+                      const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenResponse.access_token}`);
+                      const userInfo = await userInfoResponse.json();
+                      
+                      // 发送到后端验证
+                      const result = await this.$api.postWithErrorHandler('/auth/google/callback', {
+                        accessToken: tokenResponse.access_token,
+                        userInfo: userInfo
+                      }, {
+                        fallbackKey: 'login.error.googleAuthFailed'
+                      });
+                      
+                      this.handleLoginSuccess(result.data);
+                    } catch (error) {
+                      this.handleLoginError(error, 'Google');
+                    } finally {
+                      this.socialLoading.google = false;
+                    }
+                  } else {
+                    reject(new Error('No access token received'));
+                  }
+                },
+                error_callback: (error) => {
+                  reject(error);
+                }
+              });
+              popup.requestAccessToken();
+            }
+          });
         });
+        
+        // 如果使用ID Token方式
+        if (credential) {
+          const result = await this.$api.postWithErrorHandler('/auth/google/callback', {
+            idToken: credential
+          }, {
+            fallbackKey: 'login.error.googleAuthFailed'
+          });
+          
+          this.handleLoginSuccess(result.data);
+        }
         
       } catch (error) {
         this.handleLoginError(error, 'Google');
@@ -435,6 +486,7 @@ export default {
         this.socialLoading.google = false;
       }
     },
+    
     
     async loginWithFacebook() {
       try {
@@ -542,7 +594,7 @@ export default {
   padding: 4px;
   border-radius: 4px;
   transition: all 0.3s ease;
-  
+
   &:hover {
     color: #666;
     background-color: #f5f5f5;
@@ -756,11 +808,11 @@ export default {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -769,7 +821,7 @@ export default {
 
 .apple-button {
   color: #000;
-  
+
   &:hover {
     background-color: #f8f8f8;
   }
@@ -777,7 +829,7 @@ export default {
 
 .google-button {
   color: #757575;
-  
+
   &:hover {
     background-color: #f8f8f8;
   }
@@ -785,7 +837,7 @@ export default {
 
 .facebook-button {
   color: #1877f2;
-  
+
   &:hover {
     background-color: #f0f2f5;
   }

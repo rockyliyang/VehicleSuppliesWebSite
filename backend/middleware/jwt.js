@@ -67,6 +67,7 @@ const verifyToken = (req, res, next) => {
       req.userId = decoded.userId;
       req.userEmail = decoded.email;
       req.userRole = decoded.role;
+      req.userCurrency = decoded.currency;
       
       // 添加token续期功能
       req.token = token;
@@ -84,6 +85,7 @@ const verifyToken = (req, res, next) => {
             req.userId = decoded.userId;
             req.userEmail = decoded.email;
             req.userRole = decoded.role;
+            req.userCurrency = decoded.currency;
             req.token = token;
           }
         } catch (decodeError) {

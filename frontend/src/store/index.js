@@ -2,10 +2,88 @@ import { createStore } from 'vuex'
 import languageModule from './modules/language.js'
 import api from '../utils/api.js'
 
+// 货币符号映射
+const currencySymbols = {
+  'USD': '$',
+  'EUR': '€',
+  'GBP': '£',
+  'JPY': '¥',
+  'CNY': '¥',
+  'CAD': 'C$',
+  'AUD': 'A$',
+  'CHF': 'CHF',
+  'SEK': 'kr',
+  'NOK': 'kr',
+  'DKK': 'kr',
+  'PLN': 'zł',
+  'CZK': 'Kč',
+  'HUF': 'Ft',
+  'RUB': '₽',
+  'BRL': 'R$',
+  'MXN': '$',
+  'INR': '₹',
+  'KRW': '₩',
+  'SGD': 'S$',
+  'HKD': 'HK$',
+  'TWD': 'NT$',
+  'THB': '฿',
+  'MYR': 'RM',
+  'IDR': 'Rp',
+  'PHP': '₱',
+  'VND': '₫',
+  'ZAR': 'R',
+  'TRY': '₺',
+  'ILS': '₪',
+  'AED': 'د.إ',
+  'SAR': 'ر.س'
+}
+
+// 货币名称映射
+const currencyNames = {
+  'USD': 'US Dollar',
+  'EUR': 'Euro',
+  'GBP': 'British Pound',
+  'JPY': 'Japanese Yen',
+  'CNY': 'Chinese Yuan',
+  'CAD': 'Canadian Dollar',
+  'AUD': 'Australian Dollar',
+  'CHF': 'Swiss Franc',
+  'SEK': 'Swedish Krona',
+  'NOK': 'Norwegian Krone',
+  'DKK': 'Danish Krone',
+  'PLN': 'Polish Zloty',
+  'CZK': 'Czech Koruna',
+  'HUF': 'Hungarian Forint',
+  'RUB': 'Russian Ruble',
+  'BRL': 'Brazilian Real',
+  'MXN': 'Mexican Peso',
+  'INR': 'Indian Rupee',
+  'KRW': 'South Korean Won',
+  'SGD': 'Singapore Dollar',
+  'HKD': 'Hong Kong Dollar',
+  'TWD': 'Taiwan Dollar',
+  'THB': 'Thai Baht',
+  'MYR': 'Malaysian Ringgit',
+  'IDR': 'Indonesian Rupiah',
+  'PHP': 'Philippine Peso',
+  'VND': 'Vietnamese Dong',
+  'ZAR': 'South African Rand',
+  'TRY': 'Turkish Lira',
+  'ILS': 'Israeli Shekel',
+  'AED': 'UAE Dirham',
+  'SAR': 'Saudi Riyal'
+}
+
+// 获取货币名称
+function getCurrencyName(code) {
+  return currencyNames[code] || code
+}
+
 export default createStore({
   state: {
     admin: null,
     user: null,
+    userCurrency: 'USD', // 用户货币设置
     isLoggedIn: false,
     isAdminLoggedIn: false,
     categories: [],
@@ -15,38 +93,44 @@ export default createStore({
     showLoginDialog: false
   },
   mutations: {
-    
     setUser(state, user) {
       state.user = user
       state.isAdminLoggedIn = false
       state.isLoggedIn = false
-      if (user)
-      {
+      if (user) {
+        // 如果用户数据包含currency字段，则更新userCurrency
+        if (user.currency) {
+          state.userCurrency = user.currency
+        }
         if (user.role === 'admin') {
           state.isAdminLoggedIn = true
-        }else {
+        } else {
           state.isLoggedIn = true
         }
       }
-
+    },
+    setUserCurrency(state, currency) {
+      state.userCurrency = currency
     },
     setCategories(state, categories) {
       state.categories = categories
     },
-    // 购物车相关mutations
-    addToCart(state, item) {
-      const existingItem = state.cartItems.find(cartItem => cartItem.id === item.id)
+    addToCart(state, product) {
+      const existingItem = state.cartItems.find(item => item.id === product.id)
       if (existingItem) {
-        existingItem.quantity += item.quantity || 1
+        existingItem.quantity += product.quantity || 1
       } else {
-        state.cartItems.push({ ...item, quantity: item.quantity || 1 })
+        state.cartItems.push({
+          ...product,
+          quantity: product.quantity || 1
+        })
       }
     },
-    removeFromCart(state, itemId) {
-      state.cartItems = state.cartItems.filter(item => item.id !== itemId)
+    removeFromCart(state, productId) {
+      state.cartItems = state.cartItems.filter(item => item.id !== productId)
     },
-    updateCartItemQuantity(state, { itemId, quantity }) {
-      const item = state.cartItems.find(cartItem => cartItem.id === itemId)
+    updateCartItemQuantity(state, { productId, quantity }) {
+      const item = state.cartItems.find(item => item.id === productId)
       if (item) {
         item.quantity = quantity
       }
@@ -54,12 +138,9 @@ export default createStore({
     clearCart(state) {
       state.cartItems = []
     },
-    // 登录对话框相关mutations
     setShowLoginDialog(state, show) {
       state.showLoginDialog = show
     }
-    
-
   },
   actions: {
     // 初始化应用
@@ -91,9 +172,12 @@ export default createStore({
         console.log('未找到有效的登录状态')
       }
     },
+
  
     logout({ commit }) {
       commit('setUser', null)
+      // 登出时重置货币为默认值
+      commit('setUserCurrency', 'USD')
       // 登出时清空购物车
       commit('clearCart')
     },
@@ -137,8 +221,31 @@ export default createStore({
     user: state => state.user,
     // 购物车相关getters
     cartItems: state => state.cartItems,
-    cartItemCount: state => state.cartItems.reduce((total, item) => total + item.quantity, 0),
-    cartTotal: state => state.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0),
+    cartItemCount: (state) => {
+      return state.cartItems.reduce((total, item) => total + item.quantity, 0)
+    },
+    cartTotal: (state) => {
+      return state.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0)
+    },
+    // 获取当前用户的货币符号
+    currencySymbol: (state) => {
+      return currencySymbols[state.userCurrency] || '$'
+    },
+    // 格式化价格显示
+    formatPrice: (state, getters) => (price) => {
+      if (price === null || price === undefined) return ''
+      const symbol = getters.currencySymbol
+      const formattedPrice = parseFloat(price).toFixed(2)
+      return `${symbol}${formattedPrice}`
+    },
+    // 获取所有支持的货币列表
+    supportedCurrencies: () => {
+      return Object.keys(currencySymbols).map(code => ({
+        code,
+        symbol: currencySymbols[code],
+        name: getCurrencyName(code)
+      }))
+    },
     // 登录对话框状态
     showLoginDialog: state => state.showLoginDialog
   },

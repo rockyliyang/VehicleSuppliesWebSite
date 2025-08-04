@@ -34,17 +34,17 @@
             </el-table-column>
             <el-table-column :label="$t('checkout.quantity') || '数量'" prop="quantity" width="100" align="center" />
             <el-table-column :label="$t('checkout.unitPrice') || '单价'" width="120" align="right">
-              <template #default="{row}">{{ formatPrice(row.price) }}</template>
+              <template #default="{row}">{{ $store.getters.formatPrice(row.price) }}</template>
             </el-table-column>
             <el-table-column :label="$t('checkout.subtotal') || '小计'" width="120" align="right">
               <template #default="{row}">
-                <span class="subtotal-price">{{ formatPrice(row.price * row.quantity) }}</span>
+                <span class="subtotal-price">{{ $store.getters.formatPrice(row.price * row.quantity) }}</span>
               </template>
             </el-table-column>
           </el-table>
           <div class="order-total">
             <span>{{ $t('checkout.total') || '总计' }}:</span>
-            <span class="total-price">{{ formatPrice(orderTotal) }}</span>
+            <span class="total-price">{{ $store.getters.formatPrice(orderTotal) }}</span>
           </div>
         </section>
 
@@ -460,9 +460,6 @@ export default {
     },
     calculateTotal() {
       this.orderTotal = this.orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    },
-    formatPrice(price) {
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
     },
     getPaymentMethodText(method) {
       const methodMap = {

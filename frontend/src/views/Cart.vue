@@ -44,7 +44,7 @@
                       </div>
                     </div>
                   </td>
-                  <td class="price-cell">¥{{ formatPrice(item.price) }}</td>
+                  <td class="price-cell">{{ $store.getters.formatPrice(item.price) }}</td>
                   <td class="quantity-cell">
                     <div class="quantity-controls">
                       <button class="quantity-btn" @click="decreaseQuantity(item)">-</button>
@@ -53,7 +53,7 @@
                       <button class="quantity-btn" @click="increaseQuantity(item)">+</button>
                     </div>
                   </td>
-                  <td class="subtotal-cell">¥{{ formatPrice(item.price * item.quantity) }}</td>
+                  <td class="subtotal-cell">{{ $store.getters.formatPrice(item.price * item.quantity) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -86,7 +86,7 @@
               <div class="card-body">
                 <div class="price-info">
                   <span class="price-label">{{ $t('cart.unitPrice') || '单价' }}:</span>
-                  <span class="price-value">¥{{ formatPrice(item.price) }}</span>
+                  <span class="price-value">{{ $store.getters.formatPrice(item.price) }}</span>
                 </div>
                 <div class="quantity-section">
                   <span class="quantity-label">{{ $t('cart.quantity') || '数量' }}:</span>
@@ -99,7 +99,7 @@
                 </div>
                 <div class="subtotal-info">
                   <span class="subtotal-label">{{ $t('cart.subtotal') || '小计' }}:</span>
-                  <span class="subtotal-value">¥{{ formatPrice(item.price * item.quantity) }}</span>
+                  <span class="subtotal-value">{{ $store.getters.formatPrice(item.price * item.quantity) }}</span>
                 </div>
               </div>
               <!-- 移除手机端单个商品的删除按钮 -->
@@ -112,7 +112,7 @@
           <div class="cart-summary">
             <div class="cart-total">
               <span>{{ $t('cart.total') || '总计' }}:</span>
-              <span class="total-price">¥{{ formatPrice(selectedTotal) }}</span>
+              <span class="total-price">{{ $store.getters.formatPrice(selectedTotal) }}</span>
             </div>
             <div class="cart-actions">
               <button class="continue-shopping-btn" @click="$router.push('/products')">
@@ -154,7 +154,6 @@
 
 <script>
 import { handleImageError } from '../utils/imageUtils';
-import { formatPrice } from '../utils/format';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import InquiryPanel from '@/components/common/InquiryPanel.vue';
@@ -217,7 +216,6 @@ export default {
   },
   methods: {
     handleImageError,
-    formatPrice,
     formatTime(timestamp) {
       return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },

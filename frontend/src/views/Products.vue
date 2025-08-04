@@ -49,7 +49,6 @@
 
 <script>
 import { handleImageError } from '../utils/imageUtils';
-import { formatPrice } from '../utils/format';
 import { addToCart } from '../utils/cartUtils';
 import ProductCard from '../components/common/ProductCard.vue';
 import PageBanner from '../components/common/PageBanner.vue';
@@ -91,7 +90,6 @@ export default {
     }
   },
   methods: {
-    formatPrice,
     handleImageError,
     handleProductClick(product) {
       // 产品点击事件处理，可以在这里添加额外的逻辑

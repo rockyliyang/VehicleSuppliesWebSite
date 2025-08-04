@@ -66,7 +66,25 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'USER.ADMIN_CREATE_SUCCESS', 'en', 'Admin created successfully'),
 (gen_random_uuid(), 'USER.ADMIN_CREATE_SUCCESS', 'zh-CN', '管理员创建成功'),
 (gen_random_uuid(), 'USER.LIST_SUCCESS', 'en', 'User list retrieved successfully'),
-(gen_random_uuid(), 'USER.LIST_SUCCESS', 'zh-CN', '用户列表获取成功');
+(gen_random_uuid(), 'USER.LIST_SUCCESS', 'zh-CN', '用户列表获取成功'),
+(gen_random_uuid(), 'USER.CURRENCY_REQUIRED', 'en', 'Currency is required'),
+(gen_random_uuid(), 'USER.CURRENCY_REQUIRED', 'zh-CN', '货币为必填项'),
+(gen_random_uuid(), 'USER.INVALID_CURRENCY_FORMAT', 'en', 'Invalid currency format'),
+(gen_random_uuid(), 'USER.INVALID_CURRENCY_FORMAT', 'zh-CN', '无效的货币格式'),
+(gen_random_uuid(), 'USER.CURRENCY_UPDATE_SUCCESS', 'en', 'Currency updated successfully'),
+(gen_random_uuid(), 'USER.CURRENCY_UPDATE_SUCCESS', 'zh-CN', '货币设置更新成功'),
+(gen_random_uuid(), 'USER.NO_FIELDS_TO_UPDATE', 'en', 'No fields to update'),
+(gen_random_uuid(), 'USER.NO_FIELDS_TO_UPDATE', 'zh-CN', '没有要更新的字段'),
+(gen_random_uuid(), 'USER.INVALID_PHONE_FORMAT', 'en', 'Invalid phone format'),
+(gen_random_uuid(), 'USER.INVALID_PHONE_FORMAT', 'zh-CN', '无效的手机号格式'),
+(gen_random_uuid(), 'USER.INVALID_EMAIL_FORMAT', 'en', 'Invalid email format'),
+(gen_random_uuid(), 'USER.INVALID_EMAIL_FORMAT', 'zh-CN', '无效的邮箱格式'),
+(gen_random_uuid(), 'USER.USERNAME_EXISTS', 'en', 'Username already exists'),
+(gen_random_uuid(), 'USER.USERNAME_EXISTS', 'zh-CN', '用户名已存在'),
+(gen_random_uuid(), 'USER.PROFILE_UPDATE_SUCCESS', 'en', 'Profile updated successfully'),
+(gen_random_uuid(), 'USER.PROFILE_UPDATE_SUCCESS', 'zh-CN', '个人资料更新成功'),
+(gen_random_uuid(), 'USER.LOGOUT_SUCCESS', 'en', 'Logout successful'),
+(gen_random_uuid(), 'USER.LOGOUT_SUCCESS', 'zh-CN', '退出登录成功');
 
 INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- COMMON相关
@@ -1947,6 +1965,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'userSettings.accountInfo.cancel', 'zh-CN', '取消'),
 (gen_random_uuid(), 'userSettings.accountInfo.currency', 'en', 'Currency'),
 (gen_random_uuid(), 'userSettings.accountInfo.currency', 'zh-CN', '货币'),
+(gen_random_uuid(), 'userSettings.accountInfo.currencyPlaceholder', 'en', 'Select currency'),
+(gen_random_uuid(), 'userSettings.accountInfo.currencyPlaceholder', 'zh-CN', '选择货币'),
 
 -- 功能模块部分
 (gen_random_uuid(), 'userSettings.features.title', 'en', 'Feature Modules'),

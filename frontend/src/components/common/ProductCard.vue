@@ -8,7 +8,7 @@
       <h3 class="product-title" @click.stop="handleTitleClick">{{ product.name }}</h3>
       <p v-if="showDescription" class="product-description">{{ product.description || defaultDescription }}</p>
       <div class="product-footer">
-        <span class="product-price">${{ formatPrice(product.price) }}</span>
+        <span class="product-price">{{ $store.getters.formatPrice(product.price) }}</span>
         <div class="product-footer-right">
           <span v-if="product.promo_message" class="promo-message">{{ product.promo_message }}</span>
           <span v-if="showArrow" class="product-arrow">
@@ -22,7 +22,6 @@
 
 <script>
 import { handleImageError } from '../../utils/imageUtils';
-import { formatPrice } from '../../utils/format';
 
 export default {
   name: 'ProductCard',
@@ -59,7 +58,6 @@ export default {
   },
   methods: {
     handleImageError,
-    formatPrice,
     handleCardClick() {
       this.$emit('card-click', this.product);
       this.$router.push(`/product/${this.product.id}`);

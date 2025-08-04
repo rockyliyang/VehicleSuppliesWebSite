@@ -85,7 +85,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: getMessage('USER.EMAIL_PASSWORD_REQUIRED'), data: null });
     }
     // 检查邮箱是否已存在
-    const existingUsers = await query('SELECT * FROM users WHERE email = $1', [email]);
+    const existingUsers = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existingUsers.getRowCount() > 0) {
       return res.status(400).json({ success: false, message: getMessage('USER.EMAIL_EXISTS'), data: null });
     }
@@ -122,7 +122,7 @@ router.get('/activate', async (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_ACTIVATION_CODE'), data: null });
   
-  const users = await query('SELECT * FROM users WHERE activation_token = $1', [token]);
+  const users = await query('SELECT id FROM users WHERE activation_token = $1', [token]);
   if (users.getRowCount() === 0) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_ACTIVATION_CODE'), data: null });
   
   await query('UPDATE users SET is_active=1, activation_token=NULL, updated_by=$1 WHERE id=$2', [users.getFirstRow().id, users.getFirstRow().id]);
@@ -154,7 +154,7 @@ router.post('/reset-password', async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_PARAMS'), data: null });
   
-  const users = await query('SELECT * FROM users WHERE reset_token = $1', [token]);
+  const users = await query('SELECT id, reset_token_expire FROM users WHERE reset_token = $1', [token]);
   if (users.getRowCount() === 0) return res.status(400).json({ success: false, message: getMessage('USER.INVALID_RESET_CODE'), data: null });
   if (new Date(users.getFirstRow().reset_token_expire) < new Date()) return res.status(400).json({ success: false, message: getMessage('USER.RESET_CODE_EXPIRED'), data: null });
   
@@ -170,7 +170,7 @@ router.post('/login', async (req, res) => {
     const { username, password, admin } = req.body; // admin: true/false
     // 查找用户
     const users = await query(
-      'SELECT * FROM users WHERE email = $1 AND deleted = false',
+      'SELECT id, email, password, user_role, is_active, currency FROM users WHERE email = $1 AND deleted = false',
       [username]
     );
     if (users.getRowCount() === 0) {
@@ -198,7 +198,7 @@ router.post('/login', async (req, res) => {
 
     // 生成 JWT token
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.user_role },
+      { userId: user.id, email: user.email, role: user.user_role, currency: user.currency },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -217,7 +217,8 @@ router.post('/login', async (req, res) => {
       data: {
         user: {
           email: user.email,
-          role: user.user_role
+          role: user.user_role,
+          currency: user.currency
         }
       }
     });
@@ -231,7 +232,7 @@ router.post('/check-token', verifyToken, async (req, res) => {
   try {
     // 生成新的token
     const newToken = jwt.sign(
-      { userId: req.userId, email: req.userEmail, role: req.userRole },
+      { userId: req.userId, email: req.userEmail, role: req.userRole, currency: req.userCurrency },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -250,7 +251,8 @@ router.post('/check-token', verifyToken, async (req, res) => {
       data: {
         user: {
           email: req.userEmail,
-          role: req.userRole
+          role: req.userRole,
+          currency: req.userCurrency
         }
       }
     });
@@ -430,6 +432,7 @@ router.put('/profile', verifyToken, async (req, res) => {
   }
 });
 
+
 // 管理员创建新管理员
 router.post('/admin/create', verifyToken, isAdmin, async (req, res) => {
   try {
@@ -437,7 +440,7 @@ router.post('/admin/create', verifyToken, isAdmin, async (req, res) => {
 
     // 检查用户是否已存在
     const existingUsers = await query(
-      'SELECT * FROM users WHERE email = $1 OR username = $2',
+      'SELECT id FROM users WHERE email = $1 OR username = $2',
       [email, username]
     );
 

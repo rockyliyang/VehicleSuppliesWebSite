@@ -24,7 +24,7 @@
               </el-table-column>
               <el-table-column :label="$t('orders.totalAmount') || '订单金额'" width="220">
                 <template #default="{row}">
-                  <span class="order-amount">¥{{ formatPrice(row.total_amount) }}</span>
+                  <span class="order-amount">{{ $store.getters.formatPrice(row.total_amount) }}</span>
                 </template>
               </el-table-column>
               <el-table-column :label="$t('orders.status') || '订单状态'" width="200">
@@ -55,7 +55,7 @@
                   </div>
                   <div class="order-info-row">
                     <span class="label">订单金额:</span>
-                    <span class="value amount">¥{{ formatPrice(order.total_amount) }}</span>
+                    <span class="value amount">{{ $store.getters.formatPrice(order.total_amount) }}</span>
                   </div>
                   <div class="order-info-row">
                     <span class="label">支付方式:</span>
@@ -97,7 +97,6 @@
 </template>
 
 <script>
-import { formatPrice } from '../utils/format';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 
@@ -127,7 +126,6 @@ export default {
     this.fetchOrders();
   },
   methods: {
-    formatPrice,
     formatDate(dateString) {
       const date = new Date(dateString);
       return date.toLocaleString('zh-CN', {

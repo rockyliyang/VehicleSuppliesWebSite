@@ -207,8 +207,7 @@ export default {
     
     goToBrowsingHistory() {
       this.$router.push('/browsing-history');
-    },
-
+    }
 
   }
 }

@@ -70,7 +70,7 @@
               <span class="product-id">{{ $t('productDetail.productCode') }}: {{ product.product_code }}</span>
               <span class="product-category">{{ $t('productDetail.category') }}: {{ categoryName }}</span>
             </div>
-            <div class="product-price">¥{{ formatPrice(product.price) }}</div>
+            <div class="product-price">{{ $store.getters.formatPrice(product.price) }}</div>
             <div class="product-stock">
               <span :class="['stock-status', product.stock > 0 ? 'in-stock' : 'out-of-stock']">
                 {{ product.stock > 0 ? $t('productDetail.inStock') : $t('productDetail.outOfStock') }}
@@ -250,7 +250,6 @@
 <script>
 // 使用全局注册的$api替代axios
 import { handleImageError } from '../utils/imageUtils';
-import { formatPrice } from '../utils/format';
 import { addToCart } from '../utils/cartUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
@@ -525,7 +524,6 @@ export default {
   },
   methods: {
     handleImageError,
-    formatPrice,
     async fetchCategories() {
       try {
         const response = await this.$api.get('categories')
