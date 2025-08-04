@@ -147,30 +147,33 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
+@import '@/assets/styles/_mixins.scss';
+
 /* 统一的输入框样式 */
 .form-input {
   width: 100%;
-  border-radius: 8px;
+  border-radius: $border-radius-md;
 
   :deep(.el-input__wrapper) {
     width: 100% !important;
-    height: 48px;
-    border-radius: 8px;
-    border: 2px solid #e1e8ed;
-    background-color: #ffffff;
-    transition: all 0.3s ease;
+    height: 48px; /* 使用固定高度，保持与原设计一致 */
+    border-radius: $border-radius-md;
+    border: $border-width-sm solid $border-light;
+    background-color: $white;
+    transition: $transition-base;
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    padding: 0 16px;
+    padding: 0 $spacing-md;
 
     &:hover {
-      border-color: #667eea;
+      border-color: $primary-color;
     }
 
     &.is-focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
     }
   }
 
@@ -179,19 +182,19 @@ export default {
     height: 100%;
     border: none;
     border-radius: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 18px; /* 使用与Login.vue一致的大字体 */
-    color: #2c3e50;
+    font-family: $font-family-base;
+    font-size: $font-size-lg; /* 使用项目标准字体大小 */
+    color: $text-primary;
     padding: 0;
     background-color: transparent;
     transition: none;
-    line-height: 48px;
+    line-height: 48px; /* 与wrapper高度保持一致 */
     box-sizing: border-box;
     outline: none;
     text-align: left;
 
     &::placeholder {
-      color: #bdc3c7;
+      color: $text-muted;
     }
 
     &:focus {
@@ -205,91 +208,91 @@ export default {
     &:-webkit-autofill:hover,
     &:-webkit-autofill:focus,
     &:-webkit-autofill:active {
-      -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-      -webkit-text-fill-color: #2c3e50 !important;
-      background-color: #ffffff !important;
-      font-size: 18px !important; /* 强制保持18px字体大小 */
+      -webkit-box-shadow: 0 0 0 1000px $white inset !important;
+      -webkit-text-fill-color: $text-primary !important;
+      background-color: $white !important;
+      font-size: $font-size-lg !important; /* 强制保持字体大小 */
       transition: background-color 5000s ease-in-out 0s;
     }
 
     /* 处理Firefox自动填充样式 */
     &:-moz-autofill {
-      background-color: #ffffff !important;
-      color: #2c3e50 !important;
-      font-size: 18px !important; /* 强制保持18px字体大小 */
+      background-color: $white !important;
+      color: $text-primary !important;
+      font-size: $font-size-lg !important; /* 强制保持字体大小 */
     }
 
     /* 处理其他浏览器自动填充样式 */
     &:autofill {
-      background-color: #ffffff !important;
-      color: #2c3e50 !important;
-      font-size: 18px !important; /* 强制保持18px字体大小 */
+      background-color: $white !important;
+      color: $text-primary !important;
+      font-size: $font-size-lg !important; /* 强制保持字体大小 */
     }
   }
 
   :deep(.el-input__prefix) {
     position: relative;
     left: 0;
-    margin-right: 12px;
-    color: #7f8c8d;
+    margin-right: $spacing-sm;
+    color: $text-muted;
     height: 100%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
     .el-icon {
-      font-size: 18px;
+      font-size: $font-size-lg;
     }
   }
 
   :deep(.el-input__suffix) {
     position: relative;
     right: 0;
-    margin-left: 12px;
-    color: #7f8c8d;
+    margin-left: $spacing-sm;
+    color: $text-muted;
     height: 100%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
     .el-icon {
-      font-size: 18px;
+      font-size: $font-size-lg;
     }
   }
 
   /* 密码显示/隐藏按钮样式 */
   :deep(.el-input__password) {
-    color: #7f8c8d;
+    color: $text-muted;
     cursor: pointer;
-    transition: color 0.3s ease;
+    transition: $transition-base;
 
     &:hover {
-      color: #667eea;
+      color: $primary-color;
     }
   }
 
   /* 清除按钮样式 */
   :deep(.el-input__clear) {
-    color: #7f8c8d;
+    color: $text-muted;
     cursor: pointer;
-    transition: color 0.3s ease;
+    transition: $transition-base;
 
     &:hover {
-      color: #667eea;
+      color: $primary-color;
     }
   }
 
   /* 禁用状态 */
   :deep(.el-input.is-disabled) {
     .el-input__wrapper {
-      background-color: #f5f7fa;
-      border-color: #e4e7ed;
-      color: #c0c4cc;
+      background-color: $gray-100;
+      border-color: $gray-300;
+      color: $text-disabled;
       cursor: not-allowed;
     }
 
     .el-input__inner {
-      color: #c0c4cc;
+      color: $text-disabled;
       cursor: not-allowed;
     }
   }
@@ -297,8 +300,8 @@ export default {
   /* 只读状态 */
   :deep(.el-input.is-readonly) {
     .el-input__wrapper {
-      background-color: #f8f9fa;
-      border-color: #e1e8ed;
+      background-color: $background-light;
+      border-color: $border-light;
     }
 
     .el-input__inner {

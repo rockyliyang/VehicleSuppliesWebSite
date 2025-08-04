@@ -210,6 +210,24 @@ const routes = [
     component: () => import('../views/Inquiries.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/address',
+    name: 'AddressList',
+    component: () => import('../views/AddressList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/browsing-history',
+    name: 'BrowsingHistory',
+    component: () => import('../views/BrowsingHistory.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/favorites',
+    name: 'FavoritesManagement',
+    component: () => import('../views/FavoritesManagement.vue'),
+    meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({

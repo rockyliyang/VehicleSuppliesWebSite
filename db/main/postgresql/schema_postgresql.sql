@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS users (
   third_party_email VARCHAR(64) DEFAULT NULL,
   login_source VARCHAR(16) DEFAULT 'local' CHECK (login_source IN ('local', 'apple', 'google', 'facebook', 'mixed')),
   is_email_verified BOOLEAN DEFAULT FALSE,
+  currency VARCHAR(3) DEFAULT 'USD',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -56,6 +57,7 @@ COMMENT ON COLUMN users.avatar_url IS '用户头像URL';
 COMMENT ON COLUMN users.third_party_email IS '第三方平台邮箱';
 COMMENT ON COLUMN users.login_source IS '主要登录方式';
 COMMENT ON COLUMN users.is_email_verified IS '邮箱是否已验证';
+COMMENT ON COLUMN users.currency IS '用户首选货币，默认USD';
 COMMENT ON COLUMN users.created_by IS '创建者用户ID';
 COMMENT ON COLUMN users.updated_by IS '最后更新者用户ID';
 
@@ -525,6 +527,98 @@ CREATE TRIGGER update_third_party_logins_modtime
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 
+-- 用户产品关联表（收藏和浏览历史）
+CREATE TABLE IF NOT EXISTS user_products (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  user_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  type VARCHAR(16) NOT NULL CHECK (type IN ('favorite', 'viewed')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON COLUMN user_products.user_id IS '用户ID';
+COMMENT ON COLUMN user_products.product_id IS '产品ID';
+COMMENT ON COLUMN user_products.type IS '类型：favorite-收藏，viewed-浏览历史';
+COMMENT ON COLUMN user_products.created_by IS '创建者用户ID';
+COMMENT ON COLUMN user_products.updated_by IS '最后更新者用户ID';
+
+-- 创建唯一索引（同一用户对同一产品的同一类型记录唯一）
+CREATE UNIQUE INDEX unique_user_product_type ON user_products (user_id, product_id, type) WHERE deleted = FALSE;
+
+-- 创建普通索引
+CREATE INDEX idx_user_products_user_id ON user_products (user_id);
+CREATE INDEX idx_user_products_product_id ON user_products (product_id);
+CREATE INDEX idx_user_products_type ON user_products (type);
+CREATE INDEX idx_user_products_created_at ON user_products (created_at DESC);
+CREATE INDEX idx_user_products_created_by ON user_products (created_by);
+CREATE INDEX idx_user_products_updated_by ON user_products (updated_by);
+
+-- 添加外键约束
+ALTER TABLE user_products ADD CONSTRAINT fk_user_products_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE user_products ADD CONSTRAINT fk_user_products_product_id FOREIGN KEY (product_id) REFERENCES products(id);
+ALTER TABLE user_products ADD CONSTRAINT fk_user_products_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE user_products ADD CONSTRAINT fk_user_products_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_user_products_modtime
+    BEFORE UPDATE ON user_products
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+
 -- 创建默认管理员用户 (密码: admin123)
 INSERT INTO users (guid, username, password, email, user_role) 
 VALUES (gen_random_uuid(), 'admin', '$2a$10$iFYbr7GWsaiDd8iZji5LRuzpE5Ch8YHlBu0eqVE7IB/zpnbhEBrGy', '"admin@autoeasetechx.com"', 'admin');
+
+
+-- 用户地址表
+CREATE TABLE IF NOT EXISTS user_addresses (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  user_id BIGINT NOT NULL,
+  recipient_name VARCHAR(50) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  address TEXT NOT NULL,
+  postal_code VARCHAR(20),
+  is_default BOOLEAN DEFAULT FALSE,
+  label VARCHAR(20) DEFAULT 'home',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON COLUMN user_addresses.user_id IS '用户ID';
+COMMENT ON COLUMN user_addresses.recipient_name IS '收货人姓名';
+COMMENT ON COLUMN user_addresses.phone IS '收货人手机号';
+COMMENT ON COLUMN user_addresses.address IS '详细地址';
+COMMENT ON COLUMN user_addresses.postal_code IS '邮政编码';
+COMMENT ON COLUMN user_addresses.is_default IS '是否为默认地址';
+COMMENT ON COLUMN user_addresses.label IS '地址标签：home-家，company-公司，school-学校，other-其他';
+COMMENT ON COLUMN user_addresses.created_by IS '创建者用户ID';
+COMMENT ON COLUMN user_addresses.updated_by IS '最后更新者用户ID';
+
+-- 创建普通索引
+CREATE INDEX idx_user_addresses_user_id ON user_addresses (user_id);
+CREATE INDEX idx_user_addresses_is_default ON user_addresses (is_default);
+CREATE INDEX idx_user_addresses_created_by ON user_addresses (created_by);
+CREATE INDEX idx_user_addresses_updated_by ON user_addresses (updated_by);
+
+-- 添加外键约束
+ALTER TABLE user_addresses ADD CONSTRAINT fk_user_addresses_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE user_addresses ADD CONSTRAINT fk_user_addresses_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE user_addresses ADD CONSTRAINT fk_user_addresses_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_user_addresses_modtime
+    BEFORE UPDATE ON user_addresses
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();

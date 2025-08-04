@@ -219,10 +219,10 @@ export default {
       ];
     },
     isLoggedIn() {
-      return this.$store.getters['auth/isAuthenticated'];
+      return this.$store.getters.isLoggedIn;
     },
     userInfo() {
-      return this.$store.getters['auth/userInfo'] || {};
+      return this.$store.getters.user || {};
     }
   },
   watch: {

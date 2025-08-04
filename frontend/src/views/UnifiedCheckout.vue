@@ -11,8 +11,12 @@
         <!-- 订单信息 -->
         <section class="order-summary">
           <h2 class="section-title">
-            <i class="el-icon-shopping-cart-2"></i>
-            {{ $t('checkout.orderInfo') || '订单信息' }}
+            <div class="title-content">
+              <el-icon>
+                <ShoppingCart />
+              </el-icon>
+              {{ $t('checkout.orderInfo') || '订单信息' }}
+            </div>
           </h2>
           <el-table :data="orderItems" class="order-table">
             <el-table-column :label="$t('checkout.product') || '商品'" min-width="200">
@@ -47,34 +51,43 @@
         <!-- 收货信息 -->
         <section class="shipping-info">
           <h2 class="section-title">
-            <i class="el-icon-location"></i>
-            {{ $t('checkout.shippingInfo') || '收货信息' }}
+            <div class="title-content">
+              <el-icon>
+                <Location />
+              </el-icon>
+              {{ $t('checkout.shippingInfo') || '收货信息' }}
+            </div>
+            <div class="shipping-header" v-if="!isOrderDetail">
+              <el-button @click="showAddressDialog = true" type="primary" class="address-select-btn">
+                {{ $t('address.selectFromBook') || '从地址簿选择' }}
+              </el-button>
+            </div>
           </h2>
-          <el-form :model="shippingInfo" :rules="isOrderDetail ? {} : shippingRules" ref="shippingForm"
-            :label-width="$form-label-width" class="shipping-form">
+          <el-form :model="shippingInfo" :rules="isOrderDetail ? {} : shippingRules" ref="shippingForm" label-width="0"
+            class="shipping-form">
             <div class="form-row">
-              <el-form-item :label="$t('checkout.name') || '姓名'" prop="name">
-                <el-input v-model="shippingInfo.name" :placeholder="$t('checkout.namePlaceholder') || '请输入收货人姓名'"
+              <el-form-item prop="name">
+                <el-input v-model="shippingInfo.name" :placeholder="$t('checkout.namePlaceholder') || '收货人姓名'"
                   :readonly="isOrderDetail" clearable />
               </el-form-item>
-              <el-form-item :label="$t('checkout.phone') || '电话'" prop="phone">
-                <el-input v-model="shippingInfo.phone" :placeholder="$t('checkout.phonePlaceholder') || '请输入手机号码'"
+              <el-form-item prop="phone">
+                <el-input v-model="shippingInfo.phone" :placeholder="$t('checkout.phonePlaceholder') || '手机号码'"
                   :readonly="isOrderDetail" clearable />
               </el-form-item>
             </div>
             <div class="form-row">
-              <el-form-item :label="$t('checkout.email') || '邮箱'" prop="email">
-                <el-input v-model="shippingInfo.email" :placeholder="$t('checkout.emailPlaceholder') || '请输入邮箱地址'"
+              <el-form-item>
+                <el-input v-model="shippingInfo.email" :placeholder="$t('checkout.emailPlaceholder') || '邮箱地址'"
                   :readonly="isOrderDetail" clearable autocomplete="off" />
               </el-form-item>
-              <el-form-item :label="$t('checkout.zipCode') || '邮编'" prop="zipCode">
-                <el-input v-model="shippingInfo.zipCode" :placeholder="$t('checkout.zipCodePlaceholder') || '请输入邮政编码'"
+              <el-form-item prop="zipCode">
+                <el-input v-model="shippingInfo.zipCode" :placeholder="$t('checkout.zipCodePlaceholder') || '邮政编码'"
                   :readonly="isOrderDetail" clearable />
               </el-form-item>
             </div>
-            <el-form-item :label="$t('checkout.address') || '地址'" prop="address">
+            <el-form-item prop="address">
               <el-input v-model="shippingInfo.address" type="textarea" :rows="3"
-                :placeholder="$t('checkout.addressPlaceholder') || '请输入详细收货地址'" :readonly="isOrderDetail" />
+                :placeholder="$t('checkout.addressPlaceholder') || '详细收货地址'" :readonly="isOrderDetail" />
             </el-form-item>
           </el-form>
         </section>
@@ -82,8 +95,12 @@
         <!-- 支付方式 -->
         <section class="payment-methods" v-if="!isOrderDetail || !isOrderPaid">
           <h2 class="section-title">
-            <i class="el-icon-credit-card"></i>
-            {{ $t('checkout.paymentMethod') || '支付方式' }}
+            <div class="title-content">
+              <el-icon>
+                <CreditCard />
+              </el-icon>
+              {{ $t('checkout.paymentMethod') || '支付方式' }}
+            </div>
           </h2>
           <el-tabs v-model="activePaymentTab" @tab-click="onTabChange" class="payment-tabs">
             <el-tab-pane :label="$t('checkout.paypal') || 'PayPal/信用卡'" name="paypal">
@@ -101,7 +118,9 @@
                     <div class="qrcode-actions">
                       <el-button @click="refreshQrcode('alipay')" type="primary" class="refresh-qr-btn"
                         :loading="refreshing">
-                        <i class="el-icon-refresh"></i>
+                        <el-icon>
+                          <Refresh />
+                        </el-icon>
                         {{ $t('checkout.refreshQrcode') || '刷新二维码' }}
                       </el-button>
                       <div class="qrcode-timer" v-if="qrcodeTimer > 0">
@@ -112,7 +131,9 @@
                     </div>
                   </div>
                   <div v-else class="qrcode-placeholder">
-                    <i class="el-icon-picture-outline qrcode-placeholder-icon"></i>
+                    <el-icon class="qrcode-placeholder-icon">
+                      <PictureIcon />
+                    </el-icon>
                     <p class="qrcode-placeholder-text">{{ $t('checkout.clickToGenerate') || '点击下方按钮生成支付二维码' }}</p>
                     <el-button @click="generateQrcode('alipay')" type="primary" class="generate-qr-btn"
                       :loading="generating">
@@ -128,8 +149,12 @@
         <!-- 订单状态信息（已支付订单） -->
         <section class="order-status" v-if="isOrderDetail && isOrderPaid">
           <h2 class="section-title">
-            <i class="el-icon-success"></i>
-            {{ $t('order.status') || '订单状态' }}
+            <div class="title-content">
+              <el-icon>
+                <SuccessFilled />
+              </el-icon>
+              {{ $t('order.status') || '订单状态' }}
+            </div>
           </h2>
           <div class="status-card">
             <div class="status-info">
@@ -159,6 +184,64 @@
       </div>
     </div>
 
+    <!-- 地址选择对话框 -->
+    <div v-if="showAddressDialog" class="custom-dialog-overlay">
+      <div class="custom-dialog">
+        <div class="custom-dialog-header">
+          <h3 class="custom-dialog-title">{{ $t('address.selectTitle') || '选择地址' }}</h3>
+          <button class="custom-dialog-close" @click="closeAddressDialog">
+            <el-icon>
+              <Close />
+            </el-icon>
+          </button>
+        </div>
+        <div class="custom-dialog-body">
+          <div class="address-list">
+            <div v-if="addressList.length === 0" class="no-address">
+              <el-icon>
+                <LocationInformation />
+              </el-icon>
+              <p>{{ $t('address.noAddresses') || '暂无地址' }}</p>
+              <el-button type="primary" size="small" @click="goToAddressManagement">
+                {{ $t('address.addNewAddress') || '添加新地址' }}
+              </el-button>
+            </div>
+            <div v-else class="address-items">
+              <div v-for="address in addressList" :key="address.id"
+                :class="['address-item', { 'selected': selectedAddressId === address.id }]"
+                @click="selectAndConfirmAddress(address)">
+                <!-- 默认标志 -->
+                <el-tag v-if="address.is_default" size="small" type="primary" class="default-tag">
+                  {{ $t('address.default') || '默认' }}
+                </el-tag>
+
+                <div class="address-content">
+                  <div class="address-row">
+                    <span class="field-inline">
+                      <strong>{{ $t('checkout.recipientName') || '收件人' }}:</strong> {{ address.recipient_name }}
+                    </span>
+                  </div>
+                  <div class="address-row">
+                    <span class="field-inline">
+                      <strong>{{ $t('checkout.phone') || '联系电话' }}:</strong> {{ address.phone }}
+                    </span>
+                    <span class="field-inline">
+                      <strong>{{ $t('checkout.postalCode') || '邮编' }}:</strong> {{ address.postal_code }}
+                    </span>
+                  </div>
+                  <div class="address-row">
+                    <span class="field-inline">
+                      <strong>{{ $t('checkout.address') || '地址' }}:</strong> {{ address.address }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 支付成功对话框 -->
     <el-dialog v-model="paySuccess" :title="$t('checkout.paymentSuccess') || '支付成功'" :width="$dialog-width-md"
       class="success-dialog" center>
@@ -176,11 +259,15 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="goHome" class="home-btn">
-            <i class="el-icon-house"></i>
+            <el-icon>
+              <House />
+            </el-icon>
             {{ $t('checkout.backHome') || '返回首页' }}
           </el-button>
           <el-button type="primary" @click="goOrders" class="orders-btn">
-            <i class="el-icon-document"></i>
+            <el-icon>
+              <Document />
+            </el-icon>
             {{ $t('checkout.viewOrders') || '查看订单' }}
           </el-button>
         </div>
@@ -192,12 +279,34 @@
 <script>
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
+import { 
+  ShoppingCart, 
+  Location, 
+  LocationInformation,
+  CreditCard, 
+  Refresh, 
+  Picture as PictureIcon, 
+  SuccessFilled,
+  House,
+  Document,
+  Close
+} from '@element-plus/icons-vue';
 
 export default {
   name: 'UnifiedCheckout',
   components: {
     PageBanner,
-    NavigationMenu
+    NavigationMenu,
+    ShoppingCart,
+    Location,
+    LocationInformation,
+    CreditCard,
+    Refresh,
+    PictureIcon,
+    SuccessFilled,
+    House,
+    Document,
+    Close
   },
   props: {
     items: {
@@ -210,6 +319,9 @@ export default {
       orderItems: [],
       orderTotal: 0,
       shippingInfo: { name: '', phone: '', email: '', address: '', zipCode: '' },
+      addressList: [], // 地址列表
+      selectedAddressId: null, // 选中的地址ID
+      showAddressDialog: false, // 显示地址选择对话框
       isOrderDetail: false, // 是否为订单详情模式
       orderData: null, // 订单详情数据
       isOrderPaid: false, // 订单是否已支付
@@ -225,7 +337,6 @@ export default {
           { pattern: /^1[3-9]\d{9}$/, message: this.$t('checkout.phoneFormat') || '请输入正确的手机号码格式', trigger: 'blur' }
         ],
         email: [
-          { required: true, message: this.$t('checkout.emailRequired') || '请输入邮箱地址', trigger: 'blur' },
           { type: 'email', message: this.$t('checkout.emailFormat') || '请输入正确的邮箱格式', trigger: 'blur' }
         ],
         address: [
@@ -270,6 +381,7 @@ export default {
   created() {
     this.initOrderItems();
     this.fetchPayPalConfig();
+    this.loadAddressList();
   },
   mounted() {
     // 不做任何PayPal相关操作
@@ -282,6 +394,9 @@ export default {
     }
   },
   methods: {
+    closeAddressDialog() {
+      this.showAddressDialog = false;
+    },
     async initOrderItems() {
       // 检查是否为订单详情模式
       const orderId = this.$route.query.orderId;
@@ -780,6 +895,69 @@ export default {
     goOrders() {
       this.$router.push('/user/orders');
     },
+    async loadAddressList() {
+      try {
+        const response = await this.$api.getWithErrorHandler('/addresses', {
+          fallbackKey: 'address.error.fetchFailed'
+        });
+        if (response.success) {
+          this.addressList = response.data || [];
+          // 如果有默认地址，自动选中
+          const defaultAddress = this.addressList.find(addr => addr.is_default);
+          if (defaultAddress) {
+            this.selectedAddressId = defaultAddress.id;
+            this.selectAddress(defaultAddress.id);
+          }
+        }
+      } catch (error) {
+        console.error('加载地址列表失败:', error);
+      }
+    },
+    selectAddress(addressId) {
+       if (!addressId) {
+         // 清空地址信息
+         this.shippingInfo.name = '';
+         this.shippingInfo.phone = '';
+         this.shippingInfo.address = '';
+         this.shippingInfo.zipCode = '';
+         this.selectedAddressId = null;
+         return;
+       }
+       
+       const address = this.addressList.find(addr => addr.id === addressId);
+       if (address) {
+         this.shippingInfo.name = address.recipient_name || '';
+         this.shippingInfo.phone = address.phone || '';
+         this.shippingInfo.address = address.address || '';
+         this.shippingInfo.zipCode = address.postal_code || '';
+         this.selectedAddressId = addressId;
+       }
+     },
+     getAddressLabel(address) {
+       if (!address) return '';
+       const name = address.recipient_name || '';
+       const phone = address.phone || '';
+       const addr = address.address || '';
+       return `${name} ${phone} ${addr}`.trim();
+     },
+     selectAddressFromDialog(address) {
+       this.selectedAddressId = address.id;
+     },
+     selectAndConfirmAddress(address) {
+       this.selectedAddressId = address.id;
+       this.selectAddress(address.id);
+       this.showAddressDialog = false;
+     },
+     confirmAddressSelection() {
+       if (this.selectedAddressId) {
+         this.selectAddress(this.selectedAddressId);
+         this.showAddressDialog = false;
+       }
+     },
+     goToAddressManagement() {
+       this.showAddressDialog = false;
+       this.$router.push('/user/address');
+     },
     async validateShippingInfo() {
       try {
         await this.$refs.shippingForm.validate();
@@ -837,18 +1015,41 @@ export default {
   font-size: $font-size-2xl;
   font-weight: $font-weight-bold;
   color: $text-primary;
-  margin-bottom: $spacing-lg;
+  margin: 0 0 $spacing-lg 0;
   padding-bottom: $spacing-md;
   border-bottom: $table-header-border-width solid $primary-color;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title-content {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
 }
 
-.section-title i {
-  color: $primary-color;
-  font-size: $font-size-2xl;
+.title-content .el-icon {
+  color: #dc2626;
+  font-size: $font-size-xl;
 }
+
+.title-content i {
+  color: #dc2626;
+  font-size: $font-size-xl;
+}
+
+.shipping-header {
+  display: flex;
+  align-items: center;
+}
+
+/* 直接覆盖按钮内的所有span */
+.section-title .shipping-header .address-select-btn :deep(span) {
+  color: #ffffff !important;
+}
+
+
 
 /* 订单表格 */
 .order-table {
@@ -1550,13 +1751,15 @@ export default {
   .shipping-form :deep(.el-input__wrapper) {
     padding: $spacing-sm $spacing-md;
     font-size: $font-size-sm;
-    min-height: 40px; /* 减小高度但保持触摸友好 */
+    min-height: 40px;
+    /* 减小高度但保持触摸友好 */
   }
 
   .shipping-form :deep(.el-textarea__inner) {
     padding: $spacing-sm $spacing-md;
     font-size: $font-size-sm;
-    min-height: 80px; /* 减小文本域高度 */
+    min-height: 80px;
+    /* 减小文本域高度 */
     line-height: 1.4;
   }
 
@@ -1672,6 +1875,345 @@ export default {
     min-height: 44px;
     padding: $spacing-sm $spacing-md;
     font-size: $font-size-sm;
+  }
+}
+
+/* 地址选择对话框样式 */
+.address-dialog :deep(.el-dialog) {
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+}
+
+.address-dialog :deep(.el-dialog__header) {
+  padding: $spacing-lg $spacing-xl;
+  border-bottom: 1px solid $gray-200;
+}
+
+.address-dialog :deep(.el-dialog__title) {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+}
+
+.address-dialog :deep(.el-dialog__body) {
+  padding: $spacing-lg $spacing-xl;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.address-items {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.address-item {
+  border: 2px solid $gray-200;
+  border-radius: $border-radius-md;
+  padding: $spacing-lg;
+  cursor: pointer;
+  transition: $transition-slow;
+  background: $white;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+}
+
+.address-item:hover {
+  border-color: $primary-color;
+  box-shadow: $shadow-sm;
+}
+
+.address-item.selected {
+  border-color: $primary-color;
+  background: rgba($primary-color, 0.05);
+}
+
+.default-tag {
+  position: absolute;
+  top: $spacing-md;
+  right: $spacing-md;
+  z-index: 1;
+}
+
+.address-default-badge {
+  background: $primary-color;
+  color: $white;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.address-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.address-row {
+  display: flex;
+  gap: $spacing-xl;
+  align-items: flex-start;
+}
+
+.address-row:nth-child(2) {
+  /* 第二行：电话和邮编并排 */
+  gap: $spacing-lg;
+
+  .field-inline:first-child {
+    flex: 1;
+    max-width: 60%;
+  }
+
+  .field-inline:last-child {
+    flex: 0 0 auto;
+    min-width: 100px;
+    margin-left: $spacing-sm;
+  }
+}
+
+.field-inline {
+  font-size: $font-size-sm;
+  color: $text-primary;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.field-inline strong {
+  color: $text-secondary;
+  font-weight: $font-weight-semibold;
+  margin-right: $spacing-xs;
+}
+
+.address-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.address-actions .el-icon {
+  font-size: $font-size-xl;
+  color: $primary-color;
+}
+
+.no-address {
+  text-align: center;
+  padding: $spacing-5xl $spacing-lg;
+  color: $text-secondary;
+}
+
+.no-address-icon {
+  font-size: $font-size-5xl;
+  color: $gray-300;
+  margin-bottom: $spacing-lg;
+}
+
+.no-address-text {
+  font-size: $font-size-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.add-address-btn {
+  border-radius: $border-radius-md;
+  padding: $spacing-md $spacing-xl;
+  font-weight: $font-weight-medium;
+}
+
+
+
+
+
+/* 自定义对话框样式 */
+.custom-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.custom-dialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #ebeef5;
+  flex-shrink: 0;
+}
+
+.custom-dialog-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
+  margin: 0;
+}
+
+.custom-dialog-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #909399;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.custom-dialog-close:hover {
+  background-color: #f5f7fa;
+  color: #606266;
+}
+
+.custom-dialog-body {
+  padding: 20px 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 移动端自定义对话框优化 */
+@media (max-width: 768px) {
+  .custom-dialog-overlay {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .custom-dialog {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .custom-dialog-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .custom-dialog-title {
+    font-size: 16px;
+  }
+
+  .custom-dialog-body {
+    padding: 0;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .address-list {
+    height: 100%;
+    padding: 16px 20px;
+  }
+
+  .address-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .address-item {
+    padding: 12px 16px;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    min-height: auto;
+  }
+
+  .address-item:hover {
+    border-color: #409eff;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+  }
+
+  .address-item.selected {
+    border-color: #409eff;
+    background-color: #f0f9ff;
+  }
+
+  .address-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .address-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .address-row:nth-child(2) {
+    flex-direction: row;
+    gap: 16px;
+
+    .field-inline:first-child {
+      flex: 1;
+    }
+
+    .field-inline:last-child {
+      flex: 0 0 auto;
+      min-width: 80px;
+    }
+  }
+
+  .field-inline {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #606266;
+  }
+
+  .field-inline strong {
+    color: #303133;
+    font-weight: 500;
+    margin-right: 4px;
+    display: inline-block;
+    min-width: 50px;
+  }
+
+  .default-tag {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
   }
 }
 </style>

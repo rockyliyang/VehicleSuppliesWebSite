@@ -6,6 +6,7 @@ alwaysApply: true
 # 项目开发规则
 
 ## 项目概览
+项目的默认语言是英语，所有的默认文本都应该是英语。
 
 ### 技术栈
 系统使用 vue 做前端，nodejs 做后端，postgresql 做 DB。

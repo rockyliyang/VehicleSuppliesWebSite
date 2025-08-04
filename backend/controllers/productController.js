@@ -230,9 +230,10 @@ exports.getAllProducts = async (req, res) => {
 
 // Get a single product by id
 exports.getProductById = async (req, res) => {
+  const connection = await getConnection();
   try {
     // 查询产品基本信息，明确列出所有字段
-    const rows = await query(
+    const rows = await connection.query(
       `SELECT p.id, p.guid, p.name, p.product_code, p.category_id, p.price, p.stock, p.status, 
        p.product_type, p.short_description, p.full_description, p.created_at, p.updated_at, 
        c.name as category_name 
@@ -250,15 +251,16 @@ exports.getProductById = async (req, res) => {
     }
 
     // 查询主图
-    const mainImages = await query(
+    const mainImages = await connection.query(
       'SELECT image_url FROM product_images WHERE product_id = $1 AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1',
       [req.params.id]
     );
     // 查询详情图
-    const detailImages = await query(
+    const detailImages = await connection.query(
       'SELECT image_url FROM product_images WHERE product_id = $1 AND image_type = 1 AND deleted = false ORDER BY sort_order ASC, id ASC',
       [req.params.id]
     );
+
 
     // PostgreSQL 返回的 guid 已经是字符串格式
     const product = {
@@ -278,6 +280,8 @@ exports.getProductById = async (req, res) => {
       success: false,
       message: getMessage('PRODUCT.GET_FAILED')
     });
+  } finally {
+    connection.release();
   }
 };
 

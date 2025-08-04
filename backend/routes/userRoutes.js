@@ -102,8 +102,8 @@ router.post('/register', async (req, res) => {
     const defaultBusinessGroupId = defaultGroupRows.getRowCount() > 0 ? defaultGroupRows.getFirstRow().id : null;
     
     await query(
-      'INSERT INTO users (username, email, password, is_active, activation_token, user_role, business_group_id, created_by, updated_by) VALUES ($1, $2, $3, 1, $4, $5, $6, $7, $8)',
-      [username, email, hashedPassword, activation_token, 'user', defaultBusinessGroupId, null, null]
+      'INSERT INTO users (username, email, password, is_active, activation_token, user_role, business_group_id, currency, created_by, updated_by) VALUES ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9)',
+      [username, email, hashedPassword, activation_token, 'user', defaultBusinessGroupId, 'USD', null, null]
     );
     
     const link = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/activate?token=${activation_token}`;
@@ -289,7 +289,7 @@ router.post('/logout', (req, res) => {
 router.get('/profile', verifyToken, async (req, res) => {
   try {
     const users = await query(
-      'SELECT id, username, email, phone, user_role FROM users WHERE id = $1 AND deleted = false',
+      'SELECT id, username, email, phone, user_role, currency FROM users WHERE id = $1 AND deleted = false',
       [req.userId]
     );
     
@@ -308,6 +308,120 @@ router.get('/profile', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('获取用户信息错误:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 更新用户信息（动态更新）
+router.put('/profile', verifyToken, async (req, res) => {
+  try {
+    const updateData = req.body;
+    
+    // 定义允许更新的字段
+    const allowedFields = ['username', 'email', 'phone', 'currency'];
+    
+    // 过滤出有效的更新字段
+    const fieldsToUpdate = {};
+    for (const field of allowedFields) {
+      if (updateData.hasOwnProperty(field) && updateData[field] !== undefined) {
+        fieldsToUpdate[field] = updateData[field];
+      }
+    }
+    
+    // 如果没有要更新的字段
+    if (Object.keys(fieldsToUpdate).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('USER.NO_FIELDS_TO_UPDATE'),
+        data: null
+      });
+    }
+    
+    // 验证字段格式
+    if (fieldsToUpdate.phone) {
+      const phoneRegex = /^[+]?[\d\s\-()]+$/;
+      if (!phoneRegex.test(fieldsToUpdate.phone)) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('USER.INVALID_PHONE_FORMAT'),
+          data: null
+        });
+      }
+    }
+    
+    if (fieldsToUpdate.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(fieldsToUpdate.email)) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('USER.INVALID_EMAIL_FORMAT'),
+          data: null
+        });
+      }
+      
+      // 检查邮箱是否已被其他用户使用
+      const existingUser = await query(
+        'SELECT id FROM users WHERE email = $1 AND id != $2 AND deleted = false',
+        [fieldsToUpdate.email, req.userId]
+      );
+      
+      if (existingUser.getRowCount() > 0) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('USER.EMAIL_EXISTS'),
+          data: null
+        });
+      }
+    }
+    
+    if (fieldsToUpdate.username) {
+      // 检查用户名是否已被其他用户使用
+      const existingUser = await query(
+        'SELECT id FROM users WHERE username = $1 AND id != $2 AND deleted = false',
+        [fieldsToUpdate.username, req.userId]
+      );
+      
+      if (existingUser.getRowCount() > 0) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('USER.USERNAME_EXISTS'),
+          data: null
+        });
+      }
+    }
+    
+    if (fieldsToUpdate.currency) {
+      // 验证货币代码格式（3位字母）
+      const currencyRegex = /^[A-Z]{3}$/;
+      if (!currencyRegex.test(fieldsToUpdate.currency)) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('USER.INVALID_CURRENCY_FORMAT'),
+          data: null
+        });
+      }
+    }
+    
+    // 构建动态SQL更新语句
+    const updateFields = Object.keys(fieldsToUpdate);
+    const updateValues = Object.values(fieldsToUpdate);
+    
+    const setClause = updateFields.map((field, index) => `${field} = $${index + 1}`).join(', ');
+    const sql = `UPDATE users SET ${setClause}, updated_by = $${updateFields.length + 1}, updated_at = NOW() WHERE id = $${updateFields.length + 2} AND deleted = false`;
+    
+    await query(sql, [...updateValues, req.userId, req.userId]);
+    
+    res.json({
+      success: true,
+      message: getMessage('USER.PROFILE_UPDATE_SUCCESS'),
+      data: null
+    });
+  } catch (error) {
+    console.error('更新用户信息错误:', error);
     res.status(500).json({
       success: false,
       message: getMessage('COMMON.SERVER_ERROR'),

@@ -36,7 +36,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item v-if="isLoggedIn" command="settings">{{ $t('userSettings.title') || '账号设置'
+              <el-dropdown-item v-if="isLoggedIn" command="settings">{{ $t('userSettings.title') || '我的'
                 }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="orders">{{ $t('orders') }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="inquiries">{{ $t('inquiry.management.title') || '询价单管理'
@@ -112,7 +112,7 @@
         <div class="mobile-user-menu-list">
           <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('settings')">
             <i class="fas fa-cog"></i>
-            <span>{{ $t('userSettings.title') || '账号设置' }}</span>
+            <span>{{ $t('userSettings.title') || '我的' }}</span>
           </div>
           <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('orders')">
             <i class="fas fa-shopping-bag"></i>

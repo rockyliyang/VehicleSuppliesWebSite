@@ -48,6 +48,16 @@ const MESSAGES = {
     CAPTCHA_EXPIRED: 'Captcha expired, please refresh',
     CAPTCHA_INVALID: 'Invalid captcha',
     
+    // 用户信息更新相关
+    PROFILE_SUCCESS: 'User profile retrieved successfully',
+    PROFILE_UPDATE_SUCCESS: 'User profile updated successfully',
+    NO_FIELDS_TO_UPDATE: 'No fields to update',
+    INVALID_PHONE_FORMAT: 'Invalid phone number format',
+    INVALID_EMAIL_FORMAT: 'Invalid email format',
+    INVALID_CURRENCY_FORMAT: 'Invalid currency format, must be 3-letter code',
+    USERNAME_EXISTS: 'Username already exists',
+    PHONE_UPDATE_SUCCESS: 'Phone number updated successfully',
+    
     // 第三方登录相关
     THIRD_PARTY_LOGIN_SUCCESS: 'Third-party login successful',
     THIRD_PARTY_LOGIN_FAILED: 'Third-party login failed',
@@ -66,6 +76,24 @@ const MESSAGES = {
     PROVIDER_USER_ID_REQUIRED: 'Provider user ID is required'
   },
   
+  // 地址相关
+  ADDRESS: {
+    GET_SUCCESS: 'Address retrieved successfully',
+    GET_FAILED: 'Failed to retrieve address',
+    LIST_GET_SUCCESS: 'Address list retrieved successfully',
+    LIST_GET_FAILED: 'Failed to retrieve address list',
+    CREATE_SUCCESS: 'Address created successfully',
+    CREATE_FAILED: 'Failed to create address',
+    UPDATE_SUCCESS: 'Address updated successfully',
+    UPDATE_FAILED: 'Failed to update address',
+    DELETE_SUCCESS: 'Address deleted successfully',
+    DELETE_FAILED: 'Failed to delete address',
+    SET_DEFAULT_SUCCESS: 'Default address set successfully',
+    SET_DEFAULT_FAILED: 'Failed to set default address',
+    NOT_FOUND: 'Address not found',
+    REQUIRED_FIELDS: 'Recipient name, phone and address are required'
+  },
+
   // 购物车相关
   CART: {
     GET_SUCCESS: 'Cart retrieved successfully',

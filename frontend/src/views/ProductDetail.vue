@@ -56,7 +56,16 @@
             </div>
           </div>
           <div class="product-info-block">
-            <h1 class="product-title">{{ product.name }}</h1>
+            <div class="product-header">
+              <h1 class="product-title">{{ product.name }}</h1>
+              <el-button v-if="isLoggedIn" :type="isFavorited ? 'danger' : 'default'" circle size="large"
+                @click="toggleFavorite" :loading="favoriteLoading" class="favorite-btn"
+                :title="isFavorited ? $t('productDetail.removeFromFavorites') : $t('productDetail.addToFavorites')">
+                <el-icon :size="24">
+                  <Star :style="{ color: isFavorited ? '#f56c6c' : '#909399' }" />
+                </el-icon>
+              </el-button>
+            </div>
             <div class="product-meta">
               <span class="product-id">{{ $t('productDetail.productCode') }}: {{ product.product_code }}</span>
               <span class="product-category">{{ $t('productDetail.category') }}: {{ categoryName }}</span>
@@ -352,12 +361,15 @@ export default {
         captcha: [
           { required: true, message: this.$t('contact.captcha.required'), trigger: 'blur' }
         ]
-      }
+      },
+      // 收藏相关
+      favoriteLoading: false,
+      isFavorited: false
     }
   },
   computed: {
     isLoggedIn() {
-      return this.$store.getters['auth/isAuthenticated'];
+      return this.$store.getters.isLoggedIn;
     },
     userInfo() {
       return this.$store.getters['auth/userInfo'] || {};
@@ -531,6 +543,12 @@ export default {
         
         // 获取相关产品（同类别的其他产品）
         this.fetchRelatedProducts()
+        
+        // 如果用户已登录，添加浏览历史和检查收藏状态
+        if (this.isLoggedIn) {
+          this.addBrowsingHistory()
+          this.checkFavoriteStatus()
+        }
       } catch (error) {
         console.error('获取产品详情失败:', error)
         this.$messageHandler.showError(error, 'product.error.fetchFailed')
@@ -983,6 +1001,84 @@ export default {
        
        // 清除待执行的操作
        this.pendingAction = null;
+       
+       // 登录成功后添加浏览历史和检查收藏状态
+       if (this.product && this.product.id) {
+         this.addBrowsingHistory();
+         this.checkFavoriteStatus();
+       }
+     },
+     
+     // 添加浏览历史
+     async addBrowsingHistory() {
+       if (!this.isLoggedIn || !this.product.id) return;
+       
+       try {
+         await this.$api.post('user-products', {
+           product_id: this.product.id,
+           type: 'viewed'
+         });
+       } catch (error) {
+         console.error('添加浏览历史失败:', error);
+         // 浏览历史失败不影响用户体验，不显示错误消息
+       }
+     },
+     
+     // 检查收藏状态
+     async checkFavoriteStatus() {
+       if (!this.isLoggedIn || !this.product.id) return;
+       
+       try {
+         const response = await this.$api.get(`user-products/check/${this.product.id}`, {
+           params: { type: 'favorite' }
+         });
+         this.isFavorited = response.data.exists;
+       } catch (error) {
+         console.error('检查收藏状态失败:', error);
+         this.isFavorited = false;
+       }
+     },
+     
+     // 切换收藏状态
+     async toggleFavorite() {
+       if (this.favoriteLoading) return;
+       
+       // 检查用户是否已登录
+       if (!this.isLoggedIn) {
+         this.pendingAction = 'favorite';
+         this.loginDialogVisible = true;
+         return;
+       }
+       
+       this.favoriteLoading = true;
+       
+       try {
+         if (this.isFavorited) {
+           // 取消收藏
+           const checkResponse = await this.$api.get(`user-products/check/${this.product.id}`, {
+             params: { type: 'favorite' }
+           });
+           
+           if (checkResponse.data.exists && checkResponse.data.id) {
+             await this.$api.delete(`user-products/${checkResponse.data.id}`);
+             this.isFavorited = false;
+             this.$messageHandler.showSuccess('已取消收藏', 'product.success.unfavorited');
+           }
+         } else {
+           // 添加收藏
+           await this.$api.post('user-products', {
+             product_id: this.product.id,
+             type: 'favorite'
+           });
+           this.isFavorited = true;
+           this.$messageHandler.showSuccess('已添加到收藏', 'product.success.favorited');
+         }
+       } catch (error) {
+         console.error('切换收藏状态失败:', error);
+         this.$messageHandler.showError(error, 'product.error.toggleFavoriteFailed');
+       } finally {
+         this.favoriteLoading = false;
+       }
      }
   }
 }
@@ -1373,12 +1469,50 @@ export default {
   box-shadow: $shadow-sm;
 }
 
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-lg;
+  gap: $spacing-md;
+}
+
 .product-title {
   font-size: $font-size-4xl;
   font-weight: $font-weight-bold;
   color: $text-primary;
-  margin-bottom: $spacing-lg;
+  margin: 0;
   line-height: $line-height-tight;
+  flex: 1;
+}
+
+.favorite-btn {
+  flex-shrink: 0;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  border: 2px solid $gray-300 !important;
+  background-color: $white !important;
+  transition: all 0.3s ease !important;
+
+  &:hover {
+    border-color: $primary-color !important;
+    background-color: $gray-50 !important;
+    transform: scale(1.05);
+  }
+
+  &.el-button--danger {
+    border-color: #f56c6c !important;
+    background-color: rgba(245, 108, 108, 0.1) !important;
+
+    &:hover {
+      background-color: rgba(245, 108, 108, 0.2) !important;
+    }
+  }
+
+  :deep(.el-icon) {
+    font-size: 24px !important;
+  }
 }
 
 .product-meta {
@@ -1485,9 +1619,56 @@ export default {
   }
 }
 
-/* 按钮样式已在shared.scss中统一定义，这里不再重复定义 */
+/* Chat 和 Message 按钮样式 */
+:deep(.chat-button) {
+  @include button-base;
+  background-color: #67C23A !important;
+  color: white !important;
+  border-color: #67C23A !important;
+  padding: $spacing-md $spacing-xl !important;
+  font-size: $font-size-lg !important;
+  font-weight: $font-weight-semibold !important;
+  border-radius: $border-radius-md !important;
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3) !important;
+  transition: all 0.3s ease !important;
 
+  &:hover:not(:disabled) {
+    background-color: #5daf34 !important;
+    border-color: #5daf34 !important;
+    box-shadow: 0 4px 12px rgba(103, 194, 58, 0.4) !important;
+    transform: translateY(-1px);
+  }
 
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(103, 194, 58, 0.3) !important;
+  }
+}
+
+:deep(.email-button) {
+  @include button-base;
+  background-color: #409EFF !important;
+  color: white !important;
+  border-color: #409EFF !important;
+  padding: $spacing-md $spacing-xl !important;
+  font-size: $font-size-lg !important;
+  font-weight: $font-weight-semibold !important;
+  border-radius: $border-radius-md !important;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3) !important;
+  transition: all 0.3s ease !important;
+
+  &:hover:not(:disabled) {
+    background-color: #337ecc !important;
+    border-color: #337ecc !important;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4) !important;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(64, 158, 255, 0.3) !important;
+  }
+}
 
 :deep(.el-button--primary:hover) {
   background-color: $primary-dark !important;
@@ -1880,10 +2061,26 @@ export default {
     padding: $spacing-md;
   }
 
+  .product-header {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+  }
+
   .product-title {
     font-size: $font-size-2xl;
-    margin-bottom: $spacing-md;
+    margin: 0;
     line-height: $line-height-normal;
+  }
+
+  .favorite-btn {
+    width: 40px !important;
+    height: 40px !important;
+
+    :deep(.el-icon) {
+      font-size: 20px !important;
+    }
   }
 
   .product-meta {
@@ -1932,6 +2129,18 @@ export default {
         font-size: $font-size-sm;
         padding: $spacing-sm $spacing-md;
       }
+
+      :deep(.chat-button) {
+        padding: $spacing-md $spacing-lg !important;
+        font-size: $font-size-md !important;
+        box-shadow: 0 2px 6px rgba(103, 194, 58, 0.25) !important;
+      }
+
+      :deep(.email-button) {
+        padding: $spacing-md $spacing-lg !important;
+        font-size: $font-size-md !important;
+        box-shadow: 0 2px 6px rgba(64, 158, 255, 0.25) !important;
+      }
     }
   }
 
@@ -1962,7 +2171,9 @@ export default {
     font-size: $font-size-sm;
     line-height: $line-height-relaxed;
 
-    :deep(h1), :deep(h2), :deep(h3) {
+    :deep(h1),
+    :deep(h2),
+    :deep(h3) {
       font-size: $font-size-lg;
       margin: $spacing-md 0 $spacing-sm 0;
     }
