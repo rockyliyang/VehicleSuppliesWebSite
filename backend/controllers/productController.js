@@ -3,6 +3,101 @@ const { query, getConnection } = require('../db/db');
 // 移除 uuidToBinary 和 binaryToUuid 的引用，PostgreSQL 使用原生 UUID
 const { getMessage } = require('../config/messages');
 
+// 验证阶梯价格范围的辅助函数
+const validatePriceRanges = (priceRanges) => {
+  if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
+    return { valid: false, message: 'Price ranges must be a non-empty array' };
+  }
+
+  // 按最小数量排序
+  const sortedRanges = [...priceRanges].sort((a, b) => a.min_quantity - b.min_quantity);
+
+  // 检查第一个范围是否从1开始
+  if (sortedRanges[0].min_quantity !== 1) {
+    return { valid: false, message: 'First price range must start from quantity 1' };
+  }
+
+  // 检查范围是否连续，没有间隔
+  for (let i = 0; i < sortedRanges.length; i++) {
+    const current = sortedRanges[i];
+    
+    // 验证基本字段
+    if (!current.min_quantity || current.min_quantity <= 0) {
+      return { valid: false, message: `Invalid min_quantity at range ${i + 1}` };
+    }
+    
+    if (!current.price || current.price <= 0) {
+      return { valid: false, message: `Invalid price at range ${i + 1}` };
+    }
+
+    // 验证max_quantity（如果存在）
+    if (current.max_quantity !== null && current.max_quantity !== undefined) {
+      if (current.max_quantity < current.min_quantity) {
+        return { valid: false, message: `max_quantity must be >= min_quantity at range ${i + 1}` };
+      }
+    }
+
+    // 检查与下一个范围的连续性
+    if (i < sortedRanges.length - 1) {
+      const next = sortedRanges[i + 1];
+      
+      // 当前范围必须有max_quantity（除了最后一个）
+      if (current.max_quantity === null || current.max_quantity === undefined) {
+        return { valid: false, message: `Range ${i + 1} must have max_quantity (except the last range)` };
+      }
+      
+      // 下一个范围的min_quantity必须等于当前范围的max_quantity + 1
+      if (next.min_quantity !== current.max_quantity + 1) {
+        return { valid: false, message: `Gap detected between range ${i + 1} and ${i + 2}. Range ${i + 2} should start from ${current.max_quantity + 1}` };
+      }
+    } else {
+      // 最后一个范围的max_quantity应该是null（表示无上限）
+      if (current.max_quantity !== null && current.max_quantity !== undefined) {
+        return { valid: false, message: 'Last price range should have no upper limit (max_quantity should be null)' };
+      }
+    }
+  }
+
+  return { valid: true, sortedRanges };
+};
+
+// 根据数量获取对应的价格
+const getPriceByQuantity = (priceRanges, quantity) => {
+  if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
+    return null;
+  }
+
+  for (const range of priceRanges) {
+    if (quantity >= range.min_quantity) {
+      if (range.max_quantity === null || quantity <= range.max_quantity) {
+        return range.price;
+      }
+    }
+  }
+  
+  return null;
+};
+
+// 格式化价格范围显示字符串
+const formatPriceRangeDisplay = (priceRanges, currencySymbol = '$') => {
+  if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
+    return '';
+  }
+
+  const sortedRanges = [...priceRanges].sort((a, b) => a.min_quantity - b.min_quantity);
+  
+  return sortedRanges.map(range => {
+    const price = `${currencySymbol}${parseFloat(range.price).toFixed(2)}`;
+    if (range.max_quantity === null) {
+      return `${range.min_quantity}+ pcs: ${price}`;
+    } else if (range.min_quantity === range.max_quantity) {
+      return `${range.min_quantity} pc: ${price}`;
+    } else {
+      return `${range.min_quantity}-${range.max_quantity} pcs: ${price}`;
+    }
+  }).join('; ');
+};
+
 // Generate a unique product code
 exports.generateProductCode = async (req, res) => {
   try {
@@ -55,6 +150,7 @@ exports.createProduct = async (req, res) => {
       product_code,
       category_id,
       price,
+      price_ranges, // 新增：阶梯价格数组
       stock = 0,
       status = 'on_shelf',
       product_type = 'consignment', // 默认为代销
@@ -65,12 +161,19 @@ exports.createProduct = async (req, res) => {
     } = req.body;
 
     // 验证产品类型
-    const validProductTypes = ['physical', 'virtual', 'service'];
+    const validProductTypes = ['self_operated', 'consignment'];
     if (!validProductTypes.includes(product_type)) {
       return res.status(400).json({
         success: false,
         message: getMessage('PRODUCT.INVALID_TYPE')
       });
+    }
+
+    // 处理阶梯价格数据（客户端已验证）
+    let validatedPriceRanges = null;
+    if (price_ranges && price_ranges.length > 0) {
+      // 按最小数量排序，确保数据一致性
+      validatedPriceRanges = [...price_ranges].sort((a, b) => a.min_quantity - b.min_quantity);
     }
 
     // 检查产品编号是否已存在
@@ -80,7 +183,7 @@ exports.createProduct = async (req, res) => {
     );
 
     if (existing.getRowCount() > 0) {
-
+      await connection.rollback();
       return res.status(400).json({
         success: false,
         message: getMessage('PRODUCT.CODE_EXISTS')
@@ -110,17 +213,38 @@ exports.createProduct = async (req, res) => {
       ]
     );
 
+    const productId = result.rows[0].id;
+
+    // 插入阶梯价格数据（如果提供）
+    if (validatedPriceRanges && validatedPriceRanges.length > 0) {
+      for (const range of validatedPriceRanges) {
+        await connection.query(
+          `INSERT INTO product_price_ranges (product_id, min_quantity, max_quantity, price, created_by, updated_by)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            productId,
+            range.min_quantity,
+            range.max_quantity,
+            range.price,
+            currentUserId,
+            currentUserId
+          ]
+        );
+      }
+    }
+
     await connection.commit();
 
     res.status(201).json({
       success: true,
       message: getMessage('PRODUCT.CREATE_SUCCESS'),
       data: {
-        id: result.rows[0].id,
+        id: productId,
         name,
         product_code,
         category_id,
         price,
+        price_ranges: validatedPriceRanges,
         stock,
         status,
         product_type,
@@ -209,11 +333,38 @@ exports.getAllProducts = async (req, res) => {
     // PostgreSQL 返回的 guid 已经是字符串格式
     const products = rows.getRows();
 
+    // 一次性查询所有产品的阶梯价格
+    let productsWithPriceRanges = products;
+    if (products.length > 0) {
+      const productIds = products.map(p => p.id);
+      const priceRangesResult = await query(
+        'SELECT product_id, min_quantity, max_quantity, price FROM product_price_ranges WHERE product_id = ANY($1) ORDER BY product_id, min_quantity ASC',
+        [productIds]
+      );
+      
+      const priceRangesMap = {};
+      priceRangesResult.getRows().forEach(range => {
+        if (!priceRangesMap[range.product_id]) {
+          priceRangesMap[range.product_id] = [];
+        }
+        priceRangesMap[range.product_id].push({
+          min_quantity: range.min_quantity,
+          max_quantity: range.max_quantity,
+          price: range.price
+        });
+      });
+      
+      productsWithPriceRanges = products.map(product => ({
+        ...product,
+        price_ranges: priceRangesMap[product.id] || []
+      }));
+    }
+
     res.json({
       success: true,
       message: getMessage('PRODUCT.LIST_SUCCESS'),
       data: {
-        items: products,
+        items: productsWithPriceRanges,
         total: total.getFirstRow().total,
         page: parseInt(page),
         limit: parseInt(limit)
@@ -250,6 +401,12 @@ exports.getProductById = async (req, res) => {
       });
     }
 
+    // 查询阶梯价格
+    const priceRanges = await connection.query(
+      'SELECT min_quantity, max_quantity, price FROM product_price_ranges WHERE product_id = $1 ORDER BY min_quantity ASC',
+      [req.params.id]
+    );
+
     // 查询主图
     const mainImages = await connection.query(
       'SELECT image_url FROM product_images WHERE product_id = $1 AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1',
@@ -261,10 +418,10 @@ exports.getProductById = async (req, res) => {
       [req.params.id]
     );
 
-
     // PostgreSQL 返回的 guid 已经是字符串格式
     const product = {
       ...rows.getFirstRow(),
+      price_ranges: priceRanges.getRows(),
       thumbnail_url: mainImages.getRowCount() > 0 ? mainImages.getFirstRow().image_url : '',
       detail_images: detailImages.getRows().map(img => img.image_url)
     };
@@ -297,6 +454,7 @@ exports.updateProduct = async (req, res) => {
       product_code,
       category_id,
       price,
+      price_ranges, // 新增：阶梯价格数组
       stock,
       status,
       product_type,
@@ -307,12 +465,20 @@ exports.updateProduct = async (req, res) => {
     } = req.body;
 
     // 验证产品类型
-    const validProductTypes = ['physical', 'virtual', 'service'];
+    const validProductTypes = ['self_operated', 'consignment'];
     if (!validProductTypes.includes(product_type)) {
+      await connection.rollback();
       return res.status(400).json({
         success: false,
         message: getMessage('PRODUCT.INVALID_TYPE')
       });
+    }
+
+    // 处理阶梯价格数据（客户端已验证）
+    let validatedPriceRanges = null;
+    if (price_ranges && price_ranges.length > 0) {
+      // 按最小数量排序，确保数据一致性
+      validatedPriceRanges = [...price_ranges].sort((a, b) => a.min_quantity - b.min_quantity);
     }
 
     // 检查产品是否存在
@@ -322,6 +488,7 @@ exports.updateProduct = async (req, res) => {
     );
 
     if (existing.getRowCount() === 0) {
+      await connection.rollback();
       return res.status(404).json({
         success: false,
         message: getMessage('PRODUCT.NOT_FOUND')
@@ -335,6 +502,7 @@ exports.updateProduct = async (req, res) => {
     );
 
     if (codeExists.getRowCount() > 0) {
+      await connection.rollback();
       return res.status(400).json({
         success: false,
         message: getMessage('PRODUCT.CODE_EXISTS')
@@ -374,6 +542,31 @@ exports.updateProduct = async (req, res) => {
       ]
     );
 
+    // 更新阶梯价格数据
+    // 先删除现有的阶梯价格记录
+    await connection.query(
+      'DELETE FROM product_price_ranges WHERE product_id = $1',
+      [id]
+    );
+
+    // 插入新的阶梯价格数据（如果提供）
+    if (validatedPriceRanges && validatedPriceRanges.length > 0) {
+      for (const range of validatedPriceRanges) {
+        await connection.query(
+          `INSERT INTO product_price_ranges (product_id, min_quantity, max_quantity, price, created_by, updated_by)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            id,
+            range.min_quantity,
+            range.max_quantity,
+            range.price,
+            req.userId,
+            req.userId
+          ]
+        );
+      }
+    }
+
     await connection.commit();
 
     res.json({
@@ -385,6 +578,7 @@ exports.updateProduct = async (req, res) => {
         product_code,
         category_id,
         price,
+        price_ranges: validatedPriceRanges,
         stock,
         status,
         product_type,
@@ -677,6 +871,69 @@ exports.searchProducts = async (req, res) => {
       success: false,
       message: getMessage('PRODUCT.SEARCH_FAILED'),
       data: []
+    });
+  }
+};
+
+// 根据产品ID和数量获取对应的价格
+exports.getPriceByQuantity = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { quantity } = req.query;
+
+    if (!quantity || isNaN(parseInt(quantity)) || parseInt(quantity) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid quantity parameter'
+      });
+    }
+
+    const qty = parseInt(quantity);
+
+    // 查询产品是否存在
+    const productExists = await query(
+      'SELECT id, price FROM products WHERE id = $1 AND deleted = false',
+      [productId]
+    );
+
+    if (productExists.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('PRODUCT.NOT_FOUND')
+      });
+    }
+
+    // 查询阶梯价格
+    const priceRanges = await query(
+      'SELECT min_quantity, max_quantity, price FROM product_price_ranges WHERE product_id = $1 ORDER BY min_quantity ASC',
+      [productId]
+    );
+
+    let finalPrice = productExists.getFirstRow().price; // 默认使用产品表中的价格
+
+    // 如果有阶梯价格，则根据数量匹配对应价格
+    if (priceRanges.getRowCount() > 0) {
+      const matchedPrice = getPriceByQuantity(priceRanges.getRows(), qty);
+      if (matchedPrice !== null) {
+        finalPrice = matchedPrice;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Price retrieved successfully',
+      data: {
+        product_id: productId,
+        quantity: qty,
+        price: finalPrice,
+        price_ranges: priceRanges.getRows()
+      }
+    });
+  } catch (error) {
+    console.error('获取产品价格失败:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get product price'
     });
   }
 };

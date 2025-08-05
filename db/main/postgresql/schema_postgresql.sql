@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS products (
   thumbnail_url VARCHAR(255) DEFAULT NULL,
   stock INT NOT NULL,
   category_id BIGINT NOT NULL,
-  product_type VARCHAR(16) NOT NULL DEFAULT 'physical' CHECK (product_type IN ('physical', 'virtual', 'service')),
+  product_type VARCHAR(16) NOT NULL DEFAULT 'self_operated' CHECK (product_type IN ('self_operated', 'consignment')),
   status VARCHAR(16) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
   sort_order INT NOT NULL DEFAULT 0,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 -- 添加注释
-COMMENT ON COLUMN products.product_type IS '产品类型：physical-实物商品，virtual-虚拟商品，service-服务';
+COMMENT ON COLUMN products.product_type IS '产品类型：self_operated-自营，consignment-代销';
 COMMENT ON COLUMN products.sort_order IS '排序字段，数值越大排序越靠前';
 COMMENT ON COLUMN products.created_by IS '创建者用户ID';
 COMMENT ON COLUMN products.updated_by IS '最后更新者用户ID';
@@ -201,6 +201,54 @@ ALTER TABLE product_images ADD CONSTRAINT fk_product_images_updated_by FOREIGN K
 -- 创建更新时间戳触发器
 CREATE TRIGGER update_product_images_modtime
     BEFORE UPDATE ON product_images
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+-- 产品阶梯价格表
+CREATE TABLE IF NOT EXISTS product_price_ranges (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  product_id BIGINT NOT NULL,
+  min_quantity INT NOT NULL,
+  max_quantity INT DEFAULT NULL, -- NULL表示无上限
+  price DECIMAL(10, 2) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON COLUMN product_price_ranges.product_id IS '关联的产品ID';
+COMMENT ON COLUMN product_price_ranges.min_quantity IS '数量范围下限（包含）';
+COMMENT ON COLUMN product_price_ranges.max_quantity IS '数量范围上限（包含），NULL表示无上限';
+COMMENT ON COLUMN product_price_ranges.price IS '该数量范围对应的单价';
+COMMENT ON COLUMN product_price_ranges.sort_order IS '排序字段，用于确保价格范围的顺序';
+COMMENT ON COLUMN product_price_ranges.created_by IS '创建者用户ID';
+COMMENT ON COLUMN product_price_ranges.updated_by IS '最后更新者用户ID';
+
+-- 创建普通索引
+CREATE INDEX idx_product_price_ranges_product_id ON product_price_ranges (product_id);
+CREATE INDEX idx_product_price_ranges_quantity_range ON product_price_ranges (product_id, min_quantity, max_quantity);
+CREATE INDEX idx_product_price_ranges_created_by ON product_price_ranges (created_by);
+CREATE INDEX idx_product_price_ranges_updated_by ON product_price_ranges (updated_by);
+
+-- 添加外键约束
+ALTER TABLE product_price_ranges ADD CONSTRAINT fk_product_price_ranges_product_id FOREIGN KEY (product_id) REFERENCES products(id);
+ALTER TABLE product_price_ranges ADD CONSTRAINT fk_product_price_ranges_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE product_price_ranges ADD CONSTRAINT fk_product_price_ranges_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 添加约束确保数量范围的逻辑正确性
+ALTER TABLE product_price_ranges ADD CONSTRAINT chk_quantity_range CHECK (
+  min_quantity > 0 AND 
+  (max_quantity IS NULL OR max_quantity >= min_quantity)
+);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_product_price_ranges_modtime
+    BEFORE UPDATE ON product_price_ranges
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 

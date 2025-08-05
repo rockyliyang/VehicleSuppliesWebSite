@@ -238,6 +238,42 @@ export default createStore({
       const formattedPrice = parseFloat(price).toFixed(2)
       return `${symbol}${formattedPrice}`
     },
+    // 格式化价格范围显示
+    formatPriceRange: (_state, getters) => (priceRanges) => {
+      if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
+        return ''
+      }
+
+      const symbol = getters.currencySymbol
+      const sortedRanges = [...priceRanges].sort((a, b) => a.min_quantity - b.min_quantity)
+      
+      return sortedRanges.map(range => {
+        const price = `${symbol}${parseFloat(range.price).toFixed(2)}`
+        if (range.max_quantity === null || range.max_quantity === undefined) {
+          return `${range.min_quantity}+ pcs: ${price}`
+        } else if (range.min_quantity === range.max_quantity) {
+          return `${range.min_quantity} pc: ${price}`
+        } else {
+          return `${range.min_quantity}-${range.max_quantity} pcs: ${price}`
+        }
+      }).join('; ')
+    },
+    // 根据数量获取对应的价格
+    getPriceByQuantity: () => (priceRanges, quantity) => {
+      if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
+        return null
+      }
+
+      for (const range of priceRanges) {
+        if (quantity >= range.min_quantity) {
+          if (range.max_quantity === null || range.max_quantity === undefined || quantity <= range.max_quantity) {
+            return range.price
+          }
+        }
+      }
+      
+      return null
+    },
     // 获取所有支持的货币列表
     supportedCurrencies: () => {
       return Object.keys(currencySymbols).map(code => ({

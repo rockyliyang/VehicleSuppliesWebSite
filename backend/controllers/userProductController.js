@@ -8,7 +8,6 @@ class UserProductController {
     try {
       const { product_id, type } = req.body;
       const user_id = req.userId;
-      const language = req.headers['accept-language'] || 'en';
 
       // 验证参数
       if (!product_id || !type) {

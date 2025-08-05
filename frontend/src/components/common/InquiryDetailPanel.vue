@@ -50,8 +50,8 @@
                   </div>
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.unitPrice') || '期望价格' }}</label>
-                    <input type="number" class="control-input" :value="item.unit_price || item.price || 0" step="0.01" placeholder="0.00"
-                      readonly>
+                    <input v-if="item.unit_price" type="number" class="control-input" :value="item.unit_price" step="0.01" placeholder="0.00" readonly>
+                    <input v-else type="text" class="control-input" :value="getPriceRangeDisplay(item)" readonly>
                   </div>
                 </div>
                 <div class="item-actions">
@@ -176,8 +176,8 @@
                   </div>
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.unitPrice') || '期望价格' }}</label>
-                    <input type="number" class="control-input" :value="item.unit_price || item.price || 0" step="0.01" placeholder="0.00"
-                      readonly>
+                    <input v-if="item.unit_price" type="number" class="control-input" :value="item.unit_price" step="0.01" placeholder="0.00" readonly>
+                    <input v-else type="text" class="control-input" :value="getPriceRangeDisplay(item)" readonly>
                   </div>
                 </div>
                 <div class="item-actions">
@@ -528,6 +528,37 @@ export default {
           this.$refs.productSearchInput.focus();
         }
       });
+    },
+    
+    // 根据商品的价格范围生成显示文本
+    getPriceRangeDisplay(item) {
+      // 如果有单价，直接返回单价
+      if (item.unit_price) {
+        return this.$store.getters.formatPrice(item.unit_price);
+      }
+      
+      // 如果有价格范围，显示价格范围
+      if (item.min_price !== undefined && item.max_price !== undefined) {
+        // 如果最小价格和最大价格相同，只显示一个价格
+        if (item.min_price === item.max_price) {
+          return this.$store.getters.formatPrice(item.min_price);
+        }
+        // 否则显示价格范围
+        return `${this.$store.getters.formatPrice(item.min_price)} - ${this.$store.getters.formatPrice(item.max_price)}`;
+      }
+      
+      // 如果只有原始价格，显示原始价格
+      if (item.original_price !== undefined) {
+        return this.$store.getters.formatPrice(item.original_price);
+      }
+      
+      // 如果有普通价格，显示普通价格
+      if (item.price) {
+        return this.$store.getters.formatPrice(item.price);
+      }
+      
+      // 如果什么都没有，显示面议
+      return this.$t('products.negotiable') || '面议';
     }
   }
 };

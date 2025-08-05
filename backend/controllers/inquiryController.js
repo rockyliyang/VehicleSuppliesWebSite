@@ -313,10 +313,10 @@ exports.addItemToInquiry = async (req, res) => {
       });
     }
     
-    // 添加商品到询价，包含价格信息
+    // 添加商品到询价，不填充单价（由管理员后续设置）
     const result = await query(
       'INSERT INTO inquiry_items (inquiry_id, product_id, quantity, unit_price, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [inquiryId, productId, quantity, unitPrice || null, userId, userId]
+      [inquiryId, productId, quantity, null, userId, userId]
     );
     
     // 返回与getInquiryDetail相同的数据结构
@@ -327,7 +327,7 @@ exports.addItemToInquiry = async (req, res) => {
         id: result.getFirstRow().id,
         product_id: productId,
         quantity: quantity,
-        unit_price: unitPrice || null,
+        unit_price: null,
         item_status: 'pending',
         product_name: productResult.getFirstRow().product_name,
         product_code: productResult.getFirstRow().product_code,

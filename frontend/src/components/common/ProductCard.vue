@@ -8,7 +8,7 @@
       <h3 class="product-title" @click.stop="handleTitleClick">{{ product.name }}</h3>
       <p v-if="showDescription" class="product-description">{{ product.description || defaultDescription }}</p>
       <div class="product-footer">
-        <span class="product-price">{{ $store.getters.formatPrice(product.price) }}</span>
+        <span class="product-price">{{ displayPrice }}</span>
         <div class="product-footer-right">
           <span v-if="product.promo_message" class="promo-message">{{ product.promo_message }}</span>
           <span v-if="showArrow" class="product-arrow">
@@ -54,6 +54,25 @@ export default {
         'home-style': this.cardStyle === 'home',
         'products-style': this.cardStyle === 'products'
       };
+    },
+    displayPrice() {
+      // 如果有价格范围，显示价格范围
+      if (this.product.price_ranges && Array.isArray(this.product.price_ranges) && this.product.price_ranges.length > 0) {
+        const prices = this.product.price_ranges.map(range => parseFloat(range.price));
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        
+        const symbol = this.$store.getters.currencySymbol;
+        
+        if (minPrice === maxPrice) {
+          return `${symbol}${minPrice.toFixed(2)}`;
+        } else {
+          return `${symbol}${minPrice.toFixed(2)} - ${symbol}${maxPrice.toFixed(2)}`;
+        }
+      }
+      
+      // 如果没有价格范围，显示默认价格
+      return this.$store.getters.formatPrice(this.product.price);
     }
   },
   methods: {

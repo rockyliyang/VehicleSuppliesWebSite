@@ -7,6 +7,7 @@ const { verifyToken } = require('../middleware/jwt');
 router.get('/', productController.getAllProducts);
 router.get('/search', productController.searchProducts);
 router.get('/:id', productController.getProductById);
+router.get('/:productId/price', productController.getPriceByQuantity);
 router.get('/generate-code', productController.generateProductCode);
 
 // Admin routes - JWT auth required

@@ -44,7 +44,7 @@
                       </div>
                     </div>
                   </td>
-                  <td class="price-cell">{{ $store.getters.formatPrice(item.price) }}</td>
+                  <td class="price-cell">{{ $store.getters.formatPrice(item.calculatedPrice || item.price) }}</td>
                   <td class="quantity-cell">
                     <div class="quantity-controls">
                       <button class="quantity-btn" @click="decreaseQuantity(item)">-</button>
@@ -53,7 +53,7 @@
                       <button class="quantity-btn" @click="increaseQuantity(item)">+</button>
                     </div>
                   </td>
-                  <td class="subtotal-cell">{{ $store.getters.formatPrice(item.price * item.quantity) }}</td>
+                  <td class="subtotal-cell">{{ $store.getters.formatPrice((item.calculatedPrice || item.price) * item.quantity) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -86,7 +86,7 @@
               <div class="card-body">
                 <div class="price-info">
                   <span class="price-label">{{ $t('cart.unitPrice') || '单价' }}:</span>
-                  <span class="price-value">{{ $store.getters.formatPrice(item.price) }}</span>
+                  <span class="price-value">{{ $store.getters.formatPrice(item.calculatedPrice || item.price) }}</span>
                 </div>
                 <div class="quantity-section">
                   <span class="quantity-label">{{ $t('cart.quantity') || '数量' }}:</span>
@@ -99,7 +99,7 @@
                 </div>
                 <div class="subtotal-info">
                   <span class="subtotal-label">{{ $t('cart.subtotal') || '小计' }}:</span>
-                  <span class="subtotal-value">{{ $store.getters.formatPrice(item.price * item.quantity) }}</span>
+                  <span class="subtotal-value">{{ $store.getters.formatPrice((item.calculatedPrice || item.price) * item.quantity) }}</span>
                 </div>
               </div>
               <!-- 移除手机端单个商品的删除按钮 -->
@@ -196,7 +196,7 @@ export default {
     
     selectedTotal() {
       return this.selectedItems.reduce((total, item) => {
-        return total + (item.price * item.quantity);
+        return total + ((item.calculatedPrice || item.price) * item.quantity);
       }, 0);
     },
     
@@ -219,6 +219,42 @@ export default {
     formatTime(timestamp) {
       return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },
+    
+    // 根据数量和价格范围计算价格
+    calculatePriceByQuantity(priceRanges, quantity) {
+      if (!priceRanges || priceRanges.length === 0) {
+        return null;
+      }
+      
+      for (let range of priceRanges) {
+        if (quantity >= range.min_quantity && (range.max_quantity === null || quantity <= range.max_quantity)) {
+          return range.price;
+        }
+      }
+      
+      return null;
+    },
+    
+    // 更新商品的计算价格
+    updateItemPrice(item) {
+      if (item.price_ranges && item.price_ranges.length > 0) {
+        const calculatedPrice = this.calculatePriceByQuantity(item.price_ranges, item.quantity);
+        if (calculatedPrice !== null) {
+          item.calculatedPrice = calculatedPrice;
+        } else {
+          item.calculatedPrice = item.price; // 使用默认价格
+        }
+      } else {
+        item.calculatedPrice = item.price; // 使用默认价格
+      }
+    },
+    
+    // 更新所有商品的计算价格
+    updateAllItemPrices() {
+      this.cartItems.forEach(item => {
+        this.updateItemPrice(item);
+      });
+    },
     async fetchCart() {
       if (!this.$store.getters.isLoggedIn) {
         this.$router.push('/login?redirect=/cart');
@@ -230,7 +266,14 @@ export default {
         const response = await this.$api.get('/cart');
         if (response.success) {
           this.cartItems = response.data.items;
-          this.totalPrice = response.data.totalPrice;
+          // 为每个商品添加selected属性
+          this.cartItems.forEach(item => {
+            if (item.selected === undefined) {
+              item.selected = false;
+            }
+          });
+          // 计算所有商品的价格
+          this.updateAllItemPrices();
         }
       } catch (error) {
         console.error('获取购物车失败:', error);
@@ -241,8 +284,23 @@ export default {
     },
     async updateQuantity(cartItemId, quantity) {
       try {
-        const response = await this.$api.put(`/cart/item/${cartItemId}`, { quantity });
+        // 找到对应的购物车项目
+        const cartItem = this.cartItems.find(item => item.id === cartItemId);
+        if (!cartItem) {
+          console.error('找不到购物车项目');
+          return;
+        }
+
+        const response = await this.$api.put(`/cart/item/${cartItemId}`, { 
+          quantity
+        });
+        
         if (response.success) {
+          // 更新本地数据
+          cartItem.quantity = quantity;
+          // 重新计算该商品的价格
+          this.updateItemPrice(cartItem);
+          
           this.$messageHandler.showSuccess('数量已更新', 'cart.success.quantityUpdated');
           this.$bus.emit('cart-updated')
           this.calculateTotal();
@@ -370,6 +428,8 @@ export default {
     decreaseQuantity(item) {
       if (item.quantity > 1) {
         item.quantity--;
+        // 立即更新价格显示
+        this.updateItemPrice(item);
         this.updateQuantity(item.id, item.quantity);
       }
     },
@@ -377,6 +437,8 @@ export default {
     increaseQuantity(item) {
       if (item.quantity < item.stock) {
         item.quantity++;
+        // 立即更新价格显示
+        this.updateItemPrice(item);
         this.updateQuantity(item.id, item.quantity);
       }
     },
@@ -449,12 +511,11 @@ export default {
           if (response.success) {
             const inquiryId = response.data.id;
             
-            // 将选中的商品添加到询价单
+            // 将选中的商品添加到询价单（不传递单价，由管理员后续设置）
             const addPromises = this.selectedItems.map(item => 
               this.$api.postWithErrorHandler(`/inquiries/${inquiryId}/items`, {
                 product_id: item.product_id,
-                quantity: item.quantity,
-                unit_price: item.price
+                quantity: item.quantity
               }, {
                 fallbackKey: 'INQUIRY.ADD_ITEM.FAILED'
               })

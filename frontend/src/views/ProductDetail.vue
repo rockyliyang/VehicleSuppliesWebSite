@@ -70,8 +70,27 @@
               <span class="product-id">{{ $t('productDetail.productCode') }}: {{ product.product_code }}</span>
               <span class="product-category">{{ $t('productDetail.category') }}: {{ categoryName }}</span>
             </div>
-            <div class="product-price">{{ $store.getters.formatPrice(product.price) }}</div>
-            <div class="product-stock">
+            <div class="product-price">
+              <!-- 如果有阶梯价格，显示阶梯价格 -->
+              <div v-if="product.price_ranges && product.price_ranges.length > 0" class="price-ranges">
+                <div v-for="(range, index) in product.price_ranges" :key="index" class="price-range-item">
+                  <div class="quantity-range">
+                    <span v-if="range.max_quantity !== null && range.max_quantity !== undefined">
+                      {{ range.min_quantity }} - {{ range.max_quantity }} pieces
+                    </span>
+                    <span v-else>
+                      >= {{ range.min_quantity }} pieces
+                    </span>
+                  </div>
+                  <div class="range-price">{{ $store.getters.formatPrice(range.price) }}</div>
+                </div>
+              </div>
+              <!-- 如果没有阶梯价格，显示普通价格 -->
+              <div v-else class="single-price">
+                {{ $store.getters.formatPrice(product.price) }}
+              </div>
+            </div>
+            <div v-if="product.product_type === 'self_operated'" class="product-stock">
               <span :class="['stock-status', product.stock > 0 ? 'in-stock' : 'out-of-stock']">
                 {{ product.stock > 0 ? $t('productDetail.inStock') : $t('productDetail.outOfStock') }}
               </span>
@@ -604,11 +623,10 @@ export default {
           
           this.currentInquiryId = createInquiryResponse.data.id;
           
-          // 添加商品到询价单
+          // 添加商品到询价单（不传递单价，由管理员后续设置）
           await this.$api.post(`/inquiries/${this.currentInquiryId}/items`, {
             productId: this.product.id,
-            quantity: this.quantity || 1,
-            unitPrice: this.product.price
+            quantity: this.quantity || 1
           });
           
           // 清空初始消息，不显示默认信息
@@ -1534,6 +1552,47 @@ export default {
   font-weight: $font-weight-bold;
   color: $primary-color;
   margin-bottom: $spacing-lg;
+}
+
+/* 阶梯价格样式 */
+.price-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  background-color: transparent;
+}
+
+.price-range-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  min-width: 120px;
+  flex: 1;
+}
+
+.quantity-range {
+  font-size: 12px;
+  color: #666;
+  font-weight: 400;
+  margin-bottom: 4px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.range-price {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+}
+
+.single-price {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  color: $primary-color;
 }
 
 .product-stock {

@@ -39,7 +39,7 @@
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
       <el-table-column label="产品图片" width="120">
         <template #default="{row}">
-          <el-image :src="row.thumbnail_url" :preview-src-list="[row.thumbnail_url]" fit="cover" class="product-image"
+          <el-image :src="row.thumbnail_url" fit="cover" class="product-image"
             v-if="row.thumbnail_url" @error="handleImageError">
           </el-image>
           <span v-else>无图片</span>
@@ -89,7 +89,7 @@
     </div>
 
     <!-- 产品表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" v-model="dialogVisible" width="800px">
+    <el-dialog :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" v-model="dialogVisible" width="900px" top="5vh" :close-on-click-modal="false">
       <el-form :model="productForm" :rules="rules" ref="productFormRef" label-width="100px">
         <el-form-item label="产品名称" prop="name">
           <el-input v-model="productForm.name" placeholder="请输入产品名称" />
@@ -116,6 +116,45 @@
           <el-input v-model.number="productForm.price" placeholder="请输入产品价格">
             <template #prepend>¥</template>
           </el-input>
+        </el-form-item>
+        <el-form-item label="阶梯价格">
+          <div class="price-ranges-container">
+            <div v-for="(range, index) in productForm.price_ranges" :key="index" class="price-range-item">
+              <el-input-number 
+                v-model="range.min_quantity" 
+                :min="1" 
+                placeholder="最小数量"
+                style="width: 120px"
+              />
+              <span class="range-separator">-</span>
+              <el-input-number 
+                v-model="range.max_quantity" 
+                :min="range.min_quantity || 1" 
+                placeholder="最大数量"
+                style="width: 120px"
+              />
+              <span class="range-separator">件</span>
+              <el-input-number 
+                v-model="range.price" 
+                :min="0" 
+                :precision="2"
+                placeholder="单价"
+                style="width: 120px"
+              />
+              <span class="range-separator">元</span>
+              <el-button 
+                type="danger" 
+                size="small" 
+                @click="removePriceRange(index)"
+                :disabled="productForm.price_ranges.length <= 1"
+              >
+                删除
+              </el-button>
+            </div>
+            <el-button type="primary" size="small" @click="addPriceRange" style="margin-top: 10px;">
+              添加价格区间
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item label="产品库存" prop="stock">
           <el-input-number v-model="productForm.stock" :min="0" :max="999999" />
@@ -266,6 +305,9 @@ export default {
         category_id: '',
         product_type: 'consignment',
         price: '',
+        price_ranges: [
+          { min_quantity: 1, max_quantity: 99, price: 0 }
+        ],
         stock: 0,
         sort_order: 0,
         short_description: '',
@@ -613,6 +655,7 @@ export default {
         category_id: '',
         product_type: 'consignment',
         price: '',
+        price_ranges: [{ min_quantity: 1, max_quantity: 99, price: 0 }],
         stock: 0,
         sort_order: 0,
         short_description: '',
@@ -634,7 +677,10 @@ export default {
       this.productForm = Object.assign({}, row, {
         price: Number(row.price),
         status: row.status || 'on_shelf',
-        full_description: row.full_description || ''
+        full_description: row.full_description || '',
+        price_ranges: row.price_ranges && row.price_ranges.length > 0 
+          ? row.price_ranges 
+          : [{ min_quantity: 1, max_quantity: 99, price: Number(row.price) || 0 }]
       })
       this.quillKey++;
       
@@ -685,10 +731,77 @@ export default {
       }).catch(() => {})
     },
     
+    // 验证阶梯价格范围的客户端函数
+    validatePriceRanges(priceRanges) {
+      if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
+        return { valid: false, message: '价格范围必须是非空数组' };
+      }
+
+      // 按最小数量排序
+      const sortedRanges = [...priceRanges].sort((a, b) => a.min_quantity - b.min_quantity);
+
+      // 检查第一个范围是否从1开始
+      if (sortedRanges[0].min_quantity !== 1) {
+        return { valid: false, message: '第一个价格范围必须从数量1开始' };
+      }
+
+      // 检查范围是否连续，没有间隔
+      for (let i = 0; i < sortedRanges.length; i++) {
+        const current = sortedRanges[i];
+        
+        // 验证基本字段
+        if (!current.min_quantity || current.min_quantity <= 0) {
+          return { valid: false, message: `第${i + 1}个范围的最小数量无效` };
+        }
+        
+        if (!current.price || current.price <= 0) {
+          return { valid: false, message: `第${i + 1}个范围的价格无效` };
+        }
+
+        // 检查与下一个范围的连续性
+        if (i < sortedRanges.length - 1) {
+          const next = sortedRanges[i + 1];
+          
+          // 当前范围必须有max_quantity（除了最后一个）
+          if (current.max_quantity === null || current.max_quantity === undefined) {
+            return { valid: false, message: `第${i + 1}个范围必须有最大数量（除了最后一个范围）` };
+          }
+          
+          // 验证max_quantity（如果存在）
+          if (current.max_quantity < current.min_quantity) {
+            return { valid: false, message: `第${i + 1}个范围的最大数量必须大于等于最小数量` };
+          }
+          
+          // 下一个范围的min_quantity必须等于当前范围的max_quantity + 1
+          if (next.min_quantity !== current.max_quantity + 1) {
+            return { valid: false, message: `第${i + 1}个范围和第${i + 2}个范围之间存在间隔。第${i + 2}个范围应该从${current.max_quantity + 1}开始` };
+          }
+        } else {
+          // 最后一个范围的max_quantity可以是null（表示无上限）或者是一个有效数字
+          if (current.max_quantity !== null && current.max_quantity !== undefined) {
+            if (current.max_quantity < current.min_quantity) {
+              return { valid: false, message: `第${i + 1}个范围的最大数量必须大于等于最小数量` };
+            }
+          }
+        }
+      }
+
+      return { valid: true, sortedRanges };
+    },
+
     // 提交表单
     async submitForm() {
       this.$refs.productFormRef.validate(async valid => {
         if (valid) {
+          // 验证阶梯价格（如果提供）
+          if (this.productForm.price_ranges && this.productForm.price_ranges.length > 0) {
+            const validation = this.validatePriceRanges(this.productForm.price_ranges);
+            if (!validation.valid) {
+              this.$messageHandler.showError(`价格范围验证失败: ${validation.message}`, 'admin.products.error.priceRangeValidationFailed');
+              return;
+            }
+          }
+
           console.log('full_description:', this.productForm.full_description);
           this.submitLoading = true
           try {
@@ -779,6 +892,25 @@ export default {
         quill.getModule('toolbar').addHandler('image', () => {
           this.handleQuillImageUpload(quill);
         });
+      }
+    },
+    
+    // 添加价格区间
+    addPriceRange() {
+      const lastRange = this.productForm.price_ranges[this.productForm.price_ranges.length - 1];
+      const newMinQuantity = lastRange ? (lastRange.max_quantity || 0) + 1 : 1;
+      // 新增的价格区间默认为无穷大（max_quantity: null）
+      this.productForm.price_ranges.push({
+        min_quantity: newMinQuantity,
+        max_quantity: null,
+        price: 0
+      });
+    },
+    
+    // 删除价格区间
+    removePriceRange(index) {
+      if (this.productForm.price_ranges.length > 1) {
+        this.productForm.price_ranges.splice(index, 1);
       }
     }
   }
@@ -1005,5 +1137,34 @@ export default {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 阶梯价格样式 */
+.price-ranges-container {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #fafafa;
+}
+
+.price-range-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+}
+
+.price-range-item:last-of-type {
+  margin-bottom: 0;
+}
+
+.range-separator {
+  color: #606266;
+  font-weight: 500;
+  white-space: nowrap;
 }
 </style>

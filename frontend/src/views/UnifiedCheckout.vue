@@ -34,11 +34,11 @@
             </el-table-column>
             <el-table-column :label="$t('checkout.quantity') || '数量'" prop="quantity" width="100" align="center" />
             <el-table-column :label="$t('checkout.unitPrice') || '单价'" width="120" align="right">
-              <template #default="{row}">{{ $store.getters.formatPrice(row.price) }}</template>
+              <template #default="{row}">{{ $store.getters.formatPrice(row.calculatedPrice || row.price) }}</template>
             </el-table-column>
             <el-table-column :label="$t('checkout.subtotal') || '小计'" width="120" align="right">
               <template #default="{row}">
-                <span class="subtotal-price">{{ $store.getters.formatPrice(row.price * row.quantity) }}</span>
+                <span class="subtotal-price">{{ $store.getters.formatPrice((row.calculatedPrice || row.price) * row.quantity) }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -459,7 +459,7 @@ export default {
       this.$router.push('/cart');
     },
     calculateTotal() {
-      this.orderTotal = this.orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      this.orderTotal = this.orderItems.reduce((sum, item) => sum + (item.calculatedPrice || item.price) * item.quantity, 0);
     },
     getPaymentMethodText(method) {
       const methodMap = {
@@ -631,7 +631,7 @@ export default {
                   product_code: item.product_code,
                   product_name: item.name,
                   quantity: item.quantity,
-                  price: item.price
+                  price: item.calculatedPrice || item.price
                 }))
               };
               
@@ -725,7 +725,7 @@ export default {
               product_code: item.product_code,
               product_name: item.name,
               quantity: item.quantity,
-              price: item.price
+              price: item.calculatedPrice || item.price
             }))
           };
           

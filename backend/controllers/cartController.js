@@ -16,24 +16,50 @@ exports.getUserCart = async (req, res) => {
       WHERE ci.user_id = $1 AND ci.deleted = false AND p.deleted = false
       ORDER BY ci.created_at DESC`;
     
-    const cartItems = await query(queryStr, [userId]);
-    if (cartItems.getRowCount() === 0) {
-      return res.status(404).json({
-        success: false,
-        message: getMessage('CART.EMPTY')
+    const result = await query(queryStr, [userId]);
+    
+    if (!result || result.getRowCount() === 0) {
+      return res.json({
+        success: true,
+        data: {
+          items: []
+        }
       });
-    } 
-    // 计算总价
-    let totalPrice = 0;
-    cartItems.getRows().forEach(item => {
-      totalPrice += item.price * item.quantity;
-    });
+    }
+    
+    const items = result.getRows();
+    
+    // 一次性查询所有商品的阶梯价格信息
+    if (items.length > 0) {
+      const productIds = items.map(item => item.product_id);
+      const priceRangesResult = await query(
+        'SELECT product_id, min_quantity, max_quantity, price FROM product_price_ranges WHERE product_id = ANY($1) AND deleted = false ORDER BY product_id, min_quantity ASC',
+        [productIds]
+      );
+      
+      // 将价格范围按产品ID分组
+      const priceRangesMap = {};
+      priceRangesResult.getRows().forEach(range => {
+        if (!priceRangesMap[range.product_id]) {
+          priceRangesMap[range.product_id] = [];
+        }
+        priceRangesMap[range.product_id].push({
+          min_quantity: range.min_quantity,
+          max_quantity: range.max_quantity,
+          price: range.price
+        });
+      });
+      
+      // 为每个商品添加价格范围信息
+      items.forEach(item => {
+        item.price_ranges = priceRangesMap[item.product_id] || [];
+      });
+    }
     
     return res.json({
       success: true,
       data: {
-        items: cartItems.getRows(),
-        totalPrice: totalPrice
+        items
       }
     });
   } catch (error) {
@@ -44,6 +70,8 @@ exports.getUserCart = async (req, res) => {
     });
   }
 };
+
+
 
 // 添加商品到购物车
 exports.addToCart = async (req, res) => {
@@ -84,6 +112,7 @@ exports.addToCart = async (req, res) => {
     if (existingItem && existingItem.getRowCount() > 0) {
       // 更新数量
       const newQuantity = existingItem.getFirstRow().quantity + quantity;
+      
       await query(
         'UPDATE cart_items SET quantity = $1, updated_by = $2, updated_at = NOW() WHERE id = $3',
         [newQuantity, userId, existingItem.getFirstRow().id]
