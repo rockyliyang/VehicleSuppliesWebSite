@@ -154,6 +154,7 @@
 
 <script>
 import { handleImageError } from '../utils/imageUtils';
+import { updateItemCalculatedPrice, updateAllItemsCalculatedPrice } from '@/utils/priceUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import InquiryPanel from '@/components/common/InquiryPanel.vue';
@@ -220,40 +221,14 @@ export default {
       return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },
     
-    // 根据数量和价格范围计算价格
-    calculatePriceByQuantity(priceRanges, quantity) {
-      if (!priceRanges || priceRanges.length === 0) {
-        return null;
-      }
-      
-      for (let range of priceRanges) {
-        if (quantity >= range.min_quantity && (range.max_quantity === null || quantity <= range.max_quantity)) {
-          return range.price;
-        }
-      }
-      
-      return null;
-    },
-    
     // 更新商品的计算价格
     updateItemPrice(item) {
-      if (item.price_ranges && item.price_ranges.length > 0) {
-        const calculatedPrice = this.calculatePriceByQuantity(item.price_ranges, item.quantity);
-        if (calculatedPrice !== null) {
-          item.calculatedPrice = calculatedPrice;
-        } else {
-          item.calculatedPrice = item.price; // 使用默认价格
-        }
-      } else {
-        item.calculatedPrice = item.price; // 使用默认价格
-      }
+      updateItemCalculatedPrice(item);
     },
     
     // 更新所有商品的计算价格
     updateAllItemPrices() {
-      this.cartItems.forEach(item => {
-        this.updateItemPrice(item);
-      });
+      updateAllItemsCalculatedPrice(this.cartItems);
     },
     async fetchCart() {
       if (!this.$store.getters.isLoggedIn) {

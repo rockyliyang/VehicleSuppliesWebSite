@@ -62,6 +62,7 @@ exports.getUserInquiries = async (req, res) => {
           ii.quantity,
           ii.unit_price,
           p.name as product_name,
+          p.price as original_price,
           (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
         FROM inquiry_items ii
         JOIN products p ON ii.product_id = p.id
@@ -71,10 +72,42 @@ exports.getUserInquiries = async (req, res) => {
       `;
       
       const items = await query(itemsQuery, [inquiry.id]);
+      const itemsData = items.getRows();
+      
+      // 一次性查询所有商品的价格范围
+      if (itemsData.length > 0) {
+        const productIds = itemsData.map(item => item.product_id);
+        const priceRangesQuery = `
+          SELECT product_id, min_quantity, max_quantity, price
+          FROM product_price_ranges
+          WHERE product_id = ANY($1) AND deleted = false
+          ORDER BY product_id, min_quantity ASC
+        `;
+        const priceRanges = await query(priceRangesQuery, [productIds]);
+        const priceRangesData = priceRanges.getRows();
+        
+        // 将价格范围按product_id分组
+        const priceRangesByProduct = {};
+        priceRangesData.forEach(range => {
+          if (!priceRangesByProduct[range.product_id]) {
+            priceRangesByProduct[range.product_id] = [];
+          }
+          priceRangesByProduct[range.product_id].push({
+            min_quantity: range.min_quantity,
+            max_quantity: range.max_quantity,
+            price: range.price
+          });
+        });
+        
+        // 为每个商品添加价格范围
+        itemsData.forEach(item => {
+          item.price_ranges = priceRangesByProduct[item.product_id] || [];
+        });
+      }
       
       inquiriesWithItems.push({
         ...inquiry,
-        items: items.getRows()
+        items: itemsData
       });
     }
     
@@ -152,6 +185,38 @@ exports.getInquiryDetail = async (req, res) => {
     `;
     
     const items = await query(itemsQuery, [inquiryId]);
+    const itemsData = items.getRows();
+    
+    // 一次性查询所有商品的价格范围
+    if (itemsData.length > 0) {
+      const productIds = itemsData.map(item => item.product_id);
+      const priceRangesQuery = `
+        SELECT product_id, min_quantity, max_quantity, price
+        FROM product_price_ranges
+        WHERE product_id = ANY($1) AND deleted = false
+        ORDER BY product_id, min_quantity ASC
+      `;
+      const priceRanges = await query(priceRangesQuery, [productIds]);
+      const priceRangesData = priceRanges.getRows();
+      
+      // 将价格范围按product_id分组
+      const priceRangesByProduct = {};
+      priceRangesData.forEach(range => {
+        if (!priceRangesByProduct[range.product_id]) {
+          priceRangesByProduct[range.product_id] = [];
+        }
+        priceRangesByProduct[range.product_id].push({
+          min_quantity: range.min_quantity,
+          max_quantity: range.max_quantity,
+          price: range.price
+        });
+      });
+      
+      // 为每个商品添加价格范围
+      itemsData.forEach(item => {
+        item.price_ranges = priceRangesByProduct[item.product_id] || [];
+      });
+    }
     
     // 查询询价消息
     const messagesQuery = `
@@ -174,7 +239,7 @@ exports.getInquiryDetail = async (req, res) => {
       message: getMessage('INQUIRY.FETCH.SUCCESS'),
       data: {
         inquiry,
-        items: items.getRows(),
+        items: itemsData,
         messages: messages.getRows()
       }
     });

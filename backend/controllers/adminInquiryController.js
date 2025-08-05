@@ -474,7 +474,7 @@ exports.updateInquiryStatus = async (req, res) => {
     const { inquiryId } = req.params;
     const { status } = req.body;
     
-    const validStatuses = ['inquiried', 'approved', 'rejected'];
+    const validStatuses = ['inquiried', 'approved', 'rejected', 'paid'];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -501,13 +501,6 @@ exports.updateInquiryStatus = async (req, res) => {
       [status, adminId, inquiryId]
     );
     
-    // 如果状态更新为approved，同时更新所有商品状态
-    if (status === 'approved') {
-      await query(
-        'UPDATE inquiry_items SET updated_by = $1, updated_at = NOW() WHERE inquiry_id = $2 AND unit_price IS NOT NULL AND deleted = false',
-        [adminId, inquiryId]
-      );
-    }
     
     return res.json({
       success: true,

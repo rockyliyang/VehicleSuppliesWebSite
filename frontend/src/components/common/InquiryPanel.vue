@@ -64,8 +64,9 @@
       </div>
 
       <!-- Inquiry Detail Panel -->
-      <InquiryDetailPanel :inquiry="activeInquiry" @remove-item="removeFromInquiry" @send-message="sendMessage" @item-added="handleItemAdded"
-        @update-message="updateInquiryMessage" @checkout-inquiry="handleCheckoutInquiry" />
+      <InquiryDetailPanel :inquiry="activeInquiry" @remove-item="removeFromInquiry" @send-message="sendMessage"
+        @item-added="handleItemAdded" @update-message="updateInquiryMessage"
+        @checkout-inquiry="handleCheckoutInquiry" />
     </div>
   </div>
 </template>
@@ -166,7 +167,8 @@ export default {
               image_url: item.image_url,
               quantity: item.quantity,
               unit_price: item.unit_price,
-              price: item.price || item.unit_price
+              price: item.price || item.unit_price,
+              price_ranges: item.price_ranges
             })),
             messages: [],
             newMessage: ''
@@ -212,7 +214,8 @@ export default {
               image_url: item.image_url,
               quantity: item.quantity,
               unit_price: item.unit_price,
-              price: item.price || item.unit_price
+              price: item.price || item.unit_price,
+              price_ranges: item.price_ranges || []
             }));
             
             inquiry.messages = response.data.messages.map(msg => ({
@@ -367,7 +370,8 @@ export default {
               name: response.data.product_name,
               imageUrl: response.data.image_url || require('@/assets/images/default-image.svg'),
               quantity: response.data.quantity,
-              unit_price: response.data.unit_price
+              unit_price: response.data.unit_price,
+              price_ranges: response.data.price_ranges || []
             };
             
             activeInquiry.items.push(inquiryItem);
@@ -444,7 +448,8 @@ export default {
                 name: response.data.product_name,
                 imageUrl: response.data.image_url || require('@/assets/images/default-image.svg'),
                 quantity: response.data.quantity,
-                unit_price: response.data.unit_price
+                unit_price: response.data.unit_price,
+                price_ranges: response.data.price_ranges || []
               };
               
               activeInquiry.items.push(inquiryItem);

@@ -108,14 +108,14 @@
 
               <!-- 按钮组单独一行 -->
               <div class="action-buttons">
-                <el-button type="primary" @click="addToCart" :disabled="product.stock <= 0" :loading="addingToCart"
+                <el-button type="primary" @click="addToCart" :disabled="product.product_type === 'self_operated' && product.stock <= 0" :loading="addingToCart"
                   class="add-to-cart-btn">
                   <span v-if="!addingToCart">{{ $t('buttons.addToCart') }}</span>
                   <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
                 </el-button>
-                <el-button class="chat-button" @click="createInquiry" :disabled="product.stock <= 0">{{
+                <el-button class="chat-button" @click="createInquiry">{{
                   $t('buttons.chat') || 'Chat' }}</el-button>
-                <el-button class="email-button" @click="openEmailDialog" :disabled="product.stock <= 0">{{
+                <el-button class="email-button" @click="openEmailDialog">{{
                   $t('buttons.message') || 'Message' }}</el-button>
               </div>
             </div>

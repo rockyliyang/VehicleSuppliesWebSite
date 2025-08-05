@@ -397,11 +397,14 @@ export default {
     overflow-x: auto;
     white-space: nowrap;
     padding: $spacing-sm 0;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-    
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+
     &::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, Opera */
+      display: none;
+      /* Chrome, Safari, Opera */
     }
   }
 
@@ -578,7 +581,7 @@ export default {
 }
 
 /* 平板设备优化 */
-@media (min-width: $content-mobile-breakpoint + 1px) and (max-width: $content-tablet-breakpoint) {
+@media (min-width: ($content-mobile-breakpoint + 1px)) and (max-width: $content-tablet-breakpoint) {
   .about-layout {
     gap: $spacing-lg;
   }
@@ -596,7 +599,8 @@ export default {
 @media (hover: none) and (pointer: coarse) {
   .nav-menu li a {
     padding: $spacing-md $spacing-lg;
-    min-height: 44px; /* 确保触摸目标足够大 */
+    min-height: 44px;
+    /* 确保触摸目标足够大 */
     display: flex;
     align-items: center;
     justify-content: center;

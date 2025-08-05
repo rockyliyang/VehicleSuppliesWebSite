@@ -4,31 +4,22 @@
       <!-- 手机端：聊天窗口在上面 -->
       <template v-if="isMobile">
         <!-- Sales Communication -->
-        <CommunicationSection
-          :messages="inquiry.messages"
-          :inquiry-id="inquiry.id"
-          :items-count="inquiry.items.length"
-          :status="inquiry.status"
-          :initial-message="newMessage"
-          :is-mobile="isMobile"
-          @send-message="handleSendMessage"
-          @update-message="updateMessage"
-          @checkout="handleCheckout"
-        />
-        
+        <CommunicationSection :messages="inquiry.messages" :inquiry-id="inquiry.id" :items-count="inquiry.items.length"
+          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile" @send-message="handleSendMessage"
+          @update-message="updateMessage" @checkout="handleCheckout" />
+
         <!-- Products Section -->
         <div class="inquiry-items-section">
           <div class="section-header">
             <h4 class="section-title">{{ $t('products.products') || 'Products' }}</h4>
             <!-- 添加产品按钮 - 移到标题旁边 -->
-            <button v-if="inquiry.status === 'inquiried' && !showAddProduct" 
-                    @click="showAddProduct = true" 
-                    class="add-product-btn-header">
+            <button v-if="inquiry.status === 'inquiried' && !showAddProduct" @click="showAddProduct = true"
+              class="add-product-btn-header">
               <i class="material-icons">add</i>
               {{ $t('inquiry.addProduct') || '添加产品' }}
             </button>
           </div>
-          
+
           <div class="inquiry-items">
             <!-- 现有商品 -->
             <div v-for="item in inquiry.items" :key="item.productId" class="inquiry-item"
@@ -38,7 +29,8 @@
                 <img :src="item.image_url || item.imageUrl" :alt="item.product_name || item.name" class="item-image">
                 <div class="item-details">
                   <p class="item-name">{{ item.product_name || item.name }}</p>
-                  <p class="item-code">{{ $t('cart.productCode') || '产品编号' }}: {{ item.product_id || item.productId }}</p>
+                  <p class="item-code">{{ $t('cart.productCode') || '产品编号' }}: {{ item.product_id || item.productId }}
+                  </p>
                 </div>
               </div>
               <!-- 第二行：数量、单价和删除按钮 -->
@@ -46,17 +38,18 @@
                 <div class="item-controls">
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.quantity') || '数量' }}</label>
-                    <input type="number" class="control-input" v-model="item.quantity" min="1" @change="updateItemQuantity(item)" :readonly="inquiry.status !== 'inquiried'">
+                    <input type="number" class="control-input" v-model="item.quantity" min="1"
+                      @change="updateItemQuantity(item)" :readonly="inquiry.status !== 'inquiried'">
                   </div>
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.unitPrice') || '期望价格' }}</label>
-                    <input v-if="item.unit_price" type="number" class="control-input" :value="item.unit_price" step="0.01" placeholder="0.00" readonly>
-                    <input v-else type="text" class="control-input" :value="getPriceRangeDisplay(item)" readonly>
+                    <div class="control-text">{{ getPriceRangeDisplay(item) || '价格待定' }}</div>
                   </div>
                 </div>
                 <div class="item-actions">
                   <button class="remove-item-btn remove-inquiry-item-btn"
-                    @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)" :data-product-id="item.product_id || item.productId"
+                    @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)"
+                    :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
                     <i class="material-icons">remove_circle_outline</i>
                   </button>
@@ -72,24 +65,13 @@
                 </div>
                 <div class="item-details">
                   <div class="product-search-input-container">
-                    <input 
-                      type="text" 
-                      v-model="searchKeyword" 
-                      @input="searchProducts"
-                      @focus="showSearchResults = true"
-                      @blur="hideSearchResults"
-                      :placeholder="$t('inquiry.searchProductPlaceholder') || '输入商品名称搜索...'"
-                      class="product-search-input"
-                      ref="productSearchInput"
-                    />
+                    <input type="text" v-model="searchKeyword" @input="searchProducts" @focus="showSearchResults = true"
+                      @blur="hideSearchResults" :placeholder="$t('inquiry.searchProductPlaceholder') || '输入商品名称搜索...'"
+                      class="product-search-input" ref="productSearchInput" />
                     <!-- 浮动搜索结果 -->
                     <div v-if="searchResults.length > 0 && showSearchResults" class="floating-search-results">
-                      <div 
-                        v-for="product in searchResults" 
-                        :key="product.id" 
-                        class="floating-result-item"
-                        @click="selectProduct(product)"
-                      >
+                      <div v-for="product in searchResults" :key="product.id" class="floating-result-item"
+                        @click="selectProduct(product)">
                         <div class="result-image">
                           <img :src="product.thumbnail_url || '/images/placeholder.jpg'" :alt="product.name" />
                         </div>
@@ -106,7 +88,8 @@
                       {{ $t('inquiry.searching') || '搜索中...' }}
                     </div>
                     <!-- 无搜索结果 -->
-                    <div v-if="showSearchResults && !searching && searchKeyword && searchResults.length === 0" class="no-search-results">
+                    <div v-if="showSearchResults && !searching && searchKeyword && searchResults.length === 0"
+                      class="no-search-results">
                       {{ $t('inquiry.noSearchResults') || '未找到相关商品' }}
                     </div>
                   </div>
@@ -124,22 +107,21 @@
                   </div>
                 </div>
                 <div class="item-actions">
-                  <button class="remove-item-btn cancel-add-btn"
-                    @click="cancelAddProduct"
+                  <button class="remove-item-btn cancel-add-btn" @click="cancelAddProduct"
                     :title="$t('common.cancel') || '取消'">
                     <i class="material-icons">close</i>
                   </button>
                 </div>
               </div>
             </div>
-            
+
             <p v-if="inquiry.items.length === 0 && !showAddProduct" class="no-items-message">
               {{ $t('cart.noItemsInInquiry') || '此询价单中没有商品，请从购物车添加商品。' }}
             </p>
           </div>
         </div>
       </template>
-      
+
       <!-- 桌面端：保持原有布局 -->
       <template v-else>
         <!-- Products Section -->
@@ -147,14 +129,13 @@
           <div class="section-header">
             <h4 class="section-title">{{ $t('products.products') || 'Products' }}</h4>
             <!-- 添加产品按钮 - 移到标题旁边 -->
-            <button v-if="inquiry.status === 'inquiried' && !showAddProduct" 
-                    @click="showAddProduct = true" 
-                    class="add-product-btn-header">
+            <button v-if="inquiry.status === 'inquiried' && !showAddProduct" @click="showAddProduct = true"
+              class="add-product-btn-header">
               <i class="material-icons">add</i>
               {{ $t('inquiry.addProduct') || '添加产品' }}
             </button>
           </div>
-          
+
           <div class="inquiry-items">
             <!-- 现有商品 -->
             <div v-for="item in inquiry.items" :key="item.productId" class="inquiry-item"
@@ -164,7 +145,8 @@
                 <img :src="item.image_url || item.imageUrl" :alt="item.product_name || item.name" class="item-image">
                 <div class="item-details">
                   <p class="item-name">{{ item.product_name || item.name }}</p>
-                  <p class="item-code">{{ $t('cart.productCode') || '产品编号' }}: {{ item.product_id || item.productId }}</p>
+                  <p class="item-code">{{ $t('cart.productCode') || '产品编号' }}: {{ item.product_id || item.productId }}
+                  </p>
                 </div>
               </div>
               <!-- 第二行：数量、单价和删除按钮 -->
@@ -172,17 +154,18 @@
                 <div class="item-controls">
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.quantity') || '数量' }}</label>
-                    <input type="number" class="control-input" v-model="item.quantity" min="1" @change="updateItemQuantity(item)" :readonly="inquiry.status !== 'inquiried'">
+                    <input type="number" class="control-input" v-model="item.quantity" min="1"
+                      @change="updateItemQuantity(item)" :readonly="inquiry.status !== 'inquiried'">
                   </div>
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.unitPrice') || '期望价格' }}</label>
-                    <input v-if="item.unit_price" type="number" class="control-input" :value="item.unit_price" step="0.01" placeholder="0.00" readonly>
-                    <input v-else type="text" class="control-input" :value="getPriceRangeDisplay(item)" readonly>
+                    <div class="control-text">{{ getPriceRangeDisplay(item) || '价格待定' }}</div>
                   </div>
                 </div>
                 <div class="item-actions">
                   <button class="remove-item-btn remove-inquiry-item-btn"
-                    @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)" :data-product-id="item.product_id || item.productId"
+                    @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)"
+                    :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
                     <i class="material-icons">remove_circle_outline</i>
                   </button>
@@ -198,24 +181,13 @@
                 </div>
                 <div class="item-details">
                   <div class="product-search-input-container">
-                    <input 
-                      type="text" 
-                      v-model="searchKeyword" 
-                      @input="searchProducts"
-                      @focus="showSearchResults = true"
-                      @blur="hideSearchResults"
-                      :placeholder="$t('inquiry.searchProductPlaceholder') || '输入商品名称搜索...'"
-                      class="product-search-input"
-                      ref="productSearchInput"
-                    />
+                    <input type="text" v-model="searchKeyword" @input="searchProducts" @focus="showSearchResults = true"
+                      @blur="hideSearchResults" :placeholder="$t('inquiry.searchProductPlaceholder') || '输入商品名称搜索...'"
+                      class="product-search-input" ref="productSearchInput" />
                     <!-- 浮动搜索结果 -->
                     <div v-if="searchResults.length > 0 && showSearchResults" class="floating-search-results">
-                      <div 
-                        v-for="product in searchResults" 
-                        :key="product.id" 
-                        class="floating-result-item"
-                        @click="selectProduct(product)"
-                      >
+                      <div v-for="product in searchResults" :key="product.id" class="floating-result-item"
+                        @click="selectProduct(product)">
                         <div class="result-image">
                           <img :src="product.thumbnail_url || '/images/placeholder.jpg'" :alt="product.name" />
                         </div>
@@ -232,7 +204,8 @@
                       {{ $t('inquiry.searching') || '搜索中...' }}
                     </div>
                     <!-- 无搜索结果 -->
-                    <div v-if="showSearchResults && !searching && searchKeyword && searchResults.length === 0" class="no-search-results">
+                    <div v-if="showSearchResults && !searching && searchKeyword && searchResults.length === 0"
+                      class="no-search-results">
                       {{ $t('inquiry.noSearchResults') || '未找到相关商品' }}
                     </div>
                   </div>
@@ -250,15 +223,14 @@
                   </div>
                 </div>
                 <div class="item-actions">
-                  <button class="remove-item-btn cancel-add-btn"
-                    @click="cancelAddProduct"
+                  <button class="remove-item-btn cancel-add-btn" @click="cancelAddProduct"
                     :title="$t('common.cancel') || '取消'">
                     <i class="material-icons">close</i>
                   </button>
                 </div>
               </div>
             </div>
-            
+
             <p v-if="inquiry.items.length === 0 && !showAddProduct" class="no-items-message">
               {{ $t('cart.noItemsInInquiry') || '此询价单中没有商品，请从购物车添加商品。' }}
             </p>
@@ -266,17 +238,9 @@
         </div>
 
         <!-- Sales Communication -->
-        <CommunicationSection
-          :messages="inquiry.messages"
-          :inquiry-id="inquiry.id"
-          :items-count="inquiry.items.length"
-          :status="inquiry.status"
-          :initial-message="newMessage"
-          :is-mobile="isMobile"
-          @send-message="handleSendMessage"
-          @update-message="updateMessage"
-          @checkout="handleCheckout"
-        />
+        <CommunicationSection :messages="inquiry.messages" :inquiry-id="inquiry.id" :items-count="inquiry.items.length"
+          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile" @send-message="handleSendMessage"
+          @update-message="updateMessage" @checkout="handleCheckout" />
       </template>
     </div>
 
@@ -291,6 +255,7 @@
 
 <script>
 import CommunicationSection from './CommunicationSection.vue';
+import { calculatePriceByQuantity, getPriceRangeDisplayUtil } from '@/utils/priceUtils';
 
 export default {
   name: 'InquiryDetailPanel',
@@ -329,9 +294,29 @@ export default {
       immediate: true
     }
   },
+  computed: {
+    // 计算总价
+    totalPrice() {
+      if (!this.inquiry || !this.inquiry.items) return 0;
+      return this.inquiry.items.reduce((total, item) => {
+        const price = this.getCalculatedPrice(item);
+        return total + (price * item.quantity);
+      }, 0);
+    }
+  },
   methods: {
     formatTime(timestamp) {
       return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    },
+    
+    // 获取价格范围显示文本
+    getPriceRangeDisplay(item) {
+      if (item.unit_price) {
+        return this.$store.getters.formatPrice(item.unit_price);
+      } else {
+        const formatPrice = this.$store.getters.formatPrice;
+        return getPriceRangeDisplayUtil(item, formatPrice);
+      }
     },
     handleSendMessage(inquiryId, message) {
       this.$emit('send-message', inquiryId, message);
@@ -352,7 +337,7 @@ export default {
           name: item.name,
           image_url: item.imageUrl || require('@/assets/images/default-image.svg'),
           quantity: item.quantity,
-          price: item.unit_price || 0, // UnifiedCheckout期望的是price字段，不是unit_price
+          price: this.getCalculatedPrice(item), // 使用calculatedPrice
           selected: true
         }));
         
@@ -530,35 +515,22 @@ export default {
       });
     },
     
-    // 根据商品的价格范围生成显示文本
-    getPriceRangeDisplay(item) {
-      // 如果有单价，直接返回单价
+
+    
+    // 计算商品的calculatedPrice
+    getCalculatedPrice(item) {
+      // 如果有unit_price，优先使用
       if (item.unit_price) {
-        return this.$store.getters.formatPrice(item.unit_price);
+        return item.unit_price;
       }
       
-      // 如果有价格范围，显示价格范围
-      if (item.min_price !== undefined && item.max_price !== undefined) {
-        // 如果最小价格和最大价格相同，只显示一个价格
-        if (item.min_price === item.max_price) {
-          return this.$store.getters.formatPrice(item.min_price);
-        }
-        // 否则显示价格范围
-        return `${this.$store.getters.formatPrice(item.min_price)} - ${this.$store.getters.formatPrice(item.max_price)}`;
+      // 否则使用价格范围计算
+      if (item.price_ranges && item.price_ranges.length > 0) {
+        return calculatePriceByQuantity(item.price_ranges, item.quantity);
       }
       
-      // 如果只有原始价格，显示原始价格
-      if (item.original_price !== undefined) {
-        return this.$store.getters.formatPrice(item.original_price);
-      }
-      
-      // 如果有普通价格，显示普通价格
-      if (item.price) {
-        return this.$store.getters.formatPrice(item.price);
-      }
-      
-      // 如果什么都没有，显示面议
-      return this.$t('products.negotiable') || '面议';
+      // 如果没有价格范围，返回原始价格或默认价格
+      return item.original_price || item.price || 0;
     }
   }
 };
@@ -724,6 +696,17 @@ export default {
   border-radius: $border-radius-sm;
   font-size: $font-size-sm;
   background: $background-light;
+}
+
+.control-text {
+  width: 120px;
+  padding: $spacing-sm 0;
+  font-size: $font-size-sm;
+  text-align: left;
+  color: $text-primary;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .item-actions {
@@ -903,8 +886,13 @@ export default {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .no-search-results {
