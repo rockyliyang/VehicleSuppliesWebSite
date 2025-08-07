@@ -206,7 +206,7 @@ router.post('/login', async (req, res) => {
     // 设置 Cookie
     res.cookie('aex-token', token, {
       httpOnly: process.env.NODE_ENV === 'production' ? true : false,
-      secure: process.env.NODE_ENV === 'production',
+      //secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 1000 // 1小时
     });
@@ -240,7 +240,7 @@ router.post('/check-token', verifyToken, async (req, res) => {
     // 更新Cookie，有效期也为1小时
     res.cookie('aex-token', newToken, {
       httpOnly: process.env.NODE_ENV === 'production' ? true : false,
-      secure: process.env.NODE_ENV === 'production',
+      //secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 1000 // 1小时
     });

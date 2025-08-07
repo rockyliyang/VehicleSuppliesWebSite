@@ -622,7 +622,7 @@ CREATE TRIGGER update_user_products_modtime
 
 -- 创建默认管理员用户 (密码: admin123)
 INSERT INTO users (guid, username, password, email, user_role) 
-VALUES (gen_random_uuid(), 'admin', '$2a$10$iFYbr7GWsaiDd8iZji5LRuzpE5Ch8YHlBu0eqVE7IB/zpnbhEBrGy', '"admin@autoeasetechx.com"', 'admin');
+VALUES (gen_random_uuid(), 'admin', '$2a$10$NlSQyZ/jQTcsdZdvnAQ27eGGmSSZJ1WXvVLGx.5xwAhSMKqs7OIbW', 'admin@autoeasetechx.com', 'admin');
 
 
 -- 用户地址表

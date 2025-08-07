@@ -1,5 +1,8 @@
 const { defineConfig } = require('@vue/cli-service')
 const path = require('path')
+const AutoImport = require('unplugin-auto-import/webpack')
+const Components = require('unplugin-vue-components/webpack')
+const { ElementPlusResolver } = require('unplugin-vue-components/resolvers')
 
 module.exports = defineConfig({
   devServer: {
@@ -33,20 +36,55 @@ module.exports = defineConfig({
   transpileDependencies: true,
   configureWebpack: {
     devtool: 'source-map',
-     output: {
-       devtoolModuleFilenameTemplate: info => {
-          const resourcePath = path.normalize(info.resourcePath).replace(/\\/g, '/')
-          
-          // 特殊处理.vue文件，使用相对路径而非hash值确保断点正确工作
-          if (info.resourcePath.endsWith('.vue')) {
-            // 使用相对路径确保每个.vue文件都有唯一的标识
-            const relativePath = path.relative(process.cwd(), info.absoluteResourcePath).replace(/\\/g, '/')
-            return `webpack:///${info.moduleId}/${relativePath}`
+    output: {
+      filename: 'js/[name].[contenthash:8].js',
+      chunkFilename: 'js/[name].[contenthash:8].js'
+    },
+    plugins: [
+      // Element Plus 按需引入
+      AutoImport({
+        resolvers: [ElementPlusResolver()],
+      }),
+      Components({
+        resolvers: [ElementPlusResolver()],
+      }),
+    ],
+    optimization: {
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          // Vue ecosystem (vue, vue-router, vuex, vue-i18n)
+          vue: {
+            name: 'chunk-vue',
+            test: /[\/]node_modules[\/](vue|vue-router|vuex|vue-i18n)[\/]/,
+            priority: 20,
+            chunks: 'all'
+          },
+          // Element Plus UI library (按需引入后会更小)
+          elementPlus: {
+            name: 'chunk-element-plus',
+            test: /[\/]node_modules[\/](element-plus|@element-plus)[\/]/,
+            priority: 15,
+            chunks: 'all'
+          },
+          // Other major libraries
+          libs: {
+            name: 'chunk-libs',
+            test: /[\/]node_modules[\/](axios|swiper|vue3-quill)[\/]/,
+            priority: 10,
+            chunks: 'all'
+          },
+          // Remaining vendor dependencies
+          vendor: {
+            name: 'chunk-vendors',
+            test: /[\/]node_modules[\/]/,
+            priority: 5,
+            chunks: 'all',
+            minChunks: 1
           }
-         
-          return `webpack:///${resourcePath}`
         }
-     }
+      }
+    }
   },
   chainWebpack: config => {
     config.devtool('source-map')
@@ -62,6 +100,9 @@ module.exports = defineConfig({
       args[0].__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = 'false'
       return args
     })
+
+    // 删除默认的 prefetch 插件，避免预取大文件
+    config.plugins.delete('prefetch')
 
     // 配置源映射加载器
     config.module
