@@ -91,11 +91,7 @@
             <div class="title-underline"></div>
           </div>
 
-          <!-- 显示当前用户信息（如果已登录） -->
-          <div v-if="isLoggedIn" class="user-info">
-            <el-tag type="info">{{ $t('contact.currentUser') }}: {{ userInfo.username }} ({{ userInfo.email
-              }})</el-tag>
-          </div>
+
 
           <div class="contact-form">
             <el-form ref="contactFormRef" :model="contactForm" :rules="contactRules" label-width="0px"
@@ -349,7 +345,7 @@ export default {
 .contact-page {
   min-height: 100vh;
   background: linear-gradient(135deg, $background-light 0%, $background-secondary 100%);
-  padding: $spacing-lg 0;
+  padding: 0 0 $spacing-lg 0;
 }
 
 .container {
@@ -696,12 +692,7 @@ export default {
   justify-content: center;
 }
 
-.user-info {
-  margin-bottom: $spacing-md;
-  padding: $spacing-sm;
-  background-color: #f5f7fa;
-  border-radius: $border-radius-sm;
-}
+
 
 .submit-btn {
   width: 100%;
@@ -962,12 +953,7 @@ export default {
     }
   }
 
-  .user-info {
-    margin-bottom: $spacing-lg;
-    padding: $spacing-lg;
-    border-radius: $border-radius-md;
-    text-align: center;
-  }
+
 }
 
 @include tablet {
@@ -1104,16 +1090,7 @@ export default {
     }
   }
 
-  .user-info {
-    margin-bottom: $spacing-md;
-    padding: $spacing-md;
-    border-radius: $border-radius-sm;
 
-    .el-tag {
-      font-size: $font-size-xs;
-      padding: $spacing-xs $spacing-sm;
-    }
-  }
 }
 
 // 超小屏适配 (360px以下)

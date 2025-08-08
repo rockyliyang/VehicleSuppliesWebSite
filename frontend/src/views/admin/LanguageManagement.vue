@@ -114,17 +114,17 @@ export default {
       translations: [],
       
       // 支持的语言列表
-      supportedLanguages: ['zh-CN', 'en'],
+      supportedLanguages: ["zh-CN", "en"],
       
       // 语言显示名称映射
       languageDisplayMap: {
-        'zh-CN': '中文',
-        'en': 'English'
+        "zh-CN": "中文",
+        "en": "English"
       },
       
       // 筛选条件
-      filterLang: '',
-      searchKeyword: '',
+      filterLang: "",
+      searchKeyword: "",
       
       // 分页
       currentPage: 1,
@@ -134,26 +134,26 @@ export default {
       // 添加翻译对话框
       addDialogVisible: false,
       translationForm: {
-        code: '',
-        lang: '',
-        value: ''
+        code: "",
+        lang: "",
+        value: ""
       },
       translationRules: {
-        code: [{ required: true, message: '请输入翻译键', trigger: 'blur' }],
-        lang: [{ required: true, message: '请选择语言', trigger: 'change' }],
-        value: [{ required: true, message: '请输入翻译内容', trigger: 'blur' }]
+        code: [{ required: true, message: "请输入翻译键", trigger: "blur" }],
+        lang: [{ required: true, message: "请选择语言", trigger: "change" }],
+        value: [{ required: true, message: "请输入翻译内容", trigger: "blur" }]
       },
       
       // 编辑翻译对话框
       editDialogVisible: false,
       editForm: {
         id: null,
-        code: '',
-        lang: '',
-        value: ''
+        code: "",
+        lang: "",
+        value: ""
       },
       editRules: {
-        value: [{ required: true, message: '请输入翻译内容', trigger: 'blur' }]
+        value: [{ required: true, message: "请输入翻译内容", trigger: "blur" }]
       }
     }
   },

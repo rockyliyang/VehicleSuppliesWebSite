@@ -192,11 +192,6 @@
     <!-- 邮件对话框 -->
     <el-dialog v-model="showEmailDialog" :title="$t('productDetail.emailDialog.title')" width="600px" center>
       <div class="email-dialog-content">
-        <!-- 显示当前用户信息（如果已登录） -->
-        <div v-if="isLoggedIn" class="user-info">
-          <el-tag type="info">{{ $t('contact.currentUser') }}: {{ userInfo.username }} ({{ userInfo.email }})</el-tag>
-        </div>
-
         <!-- 邮件表单 -->
         <el-form ref="emailFormRef" :model="emailForm" :rules="emailRules" label-width="0px">
           <div class="form-row">

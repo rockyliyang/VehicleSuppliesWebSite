@@ -53,6 +53,8 @@ export default {
             this.$messageHandler.showSuccess('登录成功', 'login.success.loginSuccess');
             const { user } = res.data
             this.$store.commit('setUser', user)
+            // 管理员登录后设置语言为中文
+            await this.$store.dispatch('language/changeLanguage', 'zh-CN')
             this.$router.push(this.$route.query.redirect || '/admin')
           } else {
             this.$messageHandler.showError(res.message, 'admin.login.error.loginFailed');

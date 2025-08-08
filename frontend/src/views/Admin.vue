@@ -60,6 +60,18 @@
             </el-icon>
             <span>询价管理</span>
           </el-menu-item>
+          <el-menu-item index="/admin/orders">
+            <el-icon>
+              <ShoppingCart />
+            </el-icon>
+            <span>订单管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/logistics-companies">
+            <el-icon>
+              <Van />
+            </el-icon>
+            <span>物流公司</span>
+          </el-menu-item>
           <el-sub-menu index="user-management">
             <template #title>
               <el-icon>
@@ -124,8 +136,9 @@
 </template>
 
 <script>
-import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown, Document, Message } from '@element-plus/icons-vue'
+import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown, Document, Message, ShoppingCart, Van } from '@element-plus/icons-vue'
 import { ChatDotRound } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
 
 export default {
   name: 'AdminPage',
@@ -140,7 +153,9 @@ export default {
     ArrowDown,
     ChatDotRound,
     Document,
-    Message
+    Message,
+    ShoppingCart,
+    Van
   },
   data() {
     return {
@@ -173,6 +188,15 @@ export default {
       } else if (to.path.includes('/admin/contact-messages')) {
         this.activeMenu = '/admin/contact-messages'
         this.currentPage = '联系消息'
+      } else if (to.path.includes('/admin/inquiries')) {
+        this.activeMenu = '/admin/inquiries'
+        this.currentPage = '询价管理'
+      } else if (to.path.includes('/admin/orders')) {
+        this.activeMenu = '/admin/orders'
+        this.currentPage = '订单管理'
+      } else if (to.path.includes('/admin/logistics-companies')) {
+        this.activeMenu = '/admin/logistics-companies'
+        this.currentPage = '物流公司管理'
       } else if (to.path.includes('/admin/regular-users')) {
         this.activeMenu = '/admin/regular-users'
         this.currentPage = '普通用户列表'
@@ -221,21 +245,25 @@ export default {
       }, 5 * 60 * 1000) // 5分钟
     },
     logout() {
-      this.$confirm('确定要退出登录吗?', '提示', {
+      ElMessageBox.confirm('确定要退出登录吗?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
+      }).then(async () => {
         // 调用后端登出接口清除cookie
         this.$api.post('/users/logout')
-          .then(() => {
+          .then(async () => {
             this.$store.commit('setUser', null)
+            // 管理员退出后恢复语言为英文
+            await this.$store.dispatch('language/changeLanguage', 'en')
             this.$router.push({ path: '/admin-login', query: { redirect: '/admin' } })
           })
-          .catch(error => {
+          .catch(async error => {
             console.error('登出失败:', error)
             // 即使API调用失败，也清除前端状态并跳转
             this.$store.commit('setUser', null)
+            // 管理员退出后恢复语言为英文
+            await this.$store.dispatch('language/changeLanguage', 'en')
             this.$router.push({ path: '/admin-login', query: { redirect: '/admin' } })
           })
       }).catch(() => {})

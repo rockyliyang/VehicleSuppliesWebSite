@@ -132,6 +132,18 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'orders',
+        name: 'AdminOrders',
+        component: () => import('../views/admin/OrderManagement.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'logistics-companies',
+        name: 'AdminLogisticsCompanies',
+        component: () => import('../views/admin/LogisticsCompanies.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: '',
         redirect: '/admin/dashboard',
         meta: { requiresAuth: true }
@@ -237,29 +249,38 @@ const router = createRouter({
 
 // 全局路由守卫 - 在每次路由跳转前验证token
 router.beforeEach(async (to, from, next) => {
-  // 不需要验证token的路由
-  //const publicPages = ['/login', '/register', '/admin-login', '/activate', '/products', '/product', '/about', '/news', '/contact', '/paypal-test', '/forgot-password', '/reset-password']
-  //const authRequired = (to.path != '/') && (!publicPages.some(path => to.path.startsWith(path)) || to.path.startsWith('/admin'))
-  const authRequired =  to.meta.requiresAuth ?? true
+  const authRequired = to.meta.requiresAuth ?? true
 
-  
   if (to.path === '/admin-login' || to.path === '/login') {
-    // 如果是管理员登录页，清除普通用户token
+    // 如果是登录页，直接通过
     return next()
   }
 
   let loginPath = '/login'
   if (to.path.startsWith('/admin') && to.path !== '/admin-login') {
-      loginPath = '/admin-login'
+    loginPath = '/admin-login'
   }
 
   if (authRequired) {
+    // 如果状态未初始化，先尝试恢复登录状态
     let isLoggedIn = store.state.isLoggedIn
-    if (loginPath === '/admin-login') {
-        isLoggedIn = store.state.isAdminLoggedIn
+    let isAdminLoggedIn = store.state.isAdminLoggedIn
+    
+    if (!isLoggedIn && !isAdminLoggedIn) {
+      try {
+        // 尝试从cookie恢复登录状态
+        await store.dispatch('restoreLoginState')
+        isLoggedIn = store.state.isLoggedIn
+        isAdminLoggedIn = store.state.isAdminLoggedIn
+      } catch (error) {
+        console.log('恢复登录状态失败:', error)
+      }
     }
 
-    if (!isLoggedIn) {
+    // 检查对应的登录状态
+    const hasValidAuth = loginPath === '/admin-login' ? isAdminLoggedIn : isLoggedIn
+
+    if (!hasValidAuth) {
       return next({
         path: loginPath,
         query: { redirect: to.fullPath }
@@ -267,7 +288,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     try {
-      // 验证管理员token
+      // 验证token有效性
       await api.post('/users/check-token')
     } catch (error) {
       // 检查是否为超时错误

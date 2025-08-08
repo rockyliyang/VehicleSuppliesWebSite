@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/jwt');
 const sseHandler = require('../utils/sseHandler');
-const db = require('../db/db');
+const { query } = require('../db/db');
 
 /**
  * SSE事件流端点
@@ -80,16 +80,16 @@ router.get('/events', verifyToken, async (req, res) => {
 async function getMissedMessages(userId, lastEventId) {
   try {
     // 查询用户相关的询价ID
-    const userInquiries = await db.query(
+    const userInquiries = await query(
       'SELECT id FROM inquiries WHERE user_id = $1 AND deleted = false',
       [userId]
     );
     
-    if (userInquiries.rowCount === 0) {
+    if (userInquiries.getRowCount() === 0) {
       return [];
     }
     
-    const inquiryIds = userInquiries.rows.map(inquiry => inquiry.id);
+    const inquiryIds = userInquiries.getRows().map(inquiry => inquiry.id);
     const placeholders = inquiryIds.map((_, index) => `$${index + 2}`).join(',');
     
     // 查询在lastEventId之后的消息
@@ -113,9 +113,9 @@ async function getMissedMessages(userId, lastEventId) {
       LIMIT 50
     `;
     
-    const messages = await db.query(queryStr, [lastEventId, ...inquiryIds]);
+    const messages = await query(queryStr, [lastEventId, ...inquiryIds]);
     
-    return messages.rows.map(message => ({
+    return messages.getRows().map(message => ({
       eventId: message.id,
       type: 'new_message',
       inquiryId: message.inquiry_id,

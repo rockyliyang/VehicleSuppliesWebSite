@@ -39,8 +39,8 @@
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
       <el-table-column label="产品图片" width="120">
         <template #default="{row}">
-          <el-image :src="row.thumbnail_url" fit="cover" class="product-image"
-            v-if="row.thumbnail_url" @error="handleImageError">
+          <el-image :src="row.thumbnail_url" fit="cover" class="product-image" v-if="row.thumbnail_url"
+            @error="handleImageError">
           </el-image>
           <span v-else>无图片</span>
         </template>
@@ -51,20 +51,20 @@
       <el-table-column prop="product_type" label="产品类型" width="100">
         <template #default="{row}">
           <el-tag :type="row.product_type === 'self_operated' ? 'success' : 'warning'">
-            {{ row.product_type === 'self_operated' ? '自营' : '代销' }}
+            {{ row.product_type === 'self_operated' ? "自营" : "代销" }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="price" label="价格" width="120" sortable="custom">
         <template #default="{row}">
-          <span>{{ row.price ? '¥' + row.price : '面议' }}</span>
+          <span>{{ row.price ? "¥" + row.price : "面议" }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="stock" label="库存" width="100" sortable="custom" />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{row}">
           <el-tag :type="row.status === 'on_shelf' ? 'success' : 'info'">
-            {{ row.status === 'on_shelf' ? '上架' : '下架' }}
+            {{ row.status === 'on_shelf' ? "上架" : "下架" }}
           </el-tag>
         </template>
       </el-table-column>
@@ -89,7 +89,8 @@
     </div>
 
     <!-- 产品表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" v-model="dialogVisible" width="900px" top="5vh" :close-on-click-modal="false">
+    <el-dialog :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" v-model="dialogVisible" width="900px" top="5vh"
+      :close-on-click-modal="false">
       <el-form :model="productForm" :rules="rules" ref="productFormRef" label-width="100px">
         <el-form-item label="产品名称" prop="name">
           <el-input v-model="productForm.name" placeholder="请输入产品名称" />
@@ -120,34 +121,15 @@
         <el-form-item label="阶梯价格">
           <div class="price-ranges-container">
             <div v-for="(range, index) in productForm.price_ranges" :key="index" class="price-range-item">
-              <el-input-number 
-                v-model="range.min_quantity" 
-                :min="1" 
-                placeholder="最小数量"
-                style="width: 120px"
-              />
+              <el-input-number v-model="range.min_quantity" :min="1" placeholder="最小数量" style="width: 120px" />
               <span class="range-separator">-</span>
-              <el-input-number 
-                v-model="range.max_quantity" 
-                :min="range.min_quantity || 1" 
-                placeholder="最大数量"
-                style="width: 120px"
-              />
+              <el-input-number v-model="range.max_quantity" :min="range.min_quantity || 1" placeholder="最大数量"
+                style="width: 120px" />
               <span class="range-separator">件</span>
-              <el-input-number 
-                v-model="range.price" 
-                :min="0" 
-                :precision="2"
-                placeholder="单价"
-                style="width: 120px"
-              />
+              <el-input-number v-model="range.price" :min="0" :precision="2" placeholder="单价" style="width: 120px" />
               <span class="range-separator">元</span>
-              <el-button 
-                type="danger" 
-                size="small" 
-                @click="removePriceRange(index)"
-                :disabled="productForm.price_ranges.length <= 1"
-              >
+              <el-button type="danger" size="small" @click="removePriceRange(index)"
+                :disabled="productForm.price_ranges.length <= 1">
                 删除
               </el-button>
             </div>
@@ -160,12 +142,8 @@
           <el-input-number v-model="productForm.stock" :min="0" :max="999999" />
         </el-form-item>
         <el-form-item label="排序" prop="sort_order">
-          <el-input-number 
-            v-model="productForm.sort_order" 
-            :min="0" 
-            placeholder="请输入排序值（数值越大越排前）"
-            style="width: 100%"
-          />
+          <el-input-number v-model="productForm.sort_order" :min="0" placeholder="请输入排序值（数值越大越排前）"
+            style="width: 100%" />
         </el-form-item>
         <el-form-item label="产品图片" prop="images">
           <el-upload class="product-image-uploader" action="/api/product-images/upload?image_type=0"
@@ -315,36 +293,36 @@ export default {
         status: 'on_shelf'
       },
       rules: {
-        name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
+        name: [{ required: true, message: "请输入产品名称", trigger: "blur" }],
         product_code: [
-          { required: true, message: '请输入产品编号', trigger: 'blur' },
-          { max: 64, message: '产品编号不能超过64个字符', trigger: 'blur' }
+          { required: true, message: "请输入产品编号", trigger: "blur" },
+          { max: 64, message: "产品编号不能超过64个字符", trigger: "blur" }
         ],
-        category_id: [{ required: true, message: '请选择产品分类', trigger: 'change' }],
-        product_type: [{ required: true, message: '请选择产品类型', trigger: 'change' }],
+        category_id: [{ required: true, message: "请选择产品分类", trigger: "change" }],
+        product_type: [{ required: true, message: "请选择产品类型", trigger: "change" }],
         price: [
-          { required: true, message: '请输入产品价格', trigger: 'blur' },
-          { type: 'number', message: '价格必须为数字', trigger: 'blur' }
+          { required: true, message: "请输入产品价格", trigger: "blur" },
+          { type: "number", message: "价格必须为数字", trigger: "blur" }
         ]
       },
-      sessionId: localStorage.getItem('session_id') || (Date.now() + '-' + Math.random().toString(36).substr(2, 9)),
+      sessionId: localStorage.getItem("session_id") || (Date.now() + "-" + Math.random().toString(36).substr(2, 9)),
       quillOptions: {
         modules: {
           toolbar: [
-            ['bold', 'italic', 'underline', 'strike'],
-            ['blockquote', 'code-block'],
-            [{ 'header': 1 }, { 'header': 2 }],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            [{ 'script': 'sub' }, { 'script': 'super' }],
-            [{ 'indent': '-1' }, { 'indent': '+1' }],
-            [{ 'direction': 'rtl' }],
-            [{ 'size': ['small', false, 'large', 'huge'] }],
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'font': [] }],
-            [{ 'align': [] }],
-            ['link', 'image', 'video'],
-            ['clean']
+            ["bold", "italic", "underline", "strike"],
+            ["blockquote", "code-block"],
+            [{ "header": 1 }, { "header": 2 }],
+            [{ "list": "ordered" }, { "list": "bullet" }],
+            [{ "script": "sub" }, { "script": "super" }],
+            [{ "indent": "-1" }, { "indent": "+1" }],
+            [{ "direction": "rtl" }],
+            [{ "size": ["small", false, "large", "huge"] }],
+            [{ "header": [1, 2, 3, 4, 5, 6, false] }],
+            [{ "color": [] }, { "background": [] }],
+            [{ "font": [] }],
+            [{ "align": [] }],
+            ["link", "image", "video"],
+            ["clean"]
           ]
         }
       },

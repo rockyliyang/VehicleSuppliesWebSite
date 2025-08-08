@@ -50,7 +50,7 @@
         <el-table-column prop="isActive" label="状态" width="100" align="center">
           <template #default="{row}">
             <el-tag :type="row.isActive ? 'success' : 'danger'">
-              {{ row.isActive ? '已激活' : '未激活' }}
+              {{ row.isActive ? "已激活" : "未激活" }}
             </el-tag>
           </template>
         </el-table-column>
@@ -173,7 +173,7 @@ export default {
         const params = {
           page: this.currentPage,
           pageSize: this.pageSize,
-          role: 'user' // 只获取普通用户
+          role: "user" // 只获取普通用户
         }
         
         if (this.filters.businessGroup) {
@@ -183,7 +183,7 @@ export default {
           params.search = this.filters.search
         }
         
-        const response = await this.$api.get('/admin/users', { params })
+        const response = await this.$api.get("/admin/users", { params })
         if (response.success) {
           const rawUsers = response.data.items || []
           this.total = response.data.total || 0
@@ -203,11 +203,11 @@ export default {
             updatedAt: user.updated_at
           }))
         } else {
-          this.$messageHandler.showError(response.message, 'admin.users.error.loadFailed')
+          this.$messageHandler.showError(response.message, "admin.users.error.loadFailed")
         }
       } catch (error) {
-        console.error('加载普通用户列表失败:', error)
-        this.$messageHandler.showError('加载普通用户列表失败', 'admin.users.error.loadFailed')
+        console.error("加载普通用户列表失败:", error)
+        this.$messageHandler.showError("加载普通用户列表失败", "admin.users.error.loadFailed")
       } finally {
         this.loading = false
       }
@@ -216,7 +216,7 @@ export default {
     // 加载业务组列表
     async loadBusinessGroups() {
       try {
-        const response = await this.$api.get('/admin/business-groups')
+        const response = await this.$api.get("/admin/business-groups")
         if (response.success) {
           const rawGroups = response.data.items || []
           this.businessGroups = rawGroups.map(group => ({
@@ -231,7 +231,7 @@ export default {
           }))
         }
       } catch (error) {
-        console.error('加载业务组列表失败:', error)
+        console.error("加载业务组列表失败:", error)
       }
     },
     
@@ -262,8 +262,8 @@ export default {
     // 清除所有筛选条件
     clearFilters() {
       this.filters = {
-        businessGroup: '',
-        search: ''
+        businessGroup: "",
+        search: ""
       }
       this.currentPage = 1
       this.loadUsers()
@@ -287,7 +287,7 @@ export default {
       
       const currentGroupId = this.selectedUserForGroup.currentBusinessGroup?.id
       if (currentGroupId === this.selectedBusinessGroupId) {
-        this.$messageHandler.showInfo('业务组没有变化', 'admin.users.info.noChange')
+        this.$messageHandler.showInfo("业务组没有变化", "admin.users.info.noChange")
         this.businessGroupDialogVisible = false
         return
       }
@@ -299,15 +299,15 @@ export default {
         })
         
         if (response.success) {
-          this.$messageHandler.showSuccess('业务组更新成功', 'admin.users.success.businessGroupUpdateSuccess')
+          this.$messageHandler.showSuccess("业务组更新成功", "admin.users.success.businessGroupUpdateSuccess")
           this.businessGroupDialogVisible = false
           this.loadUsers()
         } else {
-          this.$messageHandler.showError(response.message, 'admin.users.error.businessGroupUpdateFailed')
+          this.$messageHandler.showError(response.message, "admin.users.error.businessGroupUpdateFailed")
         }
       } catch (error) {
-        console.error('业务组更新失败:', error)
-        this.$messageHandler.showError('业务组更新失败', 'admin.users.error.businessGroupUpdateFailed')
+        console.error("业务组更新失败:", error)
+        this.$messageHandler.showError("业务组更新失败", "admin.users.error.businessGroupUpdateFailed")
       } finally {
         this.updating = false
       }

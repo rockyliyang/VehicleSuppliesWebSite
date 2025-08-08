@@ -286,9 +286,9 @@ class ThirdPartyAuthController {
       // 设置cookie
       res.cookie('aex-token', token, {
         httpOnly: process.env.NODE_ENV === 'production' ? true : false,
-        secure: process.env.NODE_ENV === 'production',
-			  sameSite: 'lax',
-			  maxAge: 60 * 60 * 1000 // 1小时
+        secure: process.env.COOKIE_SECURE === 'true',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 1000 // 1小时
       });
 
       res.json({
@@ -427,8 +427,8 @@ class ThirdPartyAuthController {
       // 设置cookie
       res.cookie('aex-token', token, {
         httpOnly: process.env.NODE_ENV === 'production' ? true : false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: process.env.COOKIE_SECURE === 'true',
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24小时
       });
 
@@ -534,9 +534,9 @@ class ThirdPartyAuthController {
       // 设置cookie
       res.cookie('aex-token', token, {
         httpOnly: process.env.NODE_ENV === 'production' ? true : false,
-        secure: process.env.NODE_ENV === 'production',
-			  sameSite: 'lax',
-			  maxAge: 60 * 60 * 1000 // 1小时
+        secure: process.env.COOKIE_SECURE === 'true',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 1000 // 1小时
       });
 
       res.json({

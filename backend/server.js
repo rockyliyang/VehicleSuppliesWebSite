@@ -31,6 +31,7 @@ const sseRoutes = require('./routes/sseRoutes');
 const thirdPartyAuthRoutes = require('./routes/thirdPartyAuthRoutes');
 const addressRoutes = require('./routes/addressRoutes');
 const userProductRoutes = require('./routes/userProductRoutes');
+const orderManagementRoutes = require('./routes/orderManagementRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -84,6 +85,7 @@ app.use('/api/sse', sseRoutes);
 app.use('/api/auth', thirdPartyAuthRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api', userProductRoutes);
+app.use('/api/order-management', orderManagementRoutes);
 
 // 注册长轮询路由
 const pollingRoutes = require('./routes/pollingRoutes');

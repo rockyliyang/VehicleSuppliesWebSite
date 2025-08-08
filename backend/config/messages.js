@@ -136,7 +136,33 @@ const MESSAGES = {
     DETAIL_GET_FAILED: 'Failed to retrieve order details',
     NOT_FOUND: 'Order not found',
     CART_EMPTY: 'Cart is empty, cannot create order',
-    CART_EMPTY_PAYMENT: 'Cart is empty, cannot process payment'
+    CART_EMPTY_PAYMENT: 'Cart is empty, cannot process payment',
+    FETCH_SUCCESS: 'Orders retrieved successfully',
+    FETCH_FAILED: 'Failed to retrieve orders',
+    NOT_FOUND_OR_NO_PERMISSION: 'Order not found or no permission',
+    LOGISTICS_UPDATE_SUCCESS: 'Order logistics updated successfully',
+    LOGISTICS_UPDATE_FAILED: 'Failed to update order logistics',
+    DETAIL_FETCH_SUCCESS: 'Order detail retrieved successfully',
+    DETAIL_FETCH_FAILED: 'Failed to retrieve order detail'
+  },
+
+  // 物流相关
+  LOGISTICS: {
+    FETCH_COMPANIES_SUCCESS: 'Logistics companies retrieved successfully',
+    FETCH_COMPANIES_FAILED: 'Failed to retrieve logistics companies',
+    COMPANY_NAME_REQUIRED: 'Logistics company name is required',
+    COMPANY_NAME_EXISTS: 'Logistics company name already exists',
+    COMPANY_CREATE_SUCCESS: 'Logistics company created successfully',
+    COMPANY_CREATE_FAILED: 'Failed to create logistics company',
+    COMPANY_NOT_FOUND: 'Logistics company not found',
+    NO_FIELDS_TO_UPDATE: 'No fields to update',
+    COMPANY_UPDATE_SUCCESS: 'Logistics company updated successfully',
+    COMPANY_UPDATE_FAILED: 'Failed to update logistics company',
+    COMPANY_HAS_RECORDS: 'Cannot delete logistics company with existing records',
+    COMPANY_DELETE_SUCCESS: 'Logistics company deleted successfully',
+    COMPANY_DELETE_FAILED: 'Failed to delete logistics company',
+    COMPANY_DETAIL_SUCCESS: 'Logistics company detail retrieved successfully',
+    COMPANY_DETAIL_FAILED: 'Failed to retrieve logistics company detail'
   },
   
   // 支付相关

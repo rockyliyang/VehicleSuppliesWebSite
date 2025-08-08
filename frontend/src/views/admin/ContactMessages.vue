@@ -181,18 +181,18 @@ export default {
       
       // 状态映射
       statusMap: {
-        'pending': '待处理',
-        'in_progress': '处理中',
-        'completed': '已完成',
-        'closed': '已关闭'
+        "pending": "待处理",
+        "in_progress": "处理中",
+        "completed": "已完成",
+        "closed": "已关闭"
       },
       
       // 状态类型映射
       statusTypeMap: {
-        'pending': 'warning',
-        'in_progress': 'primary',
-        'completed': 'success',
-        'closed': 'info'
+        "pending": "warning",
+        "in_progress": "primary",
+        "completed": "success",
+        "closed": "info"
       }
     }
   },
@@ -318,7 +318,7 @@ export default {
           fallbackKey: 'admin.contact.error.assignFailed'
         })
         
-        this.$messageHandler.showSuccess('分配成功', 'admin.contact.success.assignSuccess')
+        this.$messageHandler.showSuccess("分配成功", "admin.contact.success.assignSuccess")
         this.assignDialogVisible = false
         this.loadMessages() // 重新加载列表
       } catch (error) {
@@ -339,7 +339,7 @@ export default {
           fallbackKey: 'admin.contact.error.statusUpdateFailed'
         })
         
-        this.$messageHandler.showSuccess('状态更新成功', 'admin.contact.success.statusUpdateSuccess')
+        this.$messageHandler.showSuccess("状态更新成功", "admin.contact.success.statusUpdateSuccess")
         this.loadMessages() // 重新加载列表
       } catch (error) {
         console.error('状态更新失败:', error)
