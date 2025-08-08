@@ -228,7 +228,7 @@ router.post('/login', async (req, res) => {
           username: user.username,
           email: user.email,
           phone: user.phone,
-          user_role: user.user_role,
+          role: user.user_role,
           currency: user.currency
         }
       }
@@ -273,7 +273,7 @@ router.post('/check-token', verifyToken, async (req, res) => {
           username: req.username,
           email: req.userEmail,
           phone: req.phone,
-          user_role: req.userRole,
+          role: req.userRole,
           currency: req.userCurrency
         }
       }

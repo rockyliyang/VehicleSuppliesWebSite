@@ -1761,7 +1761,7 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'INQUIRY.DELETE.FAILED', 'zh-CN', '询价单删除失败'),
 
 -- 新增询价管理前端翻译键
-(gen_random_uuid(), 'inquiry.management.title', 'en', 'Inquiry Management'),
+(gen_random_uuid(), 'inquiry.management.title', 'en', 'Inquiries'),
 (gen_random_uuid(), 'inquiry.management.title', 'zh-CN', '询价管理'),
 (gen_random_uuid(), 'inquiry.management.status_filter', 'en', 'Select Status'),
 (gen_random_uuid(), 'inquiry.management.status_filter', 'zh-CN', '选择状态'),

@@ -831,9 +831,7 @@ export default {
     async handleSendInquiryMessage(inquiryId, message) {
       try {
         const messageData = {
-          inquiry_id: inquiryId,
-          content: message,
-          sender: 'user'
+          message: message
         };
         
         const response = await this.$api.post(`inquiries/${inquiryId}/messages`, messageData);

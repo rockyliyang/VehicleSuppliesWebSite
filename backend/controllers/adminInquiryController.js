@@ -105,15 +105,29 @@ exports.getAllInquiries = async (req, res) => {
         i.updated_at,
         u.username,
         u.email,
-        COUNT(ii.id) as item_count,
-        SUM(CASE WHEN ii.unit_price IS NOT NULL THEN ii.quantity * ii.unit_price ELSE 0 END) as total_quoted_price,
-        COUNT(im.id) as message_count
+        COALESCE(item_stats.item_count, 0) as item_count,
+        COALESCE(item_stats.total_quoted_price, 0) as total_quoted_price,
+        COALESCE(message_stats.message_count, 0) as message_count
       FROM inquiries i
       LEFT JOIN users u ON i.user_id = u.id
-      LEFT JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = false
-      LEFT JOIN inquiry_messages im ON i.id = im.inquiry_id AND im.deleted = false
+      LEFT JOIN (
+        SELECT 
+          inquiry_id,
+          COUNT(id) as item_count,
+          SUM(CASE WHEN unit_price IS NOT NULL THEN quantity * unit_price ELSE 0 END) as total_quoted_price
+        FROM inquiry_items 
+        WHERE deleted = false 
+        GROUP BY inquiry_id
+      ) item_stats ON i.id = item_stats.inquiry_id
+      LEFT JOIN (
+        SELECT 
+          inquiry_id,
+          COUNT(id) as message_count
+        FROM inquiry_messages 
+        WHERE deleted = false 
+        GROUP BY inquiry_id
+      ) message_stats ON i.id = message_stats.inquiry_id
       ${whereClause}
-      GROUP BY i.id, i.user_inquiry_id, i.title, i.status, i.user_id, i.created_at, i.updated_at, u.username, u.email
       ORDER BY i.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
@@ -676,13 +690,20 @@ exports.exportInquiries = async (req, res) => {
         i.created_at,
         u.username,
         u.email,
-        COUNT(ii.id) as item_count,
-        SUM(CASE WHEN ii.unit_price IS NOT NULL THEN ii.quantity * ii.unit_price ELSE 0 END) as total_quoted_price
+        COALESCE(item_stats.item_count, 0) as item_count,
+        COALESCE(item_stats.total_quoted_price, 0) as total_quoted_price
       FROM inquiries i
       LEFT JOIN users u ON i.user_id = u.id
-      LEFT JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = false
+      LEFT JOIN (
+        SELECT 
+          inquiry_id,
+          COUNT(id) as item_count,
+          SUM(CASE WHEN unit_price IS NOT NULL THEN quantity * unit_price ELSE 0 END) as total_quoted_price
+        FROM inquiry_items 
+        WHERE deleted = false 
+        GROUP BY inquiry_id
+      ) item_stats ON i.id = item_stats.inquiry_id
       ${whereClause}
-      GROUP BY i.id, i.title, i.status, i.created_at, u.username, u.email
       ORDER BY i.created_at DESC
     `;
     

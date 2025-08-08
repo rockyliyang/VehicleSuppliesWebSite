@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 // Element Plus 现在通过按需引入自动处理
+import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import './assets/css/global.css'
@@ -37,6 +38,7 @@ const emitter = mitt()
 app.config.globalProperties.$bus = emitter
 
 app.use(store)
+app.use(ElementPlus)
 // Element Plus 组件现在通过按需引入自动注册
 
 // 注册所有Element Plus图标组件

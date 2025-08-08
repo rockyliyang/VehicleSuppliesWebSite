@@ -300,7 +300,7 @@ class ThirdPartyAuthController {
             username: dbUser.username,
             email: dbUser.email,
             phone: dbUser.phone,
-            user_role: dbUser.role,
+            role: dbUser.role,
             currency: dbUser.currency,
             avatar_url: dbUser.avatar_url,
             login_source: dbUser.login_source
@@ -441,7 +441,7 @@ class ThirdPartyAuthController {
             username: dbUser.username,
             email: dbUser.email,
             phone: dbUser.phone,
-            user_role: dbUser.role,
+            role: dbUser.role,
             currency: dbUser.currency,
             avatar_url: dbUser.avatar_url,
             login_source: dbUser.login_source
@@ -548,7 +548,7 @@ class ThirdPartyAuthController {
             username: dbUser.username,
             email: dbUser.email,
             phone: dbUser.phone,
-            user_role: dbUser.role,
+            role: dbUser.role,
             currency: dbUser.currency,
             avatar_url: dbUser.avatar_url,
             login_source: dbUser.login_source
