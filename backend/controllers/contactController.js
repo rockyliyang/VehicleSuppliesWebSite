@@ -188,7 +188,7 @@ class ContactController {
       if (!businessGroupId) {
         const defaultGroupRows = await query(`
           SELECT id FROM business_groups 
-          WHERE is_default = true AND deleted = false 
+          WHERE is_default = 1 AND deleted = false 
           ORDER BY created_at ASC 
           LIMIT 1
         `);
@@ -223,7 +223,7 @@ class ContactController {
       // 如果没有找到业务组，使用默认业务组
       if (!businessGroup) {
         const defaultGroupRows = await query(
-          'SELECT id, group_name, group_email FROM business_groups WHERE is_default = true AND deleted = false LIMIT 1'
+          'SELECT id, group_name, group_email FROM business_groups WHERE is_default = 1 AND deleted = false LIMIT 1'
         );
         if (defaultGroupRows.getRowCount() > 0) {
           businessGroup = defaultGroupRows.getFirstRow();

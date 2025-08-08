@@ -243,7 +243,7 @@
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="showEmailDialog = false">{{ $t('buttons.cancel') }}</el-button>
+          <el-button @click="showEmailDialog = false">{{ $t('common.cancel') }}</el-button>
           <el-button type="primary" @click="submitEmailForm" :loading="isSubmittingEmail">
             {{ isSubmittingEmail ? $t('productDetail.emailDialog.sending') : $t('productDetail.emailDialog.send') }}
           </el-button>
@@ -385,7 +385,7 @@ export default {
       return this.$store.getters.isLoggedIn;
     },
     userInfo() {
-      return this.$store.getters['auth/userInfo'] || {};
+      return this.$store.getters.user || {};
     },
     isMobile() {
       return window.innerWidth <= 768;
@@ -928,8 +928,8 @@ export default {
        this.refreshCaptcha();
      },
     fillEmailUserInfo() {
-      if (this.userInfo) {
-        this.emailForm.name = this.userInfo.name || '';
+      if (this.userInfo && Object.keys(this.userInfo).length > 0) {
+        this.emailForm.name = this.userInfo.username || '';
         this.emailForm.email = this.userInfo.email || '';
         this.emailForm.phone = this.userInfo.phone || '';
       }

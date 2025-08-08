@@ -80,17 +80,16 @@ class ThirdPartyAuthController {
   // 生成JWT token
   generateJWT(user) {
     const payload = {
-      id: user.id,
-      guid: user.guid,
+      userId: user.id,
       username: user.username,
       email: user.email,
+      phone: user.phone,
       role: user.role,
-      currency: user.currency,
-      isActive: user.is_active
+      currency: user.currency
     };
     
     return jwt.sign(payload, process.env.JWT_SECRET, { 
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h' 
+      expiresIn: '1h' 
     });
   }
 
@@ -105,7 +104,7 @@ class ThirdPartyAuthController {
 
       // 1. 先查找是否已存在该第三方账号
       let userQuery = `
-        SELECT id, username, email, user_role as role, currency, avatar_url, login_source, is_active, guid
+        SELECT id, username, email, phone, user_role as role, currency, avatar_url, login_source, is_active, guid
         FROM users 
         WHERE ${providerIdField} = $1 AND deleted = FALSE
       `;
@@ -120,7 +119,7 @@ class ThirdPartyAuthController {
 
       // 2. 查找是否有相同邮箱的用户
       if (email) {
-        userQuery = 'SELECT id, username, email, user_role as role, currency, avatar_url, login_source, is_active, guid FROM users WHERE email = $1 AND deleted = FALSE';
+        userQuery = 'SELECT id, username, email, phone, user_role as role, currency, avatar_url, login_source, is_active, guid FROM users WHERE email = $1 AND deleted = FALSE';
         userResult = await connection.query(userQuery, [email]);
 
         if (userResult.rows && userResult.rows.length > 0) {
@@ -144,7 +143,7 @@ class ThirdPartyAuthController {
           ]);
 
           // 获取更新后的用户信息
-          const updatedUser = await connection.query('SELECT id, username, email, user_role as role, currency, avatar_url, login_source, is_active, guid FROM users WHERE id = $1', [userResult.rows[0].id]);
+          const updatedUser = await connection.query('SELECT id, username, email, phone, user_role as role, currency, avatar_url, login_source, is_active, guid FROM users WHERE id = $1', [userResult.rows[0].id]);
 
           await this.createThirdPartyLoginRecord(connection, userResult.rows[0].id, provider, providerData);
           await connection.commit();
@@ -159,7 +158,7 @@ class ThirdPartyAuthController {
           username, email, password, ${providerIdField}, avatar_url, third_party_email,
           login_source, is_email_verified, is_active, user_role, currency, created_at, updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
-        RETURNING id, username, email, user_role as role, currency, avatar_url, login_source, is_active, guid
+        RETURNING id, username, email, phone, user_role as role, currency, avatar_url, login_source, is_active, guid
       `;
       
       const insertResult = await connection.query(insertQuery, [
@@ -298,10 +297,10 @@ class ThirdPartyAuthController {
           token,
           user: {
             id: dbUser.id,
-            guid: dbUser.guid,
             username: dbUser.username,
             email: dbUser.email,
-            role: dbUser.role,
+            phone: dbUser.phone,
+            user_role: dbUser.role,
             currency: dbUser.currency,
             avatar_url: dbUser.avatar_url,
             login_source: dbUser.login_source
@@ -429,7 +428,7 @@ class ThirdPartyAuthController {
         httpOnly: process.env.NODE_ENV === 'production' ? true : false,
         secure: process.env.COOKIE_SECURE === 'true',
         sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000 // 24小时
+        maxAge: 60 * 60 * 1000 // 1小时
       });
 
       res.json({
@@ -439,10 +438,10 @@ class ThirdPartyAuthController {
           token,
           user: {
             id: dbUser.id,
-            guid: dbUser.guid,
             username: dbUser.username,
             email: dbUser.email,
-            role: dbUser.role,
+            phone: dbUser.phone,
+            user_role: dbUser.role,
             currency: dbUser.currency,
             avatar_url: dbUser.avatar_url,
             login_source: dbUser.login_source
@@ -546,11 +545,11 @@ class ThirdPartyAuthController {
           token,
           user: {
             id: dbUser.id,
-            guid: dbUser.guid,
             username: dbUser.username,
             email: dbUser.email,
+            phone: dbUser.phone,
+            user_role: dbUser.role,
             currency: dbUser.currency,
-            role: dbUser.role,
             avatar_url: dbUser.avatar_url,
             login_source: dbUser.login_source
           },

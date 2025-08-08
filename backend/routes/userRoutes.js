@@ -168,9 +168,9 @@ router.post('/reset-password', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { username, password, admin } = req.body; // admin: true/false
-    // 查找用户
+    // 查找用户（获取完整信息用于生成token）
     const users = await query(
-      'SELECT id, email, password, user_role, is_active, currency FROM users WHERE email = $1 AND deleted = false',
+      'SELECT id, username, email, phone, password, user_role, is_active, currency FROM users WHERE email = $1 AND deleted = false',
       [username]
     );
     if (users.getRowCount() === 0) {
@@ -196,9 +196,16 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: getMessage('USER.WRONG_PASSWORD'), data: null });
     }
 
-    // 生成 JWT token
+    // 生成包含完整用户信息的JWT token
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.user_role, currency: user.currency },
+      { 
+        userId: user.id, 
+        username: user.username,
+        email: user.email, 
+        phone: user.phone,
+        role: user.user_role, 
+        currency: user.currency 
+      },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -211,13 +218,17 @@ router.post('/login', async (req, res) => {
       maxAge: 60 * 60 * 1000 // 1小时
     });
 
+    // 直接返回用户信息，不再额外查询数据库
     res.json({
       success: true,
       message: getMessage('USER.LOGIN_SUCCESS'),
       data: {
         user: {
+          id: user.id,
+          username: user.username,
           email: user.email,
-          role: user.user_role,
+          phone: user.phone,
+          user_role: user.user_role,
           currency: user.currency
         }
       }
@@ -230,9 +241,16 @@ router.post('/login', async (req, res) => {
 // 检查token有效性并续期
 router.post('/check-token', verifyToken, async (req, res) => {
   try {
-    // 生成新的token
+    // 生成新的token，包含完整用户信息
     const newToken = jwt.sign(
-      { userId: req.userId, email: req.userEmail, role: req.userRole, currency: req.userCurrency },
+      { 
+        userId: req.userId, 
+        username: req.username,
+        email: req.userEmail, 
+        phone: req.phone,
+        role: req.userRole, 
+        currency: req.userCurrency 
+      },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -245,13 +263,17 @@ router.post('/check-token', verifyToken, async (req, res) => {
       maxAge: 60 * 60 * 1000 // 1小时
     });
 
+    // 直接从token中获取用户信息，不再查询数据库
     res.json({ 
       success: true,
       message: getMessage('USER.TOKEN_VALID_RENEWED'),
       data: {
         user: {
+          id: req.userId,
+          username: req.username,
           email: req.userEmail,
-          role: req.userRole,
+          phone: req.phone,
+          user_role: req.userRole,
           currency: req.userCurrency
         }
       }

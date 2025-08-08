@@ -70,10 +70,12 @@
 
   .el-message__closeBtn {
     color: $gray-500 !important;
-    font-size: $font-size-xl !important;
+    font-size: $font-size-lg !important;
     transition: $transition-base;
-    top: $spacing-lg !important;
-    right: $spacing-lg !important;
+    top: $spacing-sm !important;
+    right: $spacing-sm !important;
+    position: absolute !important;
+    z-index: 10 !important;
 
     &:hover {
       color: $gray-700 !important;

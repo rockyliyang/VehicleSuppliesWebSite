@@ -65,7 +65,9 @@ const verifyToken = (req, res, next) => {
       
       // 将解码后的用户信息添加到请求对象中
       req.userId = decoded.userId;
+      req.username = decoded.username;
       req.userEmail = decoded.email;
+      req.phone = decoded.phone;
       req.userRole = decoded.role;
       req.userCurrency = decoded.currency;
       
@@ -83,7 +85,9 @@ const verifyToken = (req, res, next) => {
           const decoded = jwt.decode(token);
           if (decoded) {
             req.userId = decoded.userId;
+            req.username = decoded.username;
             req.userEmail = decoded.email;
+            req.phone = decoded.phone;
             req.userRole = decoded.role;
             req.userCurrency = decoded.currency;
             req.token = token;

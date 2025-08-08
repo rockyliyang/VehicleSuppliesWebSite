@@ -75,7 +75,7 @@ class BusinessGroupController {
       // 如果设置为默认组，先取消其他默认组
       if (is_default) {
         await query(
-          'UPDATE business_groups SET is_default = false, updated_by = $1 WHERE is_default = true AND deleted = false',
+          'UPDATE business_groups SET is_default = 0, updated_by = $1 WHERE is_default = 1 AND deleted = false',
           [req.userId]
         );
       }
@@ -358,7 +358,7 @@ class BusinessGroupController {
       // 如果设置为默认组，先取消其他默认组
       if (is_default) {
         await query(
-          'UPDATE business_groups SET is_default = false, updated_by = $1 WHERE is_default = true AND id != $2 AND deleted = false',
+          'UPDATE business_groups SET is_default = 0, updated_by = $1 WHERE is_default = 1 AND id != $2 AND deleted = false',
           [req.userId, id]
         );
       }
