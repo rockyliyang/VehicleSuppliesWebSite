@@ -188,6 +188,7 @@ exports.getInquiryDetail = async (req, res) => {
         i.title,
         i.status,
         i.user_id,
+        i.inquiry_type,
         i.created_at,
         i.updated_at,
         u.username,

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS inquiries (
     user_inquiry_id INTEGER DEFAULT NULL,
     title VARCHAR(32) DEFAULT '',
     status VARCHAR(16) DEFAULT 'pending',
+    inquiry_type VARCHAR(16) DEFAULT 'custom',
     total_amount DECIMAL(10,2) DEFAULT 0.00,
     
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -38,13 +39,19 @@ ALTER TABLE inquiries
     ADD CONSTRAINT chk_inquiry_status
     CHECK (status IN ('inquiried',  'approved', 'rejected', 'paid'));
 
+ALTER TABLE inquiries 
+    ADD CONSTRAINT chk_inquiry_type
+    CHECK (inquiry_type IN ('single', 'custom'));
+
 -- 创建索引
 CREATE INDEX idx_inquiries_guid ON inquiries(guid);
 CREATE INDEX idx_inquiries_user_id ON inquiries(user_id);
 CREATE INDEX idx_inquiries_status ON inquiries(status);
+CREATE INDEX idx_inquiries_inquiry_type ON inquiries(inquiry_type);
 CREATE INDEX idx_inquiries_deleted ON inquiries(deleted);
 CREATE INDEX idx_inquiries_created_at ON inquiries(created_at);
 CREATE INDEX idx_inquiries_status_deleted ON inquiries(status, deleted);
+CREATE INDEX idx_inquiries_type_deleted ON inquiries(inquiry_type, deleted);
 CREATE INDEX idx_inquiries_created_by ON inquiries(created_by);
 CREATE INDEX idx_inquiries_updated_by ON inquiries(updated_by);
 
@@ -157,6 +164,7 @@ COMMENT ON COLUMN inquiries.user_id IS '用户ID';
 COMMENT ON COLUMN inquiries.user_inquiry_id IS '用户级别的询价单编号';
 COMMENT ON COLUMN inquiries.title IS '询价单标题';
 COMMENT ON COLUMN inquiries.status IS '询价状态: inquiried-已询价, approved-已批准, rejected-已拒绝';
+COMMENT ON COLUMN inquiries.inquiry_type IS '询价类型: single-单品询价, custom-自定义询价';
 COMMENT ON COLUMN inquiries.total_amount IS '总金额';
 COMMENT ON COLUMN inquiries.deleted IS '软删除标记: 0-正常, 1-已删除';
 COMMENT ON COLUMN inquiries.created_at IS '创建时间';

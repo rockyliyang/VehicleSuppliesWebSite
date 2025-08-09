@@ -120,10 +120,11 @@
             :inquiry="selectedMobileInquiry" 
             :is-mobile="true"
             @remove-item="handleRemoveItem"
-            @send-message="handleSendMessage"
+
             @update-message="handleUpdateMessage"
             @checkout-inquiry="handleCheckoutInquiry"
-            @item-added="handleMobileItemAdded" />
+            @item-added="handleMobileItemAdded"
+            @new-messages-received="handleNewMessagesReceived" />
         </div>
       </div>
     </div>
@@ -391,19 +392,7 @@ export default {
       }
     },
     
-    // 处理发送消息事件
-    handleSendMessage(inquiryId, message) {
-      if (this.selectedMobileInquiry) {
-        const newMessage = {
-          id: Date.now(),
-          sender: this.$t('inquiry.you') || '您',
-          content: message,
-          timestamp: Date.now(),
-          isUser: true
-        };
-        this.selectedMobileInquiry.messages.push(newMessage);
-      }
-    },
+
     
     // 处理更新消息事件
     handleUpdateMessage(inquiryId, value) {
@@ -422,6 +411,23 @@ export default {
       const localInquiry = this.inquiries.find(inq => inq.id === inquiryId);
       if (localInquiry) {
         localInquiry.status = 'checkouted';
+      }
+    },
+    
+    // 处理新消息接收事件
+    handleNewMessagesReceived(newMessages) {
+      if (!newMessages || newMessages.length === 0) return;
+      
+      // 更新当前选中的询价单
+      if (this.selectedMobileInquiry) {
+        this.selectedMobileInquiry.messages.push(...newMessages);
+      }
+      
+      // 更新本地询价单列表中的消息
+      const localInquiry = this.inquiries.find(inq => inq.id === this.selectedMobileInquiry?.id);
+      if (localInquiry) {
+        localInquiry.messages = localInquiry.messages || [];
+        localInquiry.messages.push(...newMessages);
       }
     },
     

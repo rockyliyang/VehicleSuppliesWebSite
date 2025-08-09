@@ -2708,5 +2708,35 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'order.logistics.basicInfo', 'en', 'Basic Information'),
 (gen_random_uuid(), 'order.logistics.basicInfo', 'zh-CN', '基本信息'),
 (gen_random_uuid(), 'order.logistics.recipientInfo', 'en', 'Recipient Information'),
-(gen_random_uuid(), 'order.logistics.recipientInfo', 'zh-CN', '收件人信息')
+(gen_random_uuid(), 'order.logistics.recipientInfo', 'zh-CN', '收件人信息'),
+
+-- Common User Types
+(gen_random_uuid(), 'common.admin', 'en', 'Admin'),
+(gen_random_uuid(), 'common.admin', 'zh-CN', '管理员'),
+(gen_random_uuid(), 'common.customer', 'en', 'Customer'),
+(gen_random_uuid(), 'common.customer', 'zh-CN', '客户'),
+
+-- Inquiry Management Dialog Optimization Keys
+(gen_random_uuid(), 'inquiry.detail.basicInfo', 'en', 'Basic Information'),
+(gen_random_uuid(), 'inquiry.detail.basicInfo', 'zh-CN', '基本信息'),
+(gen_random_uuid(), 'inquiry.detail.productList', 'en', 'Product List'),
+(gen_random_uuid(), 'inquiry.detail.productList', 'zh-CN', '产品列表'),
+(gen_random_uuid(), 'inquiry.detail.messageHistory', 'en', 'Message History'),
+(gen_random_uuid(), 'inquiry.detail.messageHistory', 'zh-CN', '消息记录'),
+(gen_random_uuid(), 'inquiry.detail.sendMessage', 'en', 'Send Message'),
+(gen_random_uuid(), 'inquiry.detail.sendMessage', 'zh-CN', '发送消息'),
+(gen_random_uuid(), 'inquiry.detail.statusActions', 'en', 'Status Actions'),
+(gen_random_uuid(), 'inquiry.detail.statusActions', 'zh-CN', '状态操作'),
+(gen_random_uuid(), 'inquiry.detail.totalAmount', 'en', 'Total Amount'),
+(gen_random_uuid(), 'inquiry.detail.totalAmount', 'zh-CN', '总金额'),
+(gen_random_uuid(), 'inquiry.detail.quotedTotal', 'en', 'Quoted Total'),
+(gen_random_uuid(), 'inquiry.detail.quotedTotal', 'zh-CN', '报价总计'),
+(gen_random_uuid(), 'inquiry.detail.discount', 'en', 'Discount'),
+(gen_random_uuid(), 'inquiry.detail.discount', 'zh-CN', '折扣'),
+(gen_random_uuid(), 'inquiry.detail.finalTotal', 'en', 'Final Total'),
+(gen_random_uuid(), 'inquiry.detail.finalTotal', 'zh-CN', '最终总计'),
+(gen_random_uuid(), 'inquiry.management.viewDetail', 'en', 'View Detail'),
+(gen_random_uuid(), 'inquiry.management.viewDetail', 'zh-CN', '查看详情'),
+(gen_random_uuid(), 'inquiry.management.dialogTitle', 'en', 'Inquiry Detail'),
+(gen_random_uuid(), 'inquiry.management.dialogTitle', 'zh-CN', '询价详情')
 ON CONFLICT (code, lang) WHERE deleted = FALSE DO UPDATE SET value= EXCLUDED.value;

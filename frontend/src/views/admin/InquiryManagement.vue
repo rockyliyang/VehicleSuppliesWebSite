@@ -92,8 +92,11 @@
     </el-card>
 
     <!-- 询价详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" :title="$t('admin.inquiry.detail.title') || '询价详情'" width="80%" top="5vh"
-      :close-on-click-modal="false">
+    <el-dialog v-model="detailDialogVisible" :title="$t('admin.inquiry.detail.title') || '询价详情'" 
+      width="95%" 
+      top="2vh"
+      :close-on-click-modal="false"
+      class="inquiry-detail-dialog">
       <inquiry-detail v-if="detailDialogVisible && selectedInquiryId" :inquiry-id="selectedInquiryId"
         @status-updated="handleStatusUpdated" @quote-updated="handleQuoteUpdated" />
     </el-dialog>
@@ -307,6 +310,39 @@ export default {
   }
 }
 
+// 对话框样式优化
+:deep(.inquiry-detail-dialog) {
+  .el-dialog {
+    max-height: 96vh;
+    margin: 2vh auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .el-dialog__header {
+    flex-shrink: 0;
+    padding: 15px 20px;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .el-dialog__body {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .inquiry-detail {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 15px;
+  }
+}
+
 @include mobile {
   .inquiry-management {
     padding: 10px;
@@ -342,6 +378,20 @@ export default {
           justify-content: center;
         }
       }
+    }
+  }
+
+  // 移动端对话框优化
+  :deep(.inquiry-detail-dialog) {
+    .el-dialog {
+      width: 98% !important;
+      margin: 1vh auto;
+      max-height: 98vh;
+    }
+
+    .inquiry-detail {
+      padding: 10px;
+      gap: 10px;
     }
   }
 }

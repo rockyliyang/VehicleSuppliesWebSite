@@ -28,6 +28,7 @@ exports.getUserInquiries = async (req, res) => {
         i.user_inquiry_id,
         i.title,
         i.status,
+        i.inquiry_type,
         i.created_at,
         i.updated_at,
         COUNT(ii.id) as item_count,
@@ -35,7 +36,7 @@ exports.getUserInquiries = async (req, res) => {
       FROM inquiries i
       LEFT JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = false
       ${whereClause}
-      GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.created_at, i.updated_at
+      GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.inquiry_type, i.created_at, i.updated_at
       ORDER BY i.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
@@ -147,6 +148,7 @@ exports.getInquiryDetail = async (req, res) => {
         i.user_inquiry_id,
         i.title,
         i.status,
+        i.inquiry_type,
         i.created_at,
         i.updated_at,
         u.username as created_by_name
@@ -256,7 +258,7 @@ exports.getInquiryDetail = async (req, res) => {
 exports.createInquiry = async (req, res) => {
   try {
     const userId = req.userId;
-    const { titlePrefix } = req.body;
+    const { titlePrefix, inquiryType } = req.body;
     
     if (!titlePrefix || titlePrefix.trim() === '') {
       return res.status(400).json({
@@ -265,13 +267,16 @@ exports.createInquiry = async (req, res) => {
       });
     }
     
+    // 验证询价类型
+    const validInquiryType = inquiryType && ['single', 'custom'].includes(inquiryType) ? inquiryType : 'custom';
+    
     // 检查用户当前询价数量限制
     const countResult = await query(
-      'SELECT COUNT(*) as count FROM inquiries WHERE user_id = $1 AND status = \'inquiried\' AND deleted = false',
+      'SELECT COUNT(*) as count FROM inquiries WHERE user_id = $1 AND status = \'inquiried\' AND inquiry_type = \'custom\' AND deleted = false',
       [userId]
     );
     
-    if (countResult.getFirstRow().count >= 5) { // 限制最多5个活跃询价
+    if (countResult.getFirstRow().count >= 10) { // 限制最多5个活跃询价
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.MAX_INQUIRIES')
@@ -288,8 +293,8 @@ exports.createInquiry = async (req, res) => {
     const fullTitle = `${titlePrefix.trim()}${nextUserInquiryId}`;
     
     const result = await query(
-      'INSERT INTO inquiries (user_id, user_inquiry_id, title, status, created_by, updated_by) VALUES ($1, $2, $3, \'inquiried\', $4, $5) RETURNING id',
-      [userId, nextUserInquiryId, fullTitle, userId, userId]
+      'INSERT INTO inquiries (user_id, user_inquiry_id, title, status, inquiry_type, created_by, updated_by) VALUES ($1, $2, $3, \'inquiried\', $4, $5, $6) RETURNING id',
+      [userId, nextUserInquiryId, fullTitle, validInquiryType, userId, userId]
     );
     
     return res.json({
@@ -676,12 +681,28 @@ exports.findInquiryByProduct = async (req, res) => {
   try {
     const userId = req.userId;
     const { productId } = req.params;
+    const { inquiryType } = req.query; // 从查询参数获取询价类型
     
     if (!productId) {
       return res.status(400).json({
         success: false,
         message: getMessage('INQUIRY.VALIDATION.INVALID_ID')
       });
+    }
+    
+    // 构建查询条件
+    let whereConditions = `
+      WHERE i.user_id = $1 
+        AND i.deleted = false 
+        AND i.status = 'inquiried'
+        AND ii.product_id = $2
+    `;
+    let queryParams = [userId, productId];
+    
+    // 如果指定了询价类型，添加类型过滤条件
+    if (inquiryType && ['single', 'custom'].includes(inquiryType)) {
+      whereConditions += ` AND i.inquiry_type = $3`;
+      queryParams.push(inquiryType);
     }
     
     // 查找包含指定商品且只有这一个商品的询价单
@@ -692,22 +713,20 @@ exports.findInquiryByProduct = async (req, res) => {
         i.user_inquiry_id,
         i.title,
         i.status,
+        i.inquiry_type,
         i.created_at,
         i.updated_at,
         COUNT(ii.id) as item_count
       FROM inquiries i
       INNER JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = false
-      WHERE i.user_id = $1 
-        AND i.deleted = false 
-        AND i.status = 'inquiried'
-        AND ii.product_id = $2
-      GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.created_at, i.updated_at
+      ${whereConditions}
+      GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.inquiry_type, i.created_at, i.updated_at
       HAVING COUNT(ii.id) = 1
       ORDER BY i.created_at DESC
       LIMIT 1
     `;
     
-    const result = await query(queryStr, [userId, productId]);
+    const result = await query(queryStr, queryParams);
     
     if (result && result.getRowCount() > 0) {
       const inquiry = result.getFirstRow();

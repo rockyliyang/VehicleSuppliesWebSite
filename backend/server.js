@@ -81,15 +81,14 @@ app.use('/api/admin/business-groups', businessGroupRoutes);
 app.use('/api/admin/users', userManagementRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/admin/inquiries', adminInquiryRoutes);
+// 注册长轮询路由 - 使用独立路径避免冲突
+const pollingRoutes = require('./routes/pollingRoutes');
+app.use('/api/inquiries', pollingRoutes);
 app.use('/api/sse', sseRoutes);
 app.use('/api/auth', thirdPartyAuthRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api', userProductRoutes);
 app.use('/api/order-management', orderManagementRoutes);
-
-// 注册长轮询路由
-const pollingRoutes = require('./routes/pollingRoutes');
-app.use('/api/inquiries', pollingRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
