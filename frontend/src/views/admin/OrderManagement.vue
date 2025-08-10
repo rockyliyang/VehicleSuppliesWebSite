@@ -6,124 +6,98 @@
       <p v-else class="page-description">{{ $t("order.management.description.admin", "Manage all orders and logistics") }}</p>
     </div>
 
-    <!-- 筛选器 -->
-    <div class="filters-card">
-      <div class="filters-header">
-        <h3>{{ $t('order.filter.title', 'Filter Orders') }}</h3>
-      </div>
-      <div class="filter-grid">
-        <div class="filter-group">
-          <label>{{ $t('order.filter.status', 'Status') }}</label>
-          <select v-model="filters.status" @change="loadOrders" class="filter-select">
-            <option value="">{{ $t('order.filter.allStatus', 'All Status') }}</option>
-            <option value="pending">{{ $t('order.status.pending', 'Pending') }}</option>
-            <option value="confirmed">{{ $t('order.status.confirmed', 'Confirmed') }}</option>
-            <option value="shipped">{{ $t('order.status.shipped', 'Shipped') }}</option>
-            <option value="delivered">{{ $t('order.status.delivered', 'Delivered') }}</option>
-            <option value="cancelled">{{ $t('order.status.cancelled', 'Cancelled') }}</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label>{{ $t('order.filter.startDate', 'Start Date') }}</label>
-          <input 
-            type="date" 
-            v-model="filters.startDate" 
-            @change="loadOrders"
-            class="filter-input"
-          >
-        </div>
+    <!-- 筛选条件 -->
+    <el-card class="filter-card">
+      <el-form :model="filters" inline>
+        <el-form-item :label="$t('order.filter.status', 'Status') || '状态'">
+          <el-select v-model="filters.status" :placeholder="$t('order.filter.allStatus', 'All Status') || '选择状态'" clearable
+            style="width: 150px;">
+            <el-option value="pending" :label="$t('order.status.pending', 'Pending') || '待处理'" />
+            <el-option value="confirmed" :label="$t('order.status.confirmed', 'Confirmed') || '已确认'" />
+            <el-option value="shipped" :label="$t('order.status.shipped', 'Shipped') || '已发货'" />
+            <el-option value="delivered" :label="$t('order.status.delivered', 'Delivered') || '已送达'" />
+            <el-option value="cancelled" :label="$t('order.status.cancelled', 'Cancelled') || '已取消'" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="isAdmin" :label="$t('order.filter.user', 'User') || '用户'">
+          <el-select v-model="filters.userId" :placeholder="$t('order.filter.userPlaceholder', 'Select user') || '选择用户'"
+            clearable filterable remote :remote-method="handleUserSearch" :loading="userSearchLoading" style="width: 200px;">
+            <el-option v-for="user in userOptions" :key="user.id" :label="`${user.username} (${user.email})`"
+              :value="user.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('order.filter.dateRange', 'Date Range') || '日期范围'">
+          <el-date-picker v-model="dateRange" type="daterange" :range-separator="$t('order.filter.to', 'to') || '至'"
+            :start-placeholder="$t('order.filter.startDate', 'Start Date') || '开始日期'"
+            :end-placeholder="$t('order.filter.endDate', 'End Date') || '结束日期'" format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD" @change="handleDateRangeChange" />
+        </el-form-item>
 
-        <div class="filter-group">
-          <label>{{ $t('order.filter.endDate', 'End Date') }}</label>
-          <input 
-            type="date" 
-            v-model="filters.endDate" 
-            @change="loadOrders"
-            class="filter-input"
-          >
-        </div>
-
-        <div class="filter-group filter-search">
-          <label>{{ $t('order.filter.search', 'Search') }}</label>
-          <input 
-            type="text" 
-            v-model="filters.search" 
-            @input="debounceSearch"
-            :placeholder="$t('order.filter.searchPlaceholder', 'Order ID, Customer Name')"
-            class="filter-input"
-          >
-        </div>
-      </div>
-    </div>
+        <el-form-item>
+          <el-button @click="resetFilters">{{ $t('common.reset') || '重置' }}</el-button>
+          <el-button type="success" @click="refreshData" :loading="refreshing">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            {{ $t('common.refresh') || '刷新' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
     <!-- 订单列表 -->
-    <div class="orders-table-container">
-      <table class="orders-table">
-        <thead>
-          <tr>
-            <th>{{ $t('order.table.actions', 'Actions') }}</th>
-            <th>{{ $t('order.table.orderId', 'Order ID') }}</th>
-            <th>{{ $t('order.table.customer', 'Customer') }}</th>
-            <th>{{ $t('order.table.totalAmount', 'Total Amount') }}</th>
-            <th>{{ $t('order.table.status', 'Status') }}</th>
-            <th>{{ $t('order.table.orderDate', 'Order Date') }}</th>
-            <th>{{ $t('order.table.logisticsStatus', 'Logistics Status') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="order in orders" :key="order.id">
-            <td>
-              <button @click="viewOrderDetail(order)" class="btn btn-primary btn-sm">
-                {{ $t('order.action.view', 'View') }}
-              </button>
-              <button v-if="isAdmin" 
-                      @click="manageLogistics(order)" 
-                      class="btn btn-secondary btn-sm">
-                {{ $t('order.action.logistics', 'Logistics') }}
-              </button>
-            </td>
-            <td>{{ order.id }}</td>
-            <td>{{ order.username }}</td>
-            <td>${{ order.total_amount }}</td>
-            <td>
-              <span :class="'status-badge status-' + order.status">
-                {{ formatStatus(order.status) }}
-              </span>
-            </td>
-            <td>{{ formatDate(order.created_at) }}</td>
-            <td>
-              <span v-if="order.shipping_status" 
-                    :class="'status-badge logistics-' + order.shipping_status">
-                {{ formatLogisticsStatus(order.shipping_status) }}
-              </span>
-              <span v-else class="no-logistics">{{ $t('order.logistics.noLogistics', 'No Logistics') }}</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <el-card class="order-list-card">
+      <el-table v-loading="loading" :data="orders" stripe>
+        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="180" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="viewOrderDetail(row)">{{ $t('order.action.view', 'View')
+              || '查看' }}</el-button>
+            <el-button v-if="isAdmin" type="success" size="small" @click="manageLogistics(row)">{{
+              $t('order.action.logistics', 'Logistics') || '物流' }}</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column prop="id" :label="$t('order.table.orderId', 'Order ID') || '订单号'" width="120" />
+        <el-table-column :label="$t('order.table.customer', 'Customer') || '客户'" width="150">
+          <template #default="{ row }">
+            <div>
+              <div>{{ row.username }}</div>
+              <div class="text-secondary">{{ row.email }}</div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('order.table.totalAmount', 'Total Amount') || '总金额'" width="120">
+          <template #default="{ row }">
+            ${{ row.total_amount }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('order.table.status', 'Status') || '状态'" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)">{{ formatStatus(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'" width="120">
+          <template #default="{ row }">
+            <el-tag v-if="row.shipping_status" :type="getLogisticsStatusType(row.shipping_status)">{{ formatLogisticsStatus(row.shipping_status) }}</el-tag>
+            <span v-else class="text-secondary">{{ $t('order.logistics.noLogistics', 'No Logistics') || '无物流' }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
 
-    <!-- 分页 -->
-    <div class="pagination" v-if="totalPages > 1">
-      <button 
-        @click="changePage(currentPage - 1)" 
-        :disabled="currentPage <= 1"
-        class="btn btn-outline">
-        {{ $t('common.previous', 'Previous') }}
-      </button>
-      
-      <span class="page-info">
-        {{ $t('common.pageInfo', 'Page {current} of {total}', { current: currentPage, total: totalPages }) }}
-      </span>
-      
-      <button 
-        @click="changePage(currentPage + 1)" 
-        :disabled="currentPage >= totalPages"
-        class="btn btn-outline">
-        {{ $t('common.next', 'Next') }}
-      </button>
-    </div>
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
+        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]" :total="totalOrders" layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+      </div>
+    </el-card>
+
+
 
     <!-- 订单详情模态框 -->
     <div v-if="showOrderDetail" class="modal-overlay" @click="closeOrderDetail">
@@ -392,27 +366,35 @@
 
 <script>
 import { mapState } from 'vuex'
+import { Refresh } from '@element-plus/icons-vue'
 
 export default {
   name: 'OrderManagement',
+  components: {
+    Refresh
+  },
   data() {
     return {
       orders: [],
       logisticsCompanies: [],
       loading: false,
+      refreshing: false,
       isUpdating: false,
       showOrderDetail: false,
       showLogisticsModal: false,
       selectedOrder: null,
       currentPage: 1,
       totalPages: 1,
+      totalOrders: 0,
       pageSize: 20,
-      searchTimeout: null,
+      dateRange: [],
+      userOptions: [],
+      userSearchLoading: false,
       filters: {
         status: '',
+        userId: '',
         startDate: '',
-        endDate: '',
-        search: ''
+        endDate: ''
       },
       logisticsForm: {
         logistics_company_id: '',
@@ -432,10 +414,22 @@ export default {
       return this.user && this.user.role === 'admin'
     }
   },
+  watch: {
+    // 监听筛选条件变化，自动重新加载数据
+    'filters.status'() {
+      this.currentPage = 1
+      this.loadOrders()
+    },
+    'filters.userId'() {
+      this.currentPage = 1
+      this.loadOrders()
+    }
+  },
   mounted() {
     this.loadOrders()
     if (this.isAdmin) {
       this.loadLogisticsCompanies()
+      this.loadUsers()
     }
   },
   methods: {
@@ -455,6 +449,7 @@ export default {
         if (response.success) {
           this.orders = response.data.orders
           this.totalPages = response.data.pagination.pages
+          this.totalOrders = response.data.pagination.total || 0
         }
       } catch (error) {
         console.error('Error loading orders:', error)
@@ -668,14 +663,6 @@ export default {
       }
     },
 
-    debounceSearch() {
-      clearTimeout(this.searchTimeout)
-      this.searchTimeout = setTimeout(() => {
-        this.currentPage = 1
-        this.loadOrders()
-      }, 500)
-    },
-
     formatStatus(status) {
       const statusMap = {
         pending: 'Pending',
@@ -704,6 +691,114 @@ export default {
 
     formatDate(dateString) {
       return new Date(dateString).toLocaleDateString()
+    },
+
+    // 获取状态对应的Element Plus tag类型
+    getStatusType(status) {
+      const typeMap = {
+        pending: 'warning',
+        confirmed: 'info',
+        shipped: 'primary',
+        delivered: 'success',
+        cancelled: 'danger'
+      }
+      return typeMap[status] || 'info'
+    },
+
+    // 获取物流状态对应的Element Plus tag类型
+    getLogisticsStatusType(status) {
+      const typeMap = {
+        pending: 'warning',
+        picked_up: 'info',
+        in_transit: 'primary',
+        out_for_delivery: 'warning',
+        delivered: 'success',
+        failed: 'danger',
+        returned: 'danger'
+      }
+      return typeMap[status] || 'info'
+    },
+
+    // 加载用户列表
+    async loadUsers(query = '') {
+      this.userSearchLoading = true
+      try {
+        const params = {
+          limit: 20
+        }
+        if (query) {
+          params.search = query
+        }
+        
+        const response = await this.$api.getWithErrorHandler('/admin/users', {
+          params,
+          fallbackKey: 'admin.user.error.loadFailed'
+        })
+        
+        this.userOptions = response.data.items
+      } catch (error) {
+        // 错误已经被统一处理
+      } finally {
+        this.userSearchLoading = false
+      }
+    },
+
+    // 用户搜索处理
+    handleUserSearch(query) {
+      if (query !== '') {
+        this.loadUsers(query)
+      } else {
+        this.loadUsers()
+      }
+    },
+
+    // 日期范围变化处理
+    handleDateRangeChange(dateRange) {
+      if (dateRange && dateRange.length === 2) {
+        this.filters.startDate = dateRange[0]
+        this.filters.endDate = dateRange[1]
+      } else {
+        this.filters.startDate = ''
+        this.filters.endDate = ''
+      }
+      this.currentPage = 1
+      this.loadOrders()
+    },
+
+    // 重置过滤器
+    resetFilters() {
+      this.filters = {
+        status: '',
+        userId: '',
+        startDate: '',
+        endDate: ''
+      }
+      this.dateRange = []
+      this.currentPage = 1
+      this.loadOrders()
+    },
+
+    // 刷新数据
+    async refreshData() {
+      this.refreshing = true
+      try {
+        await this.loadOrders()
+      } finally {
+        this.refreshing = false
+      }
+    },
+
+    // 分页大小变化处理
+    handleSizeChange(newSize) {
+      this.pageSize = newSize
+      this.currentPage = 1
+      this.loadOrders()
+    },
+
+    // 当前页变化处理
+    handleCurrentChange(newPage) {
+      this.currentPage = newPage
+      this.loadOrders()
     }
   }
 }
@@ -720,53 +815,40 @@ export default {
   margin-bottom: 30px;
 }
 
-.page-title {
+.page-header h1 {
   color: #333;
   font-size: 28px;
   font-weight: 600;
-  margin: 0;
+  margin: 0 0 8px 0;
 }
 
-.filters-card {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.filters-header {
-  margin-bottom: 15px;
-}
-
-.filters-header h3 {
-  margin: 0;
-  color: #333;
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.filter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  align-items: end;
-}
-
-.filter-input,
-.filter-select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+.page-header p {
+  color: #666;
   font-size: 14px;
+  margin: 0;
 }
 
-.filter-input:focus,
-.filter-select:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+/* Element Plus 卡片样式 */
+.filter-card {
+  margin-bottom: 20px;
+}
+
+.order-list-card {
+  margin-bottom: 20px;
+}
+
+/* 分页样式 */
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 20px 0;
+}
+
+/* 表格中的辅助文本样式 */
+.text-secondary {
+  color: #6c757d;
+  font-size: 12px;
 }
 
 .btn {

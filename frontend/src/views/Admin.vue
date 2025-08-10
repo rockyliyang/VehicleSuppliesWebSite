@@ -167,57 +167,13 @@ export default {
   },
   watch: {
     '$route'(to) {
-      // 根据路由更新当前页面标题和活动菜单
-      if (to.path.includes('/admin/dashboard')) {
-        this.activeMenu = '/admin/dashboard'
-        this.currentPage = '控制面板'
-      } else if (to.path.includes('/admin/products')) {
-        this.activeMenu = '/admin/products'
-        this.currentPage = '产品管理'
-      } else if (to.path.includes('/admin/categories')) {
-        this.activeMenu = '/admin/categories'
-        this.currentPage = '分类管理'
-      } else if (to.path.includes('/admin/banners')) {
-        this.activeMenu = '/admin/banners'
-        this.currentPage = 'Banner管理'
-      } else if (to.path.includes('/admin/company')) {
-        this.activeMenu = '/admin/company'
-        this.currentPage = '公司信息'
-      } else if (to.path.includes('/admin/language')) {
-        this.activeMenu = '/admin/language'
-        this.currentPage = '语言管理'
-      } else if (to.path.includes('/admin/contact-messages')) {
-        this.activeMenu = '/admin/contact-messages'
-        this.currentPage = '联系消息'
-      } else if (to.path.includes('/admin/inquiries')) {
-        this.activeMenu = '/admin/inquiries'
-        this.currentPage = '询价管理'
-      } else if (to.path.includes('/admin/orders')) {
-        this.activeMenu = '/admin/orders'
-        this.currentPage = '订单管理'
-      } else if (to.path.includes('/admin/logistics-companies')) {
-        this.activeMenu = '/admin/logistics-companies'
-        this.currentPage = '物流公司管理'
-      } else if (to.path.includes('/admin/regular-users')) {
-        this.activeMenu = '/admin/regular-users'
-        this.currentPage = '普通用户列表'
-      } else if (to.path.includes('/admin/sales-users')) {
-        this.activeMenu = '/admin/sales-users'
-        this.currentPage = '业务员列表'
-      } else if (to.path.includes('/admin/admin-users')) {
-        this.activeMenu = '/admin/admin-users'
-        this.currentPage = '管理员列表'
-      } else if (to.path.includes('/admin/business-groups')) {
-        this.activeMenu = '/admin/business-groups'
-        this.currentPage = '业务组管理'
-      } else if (to.path.includes('/admin/settings')) {
-        this.activeMenu = '/admin/settings'
-        this.currentPage = '系统设置'
-      }
+      this.updateActiveMenu(to)
     }
   },
   mounted() {
     this.startTokenCheck()
+    // 初始化时设置正确的activeMenu
+    this.updateActiveMenu(this.$route)
   },
   beforeUnmount() {
     if (this.tokenCheckTimer) {
@@ -225,6 +181,55 @@ export default {
     }
   },
   methods: {
+    updateActiveMenu(route) {
+      // 根据路由更新当前页面标题和活动菜单
+      if (route.path.includes('/admin/dashboard')) {
+        this.activeMenu = '/admin/dashboard'
+        this.currentPage = '控制面板'
+      } else if (route.path.includes('/admin/products')) {
+        this.activeMenu = '/admin/products'
+        this.currentPage = '产品管理'
+      } else if (route.path.includes('/admin/categories')) {
+        this.activeMenu = '/admin/categories'
+        this.currentPage = '分类管理'
+      } else if (route.path.includes('/admin/banners')) {
+        this.activeMenu = '/admin/banners'
+        this.currentPage = 'Banner管理'
+      } else if (route.path.includes('/admin/company')) {
+        this.activeMenu = '/admin/company'
+        this.currentPage = '公司信息'
+      } else if (route.path.includes('/admin/language')) {
+        this.activeMenu = '/admin/language'
+        this.currentPage = '语言管理'
+      } else if (route.path.includes('/admin/contact-messages')) {
+        this.activeMenu = '/admin/contact-messages'
+        this.currentPage = '联系消息'
+      } else if (route.path.includes('/admin/inquiries')) {
+        this.activeMenu = '/admin/inquiries'
+        this.currentPage = '询价管理'
+      } else if (route.path.includes('/admin/orders')) {
+        this.activeMenu = '/admin/orders'
+        this.currentPage = '订单管理'
+      } else if (route.path.includes('/admin/logistics-companies')) {
+        this.activeMenu = '/admin/logistics-companies'
+        this.currentPage = '物流公司管理'
+      } else if (route.path.includes('/admin/regular-users')) {
+        this.activeMenu = '/admin/regular-users'
+        this.currentPage = '普通用户列表'
+      } else if (route.path.includes('/admin/sales-users')) {
+        this.activeMenu = '/admin/sales-users'
+        this.currentPage = '业务员列表'
+      } else if (route.path.includes('/admin/admin-users')) {
+        this.activeMenu = '/admin/admin-users'
+        this.currentPage = '管理员列表'
+      } else if (route.path.includes('/admin/business-groups')) {
+        this.activeMenu = '/admin/business-groups'
+        this.currentPage = '业务组管理'
+      } else if (route.path.includes('/admin/settings')) {
+        this.activeMenu = '/admin/settings'
+        this.currentPage = '系统设置'
+      }
+    },
     toggleSidebar() {
       this.isCollapsed = !this.isCollapsed
     },

@@ -1,29 +1,38 @@
 <template>
   <div class="language-management">
-    <h1>语言翻译管理</h1>
+    <div class="page-header">
+      <h1>语言翻译管理</h1>
+      <p>管理系统翻译内容，添加、编辑和删除多语言翻译</p>
+    </div>
 
-    <el-card class="language-card">
-      <template #header>
-        <div class="card-header">
-          <span>翻译管理</span>
+    <!-- 筛选条件 -->
+    <el-card class="filter-card">
+      <el-form :model="filters" inline>
+        <el-form-item label="语言">
+          <el-select v-model="filterLang" placeholder="选择语言" clearable style="width: 150px;" @change="handleFilterChange">
+            <el-option v-for="lang in supportedLanguages" :key="lang" :label="getLanguageDisplay(lang)" :value="lang" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="搜索">
+          <el-input v-model="searchKeyword" placeholder="搜索翻译键或内容" clearable style="width: 300px;"
+            @input="handleFilterChange" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="clearFilters">重置</el-button>
+          <el-button type="success" @click="loadTranslations" :loading="loading">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            刷新
+          </el-button>
           <el-button type="primary" @click="showAddDialog">添加翻译</el-button>
-        </div>
-      </template>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-      <!-- 语言筛选 -->
-      <div class="filter-container">
-        <el-select v-model="filterLang" placeholder="选择语言" clearable @change="handleFilterChange">
-          <el-option v-for="lang in supportedLanguages" :key="lang" :label="getLanguageDisplay(lang)" :value="lang" />
-        </el-select>
-
-        <el-input v-model="searchKeyword" placeholder="搜索翻译键或内容" clearable style="width: 300px; margin-left: 10px"
-          @input="handleFilterChange" />
-        
-        <el-button @click="clearFilters" style="margin-left: 10px">清除筛选</el-button>
-      </div>
-
-      <!-- 翻译列表 -->
-      <el-table :data="filteredTranslations" style="width: 100%" v-loading="loading">
+    <!-- 翻译列表 -->
+    <el-card class="language-list-card">
+      <el-table :data="filteredTranslations" style="width: 100%" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="code" label="翻译键" width="200" />
         <el-table-column prop="lang" label="语言" width="100">
@@ -47,7 +56,7 @@
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container">
+      <div class="pagination-wrapper">
         <el-pagination 
           v-model:current-page="currentPage" 
           v-model:page-size="pageSize" 
@@ -107,9 +116,13 @@
 
 <script>
 import { ElMessageBox } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
 
 export default {
   name: 'LanguageManagement',
+  components: {
+    Refresh
+  },
   data() {
     return {
       // 数据加载状态
@@ -117,6 +130,9 @@ export default {
       
       // 翻译列表
       translations: [],
+      
+      // 筛选条件
+      filters: {},
       
       // 支持的语言列表
       supportedLanguages: ["zh-CN", "en"],
@@ -383,21 +399,43 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/assets/styles/_mixins.scss';
+
 .language-management {
   padding: 20px;
-}
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+  .page-header {
+    margin-bottom: 20px;
 
-.filter-container {
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
+    h1 {
+      margin: 0 0 8px 0;
+      color: #303133;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: #606266;
+      font-size: 14px;
+    }
+  }
+
+  .filter-card {
+    margin-bottom: 20px;
+
+    .el-form {
+      margin-bottom: 0;
+    }
+  }
+
+  .language-list-card {
+    .pagination-wrapper {
+      margin-top: 20px;
+      text-align: right;
+    }
+  }
 }
 
 .translation-value {
@@ -407,15 +445,48 @@ export default {
   word-break: break-word;
 }
 
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
 .action-buttons {
   display: flex;
   gap: 8px;
   flex-wrap: nowrap;
+}
+
+@include mobile {
+  .language-management {
+    padding: 10px;
+
+    .page-header {
+      h1 {
+        font-size: 20px;
+      }
+    }
+
+    .filter-card {
+      .el-form {
+        .el-form-item {
+          display: block;
+          margin-bottom: 15px;
+
+          .el-form-item__content {
+            margin-left: 0 !important;
+          }
+        }
+      }
+    }
+
+    .language-list-card {
+      .el-table {
+        font-size: 12px;
+      }
+
+      .pagination-wrapper {
+        text-align: center;
+
+        .el-pagination {
+          justify-content: center;
+        }
+      }
+    }
+  }
 }
 </style>

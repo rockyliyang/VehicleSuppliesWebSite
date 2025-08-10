@@ -244,7 +244,15 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 如果有保存的位置（比如浏览器前进后退），则恢复到保存的位置
+    if (savedPosition) {
+      return savedPosition
+    }
+    // 否则滚动到页面顶部
+    return { top: 0 }
+  }
 })
 
 // 全局路由守卫 - 在每次路由跳转前验证token

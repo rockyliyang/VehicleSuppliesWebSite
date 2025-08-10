@@ -274,7 +274,8 @@ export default {
         }
       },
       recentProducts: [],
-      recentInquiries: []
+      recentInquiries: [],
+      refreshTimer: null
     }
   },
   computed: {
@@ -311,6 +312,10 @@ export default {
     this.fetchStatistics()
     this.fetchRecentProducts()
     this.fetchRecentInquiries()
+    this.startAutoRefresh()
+  },
+  beforeUnmount() {
+    this.stopAutoRefresh()
   },
   methods: {
     // 获取统计数据
@@ -506,6 +511,23 @@ export default {
     handleInquiryRowClick(row) {
       // 跳转到询价管理页面，可以传递询价ID让其自动打开详情
       this.$router.push(`/admin/inquiries?view=${row.id}`)
+    },
+
+    // 启动自动刷新
+    startAutoRefresh() {
+      this.refreshTimer = setInterval(() => {
+        this.fetchStatistics()
+        this.fetchRecentProducts()
+        this.fetchRecentInquiries()
+      }, 20000) // 每20秒刷新一次
+    },
+
+    // 停止自动刷新
+    stopAutoRefresh() {
+      if (this.refreshTimer) {
+        clearInterval(this.refreshTimer)
+        this.refreshTimer = null
+      }
     }
   }
 }

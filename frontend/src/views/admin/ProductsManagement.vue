@@ -6,33 +6,48 @@
     </div>
 
     <!-- 搜索和筛选 -->
-    <div class="filter-container">
-      <el-input v-model="filters.keyword" placeholder="产品名称/编号" style="width: 200px;" class="filter-item"
-        @keyup.enter="handleFilter" />
-      <el-select v-model="filters.category" placeholder="产品分类" clearable style="width: 200px" class="filter-item">
-        <el-option v-for="item in categoryOptions" :key="item.id" :label="item.name" :value="item.id" />
-      </el-select>
-      <el-select v-model="filters.status" placeholder="状态" clearable style="width: 120px" class="filter-item">
-        <el-option label="上架" value="1" />
-        <el-option label="下架" value="0" />
-      </el-select>
-      <el-select v-model="filters.product_type" placeholder="产品类型" clearable style="width: 120px" class="filter-item">
-        <el-option label="代销" value="consignment" />
-        <el-option label="自营" value="self_operated" />
-      </el-select>
-      <el-button type="primary" @click="handleFilter">
-        <el-icon>
-          <Search />
-        </el-icon>
-        搜索
-      </el-button>
-      <el-button @click="resetFilter">
-        <el-icon>
-          <Refresh />
-        </el-icon>
-        重置
-      </el-button>
-    </div>
+    <el-card class="filter-card">
+      <el-form :model="filters" inline>
+        <el-form-item :label="$t('admin.products.filter.keyword') || '关键词'">
+          <el-input v-model="filters.keyword" :placeholder="$t('admin.products.filter.keyword_placeholder') || '产品名称/编号'" 
+            style="width: 200px;" @keyup.enter="handleFilter" />
+        </el-form-item>
+        <el-form-item :label="$t('admin.products.filter.category') || '产品分类'">
+          <el-select v-model="filters.category" :placeholder="$t('admin.products.filter.category_placeholder') || '选择产品分类'" 
+            clearable style="width: 200px">
+            <el-option v-for="item in categoryOptions" :key="item.id" :label="item.name" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('admin.products.filter.status') || '状态'">
+          <el-select v-model="filters.status" :placeholder="$t('admin.products.filter.status_placeholder') || '选择状态'" 
+            clearable style="width: 120px">
+            <el-option :label="$t('admin.products.status.on_shelf') || '上架'" value="1" />
+            <el-option :label="$t('admin.products.status.off_shelf') || '下架'" value="0" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('admin.products.filter.type') || '产品类型'">
+          <el-select v-model="filters.product_type" :placeholder="$t('admin.products.filter.type_placeholder') || '选择产品类型'" 
+            clearable style="width: 120px">
+            <el-option :label="$t('admin.products.type.consignment') || '代销'" value="consignment" />
+            <el-option :label="$t('admin.products.type.self_operated') || '自营'" value="self_operated" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleFilter">
+            <el-icon>
+              <Search />
+            </el-icon>
+            {{ $t('common.search') || '搜索' }}
+          </el-button>
+          <el-button @click="resetFilter">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            {{ $t('common.reset') || '重置' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
     <!-- 产品表格 -->
     <el-table v-loading="loading" :data="productList" border style="width: 100%" @sort-change="handleSortChange">
@@ -147,7 +162,7 @@
         </el-form-item>
         <el-form-item label="产品图片" prop="images">
           <el-upload class="product-image-uploader" action="/api/product-images/upload?image_type=0"
-            :headers="uploadHeaders" :data="{ product_id: productForm.id, session_id: sessionId }"
+            :headers="uploadHeaders" :data="uploadData"
             :file-list="thumbnailList" list-type="picture-card" :on-preview="handleMediaPreview"
             :on-remove="handleRemove" :on-success="handleUploadSuccess" :before-upload="beforeImageUpload"
             :name="'images'" :limit="1" :multiple="false" :show-file-list="true">
@@ -160,7 +175,7 @@
         </el-form-item>
         <el-form-item label="轮播媒体" prop="carousel_media">
           <el-upload ref="uploadRef" class="product-media-uploader" action="/api/product-images/upload?image_type=1"
-            :headers="uploadHeaders" :data="{ product_id: productForm.id, session_id: sessionId }"
+            :headers="uploadHeaders" :data="uploadData"
             :file-list="carouselList" list-type="picture-card" :on-preview="handleMediaPreview"
             :on-remove="handleRemove" :on-success="handleUploadSuccess" :before-upload="beforeMediaUpload"
             :name="'images'" :limit="10" :multiple="true" :show-file-list="true">
@@ -335,6 +350,14 @@ export default {
       return {
         Authorization: token ? `Bearer ${token}` : ''
       }
+    },
+    uploadData() {
+      // 只有在编辑现有产品时才传递product_id，新建产品时只传递session_id
+      const data = { session_id: this.sessionId }
+      if (this.dialogStatus === 'edit' && this.productForm.id) {
+        data.product_id = this.productForm.id
+      }
+      return data
     }
   },
   created() {
@@ -922,11 +945,12 @@ export default {
   margin-bottom: 20px;
 }
 
-.filter-container {
+.filter-card {
   margin-bottom: 20px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
+
+  .el-form {
+    margin-bottom: 0;
+  }
 }
 
 .product-image {

@@ -567,16 +567,38 @@ async function uploadProduct(productData, selectedImages) {
     // 生成富文本格式的description，使用上传后的详情图片URL
     let richTextDescription = productData.description || '';
     if (uploadedDetailImages && uploadedDetailImages.length > 0) {
-      const imageHtml = uploadedDetailImages.map(imageUrl => {
+      const imageHtml = await Promise.all(uploadedDetailImages.map(async (imageUrl) => {
         // 提取相对路径用于富文本
         const relativePath = imageUrl.replace(config.apiUrl, '');
-        return `<p><img src="${relativePath}"></p>`;
-      }).join('\n');
+        
+        // 获取图片实际尺寸
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          const dimensions = await new Promise((resolve) => {
+            img.onload = () => {
+              resolve({ width: img.naturalWidth, height: img.naturalHeight });
+            };
+            img.onerror = () => {
+              resolve({ width: 750, height: 750 }); // 默认尺寸
+            };
+            img.src = imageUrl;
+          });
+          
+          return `<p><img src="${relativePath}" data-size="${dimensions.width},${dimensions.height}" width="750"></p>`;
+        } catch (error) {
+          // 如果获取尺寸失败，使用默认值
+          return `<p><img src="${relativePath}" data-size="750,750" width="750"></p>`;
+        }
+      }));
+      
+      const imageHtmlString = (await Promise.all(imageHtml)).join('\n');
       
       // 如果原有描述存在，在描述后添加图片；否则只使用图片
       richTextDescription = richTextDescription ? 
-        `${richTextDescription}\n${imageHtml}` : 
-        imageHtml;
+        `${richTextDescription}\n${imageHtmlString}` : 
+        imageHtmlString;
     }
     
     // 准备上传数据（不包含图片URL，因为图片已经单独上传）

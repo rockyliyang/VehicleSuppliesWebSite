@@ -1,17 +1,16 @@
 <template>
   <div class="about-us-admin">
     <div class="admin-header">
-      <h1>About Us 管理</h1>
+      <h1>内容管理</h1>
       <div class="header-actions">
         <button @click="showAddNavModal = true" class="btn btn-primary">
-          <i class="fas fa-plus"></i> 添加导航
+          <i class="fas fa-plus"></i> 添加内容
         </button>
       </div>
     </div>
 
     <!-- 导航管理 -->
     <div class="nav-management">
-      <h2>导航管理</h2>
       <div class="table-container">
         <table class="nav-table">
           <thead>

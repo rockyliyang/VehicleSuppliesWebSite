@@ -1,39 +1,42 @@
 <template>
   <div class="contact-messages">
-    <h1>联系消息管理</h1>
+    <div class="page-header">
+      <h1>联系消息管理</h1>
+      <p>管理用户联系消息，查看消息详情，处理和分配消息</p>
+    </div>
 
-    <el-card class="messages-card">
-      <template #header>
-        <div class="card-header">
-          <span>消息列表</span>
-          <div class="header-actions">
-            <el-button type="primary" @click="refreshMessages">刷新</el-button>
-          </div>
-        </div>
-      </template>
+    <!-- 筛选条件 -->
+    <el-card class="filter-card">
+      <el-form :model="filters" inline>
+        <el-form-item label="状态">
+          <el-select v-model="filters.status" placeholder="选择状态" clearable style="width: 150px;">
+            <el-option label="待处理" value="pending" />
+            <el-option label="处理中" value="in_progress" />
+            <el-option label="已完成" value="completed" />
+            <el-option label="已关闭" value="closed" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="日期范围">
+          <el-date-picker v-model="filters.dateRange" type="daterange" range-separator="至" 
+            start-placeholder="开始日期" end-placeholder="结束日期" format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD" @change="handleFilterChange" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilters">重置</el-button>
+          <el-button type="success" @click="refreshMessages" :loading="loading">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            刷新
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-      <!-- 筛选条件 -->
-      <div class="filter-container">
-        <el-select v-model="filters.status" placeholder="选择状态" clearable @change="handleFilterChange">
-          <el-option label="待处理" value="pending" />
-          <el-option label="处理中" value="in_progress" />
-          <el-option label="已完成" value="completed" />
-          <el-option label="已关闭" value="closed" />
-        </el-select>
+    <!-- 消息列表 -->
+    <el-card class="messages-list-card">
 
-        <el-select v-model="filters.assignedTo" placeholder="选择负责人" clearable @change="handleFilterChange">
-          <el-option v-for="user in businessUsers" :key="user.id" :label="user.name" :value="user.id" />
-        </el-select>
-
-        <el-date-picker v-model="filters.dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
-          end-placeholder="结束日期" @change="handleFilterChange" />
-
-        <el-input v-model="filters.search" placeholder="搜索姓名、邮箱或主题" clearable style="width: 300px; margin-left: 10px"
-          @input="handleFilterChange" />
-      </div>
-
-      <!-- 消息列表 -->
-      <el-table :data="paginatedMessages" style="width: 100%" v-loading="loading">
+      <el-table :data="paginatedMessages" style="width: 100%" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="姓名" width="120" />
         <el-table-column prop="email" label="邮箱" width="200" />
@@ -78,9 +81,9 @@
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container">
+      <div class="pagination-wrapper">
         <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper" :total="filteredMessages.length"
+          layout="total, sizes, prev, pager, next, jumper" :total="pagination.total"
           @size-change="handleSizeChange" @current-change="handleCurrentChange" />
       </div>
     </el-card>
@@ -134,13 +137,13 @@
 </template>
 
 <script>
-import { ArrowDown } from '@element-plus/icons-vue'
-
+import { ArrowDown, Refresh } from '@element-plus/icons-vue'
 
 export default {
   name: 'ContactMessages',
   components: {
-    ArrowDown
+    ArrowDown,
+    Refresh
   },
   data() {
     return {
@@ -156,9 +159,7 @@ export default {
       // 筛选条件
       filters: {
         status: '',
-        assignedTo: '',
-        dateRange: null,
-        search: ''
+        dateRange: null
       },
       
       // 分页
@@ -197,52 +198,13 @@ export default {
     }
   },
   computed: {
-    // 筛选后的消息列表
-    filteredMessages() {
-      let result = this.messages
-      
-      // 按状态筛选
-      if (this.filters.status) {
-        result = result.filter(item => item.status === this.filters.status)
-      }
-      
-      // 按负责人筛选
-      if (this.filters.assignedTo) {
-        result = result.filter(item => item.assignedTo === this.filters.assignedTo)
-      }
-      
-      // 按日期范围筛选
-      if (this.filters.dateRange && this.filters.dateRange.length === 2) {
-        const [startDate, endDate] = this.filters.dateRange
-        result = result.filter(item => {
-          const itemDate = new Date(item.createdAt)
-          return itemDate >= startDate && itemDate <= endDate
-        })
-      }
-      
-      // 按关键词搜索
-      if (this.filters.search) {
-        const keyword = this.filters.search.toLowerCase()
-        result = result.filter(item => 
-          item.name.toLowerCase().includes(keyword) || 
-          item.email.toLowerCase().includes(keyword) ||
-          item.subject.toLowerCase().includes(keyword)
-        )
-      }
-      
-      return result
-    },
-    
-    // 分页后的消息列表
+    // 直接使用消息列表，因为后端已经处理了分页和筛选
     paginatedMessages() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.filteredMessages.slice(start, end)
+      return this.messages
     }
   },
   created() {
     this.loadMessages()
-    this.loadBusinessUsers()
   },
   methods: {
     // 获取状态显示文本
@@ -266,7 +228,23 @@ export default {
     async loadMessages() {
       this.loading = true
       try {
+        // 构建查询参数
+        const params = {
+          page: this.currentPage,
+          pageSize: this.pageSize
+        }
+        
+        // 添加筛选条件
+        if (this.filters.status) {
+          params.status = this.filters.status
+        }
+        if (this.filters.dateRange && this.filters.dateRange.length === 2) {
+          params.startDate = this.filters.dateRange[0]
+          params.endDate = this.filters.dateRange[1]
+        }
+        
         const response = await this.$api.getWithErrorHandler('/contact/admin/messages', {
+          params,
           fallbackKey: 'admin.contact.error.loadFailed'
         })
         this.messages = response.data.items || []
@@ -278,18 +256,16 @@ export default {
       }
     },
 
-    // 加载业务人员列表
-    async loadBusinessUsers() {
-      try {
-        const response = await this.$api.getWithErrorHandler('/admin/users/business-staff', {
-          fallbackKey: 'admin.contact.error.loadBusinessUsersFailed'
-        })
-        this.businessUsers = response.data.users || []
-      } catch (error) {
-        console.error('加载业务人员列表失败:', error)
-      }
-    },
+
     
+    // 重置筛选条件
+    resetFilters() {
+      this.filters.status = ''
+      this.filters.dateRange = null
+      this.currentPage = 1
+      this.loadMessages()
+    },
+
     // 刷新消息列表
     refreshMessages() {
       this.loadMessages()
@@ -349,121 +325,65 @@ export default {
     // 处理筛选条件变化
     handleFilterChange() {
       this.currentPage = 1 // 重置到第一页
+      this.loadMessages()
     },
     
     // 处理每页显示数量变化
     handleSizeChange(val) {
       this.pageSize = val
       this.currentPage = 1 // 重置到第一页
+      this.loadMessages()
     },
     
     // 处理页码变化
     handleCurrentChange(val) {
       this.currentPage = val
+      this.loadMessages()
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-$primary-color: #409EFF;
-$success-color: #67C23A;
-$warning-color: #E6A23C;
-$danger-color: #F56C6C;
-$info-color: #909399;
-$text-color-primary: #303133;
-$text-color-regular: #606266;
-$text-color-secondary: #909399;
-$border-color-light: #EBEEF5;
-$background-color-light: #F5F7FA;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$border-radius-sm: 2px;
-$border-radius-md: 4px;
+@import '@/assets/styles/_mixins.scss';
 
 .contact-messages {
-  padding: $spacing-lg;
+  padding: 20px;
 
-  h1 {
-    color: $text-color-primary;
-    margin-bottom: $spacing-lg;
-  }
-}
+  .page-header {
+    margin-bottom: 20px;
 
-.messages-card {
-  :deep(.el-card__header) {
-    background-color: $background-color-light;
-    border-bottom: 1px solid $border-color-light;
-  }
+    h1 {
+      margin: 0 0 8px 0;
+      color: #303133;
+      font-size: 24px;
+      font-weight: 600;
+    }
 
-  :deep(.el-card__body) {
-    padding: $spacing-lg;
-  }
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  span {
-    font-size: 16px;
-    font-weight: 500;
-    color: $text-color-primary;
-  }
-}
-
-.header-actions {
-  display: flex;
-  gap: $spacing-sm;
-}
-
-.filter-container {
-  margin-bottom: $spacing-lg;
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  flex-wrap: wrap;
-
-  :deep(.el-select) {
-    min-width: 150px;
-
-    .el-input__inner {
-      border-radius: $border-radius-md;
+    p {
+      margin: 0;
+      color: #606266;
+      font-size: 14px;
     }
   }
 
-  :deep(.el-date-editor) {
-    .el-input__inner {
-      border-radius: $border-radius-md;
+  .filter-card {
+    margin-bottom: 20px;
+
+    .el-form {
+      margin-bottom: 0;
     }
   }
 
-  :deep(.el-input) {
-    .el-input__inner {
-      border-radius: $border-radius-md;
+  .messages-list-card {
+    .text-secondary {
+      color: #909399;
+      font-size: 12px;
     }
-  }
-}
 
-:deep(.el-table) {
-  border-radius: $border-radius-md;
-  overflow: hidden;
-
-  .el-table__header {
-    background-color: $background-color-light;
-
-    th {
-      background-color: $background-color-light;
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-  }
-
-  .el-table__row {
-    &:hover {
-      background-color: #F5F7FA;
+    .pagination-wrapper {
+      margin-top: 20px;
+      text-align: right;
     }
   }
 }
@@ -473,25 +393,7 @@ $border-radius-md: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: $text-color-regular;
-}
-
-.pagination-container {
-  margin-top: $spacing-lg;
-  display: flex;
-  justify-content: flex-end;
-
-  :deep(.el-pagination) {
-    .el-pager li {
-      border-radius: $border-radius-sm;
-      margin: 0 2px;
-    }
-
-    .btn-prev,
-    .btn-next {
-      border-radius: $border-radius-sm;
-    }
-  }
+  color: #606266;
 }
 
 .action-buttons {
@@ -500,115 +402,88 @@ $border-radius-md: 4px;
   flex-wrap: nowrap;
 
   :deep(.el-button) {
-    border-radius: $border-radius-sm;
-
     &.el-button--small {
       padding: 5px 8px;
     }
   }
-
-  :deep(.el-dropdown) {
-    .el-button {
-      border-radius: $border-radius-sm;
-    }
-  }
-}
-
-:deep(.el-dialog) {
-  border-radius: $border-radius-md;
-
-  .el-dialog__header {
-    background-color: $background-color-light;
-    border-bottom: 1px solid $border-color-light;
-
-    .el-dialog__title {
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-  }
-
-  .el-dialog__body {
-    padding: $spacing-lg;
-  }
 }
 
 .message-detail {
-  margin-bottom: $spacing-lg;
+  margin-bottom: 20px;
 
   :deep(.el-descriptions) {
     .el-descriptions__header {
-      margin-bottom: $spacing-md;
+      margin-bottom: 16px;
     }
 
     .el-descriptions__label {
-      color: $text-color-primary;
+      color: #303133;
       font-weight: 500;
     }
 
     .el-descriptions__content {
-      color: $text-color-regular;
+      color: #606266;
     }
   }
 }
 
 .message-content {
-  margin-top: $spacing-lg;
+  margin-top: 20px;
 
   h4 {
-    margin-bottom: $spacing-sm;
-    color: $text-color-primary;
+    margin-bottom: 8px;
+    color: #303133;
     font-weight: 500;
   }
 }
 
 .message-text {
-  background: $background-color-light;
+  background: #F5F7FA;
   padding: 15px;
-  border-radius: $border-radius-md;
+  border-radius: 4px;
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.6;
-  color: $text-color-regular;
-  border: 1px solid $border-color-light;
+  color: #606266;
+  border: 1px solid #EBEEF5;
 }
 
-:deep(.el-tag) {
-  border-radius: $border-radius-sm;
+@include mobile {
+  .contact-messages {
+    padding: 10px;
 
-  &.el-tag--success {
-    background-color: rgba($success-color, 0.1);
-    border-color: rgba($success-color, 0.2);
-    color: $success-color;
-  }
+    .page-header {
+      h1 {
+        font-size: 20px;
+      }
+    }
 
-  &.el-tag--warning {
-    background-color: rgba($warning-color, 0.1);
-    border-color: rgba($warning-color, 0.2);
-    color: $warning-color;
-  }
+    .filter-card {
+      .el-form {
+        .el-form-item {
+          display: block;
+          margin-bottom: 15px;
 
-  &.el-tag--danger {
-    background-color: rgba($danger-color, 0.1);
-    border-color: rgba($danger-color, 0.2);
-    color: $danger-color;
-  }
+          .el-form-item__content {
+            margin-left: 0 !important;
+          }
+        }
+      }
+    }
 
-  &.el-tag--info {
-    background-color: rgba($info-color, 0.1);
-    border-color: rgba($info-color, 0.2);
-    color: $info-color;
-  }
-}
+    .messages-list-card {
+      .el-table {
+        font-size: 12px;
+      }
 
-:deep(.el-form) {
-  .el-form-item__label {
-    color: $text-color-primary;
-    font-weight: 500;
-  }
+      .pagination-wrapper {
+        text-align: center;
 
-  .el-input__inner,
-  .el-select .el-input__inner {
-    border-radius: $border-radius-md;
+        .el-pagination {
+          justify-content: center;
+        }
+      }
+    }
   }
 }
 </style>

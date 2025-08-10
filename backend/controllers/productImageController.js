@@ -109,10 +109,20 @@ exports.uploadProductImages = async (req, res) => {
             : `/static/images/${file.filename}`;
           console.log('before insert file info to db');
 
+          // 处理product_id的类型转换
+          let processedProductId = null;
+          if (product_id && product_id !== 'undefined' && product_id !== 'null') {
+            // 尝试转换为数字，如果转换失败则设为null
+            const numericProductId = parseInt(product_id);
+            if (!isNaN(numericProductId)) {
+              processedProductId = numericProductId;
+            }
+          }
+
           const result = await connection.query(
             'INSERT INTO product_images (product_id, image_url, image_type, sort_order, session_id, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
             [
-              product_id === 'undefined' ? null : product_id,
+              processedProductId,
               filePath,
               image_type,
               i,

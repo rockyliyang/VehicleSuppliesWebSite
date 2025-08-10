@@ -1,159 +1,189 @@
 <template>
   <div class="logistics-companies">
     <div class="page-header">
-      <h1>Logistics Companies Management</h1>
-      <button @click="showCreateModal" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Add Company
-      </button>
+      <h1>{{ $t('logistics.management.title') || '物流公司管理' }}</h1>
+      <p>{{ $t('logistics.management.description') || '管理物流公司信息，添加、编辑和删除物流公司' }}</p>
     </div>
 
-    <!-- 筛选器 -->
-    <div class="filters">
-      <div class="filter-row">
-        <div class="filter-group">
-          <label>Status:</label>
-          <select v-model="filters.status" @change="loadCompanies">
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label>Search:</label>
-          <input 
-            type="text" 
+    <!-- 筛选条件 -->
+    <el-card class="filter-card">
+      <el-form :model="filters" inline>
+        <el-form-item :label="$t('logistics.filter.status') || '状态'">
+          <el-select v-model="filters.status" :placeholder="$t('logistics.filter.status_placeholder') || '选择状态'" clearable
+            style="width: 150px;" @change="loadCompanies">
+            <el-option value="active" :label="$t('logistics.status.active') || '启用'" />
+            <el-option value="inactive" :label="$t('logistics.status.inactive') || '禁用'" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('logistics.filter.search') || '搜索'">
+          <el-input 
             v-model="filters.search" 
+            :placeholder="$t('logistics.filter.search_placeholder') || '公司名称...'"
             @input="debounceSearch"
-            placeholder="Company name..."
-          >
-        </div>
-      </div>
-    </div>
+            style="width: 200px;"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilters">{{ $t('common.reset') || '重置' }}</el-button>
+          <el-button type="success" @click="loadCompanies" :loading="loading">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            {{ $t('common.refresh') || '刷新' }}
+          </el-button>
+          <el-button type="primary" @click="showCreateModal">
+            <el-icon>
+              <Plus />
+            </el-icon>
+            {{ $t('logistics.action.add') || '添加公司' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
     <!-- 公司列表 -->
-    <div class="companies-table-container">
-      <table class="companies-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Company Name</th>
-            <th>Description</th>
-            <th>Status</th>
-            <th>Created Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="company in companies" :key="company.id">
-            <td>{{ company.id }}</td>
-            <td>{{ company.name }}</td>
-            <td>{{ company.description || 'No description' }}</td>
-            <td>
-              <span :class="'status-badge status-' + company.status">
-                {{ formatStatus(company.status) }}
-              </span>
-            </td>
-            <td>{{ formatDate(company.created_at) }}</td>
-            <td>
-              <button @click="editCompany(company)" class="btn btn-primary btn-sm">
-                Edit
-              </button>
-              <button @click="deleteCompany(company)" class="btn btn-danger btn-sm">
-                Delete
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <el-card class="companies-list-card">
+      <el-table v-loading="loading" :data="companies" stripe>
+        <el-table-column prop="id" :label="$t('logistics.table.id') || 'ID'" width="80" />
+        <el-table-column prop="name" :label="$t('logistics.table.name') || '公司名称'" min-width="150" />
+        <el-table-column :label="$t('logistics.table.description') || '描述'" min-width="200">
+          <template #default="{ row }">
+            {{ row.description || $t('logistics.table.no_description') || '无描述' }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('logistics.table.contact_phone') || '联系电话'" width="150">
+          <template #default="{ row }">
+            {{ row.contact_phone || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('logistics.table.contact_email') || '联系邮箱'" width="180">
+          <template #default="{ row }">
+            {{ row.contact_email || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('logistics.table.website') || '官网'" width="150">
+          <template #default="{ row }">
+            <a v-if="row.website" :href="row.website" target="_blank" class="website-link">
+              {{ row.website }}
+            </a>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('logistics.table.status') || '状态'" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.is_active)">{{ formatStatus(row.is_active) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="created_at" :label="$t('logistics.table.created_at') || '创建时间'" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('logistics.table.actions') || '操作'" width="180" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="editCompany(row)">
+              {{ $t('logistics.action.edit') || '编辑' }}
+            </el-button>
+            <el-button type="danger" size="small" @click="deleteCompany(row)">
+              {{ $t('logistics.action.delete') || '删除' }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-    <!-- 分页 -->
-    <div class="pagination" v-if="totalPages > 1">
-      <button 
-        @click="changePage(currentPage - 1)" 
-        :disabled="currentPage <= 1"
-        class="btn btn-outline">
-        Previous
-      </button>
-      
-      <span class="page-info">
-        Page {{ currentPage }} of {{ totalPages }}
-      </span>
-      
-      <button 
-        @click="changePage(currentPage + 1)" 
-        :disabled="currentPage >= totalPages"
-        class="btn btn-outline">
-        Next
-      </button>
-    </div>
-
-    <!-- 创建/编辑模态框 -->
-    <div v-if="showModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ isEditing ? 'Edit Company' : 'Add New Company' }}</h3>
-          <button @click="closeModal" class="close-btn">&times;</button>
-        </div>
-        
-        <div class="modal-body">
-          <form @submit.prevent="saveCompany">
-            <div class="form-group">
-              <label>Company Name: <span class="required">*</span></label>
-              <input 
-                type="text" 
-                v-model="companyForm.name" 
-                required
-                placeholder="Enter company name"
-              >
-            </div>
-
-            <div class="form-group">
-              <label>Description:</label>
-              <textarea 
-                v-model="companyForm.description" 
-                placeholder="Enter company description"
-                rows="4"
-              ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label>Status:</label>
-              <select v-model="companyForm.status" required>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" @click="closeModal" class="btn btn-outline">
-                Cancel
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="isSaving">
-                {{ isSaving ? 'Saving...' : (isEditing ? 'Update' : 'Create') }}
-              </button>
-            </div>
-          </form>
-        </div>
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
+        <el-pagination 
+          v-model:current-page="currentPage" 
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]" 
+          :total="totalRecords" 
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange" 
+          @current-change="handleCurrentChange" 
+        />
       </div>
-    </div>
+    </el-card>
 
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading">
-      <p>Loading companies...</p>
-    </div>
+    <!-- 创建/编辑对话框 -->
+    <el-dialog 
+      v-model="showModal" 
+      :title="isEditing ? ($t('logistics.dialog.edit_title') || '编辑公司') : ($t('logistics.dialog.add_title') || '添加新公司')"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="companyForm" label-width="100px" @submit.prevent="saveCompany">
+        <el-form-item :label="$t('logistics.form.name') || '公司名称'" required>
+          <el-input 
+            v-model="companyForm.name" 
+            :placeholder="$t('logistics.form.name_placeholder') || '请输入公司名称'"
+            required
+          />
+        </el-form-item>
+
+        <el-form-item :label="$t('logistics.form.description') || '描述'">
+          <el-input 
+            v-model="companyForm.description" 
+            type="textarea"
+            :placeholder="$t('logistics.form.description_placeholder') || '请输入公司描述'"
+            :rows="4"
+          />
+        </el-form-item>
+
+        <el-form-item :label="$t('logistics.form.contact_phone') || '联系电话'">
+          <el-input 
+            v-model="companyForm.contact_phone" 
+            :placeholder="$t('logistics.form.contact_phone_placeholder') || '请输入联系电话'"
+          />
+        </el-form-item>
+
+        <el-form-item :label="$t('logistics.form.contact_email') || '联系邮箱'">
+          <el-input 
+            v-model="companyForm.contact_email" 
+            :placeholder="$t('logistics.form.contact_email_placeholder') || '请输入联系邮箱'"
+          />
+        </el-form-item>
+
+        <el-form-item :label="$t('logistics.form.website') || '官网'">
+          <el-input 
+            v-model="companyForm.website" 
+            :placeholder="$t('logistics.form.website_placeholder') || '请输入官网地址'"
+          />
+        </el-form-item>
+
+        <el-form-item :label="$t('logistics.form.status') || '状态'" required>
+          <el-select v-model="companyForm.is_active" style="width: 100%">
+            <el-option :value="true" :label="$t('logistics.status.active') || '启用'" />
+            <el-option :value="false" :label="$t('logistics.status.inactive') || '禁用'" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="closeModal">
+          {{ $t('common.cancel') || '取消' }}
+        </el-button>
+        <el-button type="primary" @click="saveCompany" :loading="isSaving">
+          {{ isSaving ? ($t('common.saving') || '保存中...') : ($t('common.save') || '保存') }}
+        </el-button>
+      </template>
+    </el-dialog>
 
     <!-- 空状态 -->
-    <div v-if="!loading && companies.length === 0" class="empty-state">
-      <p>No logistics companies found.</p>
-    </div>
+    <el-empty v-if="!loading && companies.length === 0" :description="$t('logistics.empty.description') || '暂无物流公司数据'" />
   </div>
 </template>
 
 <script>
+import { Refresh, Plus } from '@element-plus/icons-vue'
+
 export default {
   name: 'LogisticsCompanies',
+  components: {
+    Refresh,
+    Plus
+  },
   data() {
     return {
       companies: [],
@@ -163,6 +193,7 @@ export default {
       isEditing: false,
       currentPage: 1,
       totalPages: 1,
+      totalRecords: 0,
       pageSize: 20,
       searchTimeout: null,
       filters: {
@@ -173,7 +204,10 @@ export default {
         id: null,
         name: '',
         description: '',
-        status: 'active'
+        contact_phone: '',
+        contact_email: '',
+        website: '',
+        is_active: true
       }
     }
   },
@@ -197,6 +231,7 @@ export default {
         if (response.success) {
           this.companies = response.data.companies
           this.totalPages = response.data.pagination.pages
+          this.totalRecords = response.data.pagination.total
         }
       } catch (error) {
         console.error('Error loading companies:', error)
@@ -211,7 +246,10 @@ export default {
         id: null,
         name: '',
         description: '',
-        status: 'active'
+        contact_phone: '',
+        contact_email: '',
+        website: '',
+        is_active: true
       }
       this.showModal = true
     },
@@ -222,7 +260,10 @@ export default {
         id: company.id,
         name: company.name,
         description: company.description || '',
-        status: company.status
+        contact_phone: company.contact_phone || '',
+        contact_email: company.contact_email || '',
+        website: company.website || '',
+        is_active: company.is_active
       }
       this.showModal = true
     },
@@ -233,7 +274,10 @@ export default {
         const companyData = {
           name: this.companyForm.name,
           description: this.companyForm.description,
-          status: this.companyForm.status
+          contact_phone: this.companyForm.contact_phone,
+          contact_email: this.companyForm.contact_email,
+          website: this.companyForm.website,
+          is_active: this.companyForm.is_active
         }
 
         let response
@@ -260,11 +304,17 @@ export default {
     },
 
     async deleteCompany(company) {
-      if (!confirm(`Are you sure you want to delete "${company.name}"?`)) {
-        return
-      }
-
       try {
+        await this.$confirm(
+          this.$t('logistics.confirm.delete_message', { name: company.name }) || `确定要删除"${company.name}"吗？`,
+          this.$t('logistics.confirm.delete_title') || '确认删除',
+          {
+            confirmButtonText: this.$t('common.confirm') || '确定',
+            cancelButtonText: this.$t('common.cancel') || '取消',
+            type: 'warning'
+          }
+        )
+
         const response = await this.$api.deleteWithErrorHandler(`/order-management/admin/logistics-companies/${company.id}`, {
           fallbackKey: 'logistics.error.deleteFailed'
         })
@@ -274,7 +324,9 @@ export default {
           this.$message.success(this.$t(response.message))
         }
       } catch (error) {
-        console.error('Error deleting company:', error)
+        if (error !== 'cancel') {
+          console.error('Error deleting company:', error)
+        }
       }
     },
 
@@ -285,7 +337,10 @@ export default {
         id: null,
         name: '',
         description: '',
-        status: 'active'
+        contact_phone: '',
+        contact_email: '',
+        website: '',
+        is_active: true
       }
     },
 
@@ -296,6 +351,26 @@ export default {
       }
     },
 
+    handleSizeChange(newSize) {
+      this.pageSize = newSize
+      this.currentPage = 1
+      this.loadCompanies()
+    },
+
+    handleCurrentChange(newPage) {
+      this.currentPage = newPage
+      this.loadCompanies()
+    },
+
+    resetFilters() {
+      this.filters = {
+        status: '',
+        search: ''
+      }
+      this.currentPage = 1
+      this.loadCompanies()
+    },
+
     debounceSearch() {
       clearTimeout(this.searchTimeout)
       this.searchTimeout = setTimeout(() => {
@@ -304,12 +379,12 @@ export default {
       }, 500)
     },
 
-    formatStatus(status) {
-      const statusMap = {
-        active: 'Active',
-        inactive: 'Inactive'
-      }
-      return statusMap[status] || status
+    formatStatus(isActive) {
+      return isActive ? (this.$t('logistics.status.active') || '启用') : (this.$t('logistics.status.inactive') || '禁用')
+    },
+
+    getStatusType(isActive) {
+      return isActive ? 'success' : 'info'
     },
 
     formatDate(dateString) {
@@ -319,269 +394,90 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/assets/styles/_mixins.scss';
+
 .logistics-companies {
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.page-header h1 {
-  color: #333;
-  margin: 0;
-}
-
-.filters {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.filter-row {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  align-items: end;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.filter-group label {
-  font-weight: 500;
-  color: #555;
-}
-
-.filter-group select,
-.filter-group input {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.companies-table-container {
-  overflow-x: auto;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.companies-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.companies-table th,
-.companies-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.companies-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #555;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.status-active { 
-  background: #d1e7dd; 
-  color: #0f5132; 
-}
-
-.status-inactive { 
-  background: #e2e3e5; 
-  color: #41464b; 
-}
-
-.btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-right: 5px;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-primary {
-  background: #007bff;
-  color: white;
-}
-
-.btn-danger {
-  background: #dc3545;
-  color: white;
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1px solid #ddd;
-  color: #333;
-}
-
-.btn-sm {
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
-.btn:hover {
-  opacity: 0.9;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.page-info {
-  color: #666;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  width: 90%;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: #333;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #999;
-}
-
-.close-btn:hover {
-  color: #333;
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-  color: #333;
-}
-
-.required {
-  color: #dc3545;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.form-group textarea {
-  resize: vertical;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-}
-
-.loading,
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-}
-
-@media (max-width: 768px) {
   .page-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 15px;
+    margin-bottom: 20px;
+
+    h1 {
+      margin: 0 0 8px 0;
+      color: #303133;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: #606266;
+      font-size: 14px;
+    }
   }
-  
-  .filter-row {
-    flex-direction: column;
-    align-items: stretch;
+
+  .filter-card {
+    margin-bottom: 20px;
+
+    .el-form {
+      margin-bottom: 0;
+    }
   }
-  
-  .companies-table {
-    font-size: 14px;
+
+  .companies-list-card {
+    .pagination-wrapper {
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    .website-link {
+      color: #409eff;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
-  
-  .modal-content {
-    width: 95%;
-    margin: 10px;
+}
+
+@include mobile {
+  .logistics-companies {
+    padding: 10px;
+
+    .page-header {
+      h1 {
+        font-size: 20px;
+      }
+    }
+
+    .filter-card {
+      .el-form {
+        .el-form-item {
+          display: block;
+          margin-bottom: 15px;
+
+          .el-form-item__content {
+            margin-left: 0 !important;
+          }
+        }
+      }
+    }
+
+    .companies-list-card {
+      .el-table {
+        font-size: 12px;
+      }
+
+      .pagination-wrapper {
+        text-align: center;
+
+        .el-pagination {
+          justify-content: center;
+        }
+      }
+    }
   }
 }
 </style>

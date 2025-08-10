@@ -244,3 +244,64 @@
   line-height: $line-height-normal;
   color: $text-primary;
 }
+
+// 页面布局相关 mixins
+@mixin page-container {
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: calc(100vh - 60px);
+}
+
+@mixin page-header {
+  margin-bottom: 20px;
+  
+  h1 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #303133;
+  }
+  
+  p {
+    margin: 0;
+    color: #606266;
+    font-size: 14px;
+  }
+}
+
+@mixin filter-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+  
+  .el-form {
+    .el-form-item {
+      margin-bottom: 18px;
+    }
+  }
+}
+
+@mixin list-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+@mixin card-header {
+  @include flex-between;
+  padding: 20px 20px 0 20px;
+  
+  span {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+  }
+}
+
+@mixin pagination-wrapper {
+  padding: 20px;
+  @include flex-end;
+}

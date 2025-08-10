@@ -70,7 +70,7 @@ class UserManagementController {
       const currentUserId = req.userId; // 从JWT中获取当前用户ID
       const insertResult = await query(
         `INSERT INTO users (username, email, phone, password, user_role, language, is_active, created_by, updated_by) 
-         VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8) RETURNING id`,
+         VALUES ($1, $2, $3, $4, $5, $6, 1, $7, $8) RETURNING id`,
         [username, email, phone || null, hashedPassword, user_role, language || 'en', currentUserId, currentUserId]
       );
       

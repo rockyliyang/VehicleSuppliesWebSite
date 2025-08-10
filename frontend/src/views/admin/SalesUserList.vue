@@ -1,77 +1,86 @@
 <template>
   <div class="sales-user-list">
-    <h1>业务员列表</h1>
+    <div class="page-header">
+      <h1>{{ $t('admin.salesUsers.title') || '业务员管理' }}</h1>
+      <p>{{ $t('admin.salesUsers.description') || '管理业务员账户，创建、编辑和删除业务员用户，分配业务组' }}</p>
+    </div>
 
-    <el-card class="users-card">
+    <!-- 筛选条件 -->
+    <el-card class="filter-card">
+      <el-form :model="filters" inline>
+        <el-form-item :label="$t('admin.salesUsers.filter.businessGroup') || '业务组'">
+          <el-select v-model="filters.businessGroup" :placeholder="$t('admin.salesUsers.filter.businessGroupPlaceholder') || '选择业务组'" clearable @change="handleFilterChange" style="width: 200px;">
+            <el-option :label="$t('common.all') || '全部'" value="" />
+            <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('admin.salesUsers.filter.search') || '搜索'">
+          <el-input v-model="filters.search" :placeholder="$t('admin.salesUsers.filter.searchPlaceholder') || '搜索姓名或邮箱'" clearable @input="handleFilterChange" style="width: 250px;" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="clearFilters">{{ $t('common.reset') || '重置' }}</el-button>
+          <el-button type="success" @click="refreshUsers" :loading="refreshing">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            {{ $t('common.refresh') || '刷新' }}
+          </el-button>
+          <el-button type="primary" @click="showCreateDialog">{{ $t('admin.salesUsers.action.create') || '新增业务员' }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 业务员列表 -->
+    <el-card class="sales-users-list-card">
       <template #header>
         <div class="card-header">
           <span>业务员列表</span>
-          <div class="header-actions">
-            <el-button type="primary" @click="showCreateDialog">新增业务员</el-button>
-            <el-button type="primary" @click="refreshUsers">刷新</el-button>
-          </div>
         </div>
       </template>
 
-      <!-- 筛选条件 -->
-      <div class="filter-container">
-        <div class="filter-item">
-          <label class="filter-label">业务组:</label>
-          <el-select v-model="filters.businessGroup" placeholder="选择业务组" clearable @change="handleFilterChange">
-            <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id" />
-          </el-select>
-        </div>
-
-        <div class="filter-item">
-          <label class="filter-label">搜索:</label>
-          <el-input v-model="filters.search" placeholder="搜索姓名或邮箱" clearable @input="handleFilterChange" />
-        </div>
-
-        <el-button @click="clearFilters" type="primary" plain>清除所有筛选</el-button>
-      </div>
-
       <!-- 用户列表 -->
-      <el-table :data="paginatedUsers" style="width: 100%" v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="姓名" width="140" show-overflow-tooltip />
-        <el-table-column prop="email" label="邮箱" width="220" show-overflow-tooltip />
-        <el-table-column prop="role" label="角色" width="100" align="center">
-
-          <el-tag type="warning">业务员</el-tag>
+      <el-table :data="paginatedUsers" style="width: 100%" v-loading="loading" stripe>
+        <el-table-column prop="id" :label="$t('admin.salesUsers.table.id') || 'ID'" width="80" />
+        <el-table-column prop="name" :label="$t('admin.salesUsers.table.name') || '姓名'" width="140" show-overflow-tooltip />
+        <el-table-column prop="email" :label="$t('admin.salesUsers.table.email') || '邮箱'" width="220" show-overflow-tooltip />
+        <el-table-column prop="role" :label="$t('admin.salesUsers.table.role') || '角色'" width="100" align="center">
+          <template #default>
+            <el-tag type="warning">{{ $t('admin.salesUsers.table.salesRole') || '业务员' }}</el-tag>
+          </template>
         </el-table-column>
-        <el-table-column prop="businessGroups" label="所属业务组" min-width="180">
+        <el-table-column prop="businessGroups" :label="$t('admin.salesUsers.table.businessGroups') || '所属业务组'" min-width="180">
           <template #default="{row}">
             <div v-if="row.businessGroups && row.businessGroups.length > 0" class="business-groups">
               <el-tag v-for="group in row.businessGroups" :key="group.id" size="small" type="success" style="margin-right: 4px; margin-bottom: 2px;">
                 {{ group.name }}
               </el-tag>
             </div>
-            <span v-else class="no-group">未分配</span>
+            <span v-else class="no-group">{{ $t('admin.salesUsers.table.noGroup') || '未分配' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="isActive" label="状态" width="100" align="center">
+        <el-table-column prop="isActive" :label="$t('admin.salesUsers.table.status') || '状态'" width="100" align="center">
           <template #default="{row}">
             <el-tag :type="row.isActive ? 'success' : 'danger'">
-              {{ row.isActive ? '已激活' : '未激活' }}
+              {{ row.isActive ? ($t('admin.salesUsers.table.active') || '已激活') : ($t('admin.salesUsers.table.inactive') || '未激活') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="注册时间" width="160" align="center">
+        <el-table-column prop="createdAt" :label="$t('admin.salesUsers.table.createdAt') || '注册时间'" width="160" align="center">
           <template #default="{row}">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250" align="center">
+        <el-table-column :label="$t('admin.salesUsers.table.actions') || '操作'" width="250" fixed="right">
           <template #default="{row}">
-            <el-button size="small" @click="showUserDetail(row)">详情</el-button>
-            <el-button size="small" @click="showEditDialog(row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="confirmDelete(row)">删除</el-button>
+            <el-button type="primary" size="small" @click="showUserDetail(row)">{{ $t('admin.salesUsers.action.detail') || '详情' }}</el-button>
+            <el-button type="success" size="small" @click="showEditDialog(row)">{{ $t('admin.salesUsers.action.edit') || '编辑' }}</el-button>
+            <el-button type="danger" size="small" @click="confirmDelete(row)">{{ $t('admin.salesUsers.action.delete') || '删除' }}</el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container">
+      <div class="pagination-wrapper">
         <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange"
           @current-change="handleCurrentChange" />
@@ -79,79 +88,79 @@
     </el-card>
 
     <!-- 用户详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="用户详情" width="600px">
+    <el-dialog v-model="detailDialogVisible" :title="$t('admin.salesUsers.detail.title') || '业务员详情'" width="600px">
       <div v-if="selectedUser" class="user-detail">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="ID">{{ selectedUser.id }}</el-descriptions-item>
-          <el-descriptions-item label="姓名">{{ selectedUser.name }}</el-descriptions-item>
-          <el-descriptions-item label="邮箱">{{ selectedUser.email }}</el-descriptions-item>
-          <el-descriptions-item label="角色">
-            <el-tag type="warning">业务员</el-tag>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.id') || 'ID'">{{ selectedUser.id }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.name') || '姓名'">{{ selectedUser.name }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.email') || '邮箱'">{{ selectedUser.email }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.role') || '角色'">
+            <el-tag type="warning">{{ $t('admin.salesUsers.table.salesRole') || '业务员' }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="所属业务组">
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.businessGroups') || '所属业务组'">
             <div v-if="selectedUser.businessGroups && selectedUser.businessGroups.length > 0" class="business-groups">
               <el-tag v-for="group in selectedUser.businessGroups" :key="group.id" type="success" style="margin-right: 4px; margin-bottom: 2px;">
                 {{ group.name }}
               </el-tag>
             </div>
-            <span v-else class="no-group">未分配</span>
+            <span v-else class="no-group">{{ $t('admin.salesUsers.table.noGroup') || '未分配' }}</span>
           </el-descriptions-item>
-          <el-descriptions-item label="状态">
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.status') || '状态'">
             <el-tag :type="selectedUser.isActive ? 'success' : 'danger'">
-              {{ selectedUser.isActive ? '已激活' : '未激活' }}
+              {{ selectedUser.isActive ? ($t('admin.salesUsers.table.active') || '已激活') : ($t('admin.salesUsers.table.inactive') || '未激活') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="注册时间">{{ formatDate(selectedUser.createdAt) }}</el-descriptions-item>
-          <el-descriptions-item label="更新时间">{{ formatDate(selectedUser.updatedAt) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.createdAt') || '注册时间'">{{ formatDate(selectedUser.createdAt) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.updatedAt') || '更新时间'">{{ formatDate(selectedUser.updatedAt) }}</el-descriptions-item>
         </el-descriptions>
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="detailDialogVisible = false">关闭</el-button>
+          <el-button @click="detailDialogVisible = false">{{ $t('common.close') || '关闭' }}</el-button>
         </span>
       </template>
     </el-dialog>
 
     <!-- 创建用户对话框 -->
-    <el-dialog v-model="createDialogVisible" title="新增业务员" width="500px">
+    <el-dialog v-model="createDialogVisible" :title="$t('admin.salesUsers.create.title') || '新增业务员'" width="500px">
       <el-form :model="createForm" :rules="createRules" ref="createFormRef" label-width="100px">
-        <el-form-item label="姓名" prop="username">
-          <el-input v-model="createForm.username" placeholder="请输入姓名" />
+        <el-form-item :label="$t('admin.salesUsers.create.name') || '姓名'" prop="username">
+          <el-input v-model="createForm.username" :placeholder="$t('admin.salesUsers.create.namePlaceholder') || '请输入姓名'" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="createForm.email" placeholder="请输入邮箱" />
+        <el-form-item :label="$t('admin.salesUsers.create.email') || '邮箱'" prop="email">
+          <el-input v-model="createForm.email" :placeholder="$t('admin.salesUsers.create.emailPlaceholder') || '请输入邮箱'" />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password autocomplete="off" />
+        <el-form-item :label="$t('admin.salesUsers.create.password') || '密码'" prop="password">
+          <el-input v-model="createForm.password" type="password" :placeholder="$t('admin.salesUsers.create.passwordPlaceholder') || '请输入密码'" show-password autocomplete="off" />
         </el-form-item>
-        <el-form-item label="业务组" prop="businessGroupId">
-          <el-select v-model="createForm.businessGroupId" placeholder="请选择业务组" style="width: 100%">
+        <el-form-item :label="$t('admin.salesUsers.create.businessGroup') || '业务组'" prop="businessGroupId">
+          <el-select v-model="createForm.businessGroupId" :placeholder="$t('admin.salesUsers.create.businessGroupPlaceholder') || '请选择业务组'" style="width: 100%">
             <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="createDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="createUser" :loading="creating">确定</el-button>
+          <el-button @click="createDialogVisible = false">{{ $t('common.cancel') || '取消' }}</el-button>
+          <el-button type="primary" @click="createUser" :loading="creating">{{ creating ? ($t('common.creating') || '创建中...') : ($t('common.confirm') || '确定') }}</el-button>
         </span>
       </template>
     </el-dialog>
 
     <!-- 编辑用户对话框 -->
-    <el-dialog v-model="editDialogVisible" title="编辑业务员" width="600px">
+    <el-dialog v-model="editDialogVisible" :title="$t('admin.salesUsers.edit.title') || '编辑业务员'" width="600px">
       <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="100px">
-        <el-form-item label="姓名" prop="username">
-          <el-input v-model="editForm.username" placeholder="请输入姓名" />
+        <el-form-item :label="$t('admin.salesUsers.edit.name') || '姓名'" prop="username">
+          <el-input v-model="editForm.username" :placeholder="$t('admin.salesUsers.edit.namePlaceholder') || '请输入姓名'" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="editForm.email" placeholder="请输入邮箱" />
+        <el-form-item :label="$t('admin.salesUsers.edit.email') || '邮箱'" prop="email">
+          <el-input v-model="editForm.email" :placeholder="$t('admin.salesUsers.edit.emailPlaceholder') || '请输入邮箱'" />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="editForm.password" type="password" placeholder="留空则不修改密码" show-password autocomplete="off" />
+        <el-form-item :label="$t('admin.salesUsers.edit.password') || '密码'" prop="password">
+          <el-input v-model="editForm.password" type="password" :placeholder="$t('admin.salesUsers.edit.passwordPlaceholder') || '留空则不修改密码'" show-password autocomplete="off" />
         </el-form-item>
-        <el-form-item label="业务组" v-if="canEditBusinessGroup">
-          <el-select v-model="editForm.businessGroupIds" placeholder="请选择业务组" style="width: 100%" multiple clearable :disabled="!canEditBusinessGroup">
+        <el-form-item :label="$t('admin.salesUsers.edit.businessGroups') || '业务组'" v-if="canEditBusinessGroup">
+          <el-select v-model="editForm.businessGroupIds" :placeholder="$t('admin.salesUsers.edit.businessGroupsPlaceholder') || '请选择业务组'" style="width: 100%" multiple clearable :disabled="!canEditBusinessGroup">
             <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id">
               <span>{{ group.name }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">
@@ -160,14 +169,14 @@
             </el-option>
           </el-select>
           <div class="form-tip" v-if="!canEditBusinessGroup">
-            <el-text type="info" size="small">您没有权限修改业务组</el-text>
+            <el-text type="info" size="small">{{ $t('admin.salesUsers.edit.noPermissionTip') || '您没有权限修改业务组' }}</el-text>
           </div>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="editDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="updateUser" :loading="updating">确定</el-button>
+          <el-button @click="editDialogVisible = false">{{ $t('common.cancel') || '取消' }}</el-button>
+          <el-button type="primary" @click="updateUser" :loading="updating">{{ updating ? ($t('common.updating') || '更新中...') : ($t('common.confirm') || '确定') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -184,6 +193,7 @@ export default {
     return {
       // 数据加载状态
       loading: false,
+      refreshing: false,
       creating: false,
       updating: false,
       
@@ -304,7 +314,7 @@ export default {
         const response = await this.$api.get('/admin/users', { params })
         if (response.success) {
           const rawUsers = response.data.items || []
-          this.total = response.data.total || 0
+          this.total = response.data.pagination?.total || 0
           
           this.users = rawUsers.map(user => ({
             id: user.id,
@@ -351,8 +361,16 @@ export default {
     },
     
     // 刷新用户列表
-    refreshUsers() {
-      this.loadUsers()
+    async refreshUsers() {
+      this.refreshing = true;
+      try {
+        await this.loadUsers();
+      } catch (error) {
+        console.error('刷新用户列表失败:', error);
+        this.$message.error('刷新用户列表失败');
+      } finally {
+        this.refreshing = false;
+      }
     },
     
     // 处理筛选条件变化
@@ -405,7 +423,7 @@ export default {
     showEditDialog(user) {
       this.editForm = {
         id: user.id,
-        username: user.username,
+        username: user.name, // 修复：使用 user.name 而不是 user.username
         email: user.email,
         password: '',
         businessGroupIds: user.businessGroups ? user.businessGroups.map(group => group.id) : []
@@ -428,7 +446,7 @@ export default {
           username: this.createForm.username,
           email: this.createForm.email,
           password: this.createForm.password,
-          user_role: 'business_staff',
+          user_role: 'business',
           business_group_id: this.createForm.businessGroupId
         })
         
@@ -541,30 +559,30 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$primary-color: #409EFF;
-$success-color: #67C23A;
-$warning-color: #E6A23C;
-$danger-color: #F56C6C;
-$info-color: #909399;
-$text-color-primary: #303133;
-$text-color-regular: #606266;
-$text-color-secondary: #909399;
-$border-color-light: #EBEEF5;
-$background-color-light: #F5F7FA;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$border-radius-sm: 2px;
-$border-radius-md: 4px;
+@import '@/assets/styles/_mixins.scss';
 
-.user-management {
-  padding: $spacing-lg;
+.sales-users {
+  @include page-container;
+}
 
-  h1 {
-    color: $text-color-primary;
-    margin-bottom: $spacing-lg;
-    font-weight: 500;
-  }
+.page-header {
+  @include page-header;
+}
+
+.filter-card {
+  @include filter-card;
+}
+
+.sales-users-list-card {
+  @include list-card;
+}
+
+.card-header {
+  @include card-header;
+}
+
+.pagination-wrapper {
+  @include pagination-wrapper;
 }
 
 .form-tip {
@@ -579,283 +597,27 @@ $border-radius-md: 4px;
 
 .no-group {
   color: #909399;
-  font-style: italic;
 }
 
-.users-card {
-  :deep(.el-card__header) {
-    background-color: $background-color-light;
-    border-bottom: 1px solid $border-color-light;
-  }
-
-  :deep(.el-card__body) {
-    padding: $spacing-lg;
-  }
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  span {
-    font-size: 16px;
-    font-weight: 500;
-    color: $text-color-primary;
-  }
-}
-
-.header-actions {
-  display: flex;
-  gap: $spacing-sm;
-
-  :deep(.el-button) {
-    border-radius: $border-radius-md;
-  }
-}
-
-.filter-container {
-  margin-bottom: $spacing-lg;
-  display: flex;
-  align-items: flex-end;
-  gap: $spacing-lg;
-  flex-wrap: wrap;
-  padding: $spacing-md;
-  background-color: $background-color-light;
-  border-radius: $border-radius-md;
-  border: 1px solid $border-color-light;
-
-  .filter-item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 200px;
-
-    .filter-label {
-      font-size: 14px;
-      color: $text-color-primary;
-      font-weight: 500;
-      margin: 0;
-    }
-
-    .filter-input-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      position: relative;
-
-      :deep(.el-select) {
-        flex: 1;
-        min-width: 180px;
-
-        .el-input__inner {
-          border-radius: $border-radius-md;
-        }
-      }
-
-      :deep(.el-input) {
-        flex: 1;
-        min-width: 180px;
-
-        .el-input__inner {
-          border-radius: $border-radius-md;
-        }
-      }
-
-      .clear-btn {
-        padding: 4px;
-        min-height: auto;
-
-        &:hover {
-          color: $danger-color;
-          background-color: rgba($danger-color, 0.1);
-        }
-
-        :deep(.el-icon) {
-          font-size: 14px;
-        }
+// 移动端适配
+@media (max-width: 768px) {
+  .filter-card {
+    .el-form {
+      .el-form-item {
+        margin-bottom: 16px;
       }
     }
   }
 
-  >.el-button {
-    margin-left: auto;
-    align-self: flex-end;
-  }
-}
-
-:deep(.el-table) {
-  border-radius: $border-radius-md;
-  overflow: hidden;
-
-  .el-table__header {
-    background-color: $background-color-light;
-
-    th {
-      background-color: $background-color-light;
-      color: $text-color-primary;
-      font-weight: 500;
+  .sales-users-list-card {
+    .el-table {
+      font-size: 12px;
     }
   }
 
-  .el-table__row {
-    &:hover {
-      background-color: #F5F7FA;
-    }
+  .el-dialog {
+    width: 90% !important;
+    margin: 5vh auto !important;
   }
-}
-
-.pagination-container {
-  margin-top: $spacing-lg;
-  display: flex;
-  justify-content: flex-end;
-
-  :deep(.el-pagination) {
-    .el-pager li {
-      border-radius: $border-radius-sm;
-      margin: 0 2px;
-    }
-
-    .btn-prev,
-    .btn-next {
-      border-radius: $border-radius-sm;
-    }
-  }
-}
-
-.action-buttons {
-  display: flex;
-  gap: 5px;
-  flex-wrap: nowrap;
-
-  :deep(.el-button) {
-    border-radius: $border-radius-sm;
-
-    &.el-button--small {
-      padding: 5px 8px;
-    }
-  }
-
-  :deep(.el-dropdown) {
-    .el-button {
-      border-radius: $border-radius-sm;
-    }
-  }
-}
-
-:deep(.el-dialog) {
-  border-radius: $border-radius-md;
-
-  .el-dialog__header {
-    background-color: $background-color-light;
-    border-bottom: 1px solid $border-color-light;
-
-    .el-dialog__title {
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-  }
-
-  .el-dialog__body {
-    padding: $spacing-lg;
-  }
-}
-
-.user-detail {
-  margin-bottom: $spacing-lg;
-
-  :deep(.el-descriptions) {
-    .el-descriptions__header {
-      margin-bottom: $spacing-md;
-    }
-
-    .el-descriptions__label {
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-
-    .el-descriptions__content {
-      color: $text-color-regular;
-    }
-  }
-}
-
-.business-groups-section {
-  margin-top: $spacing-lg;
-
-  h4 {
-    margin-bottom: 15px;
-    color: $text-color-primary;
-    font-weight: 500;
-  }
-
-  :deep(.el-tag) {
-    margin-right: 8px;
-    margin-bottom: 8px;
-    border-radius: $border-radius-sm;
-  }
-}
-
-:deep(.el-tag) {
-  border-radius: $border-radius-sm;
-
-  &.el-tag--success {
-    background-color: rgba($success-color, 0.1);
-    border-color: rgba($success-color, 0.2);
-    color: $success-color;
-  }
-
-  &.el-tag--warning {
-    background-color: rgba($warning-color, 0.1);
-    border-color: rgba($warning-color, 0.2);
-    color: $warning-color;
-  }
-
-  &.el-tag--danger {
-    background-color: rgba($danger-color, 0.1);
-    border-color: rgba($danger-color, 0.2);
-    color: $danger-color;
-  }
-
-  &.el-tag--info {
-    background-color: rgba($info-color, 0.1);
-    border-color: rgba($info-color, 0.2);
-    color: $info-color;
-  }
-}
-
-.business-group-edit {
-  .group-selection {
-    margin-top: $spacing-lg;
-
-    h4 {
-      margin-bottom: 15px;
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-
-    :deep(.el-select) {
-      .el-input__inner {
-        border-radius: $border-radius-md;
-      }
-    }
-  }
-
-  :deep(.el-descriptions) {
-    margin-bottom: $spacing-lg;
-
-    .el-descriptions__label {
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-
-    .el-descriptions__content {
-      color: $text-color-regular;
-    }
-  }
-}
-
-:deep(.el-loading-mask) {
-  border-radius: $border-radius-md;
 }
 </style>

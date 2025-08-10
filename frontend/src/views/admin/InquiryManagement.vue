@@ -9,18 +9,24 @@
     <el-card class="filter-card">
       <el-form :model="filters" inline>
         <el-form-item :label="$t('admin.inquiry.filter.status') || '状态'">
-          <el-select v-model="filters.status" :placeholder="$t('inquiry.management.status_filter') || '选择状态'" clearable>
+          <el-select v-model="filters.status" :placeholder="$t('inquiry.management.status_filter') || '选择状态'" clearable
+            style="width: 150px;">
             <el-option value="inquiried" :label="$t('inquiry.status.inquiried') || '已询价'" />
             <el-option value="approved" :label="$t('inquiry.status.approved') || '已批准'" />
             <el-option value="rejected" :label="$t('inquiry.status.rejected') || '已拒绝'" />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('admin.inquiry.filter.user') || '用户'">
-          <el-input v-model="filters.userId" :placeholder="$t('inquiry.management.search_placeholder') || '输入用户ID'"
-            clearable />
+          <el-select v-model="filters.userId" :placeholder="$t('inquiry.management.search_placeholder') || '选择用户'"
+            clearable filterable remote :remote-method="handleUserSearch" :loading="userSearchLoading" style="width: 200px;">
+            <el-option v-for="user in userOptions" :key="user.id" :label="`${user.username} (${user.email})`"
+              :value="user.id">
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-form-item :label="$t('admin.inquiry.filter.unread') || '未读消息'">
-          <el-select v-model="filters.unreadFilter" :placeholder="$t('admin.inquiry.filter.unread_placeholder') || '选择过滤条件'" clearable>
+          <el-select v-model="filters.unreadFilter"
+            :placeholder="$t('admin.inquiry.filter.unread_placeholder') || '选择过滤条件'" clearable style="width: 150px;">
             <el-option value="unread" :label="$t('admin.inquiry.filter.has_unread') || '有未读消息'" />
             <el-option value="read" :label="$t('admin.inquiry.filter.no_unread') || '无未读消息'" />
           </el-select>
@@ -32,10 +38,11 @@
             value-format="YYYY-MM-DD" @change="handleDateRangeChange" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="loadInquiries">{{ $t('common.search') || '搜索' }}</el-button>
           <el-button @click="resetFilters">{{ $t('common.reset') || '重置' }}</el-button>
           <el-button type="success" @click="refreshData" :loading="refreshing">
-            <el-icon><Refresh /></el-icon>
+            <el-icon>
+              <Refresh />
+            </el-icon>
             {{ $t('common.refresh') || '刷新' }}
           </el-button>
         </el-form-item>
@@ -45,21 +52,11 @@
     <!-- 询价列表 -->
     <el-card class="inquiry-list-card">
       <el-table v-loading="loading" :data="inquiries" stripe>
-        <el-table-column :label="$t('admin.inquiry.table.unreadCount') || '未读消息'" width="120" fixed="left">
+        <el-table-column :label="$t('admin.inquiry.table.unreadCount') || '未读消息'" width="100" fixed="left">
           <template #default="{ row }">
             <div class="unread-message-cell">
-              <el-badge v-if="row.unread_count > 0" :value="row.unread_count" type="danger">
-                <el-icon class="message-icon"><ChatDotRound /></el-icon>
-              </el-badge>
-              <span v-else class="no-unread">{{ $t('admin.inquiry.table.noUnread') || '无未读' }}</span>
-              <el-button 
-                v-if="row.unread_count > 0" 
-                type="text" 
-                size="small" 
-                @click="markAsRead(row.id)"
-                class="mark-read-btn">
-                {{ $t('admin.inquiry.action.markRead') || '标记已读' }}
-              </el-button>
+              <span v-if="row.unread_count > 0" class="unread-number">{{ row.unread_count }}</span>
+              <span v-else class="no-unread">0</span>
             </div>
           </template>
         </el-table-column>
@@ -103,9 +100,11 @@
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="viewDetail(row.id)">{{ $t('inquiry.management.action.view')
               || '查看' }}</el-button>
-            <el-button type="success" size="small" @click="updateStatus(row, 'approved')" :disabled="row.status !== 'inquiried'">{{ 
+            <el-button type="success" size="small" @click="updateStatus(row, 'approved')"
+              :disabled="row.status !== 'inquiried'">{{
               $t('admin.inquiry.action.approve') || '批准' }}</el-button>
-            <el-button type="danger" size="small" @click="updateStatus(row, 'rejected')" :disabled="row.status !== 'inquiried'">{{ 
+            <el-button type="danger" size="small" @click="updateStatus(row, 'rejected')"
+              :disabled="row.status !== 'inquiried'">{{
               $t('admin.inquiry.action.reject') || '拒绝' }}</el-button>
           </template>
         </el-table-column>
@@ -120,11 +119,8 @@
     </el-card>
 
     <!-- 询价详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" :title="$t('admin.inquiry.detail.title') || '询价详情'" 
-      width="95%" 
-      top="2vh"
-      :close-on-click-modal="false"
-      class="inquiry-detail-dialog">
+    <el-dialog v-model="detailDialogVisible" :title="$t('admin.inquiry.detail.title') || '询价详情'" width="95%" top="2vh"
+      :close-on-click-modal="false" class="inquiry-detail-dialog">
       <inquiry-detail v-if="detailDialogVisible && selectedInquiryId" :inquiry-id="selectedInquiryId"
         @status-updated="handleStatusUpdated" @quote-updated="handleQuoteUpdated" @messages-read="handleMessagesRead" />
     </el-dialog>
@@ -132,14 +128,13 @@
 </template>
 
 <script>
-import { ChatDotRound, Refresh } from '@element-plus/icons-vue'
+import { Refresh } from '@element-plus/icons-vue'
 import InquiryDetail from '../../components/admin/InquiryDetail.vue'
 
 export default {
   name: 'InquiryManagement',
   components: {
     InquiryDetail,
-    ChatDotRound,
     Refresh
   },
   data() {
@@ -162,7 +157,9 @@ export default {
       },
       detailDialogVisible: false,
       selectedInquiryId: null,
-      userIdTimer: null
+      userIdTimer: null,
+      userOptions: [],
+      userSearchLoading: false
     }
   },
   watch: {
@@ -176,12 +173,12 @@ export default {
       this.loadInquiries()
     },
     'filters.userId'() {
-      // 用户ID输入有延迟，避免频繁请求
-      clearTimeout(this.userIdTimer)
-      this.userIdTimer = setTimeout(() => {
-        this.pagination.page = 1
-        this.loadInquiries()
-      }, 500)
+      this.pagination.page = 1
+      this.loadInquiries()
+    },
+    dateRange() {
+      this.pagination.page = 1
+      this.loadInquiries()
     }
   },
   mounted() {
@@ -191,6 +188,7 @@ export default {
     }
     
     this.loadInquiries()
+    this.loadUsers()
     
     // 检查是否有查看询价详情的查询参数
     const viewInquiryId = this.$route.query.view;
@@ -375,6 +373,37 @@ export default {
       } catch (error) {
         // 错误已经被统一处理
       }
+    },
+
+    async loadUsers(query = '') {
+      this.userSearchLoading = true
+      try {
+        const params = {
+          limit: 20
+        }
+        if (query) {
+          params.search = query
+        }
+        
+        const response = await this.$api.getWithErrorHandler('/admin/users', {
+          params,
+          fallbackKey: 'admin.user.error.loadFailed'
+        })
+        
+        this.userOptions = response.data.items
+      } catch (error) {
+        // 错误已经被统一处理
+      } finally {
+        this.userSearchLoading = false
+      }
+    },
+
+    handleUserSearch(query) {
+      if (query !== '') {
+        this.loadUsers(query)
+      } else {
+        this.loadUsers()
+      }
     }
   }
 }
@@ -427,9 +456,24 @@ export default {
       align-items: center;
       gap: 4px;
 
-      .message-icon {
-        font-size: 16px;
-        color: #409eff;
+      .unread-count-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+
+        .unread-number {
+          font-size: 18px;
+          font-weight: 600;
+          color: #f56c6c;
+          line-height: 1;
+        }
+
+        .unread-label {
+          font-size: 11px;
+          color: #909399;
+          line-height: 1;
+        }
       }
 
       .no-unread {
@@ -441,7 +485,7 @@ export default {
         padding: 0;
         font-size: 11px;
         color: #67c23a;
-        
+
         &:hover {
           color: #529b2e;
         }

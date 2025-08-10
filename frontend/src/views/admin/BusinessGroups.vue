@@ -1,51 +1,92 @@
 <template>
   <div class="business-groups">
-    <h1>业务组管理</h1>
-
-    <el-card class="groups-card">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <h1>{{ $t('admin.businessGroups.title') }}</h1>
+      <p class="page-description">{{ $t('admin.businessGroups.description') }}</p>
+    </div>
+    
+    <!-- 筛选条件卡片 -->
+    <el-card class="filter-card">
+      <el-form :inline="true" class="filter-form">
+        <el-form-item :label="$t('admin.businessGroups.filter.search')">
+          <el-input
+            v-model="searchKeyword"
+            :placeholder="$t('admin.businessGroups.filter.searchPlaceholder')"
+            style="width: 300px;"
+            clearable
+            @input="handleFilterChange"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button 
+            type="primary" 
+            :loading="refreshing"
+            @click="refreshGroups"
+          >
+            <Refresh />
+            {{ $t('common.refresh') }}
+          </el-button>
+          <el-button type="primary" @click="showAddDialog">
+            {{ $t('admin.businessGroups.actions.add') }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+    
+    <!-- 业务组列表卡片 -->
+    <el-card class="business-groups-list-card">
       <template #header>
         <div class="card-header">
-          <span>业务组列表</span>
-          <el-button type="primary" @click="showAddDialog">添加业务组</el-button>
+          <span>{{ $t('admin.businessGroups.list.title') }}</span>
         </div>
       </template>
 
-      <!-- 搜索条件 -->
-      <div class="filter-container">
-        <el-input 
-          v-model="searchKeyword" 
-          placeholder="搜索业务组名称或描述" 
-          clearable 
-          style="width: 300px"
-          @input="handleFilterChange" 
-        />
-      </div>
-
       <!-- 业务组列表 -->
-      <el-table :data="filteredGroups" style="width: 100%" v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="业务组名称" width="200" />
-        <el-table-column prop="description" label="描述">
-          <template #default="{row}">
-            <div class="description-text">{{ row.description || '无描述' }}</div>
+      <el-table 
+        :data="filteredGroups" 
+        v-loading="loading"
+        style="width: 100%"
+        stripe
+      >
+        <el-table-column prop="id" :label="$t('admin.businessGroups.table.id')" width="80" />
+        <el-table-column prop="name" :label="$t('admin.businessGroups.table.name')" min-width="150" />
+        <el-table-column prop="email" :label="$t('admin.businessGroups.table.email')" min-width="200" />
+        <el-table-column prop="description" :label="$t('admin.businessGroups.table.description')" min-width="200">
+          <template #default="scope">
+            <span class="description-text">{{ scope.row.description || $t('admin.businessGroups.table.noDescription') }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="userCount" label="成员数量" width="100">
-          <template #default="{row}">
-            <el-tag type="info">{{ row.userCount || 0 }}人</el-tag>
+        <el-table-column prop="userCount" :label="$t('admin.businessGroups.table.memberCount')" width="100" align="center" />
+        <el-table-column prop="createdAt" :label="$t('admin.businessGroups.table.createdAt')" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="180">
-          <template #default="{row}">
-            {{ formatDate(row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="250" fixed="right">
-          <template #default="{row}">
+        <el-table-column :label="$t('admin.businessGroups.table.actions')" width="280" fixed="right">
+          <template #default="scope">
             <div class="action-buttons">
-              <el-button type="primary" size="small" @click="showEditDialog(row)">编辑</el-button>
-              <el-button type="success" size="small" @click="showMembersDialog(row)">成员管理</el-button>
-              <el-button type="danger" size="small" @click="confirmDelete(row)">删除</el-button>
+              <el-button 
+                type="primary" 
+                size="small" 
+                @click="showMembersDialog(scope.row)"
+              >
+                {{ $t('admin.businessGroups.actions.manageMembers') }}
+              </el-button>
+              <el-button 
+                type="warning" 
+                size="small" 
+                @click="showEditDialog(scope.row)"
+              >
+                {{ $t('admin.businessGroups.actions.edit') }}
+              </el-button>
+              <el-button 
+                type="danger" 
+                size="small" 
+                @click="confirmDelete(scope.row)"
+              >
+                {{ $t('admin.businessGroups.actions.delete') }}
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -53,101 +94,157 @@
     </el-card>
 
     <!-- 添加业务组对话框 -->
-    <el-dialog v-model="addDialogVisible" title="添加业务组" width="500px">
-      <el-form :model="groupForm" :rules="groupRules" ref="groupFormRef" label-width="100px">
-        <el-form-item label="业务组名称" prop="name">
-          <el-input v-model="groupForm.name" placeholder="输入业务组名称" />
+    <el-dialog 
+      v-model="addDialogVisible" 
+      :title="$t('admin.businessGroups.dialog.add.title')" 
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form 
+        ref="groupFormRef" 
+        :model="groupForm" 
+        :rules="groupFormRules" 
+        label-width="100px"
+      >
+        <el-form-item :label="$t('admin.businessGroups.form.name')" prop="name">
+          <el-input v-model="groupForm.name" :placeholder="$t('admin.businessGroups.form.namePlaceholder')" />
         </el-form-item>
-        <el-form-item label="业务组邮箱" prop="email">
-          <el-input v-model="groupForm.email" placeholder="输入业务组邮箱" />
+        <el-form-item :label="$t('admin.businessGroups.form.email')" prop="email">
+          <el-input v-model="groupForm.email" :placeholder="$t('admin.businessGroups.form.emailPlaceholder')" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="groupForm.description" type="textarea" :rows="3" placeholder="输入业务组描述" />
+        <el-form-item :label="$t('admin.businessGroups.form.description')" prop="description">
+          <el-input 
+            v-model="groupForm.description" 
+            type="textarea" 
+            :rows="3"
+            :placeholder="$t('admin.businessGroups.form.descriptionPlaceholder')"
+          />
         </el-form-item>
       </el-form>
+      
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="addDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitGroup">确认</el-button>
+          <el-button @click="addDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+          <el-button type="primary" :loading="creating" @click="submitGroup">
+            {{ creating ? $t('common.creating') : $t('common.confirm') }}
+          </el-button>
         </span>
       </template>
     </el-dialog>
 
     <!-- 编辑业务组对话框 -->
-    <el-dialog v-model="editDialogVisible" title="编辑业务组" width="500px">
-      <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="100px">
-        <el-form-item label="业务组名称" prop="name">
-          <el-input v-model="editForm.name" placeholder="输入业务组名称" />
+    <el-dialog 
+      v-model="editDialogVisible" 
+      :title="$t('admin.businessGroups.dialog.edit.title')" 
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form 
+        ref="editFormRef" 
+        :model="editForm" 
+        :rules="editFormRules" 
+        label-width="100px"
+      >
+        <el-form-item :label="$t('admin.businessGroups.form.name')" prop="name">
+          <el-input v-model="editForm.name" :placeholder="$t('admin.businessGroups.form.namePlaceholder')" />
         </el-form-item>
-        <el-form-item label="业务组邮箱" prop="email">
-          <el-input v-model="editForm.email" placeholder="输入业务组邮箱" />
+        <el-form-item :label="$t('admin.businessGroups.form.email')" prop="email">
+          <el-input v-model="editForm.email" :placeholder="$t('admin.businessGroups.form.emailPlaceholder')" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="输入业务组描述" />
+        <el-form-item :label="$t('admin.businessGroups.form.description')" prop="description">
+          <el-input 
+            v-model="editForm.description" 
+            type="textarea" 
+            :rows="3"
+            :placeholder="$t('admin.businessGroups.form.descriptionPlaceholder')"
+          />
         </el-form-item>
       </el-form>
+      
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="editDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="updateGroup">确认</el-button>
+          <el-button @click="editDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+          <el-button type="primary" :loading="updating" @click="updateGroup">
+            {{ updating ? $t('common.updating') : $t('common.confirm') }}
+          </el-button>
         </span>
       </template>
     </el-dialog>
 
     <!-- 成员管理对话框 -->
-    <el-dialog v-model="membersDialogVisible" title="成员管理" width="800px">
-      <div v-if="selectedGroup">
-        <h3>{{ selectedGroup.name }} - 成员管理</h3>
-        
-        <!-- 添加成员 -->
-        <div class="add-member-section">
-          <h4>添加成员</h4>
-          <div class="add-member-form">
-            <el-select 
-              v-model="selectedUserId" 
-              placeholder="选择用户" 
-              filterable 
-              style="width: 300px"
-            >
-              <el-option 
-                v-for="user in availableUsers" 
-                :key="user.id" 
-                :label="`${user.name} (${user.email})`" 
-                :value="user.id" 
-              />
-            </el-select>
-            <el-button type="primary" @click="addMember" :disabled="!selectedUserId">添加</el-button>
-          </div>
-        </div>
-
-        <!-- 当前成员列表 -->
-        <div class="current-members-section">
-          <h4>当前成员 ({{ groupMembers.length }}人)</h4>
-          <el-table :data="groupMembers" style="width: 100%" v-loading="membersLoading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="姓名" width="120" />
-            <el-table-column prop="email" label="邮箱" width="200" />
-            <el-table-column prop="role" label="角色" width="100">
-              <template #default="{row}">
-                <el-tag :type="getRoleType(row.role)">{{ getRoleText(row.role) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="joinedAt" label="加入时间" width="180">
-              <template #default="{row}">
-                {{ formatDate(row.joinedAt) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="100">
-              <template #default="{row}">
-                <el-button type="danger" size="small" @click="removeMember(row)">移除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+    <el-dialog 
+      v-model="membersDialogVisible" 
+      :title="$t('admin.businessGroups.dialog.members.title', { groupName: selectedGroup?.name })"
+      width="800px"
+      :close-on-click-modal="false"
+    >
+      <!-- 添加成员部分 -->
+      <div class="add-member-section">
+        <h4>{{ $t('admin.businessGroups.members.addMember') }}</h4>
+        <div class="add-member-form">
+          <el-select 
+            v-model="selectedUserId" 
+            :placeholder="$t('admin.businessGroups.members.selectUser')"
+            style="width: 300px;"
+            clearable
+          >
+            <el-option 
+              v-for="user in availableUsers" 
+              :key="user.id" 
+              :label="`${user.name} (${user.email})`" 
+              :value="user.id" 
+            />
+          </el-select>
+          <el-button 
+            type="primary" 
+            :disabled="!selectedUserId"
+            @click="addMember"
+          >
+            {{ $t('admin.businessGroups.actions.add') }}
+          </el-button>
         </div>
       </div>
+      
+      <!-- 当前成员列表 -->
+      <div class="current-members-section">
+        <h4>{{ $t('admin.businessGroups.members.currentMembers', { count: groupMembers.length }) }}</h4>
+        <el-table 
+          :data="groupMembers" 
+          v-loading="membersLoading"
+          style="width: 100%"
+          stripe
+        >
+          <el-table-column prop="name" :label="$t('admin.businessGroups.members.table.username')" width="150" />
+          <el-table-column prop="email" :label="$t('admin.businessGroups.members.table.email')" min-width="200" />
+          <el-table-column prop="role" :label="$t('admin.businessGroups.members.table.role')" width="120">
+            <template #default="scope">
+              <el-tag :type="getRoleType(scope.row.role)">
+                {{ getRoleText(scope.row.role) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="joinedAt" :label="$t('admin.businessGroups.members.table.joinedAt')" width="180">
+            <template #default="scope">
+              {{ formatDate(scope.row.joinedAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column :label="$t('admin.businessGroups.members.table.actions')" width="100">
+            <template #default="scope">
+              <el-button 
+                type="danger" 
+                size="small" 
+                @click="removeMember(scope.row)"
+              >
+                {{ $t('admin.businessGroups.actions.remove') }}
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="membersDialogVisible = false">关闭</el-button>
+          <el-button @click="membersDialogVisible = false">{{ $t('common.close') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -156,13 +253,18 @@
 
 <script>
 import { ElMessageBox } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
 
 export default {
   name: 'BusinessGroups',
+  components: {
+    Refresh
+  },
   data() {
     return {
       // 数据加载状态
       loading: false,
+      refreshing: false,
       membersLoading: false,
       
       // 业务组列表
@@ -173,6 +275,7 @@ export default {
       
       // 添加业务组对话框
       addDialogVisible: false,
+      creating: false,
       groupForm: {
         name: '',
         email: '',
@@ -188,6 +291,7 @@ export default {
       
       // 编辑业务组对话框
       editDialogVisible: false,
+      updating: false,
       editForm: {
         id: null,
         name: '',
@@ -289,6 +393,16 @@ export default {
         this.loading = false
       }
     },
+
+    // 刷新业务组列表
+    async refreshGroups() {
+      this.refreshing = true
+      try {
+        await this.loadGroups()
+      } finally {
+        this.refreshing = false
+      }
+    },
     
     // 显示添加对话框
     showAddDialog() {
@@ -308,6 +422,7 @@ export default {
       
       await this.$refs.groupFormRef.validate(async (valid) => {
         if (valid) {
+          this.creating = true
           try {
             const response = await this.$api.post('/admin/business-groups', {
               group_name: this.groupForm.name,
@@ -325,6 +440,8 @@ export default {
           } catch (error) {
             console.error('添加业务组失败:', error)
             this.$messageHandler.showError('添加业务组失败', 'admin.businessGroups.error.addFailed')
+          } finally {
+            this.creating = false
           }
         }
       })
@@ -350,6 +467,7 @@ export default {
       
       await this.$refs.editFormRef.validate(async (valid) => {
         if (valid) {
+          this.updating = true
           try {
             const response = await this.$api.put(`/admin/business-groups/${this.editForm.id}`, {
               group_name: this.editForm.name,
@@ -367,6 +485,8 @@ export default {
           } catch (error) {
             console.error('更新业务组失败:', error)
             this.$messageHandler.showError('更新业务组失败', 'admin.businessGroups.error.updateFailed')
+          } finally {
+            this.updating = false
           }
         }
       })
@@ -530,41 +650,62 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$primary-color: #409EFF;
-$success-color: #67C23A;
-$warning-color: #E6A23C;
-$danger-color: #F56C6C;
-$info-color: #909399;
-$text-color-primary: #303133;
-$text-color-regular: #606266;
-$text-color-secondary: #909399;
-$border-color-light: #EBEEF5;
-$background-color-light: #F5F7FA;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$spacing-xl: 32px;
-$border-radius-sm: 2px;
-$border-radius-md: 4px;
+@import '@/assets/styles/_mixins.scss';
 
 .business-groups {
-  padding: $spacing-lg;
+  padding: 24px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 24px;
   
   h1 {
-    color: $text-color-primary;
-    margin-bottom: $spacing-lg;
-    font-weight: 500;
+    color: #303133;
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  .page-description {
+    color: #606266;
+    margin: 0;
+    font-size: 14px;
   }
 }
 
-.groups-card {
+.filter-card {
+  margin-bottom: 16px;
+  
+  .filter-form {
+    margin: 0;
+    
+    :deep(.el-form-item) {
+      margin-bottom: 0;
+      margin-right: 16px;
+      
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+    
+    :deep(.el-form-item__label) {
+      color: #606266;
+      font-weight: 500;
+    }
+  }
+}
+
+.business-groups-list-card {
   :deep(.el-card__header) {
-    background-color: $background-color-light;
-    border-bottom: 1px solid $border-color-light;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ebeef5;
+    padding: 16px 20px;
   }
   
   :deep(.el-card__body) {
-    padding: $spacing-lg;
+    padding: 20px;
   }
 }
 
@@ -575,45 +716,8 @@ $border-radius-md: 4px;
   
   span {
     font-size: 16px;
-    font-weight: 500;
-    color: $text-color-primary;
-  }
-  
-  :deep(.el-button) {
-    border-radius: $border-radius-md;
-  }
-}
-
-.filter-container {
-  margin-bottom: $spacing-lg;
-  display: flex;
-  align-items: center;
-  
-  :deep(.el-input) {
-    .el-input__inner {
-      border-radius: $border-radius-md;
-    }
-  }
-}
-
-:deep(.el-table) {
-  border-radius: $border-radius-md;
-  overflow: hidden;
-  
-  .el-table__header {
-    background-color: $background-color-light;
-    
-    th {
-      background-color: $background-color-light;
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-  }
-  
-  .el-table__row {
-    &:hover {
-      background-color: #F5F7FA;
-    }
+    font-weight: 600;
+    color: #303133;
   }
 }
 
@@ -622,118 +726,91 @@ $border-radius-md: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: $text-color-regular;
+  color: #606266;
 }
 
 .action-buttons {
   display: flex;
-  gap: 5px;
-  flex-wrap: nowrap;
+  gap: 8px;
+  flex-wrap: wrap;
   
   :deep(.el-button) {
-    border-radius: $border-radius-sm;
-    
     &.el-button--small {
-      padding: 5px 8px;
+      padding: 5px 12px;
+      font-size: 12px;
     }
-  }
-}
-
-:deep(.el-dialog) {
-  border-radius: $border-radius-md;
-  
-  .el-dialog__header {
-    background-color: $background-color-light;
-    border-bottom: 1px solid $border-color-light;
-    
-    .el-dialog__title {
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-  }
-  
-  .el-dialog__body {
-    padding: $spacing-lg;
   }
 }
 
 .add-member-section {
-  margin-bottom: $spacing-xl;
-  padding-bottom: $spacing-lg;
-  border-bottom: 1px solid $border-color-light;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #ebeef5;
   
   h4 {
-    margin-bottom: 15px;
-    color: $text-color-primary;
-    font-weight: 500;
+    margin-bottom: 16px;
+    color: #303133;
+    font-weight: 600;
+    font-size: 16px;
   }
 }
 
 .add-member-form {
   display: flex;
-  gap: $spacing-sm;
+  gap: 12px;
   align-items: center;
-  
-  :deep(.el-select) {
-    .el-input__inner {
-      border-radius: $border-radius-md;
-    }
-  }
-  
-  :deep(.el-button) {
-    border-radius: $border-radius-md;
-  }
+  flex-wrap: wrap;
 }
 
 .current-members-section {
   h4 {
-    margin-bottom: 15px;
-    color: $text-color-primary;
-    font-weight: 500;
+    margin-bottom: 16px;
+    color: #303133;
+    font-weight: 600;
+    font-size: 16px;
   }
 }
 
-:deep(.el-tag) {
-  border-radius: $border-radius-sm;
-  
-  &.el-tag--success {
-    background-color: rgba($success-color, 0.1);
-    border-color: rgba($success-color, 0.2);
-    color: $success-color;
+// 移动端适配
+@media (max-width: 768px) {
+  .business-groups {
+    padding: 16px;
   }
   
-  &.el-tag--warning {
-    background-color: rgba($warning-color, 0.1);
-    border-color: rgba($warning-color, 0.2);
-    color: $warning-color;
+  .filter-card {
+    .filter-form {
+      :deep(.el-form-item) {
+        margin-right: 0;
+        margin-bottom: 16px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
   }
   
-  &.el-tag--danger {
-    background-color: rgba($danger-color, 0.1);
-    border-color: rgba($danger-color, 0.2);
-    color: $danger-color;
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+    
+    :deep(.el-button) {
+      width: 100%;
+      margin: 0;
+    }
   }
   
-  &.el-tag--info {
-    background-color: rgba($info-color, 0.1);
-    border-color: rgba($info-color, 0.2);
-    color: $info-color;
+  .add-member-form {
+    flex-direction: column;
+    align-items: stretch;
+    
+    :deep(.el-select) {
+      width: 100%;
+    }
+    
+    :deep(.el-button) {
+      width: 100%;
+    }
   }
-}
-
-:deep(.el-form) {
-  .el-form-item__label {
-    color: $text-color-primary;
-    font-weight: 500;
-  }
-  
-  .el-input__inner,
-  .el-textarea__inner {
-    border-radius: $border-radius-md;
-  }
-}
-
-:deep(.el-loading-mask) {
-  border-radius: $border-radius-md;
 }
 </style>

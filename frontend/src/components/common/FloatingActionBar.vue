@@ -1,5 +1,5 @@
 <template>
-  <div class="floating-action-bar" :class="{ 'expanded': isExpanded }" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
+  <div class="floating-action-bar" :class="{ 'expanded': isExpanded }">
     <!-- 主按钮 -->
     <div class="main-button" @click="toggleExpanded">
       <i class="fas fa-bars"></i>
@@ -36,8 +36,7 @@ export default {
   name: 'FloatingActionBar',
   data() {
     return {
-      isExpanded: true, // 默认展开
-      hoverTimeout: null
+      isExpanded: true // 默认展开，完全由点击控制
     }
   },
   computed: {
@@ -46,22 +45,6 @@ export default {
   methods: {
     toggleExpanded() {
       this.isExpanded = !this.isExpanded
-    },
-    
-    handleMouseEnter() {
-      if (this.hoverTimeout) {
-        clearTimeout(this.hoverTimeout)
-        this.hoverTimeout = null
-      }
-      this.isExpanded = true
-    },
-    
-    handleMouseLeave() {
-      // 延迟收起，避免鼠标快速移动时意外收起
-      this.hoverTimeout = setTimeout(() => {
-        // 如果用户没有手动点击展开，则在鼠标离开后收起
-        // 这里可以根据需要调整逻辑
-      }, 300)
     },
     
     goToCart() {
@@ -145,13 +128,6 @@ export default {
       visibility: visible;
       transform: translateY(0);
     }
-  }
-
-  // 悬停时显示菜单（保持兼容性）
-  &:hover .action-menu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
   }
 
   .action-item {

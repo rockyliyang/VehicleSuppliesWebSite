@@ -1,60 +1,62 @@
 <template>
   <div class="regular-user-list">
-    <h1>普通用户列表</h1>
+    <div class="page-header">
+      <h1>{{ $t('admin.users.title') || '普通用户列表' }}</h1>
+      <p>{{ $t('admin.users.description') || '管理普通用户信息，查看用户详情，分配业务组' }}</p>
+    </div>
 
-    <el-card class="users-card">
-      <template #header>
-        <div class="card-header">
-          <span>普通用户列表</span>
-          <div class="header-actions">
-            <el-button type="primary" @click="refreshUsers">刷新</el-button>
-          </div>
-        </div>
-      </template>
-
-      <!-- 筛选条件 -->
-      <div class="filter-container">
-        <div class="filter-item">
-          <label class="filter-label">业务组:</label>
-          <el-select v-model="filters.businessGroup" placeholder="选择业务组" clearable @change="handleFilterChange">
+    <!-- 筛选条件 -->
+    <el-card class="filter-card">
+      <el-form :model="filters" inline>
+        <el-form-item :label="$t('admin.users.filter.businessGroup') || '业务组'">
+          <el-select v-model="filters.businessGroup" :placeholder="$t('admin.users.filter.businessGroup_placeholder') || '选择业务组'" clearable @change="handleFilterChange" style="width: 200px;">
             <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id" />
           </el-select>
-        </div>
+        </el-form-item>
+        <el-form-item :label="$t('admin.users.filter.search') || '搜索'">
+          <el-input v-model="filters.search" :placeholder="$t('admin.users.filter.search_placeholder') || '搜索姓名或邮箱'" clearable @input="handleFilterChange" style="width: 250px;" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="clearFilters">{{ $t('common.reset') || '重置' }}</el-button>
+          <el-button type="success" @click="refreshUsers" :loading="loading">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            {{ $t('common.refresh') || '刷新' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-        <div class="filter-item">
-          <label class="filter-label">搜索:</label>
-          <el-input v-model="filters.search" placeholder="搜索姓名或邮箱" clearable @input="handleFilterChange" />
-        </div>
+    <!-- 用户列表 -->
+    <el-card class="users-list-card">
 
-        <el-button @click="clearFilters" type="primary" plain>清除所有筛选</el-button>
-      </div>
-
-      <!-- 用户列表 -->
       <el-table 
         :data="paginatedUsers" 
         style="width: 100%" 
         v-loading="loading"
         @row-dblclick="showBusinessGroupDialog"
+        stripe
       >
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="姓名" width="140" show-overflow-tooltip />
-        <el-table-column prop="email" label="邮箱" width="220" show-overflow-tooltip />
-        <el-table-column prop="businessGroups" label="所属业务组" min-width="180">
+        <el-table-column prop="id" :label="$t('admin.users.table.id') || 'ID'" width="80" />
+        <el-table-column prop="name" :label="$t('admin.users.table.name') || '姓名'" width="140" show-overflow-tooltip />
+        <el-table-column prop="email" :label="$t('admin.users.table.email') || '邮箱'" width="220" show-overflow-tooltip />
+        <el-table-column prop="businessGroups" :label="$t('admin.users.table.businessGroup') || '所属业务组'" min-width="180">
           <template #default="{row}">
             <el-tag v-if="row.currentBusinessGroup" size="small" type="success">
               {{ row.currentBusinessGroup.name }}
             </el-tag>
-            <span v-else class="no-group">未分配</span>
+            <span v-else class="no-group">{{ $t('admin.users.table.unassigned') || '未分配' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="isActive" label="状态" width="100" align="center">
+        <el-table-column prop="isActive" :label="$t('admin.users.table.status') || '状态'" width="100" align="center">
           <template #default="{row}">
             <el-tag :type="row.isActive ? 'success' : 'danger'">
-              {{ row.isActive ? "已激活" : "未激活" }}
+              {{ row.isActive ? ($t('admin.users.status.active') || '已激活') : ($t('admin.users.status.inactive') || '未激活') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="注册时间" width="160" align="center">
+        <el-table-column prop="createdAt" :label="$t('admin.users.table.createdAt') || '注册时间'" width="160" align="center">
           <template #default="{row}">
             {{ formatDate(row.createdAt) }}
           </template>
@@ -62,7 +64,7 @@
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container">
+      <div class="pagination-wrapper">
         <el-pagination 
           v-model:current-page="currentPage" 
           v-model:page-size="pageSize" 
@@ -76,26 +78,26 @@
     </el-card>
 
     <!-- 业务组修改对话框 -->
-    <el-dialog v-model="businessGroupDialogVisible" title="修改用户业务组" width="500px">
+    <el-dialog v-model="businessGroupDialogVisible" :title="$t('admin.users.dialog.title') || '修改用户业务组'" width="500px">
       <div v-if="selectedUserForGroup" class="business-group-edit">
         <el-descriptions :column="1" border>
-          <el-descriptions-item label="用户姓名">{{ selectedUserForGroup.name }}</el-descriptions-item>
-          <el-descriptions-item label="用户邮箱">{{ selectedUserForGroup.email }}</el-descriptions-item>
-          <el-descriptions-item label="当前业务组">
+          <el-descriptions-item :label="$t('admin.users.dialog.userName') || '用户姓名'">{{ selectedUserForGroup.name }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.users.dialog.userEmail') || '用户邮箱'">{{ selectedUserForGroup.email }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.users.dialog.currentGroup') || '当前业务组'">
             <el-tag v-if="selectedUserForGroup.currentBusinessGroup" type="info">
               {{ selectedUserForGroup.currentBusinessGroup.name }}
             </el-tag>
-            <span v-else class="no-group">未分配</span>
+            <span v-else class="no-group">{{ $t('admin.users.table.unassigned') || '未分配' }}</span>
           </el-descriptions-item>
         </el-descriptions>
 
         <div class="group-selection">
-          <h4>选择新的业务组</h4>
-          <el-select v-model="selectedBusinessGroupId" placeholder="请选择业务组" style="width: 100%" clearable>
+          <h4>{{ $t('admin.users.dialog.selectGroup') || '选择新的业务组' }}</h4>
+          <el-select v-model="selectedBusinessGroupId" :placeholder="$t('admin.users.dialog.selectGroup_placeholder') || '请选择业务组'" style="width: 100%" clearable>
             <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id">
               <span>{{ group.name }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">
-                {{ group.userCount || 0 }}人
+                {{ group.userCount || 0 }}{{ $t('admin.users.dialog.memberCount') || '人' }}
               </span>
             </el-option>
           </el-select>
@@ -103,9 +105,9 @@
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="businessGroupDialogVisible = false">取消</el-button>
+          <el-button @click="businessGroupDialogVisible = false">{{ $t('common.cancel') || '取消' }}</el-button>
           <el-button type="primary" @click="updateUserBusinessGroup" :loading="updating">
-            确定修改
+            {{ updating ? ($t('common.saving') || '保存中...') : ($t('common.save') || '保存') }}
           </el-button>
         </span>
       </template>
@@ -114,8 +116,13 @@
 </template>
 
 <script>
+import { Refresh } from '@element-plus/icons-vue'
+
 export default {
   name: 'RegularUserList',
+  components: {
+    Refresh
+  },
 
   data() {
     return {
@@ -186,7 +193,7 @@ export default {
         const response = await this.$api.get("/admin/users", { params })
         if (response.success) {
           const rawUsers = response.data.items || []
-          this.total = response.data.total || 0
+          this.total = response.data.pagination?.total || 0
           
           this.users = rawUsers.map(user => ({
             id: user.id,
@@ -317,243 +324,110 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$primary-color: #409EFF;
-$success-color: #67C23A;
-$warning-color: #E6A23C;
-$danger-color: #F56C6C;
-$info-color: #909399;
-$text-color-primary: #303133;
-$text-color-regular: #606266;
-$text-color-secondary: #909399;
-$border-color-light: #EBEEF5;
-$background-color-light: #F5F7FA;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$border-radius-sm: 2px;
-$border-radius-md: 4px;
+@import '@/assets/styles/_mixins.scss';
 
-.user-management {
-  padding: $spacing-lg;
+.regular-user-list {
+  padding: 20px;
 
-  h1 {
-    color: $text-color-primary;
-    margin-bottom: $spacing-lg;
-    font-weight: 500;
-  }
-}
+  .page-header {
+    margin-bottom: 20px;
 
-.users-card {
-  :deep(.el-card__header) {
-    background-color: $background-color-light;
-    border-bottom: 1px solid $border-color-light;
-  }
+    h1 {
+      margin: 0 0 8px 0;
+      color: #303133;
+      font-size: 24px;
+      font-weight: 600;
+    }
 
-  :deep(.el-card__body) {
-    padding: $spacing-lg;
-  }
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  span {
-    font-size: 16px;
-    font-weight: 500;
-    color: $text-color-primary;
-  }
-}
-
-.header-actions {
-  display: flex;
-  gap: $spacing-sm;
-
-  :deep(.el-button) {
-    border-radius: $border-radius-md;
-  }
-}
-
-.filter-container {
-  margin-bottom: $spacing-lg;
-  display: flex;
-  align-items: flex-end;
-  gap: $spacing-lg;
-  flex-wrap: wrap;
-  padding: $spacing-md;
-  background-color: $background-color-light;
-  border-radius: $border-radius-md;
-  border: 1px solid $border-color-light;
-
-  .filter-item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 200px;
-
-    .filter-label {
-      font-size: 14px;
-      color: $text-color-primary;
-      font-weight: 500;
+    p {
       margin: 0;
-    }
-
-    .filter-input-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      position: relative;
-
-      :deep(.el-select) {
-        flex: 1;
-        min-width: 180px;
-
-        .el-input__inner {
-          border-radius: $border-radius-md;
-        }
-      }
-
-      :deep(.el-input) {
-        flex: 1;
-        min-width: 180px;
-
-        .el-input__inner {
-          border-radius: $border-radius-md;
-        }
-      }
-
-      .clear-btn {
-        padding: 4px;
-        min-height: auto;
-
-        &:hover {
-          color: $danger-color;
-          background-color: rgba($danger-color, 0.1);
-        }
-
-        :deep(.el-icon) {
-          font-size: 14px;
-        }
-      }
+      color: #606266;
+      font-size: 14px;
     }
   }
 
-  >.el-button {
-    margin-left: auto;
-    align-self: flex-end;
-  }
-}
+  .filter-card {
+    margin-bottom: 20px;
 
-:deep(.el-table) {
-  border-radius: $border-radius-md;
-  overflow: hidden;
-
-  .el-table__header {
-    background-color: $background-color-light;
-
-    th {
-      background-color: $background-color-light;
-      color: $text-color-primary;
-      font-weight: 500;
+    .el-form {
+      margin-bottom: 0;
     }
   }
 
-  .el-table__row {
-    &:hover {
-      background-color: #F5F7FA;
-    }
-  }
-}
-
-.pagination-container {
-  margin-top: $spacing-lg;
-  display: flex;
-  justify-content: flex-end;
-
-  :deep(.el-pagination) {
-    .el-pager li {
-      border-radius: $border-radius-sm;
-      margin: 0 2px;
+  .users-list-card {
+    .no-group {
+      color: #909399;
+      font-size: 12px;
     }
 
-    .btn-prev,
-    .btn-next {
-      border-radius: $border-radius-sm;
+    .pagination-wrapper {
+      margin-top: 20px;
+      text-align: right;
     }
-  }
-}
-
-.action-buttons {
-  display: flex;
-  gap: 5px;
-  flex-wrap: nowrap;
-
-  :deep(.el-button) {
-    border-radius: $border-radius-sm;
-
-    &.el-button--small {
-      padding: 5px 8px;
-    }
-  }
-
-  :deep(.el-dropdown) {
-    .el-button {
-      border-radius: $border-radius-sm;
-    }
-  }
-}
-
-:deep(.el-dialog) {
-  border-radius: $border-radius-md;
-
-  .el-dialog__header {
-    background-color: $background-color-light;
-    border-bottom: 1px solid $border-color-light;
-
-    .el-dialog__title {
-      color: $text-color-primary;
-      font-weight: 500;
-    }
-  }
-
-  .el-dialog__body {
-    padding: $spacing-lg;
   }
 }
 
 .business-group-edit {
   .group-selection {
-    margin-top: $spacing-lg;
+    margin-top: 20px;
 
     h4 {
       margin-bottom: 15px;
-      color: $text-color-primary;
+      color: #303133;
       font-weight: 500;
-    }
-
-    :deep(.el-select) {
-      .el-input__inner {
-        border-radius: $border-radius-md;
-      }
     }
   }
 
   :deep(.el-descriptions) {
-    margin-bottom: $spacing-lg;
+    margin-bottom: 20px;
 
     .el-descriptions__label {
-      color: $text-color-primary;
+      color: #303133;
       font-weight: 500;
     }
 
     .el-descriptions__content {
-      color: $text-color-regular;
+      color: #606266;
     }
   }
 }
 
-:deep(.el-loading-mask) {
-  border-radius: $border-radius-md;
+@include mobile {
+  .regular-user-list {
+    padding: 10px;
+
+    .page-header {
+      h1 {
+        font-size: 20px;
+      }
+    }
+
+    .filter-card {
+      .el-form {
+        .el-form-item {
+          display: block;
+          margin-bottom: 15px;
+
+          .el-form-item__content {
+            margin-left: 0 !important;
+          }
+        }
+      }
+    }
+
+    .users-list-card {
+      .el-table {
+        font-size: 12px;
+      }
+
+      .pagination-wrapper {
+        text-align: center;
+
+        .el-pagination {
+          justify-content: center;
+        }
+      }
+    }
+  }
 }
 </style>
