@@ -5,7 +5,7 @@ const sseHandler = require('../utils/sseHandler');
 // 获取所有询价列表（管理员）
 exports.getAllInquiries = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status, userId, startDate, endDate } = req.query;
+    const { page = 1, limit = 10, status, userId, startDate, endDate, unreadFilter } = req.query;
     const offset = (page - 1) * limit;
     const currentUserId = req.userId; // 从JWT中获取当前登录用户ID
     
@@ -93,6 +93,25 @@ exports.getAllInquiries = async (req, res) => {
       paramIndex++;
     }
     
+    // 添加未读消息过滤条件
+    if (unreadFilter === 'unread') {
+      whereClause += ` AND EXISTS (
+        SELECT 1 FROM inquiry_messages im 
+        WHERE im.inquiry_id = i.id 
+        AND im.deleted = false 
+        AND im.sender_type = 'user' 
+        AND im.is_read = 0
+      )`;
+    } else if (unreadFilter === 'read') {
+      whereClause += ` AND NOT EXISTS (
+        SELECT 1 FROM inquiry_messages im 
+        WHERE im.inquiry_id = i.id 
+        AND im.deleted = false 
+        AND im.sender_type = 'user' 
+        AND im.is_read = 0
+      )`;
+    }
+    
     // 查询询价列表
     const inquiryQuery = `
       SELECT 
@@ -107,7 +126,8 @@ exports.getAllInquiries = async (req, res) => {
         u.email,
         COALESCE(item_stats.item_count, 0) as item_count,
         COALESCE(item_stats.total_quoted_price, 0) as total_quoted_price,
-        COALESCE(message_stats.message_count, 0) as message_count
+        COALESCE(message_stats.message_count, 0) as message_count,
+        COALESCE(unread_stats.unread_count, 0) as unread_count
       FROM inquiries i
       LEFT JOIN users u ON i.user_id = u.id
       LEFT JOIN (
@@ -127,6 +147,16 @@ exports.getAllInquiries = async (req, res) => {
         WHERE deleted = false 
         GROUP BY inquiry_id
       ) message_stats ON i.id = message_stats.inquiry_id
+      LEFT JOIN (
+        SELECT 
+          inquiry_id,
+          COUNT(id) as unread_count
+        FROM inquiry_messages 
+        WHERE deleted = false 
+        AND sender_type = 'user' 
+        AND is_read = 0
+        GROUP BY inquiry_id
+      ) unread_stats ON i.id = unread_stats.inquiry_id
       ${whereClause}
       ORDER BY i.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -140,7 +170,8 @@ exports.getAllInquiries = async (req, res) => {
       ...inquiry,
       total_quoted_price: parseFloat(inquiry.total_quoted_price) || 0,
       item_count: parseInt(inquiry.item_count) || 0,
-      message_count: parseInt(inquiry.message_count) || 0
+      message_count: parseInt(inquiry.message_count) || 0,
+      unread_count: parseInt(inquiry.unread_count) || 0
     }));
     
     // 查询总数
@@ -150,7 +181,7 @@ exports.getAllInquiries = async (req, res) => {
       ${whereClause}
     `;
     const countResult = await query(countQuery, queryParams.slice(0, -2));
-    const total = countResult.getFirstRow().total;
+    const total = parseInt(countResult.getFirstRow().total);
     
     return res.json({
       success: true,
@@ -735,6 +766,49 @@ exports.exportInquiries = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: getMessage('INQUIRY.FETCH.FAILED')
+    });
+  }
+};
+
+// 标记消息为已读（管理员）
+exports.markMessagesAsRead = async (req, res) => {
+  try {
+    const adminId = req.userId;
+    const { inquiryId } = req.params;
+    
+    // 验证询价是否存在
+    const inquiryResult = await query(
+      'SELECT id FROM inquiries WHERE id = $1 AND deleted = false',
+      [inquiryId]
+    );
+    
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
+      });
+    }
+    
+    // 标记该询价单中所有用户发送的未读消息为已读
+    await query(
+      `UPDATE inquiry_messages 
+       SET is_read = 1, updated_at = NOW() 
+       WHERE inquiry_id = $1 
+       AND sender_type = 'user' 
+       AND is_read = 0 
+       AND deleted = false`,
+      [inquiryId]
+    );
+    
+    return res.json({
+      success: true,
+      message: getMessage('INQUIRY.MESSAGE.MARK_READ_SUCCESS')
+    });
+  } catch (error) {
+    console.error('标记消息为已读失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('INQUIRY.MESSAGE.MARK_READ_FAILED')
     });
   }
 };

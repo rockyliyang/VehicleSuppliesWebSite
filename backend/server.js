@@ -27,6 +27,7 @@ const businessGroupRoutes = require('./routes/businessGroupRoutes');
 const userManagementRoutes = require('./routes/userManagementRoutes');
 const inquiryRoutes = require('./routes/inquiryRoutes');
 const adminInquiryRoutes = require('./routes/adminInquiryRoutes');
+const adminStatsRoutes = require('./routes/adminStatsRoutes');
 const sseRoutes = require('./routes/sseRoutes');
 const thirdPartyAuthRoutes = require('./routes/thirdPartyAuthRoutes');
 const addressRoutes = require('./routes/addressRoutes');
@@ -81,6 +82,7 @@ app.use('/api/admin/business-groups', businessGroupRoutes);
 app.use('/api/admin/users', userManagementRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/admin/inquiries', adminInquiryRoutes);
+app.use('/api/admin/stats', adminStatsRoutes);
 // 注册长轮询路由 - 使用独立路径避免冲突
 const pollingRoutes = require('./routes/pollingRoutes');
 app.use('/api/inquiries', pollingRoutes);

@@ -367,7 +367,7 @@ class ContactController {
         WHERE ${whereClause}
       `, queryParams);
       
-      const total = countRows.getFirstRow().total;
+      const total = parseInt(countRows.getFirstRow().total);
       const totalPages = Math.ceil(total / limit);
       
       // 查询消息列表

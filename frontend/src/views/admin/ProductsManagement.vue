@@ -354,6 +354,21 @@ export default {
         });
       }
     });
+
+    // 检查是否有编辑产品的查询参数
+    const editProductId = this.$route.query.edit;
+    if (editProductId) {
+      // 等待产品列表加载完成后自动打开编辑对话框
+      this.$nextTick(() => {
+        const product = this.productList.find(p => p.id == editProductId);
+        if (product) {
+          this.handleEdit(product);
+        } else {
+          // 如果在当前页面没找到产品，可能需要搜索或加载更多数据
+          console.warn('未找到指定的产品ID:', editProductId);
+        }
+      });
+    }
   },
   methods: {
     formatDate,

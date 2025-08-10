@@ -141,7 +141,7 @@ class BusinessGroupController {
         WHERE ${whereClause}
       `, queryParams);
       
-      const total = countRows.getFirstRow().total;
+      const total = parseInt(countRows.getFirstRow().total);
       const totalPages = Math.ceil(total / limit);
       
       // 查询业务组列表

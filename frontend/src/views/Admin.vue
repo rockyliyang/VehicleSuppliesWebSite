@@ -1,13 +1,13 @@
 <template>
   <div class="admin-page">
     <el-container>
-      <el-aside width="250px">
+      <el-aside :width="isCollapsed ? '64px' : '200px'" class="sidebar-transition">
         <div class="admin-logo">
-          <img src="../assets/images/logo.png" alt="AUTO EASE EXPERT CO., LTD">
-          <h2>管理后台</h2>
+          <img v-if="!isCollapsed" src="../assets/images/logo.png" alt="AUTO EASE EXPERT CO., LTD">
+          <img v-else src="../assets/images/logo.png" alt="AUTO EASE EXPERT CO., LTD" class="logo-collapsed">
         </div>
         <el-menu :default-active="activeMenu" class="admin-menu" background-color="#304156" text-color="#bfcbd9"
-          active-text-color="#409EFF" router>
+          active-text-color="#409EFF" router :collapse="isCollapsed">
           <el-menu-item index="/admin/dashboard">
             <el-icon>
               <HomeFilled />
@@ -96,7 +96,7 @@
       <el-container>
         <el-header>
           <div class="header-left">
-            <el-icon class="toggle-sidebar">
+            <el-icon class="toggle-sidebar" @click="toggleSidebar">
               <Fold />
             </el-icon>
             <el-breadcrumb separator="/">
@@ -107,7 +107,7 @@
           <div class="header-right">
             <el-dropdown trigger="click">
               <span class="admin-user">
-                <img src="../assets/images/avatar.jpg" class="user-avatar">
+
                 <span>管理员</span>
                 <el-icon>
                   <ArrowDown />
@@ -159,9 +159,10 @@ export default {
   },
   data() {
     return {
-      activeMenu: '/admin/products',
-      currentPage: '产品管理',
-      tokenCheckTimer: null
+      activeMenu: '/admin/dashboard',
+      currentPage: '控制面板',
+      tokenCheckTimer: null,
+      isCollapsed: false,
     }
   },
   watch: {
@@ -224,6 +225,9 @@ export default {
     }
   },
   methods: {
+    toggleSidebar() {
+      this.isCollapsed = !this.isCollapsed
+    },
     async checkTokenValidity() {
       try {
         const res = await this.$api.post('/users/check-token')
@@ -285,6 +289,10 @@ export default {
   overflow-x: hidden;
 }
 
+.sidebar-transition {
+  transition: width 0.3s ease;
+}
+
 .admin-logo {
   height: 60px;
   display: flex;
@@ -299,6 +307,11 @@ export default {
   margin-right: 10px;
 }
 
+.logo-collapsed {
+  height: 32px !important;
+  margin-right: 0 !important;
+}
+
 .admin-logo h2 {
   font-size: 18px;
   color: #fff;
@@ -307,6 +320,21 @@ export default {
 
 .admin-menu {
   border-right: none;
+}
+
+.admin-menu.el-menu--collapse {
+  width: 64px;
+}
+
+.admin-menu.el-menu--collapse .el-menu-item,
+.admin-menu.el-menu--collapse .el-sub-menu__title {
+  padding: 0 20px !important;
+  text-align: center;
+}
+
+.admin-menu.el-menu--collapse .el-menu-item span,
+.admin-menu.el-menu--collapse .el-sub-menu__title span {
+  display: none;
 }
 
 .el-header {
@@ -330,6 +358,12 @@ export default {
   font-size: 20px;
   cursor: pointer;
   margin-right: 15px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
 }
 
 .admin-user {

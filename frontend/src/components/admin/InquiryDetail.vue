@@ -250,6 +250,9 @@ export default {
         this.items = response.data.items
         this.messages = response.data.messages
         
+        // 标记消息为已读
+        await this.markMessagesAsRead()
+        
         // 滚动到消息底部
         this.$nextTick(() => {
           // 确保组件仍然挂载
@@ -466,7 +469,21 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
-    }
+    },
+    
+    async markMessagesAsRead() {
+       try {
+         await this.$api.putWithErrorHandler(`/admin/inquiries/${this.inquiryId}/messages/read`, {}, {
+           fallbackKey: 'admin.inquiry.error.markReadFailed'
+         })
+         
+         // 通知父组件更新数据
+         this.$emit('messages-read')
+       } catch (error) {
+         // 错误已经被统一处理，不影响主流程
+         console.warn('标记消息已读失败:', error)
+       }
+     }
   }
 }
 </script>
@@ -538,48 +555,50 @@ export default {
       min-height: 0;
 
       .inquiry-items-card {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-
-        .el-card__body {
-          flex: 1;
+          height: 100%;
           display: flex;
           flex-direction: column;
-          padding: 15px;
-        }
 
-        .items-table-container {
-          flex: 1;
-          min-height: 0;
-        }
-
-        .product-info {
-          display: flex;
-          align-items: center;
-
-          .product-image {
-            width: 24px;
-            height: 24px;
-            object-fit: cover;
-            border-radius: 3px;
-            margin-right: 6px;
+          .el-card__body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
           }
 
-          .product-details {
-            .product-name {
-              font-weight: 600;
-              color: #303133;
-              margin-bottom: 2px;
-              font-size: 12px;
+          .items-table-container {
+            flex: 1;
+            min-height: 0;
+          }
+
+          .product-info {
+            display: flex;
+            align-items: center;
+
+            .product-image {
+              width: 24px;
+              height: 24px;
+              object-fit: cover;
+              border-radius: 3px;
+              margin-right: 6px;
             }
 
-            .product-code {
-              font-size: 11px;
-              color: #909399;
+            .product-details {
+              .product-name {
+                font-weight: 600;
+                color: #303133;
+                margin-bottom: 2px;
+                font-size: 12px;
+              }
+
+              .product-code {
+                font-size: 11px;
+                color: #909399;
+              }
             }
           }
-        }
 
         .text-muted {
           color: #c0c4cc;
@@ -646,7 +665,8 @@ export default {
           flex: 1;
           overflow-y: auto;
           margin-bottom: 15px;
-          min-height: 0;
+          padding-right: 5px;
+          max-height: 400px;
 
           .message-wrapper {
             margin-bottom: 12px;

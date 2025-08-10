@@ -1,14 +1,14 @@
 <template>
   <div class="communication-section" :class="{ 'mobile-communication': isMobile }">
     <div class="chat-history" ref="chatHistory">
-      <div v-for="message in allMessages" :key="message.id" class="chat-message"
+      <div v-for="message in messages" :key="message.id" class="chat-message"
         :class="{ 'user-message': message.isUser }">
         <p class="message-sender">
-          {{ message.sender }} ({{ formatTime(message) }}):
+          {{ message.sender }} ({{ formatTime(message.timestamp) }}):
         </p>
         <p class="message-content">{{ message.content }}</p>
       </div>
-      <p v-if="allMessages.length === 0" class="no-messages">
+      <p v-if="messages.length === 0" class="no-messages">
         {{ $t('cart.noMessages') || '暂无消息。' }}
       </p>
     </div>
@@ -62,41 +62,12 @@ export default {
       default: false
     }
   },
-  emits: ['update-message', 'checkout', 'new-messages'],
+  emits: ['send-message', 'update-message', 'checkout', 'new-messages'],
   data() {
     return {
       newMessage: this.initialMessage || '',
-      pollingConnection: null,
-      localMessages: [] // 本地消息列表，用于直接管理消息显示
+      pollingConnection: null
     };
-  },
-  computed: {
-    allMessages() {
-      // 使用 Map 来去重，以 id 为键
-      const messageMap = new Map();
-      
-      // 先添加原有消息
-      this.messages.forEach(msg => {
-        console.log('Existing message:', msg);
-        messageMap.set(msg.id, msg);
-      });
-      
-      // 再添加本地新消息，如果 ID 相同则覆盖
-      this.localMessages.forEach(msg => {
-        console.log('Local new message:', msg);
-        messageMap.set(msg.id, msg);
-      });
-      
-      // 转换为数组并按时间戳排序
-      const result = Array.from(messageMap.values()).sort((a, b) => {
-        const timeA = a.timestamp || a.created_at;
-        const timeB = b.timestamp || b.created_at;
-        return new Date(timeA) - new Date(timeB);
-      });
-      
-      console.log('allMessages final result:', result);
-      return result;
-    }
   },
   watch: {
     initialMessage: {
@@ -105,7 +76,7 @@ export default {
       },
       immediate: true
     },
-    allMessages: {
+    messages: {
       handler() {
         this.$nextTick(() => {
           this.scrollToBottom();
@@ -120,15 +91,10 @@ export default {
           this.pollingConnection.stopPolling(oldId);
         }
         
-        // 清理本地消息列表（切换询价单时）
-        if (newId !== oldId) {
-          this.localMessages = [];
-        }
-        
         // 开始新的轮询
         if (newId && this.pollingConnection) {
           this.pollingConnection.startPolling(newId);
-          console.log(`CommunicationSection: Start polling for inquiry ${newId}`);
+          console.log(`CommunicationSection: 开始轮询询价单 ${newId}`);
         }
       },
       immediate: true
@@ -142,96 +108,13 @@ export default {
     this.cleanupPolling();
   },
   methods: {
-    formatTime(messageObj) {
-      // 支持传入消息对象或时间戳
-      let timestamp;
-      if (typeof messageObj === 'object' && messageObj !== null) {
-        // 如果是消息对象，尝试获取时间戳字段
-        timestamp = messageObj.timestamp || messageObj.created_at;
-      } else {
-        // 如果直接传入时间戳
-        timestamp = messageObj;
-      }
-      
-      // 调试信息
-      console.log('formatTime received timestamp:', timestamp, 'type:', typeof timestamp);
-      
-      if (!timestamp) {
-        return this.$t('common.unknownTime') || 'Unknown Time';
-      }
-      
-      // 尝试解析时间戳
-      let date;
-      if (typeof timestamp === 'string') {
-        // 如果是字符串，尝试解析
-        date = new Date(timestamp);
-      } else if (typeof timestamp === 'number') {
-        // 如果是数字，检查是否是毫秒时间戳
-        date = new Date(timestamp);
-      } else {
-        return this.$t('common.invalidTime') || 'Invalid Time';
-      }
-      
-      // 检查日期是否有效
-      if (isNaN(date.getTime())) {
-        console.error('Invalid timestamp:', timestamp);
-        return this.$t('common.invalidTime') || 'Invalid Time';
-      }
-      
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    formatTime(timestamp) {
+      return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },
-    async handleSendMessage() {
-      if (!this.newMessage.trim()) {
-        return;
-      }
-      
-      const messageContent = this.newMessage.trim();
-      this.newMessage = ''; // 立即清空输入框
-      
-      try {
-        // 直接调用后端 API 发送消息
-        const response = await this.$api.postWithErrorHandler(`/inquiries/${this.inquiryId}/messages`, {
-          message: messageContent
-        }, {
-          fallbackKey: 'INQUIRY.SEND_MESSAGE.FAILED'
-        });
-        
-        if (response.success) {
-          // 创建消息对象并添加到本地消息列表
-          const newMessage = {
-            id: response.data.id || Date.now(),
-            sender: this.getSenderName('customer'),
-            content: messageContent,
-            timestamp: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            isUser: true,
-            sender_type: 'customer',
-            message_type: 'text',
-            is_read: false
-          };
-          
-          // 直接添加到本地消息列表
-          this.localMessages.push(newMessage);
-          
-          // 滚动到底部显示新消息
-          this.$nextTick(() => {
-            this.scrollToBottom();
-          });
-          
-          console.log('CommunicationSection: Message sent successfully');
-          
-          // 检查轮询是否因为失败次数过多而停止，如果是则重新启动
-          if (this.pollingConnection && !this.pollingConnection.isPollingInquiry(this.inquiryId)) {
-            console.log(`CommunicationSection: Detected polling stopped, restarting polling for inquiry ${this.inquiryId}`);
-            // 使用强制重启参数，确保能够重新启动轮询
-            this.pollingConnection.startPolling(this.inquiryId, true);
-          }
-        }
-        
-      } catch (error) {
-        console.error('CommunicationSection: Failed to send message:', error);
-        // 如果发送失败，恢复消息内容到输入框
-        this.newMessage = messageContent;
+    handleSendMessage() {
+      if (this.newMessage.trim()) {
+        this.$emit('send-message', this.inquiryId, this.newMessage);
+        this.newMessage = '';
       }
     },
     updateMessage(value) {
@@ -266,26 +149,26 @@ export default {
         
         // 监听轮询错误
         this.pollingConnection.on('polling_error', (error) => {
-          console.error('CommunicationSection polling error:', error);
+          console.error('CommunicationSection 轮询错误:', error);
         });
         
         // 如果已有inquiryId，立即开始轮询
         if (this.inquiryId) {
           this.pollingConnection.startPolling(this.inquiryId);
-          console.log(`CommunicationSection: Initialize polling for inquiry ${this.inquiryId}`);
+          console.log(`CommunicationSection: 初始化轮询询价单 ${this.inquiryId}`);
         }
         
-        console.log('CommunicationSection: Long polling initialization completed');
+        console.log('CommunicationSection: 长轮询初始化完成');
         
       } catch (error) {
-        console.error('CommunicationSection: Failed to initialize long polling:', error);
+        console.error('CommunicationSection: 初始化长轮询失败:', error);
       }
     },
     
     cleanupPolling() {
       if (this.pollingConnection && this.inquiryId) {
         this.pollingConnection.stopPolling(this.inquiryId);
-        console.log(`CommunicationSection: Stop polling for inquiry ${this.inquiryId}`);
+        console.log(`CommunicationSection: 停止轮询询价单 ${this.inquiryId}`);
       }
     },
     
@@ -293,69 +176,18 @@ export default {
       try {
         const { messages } = data;
         
-        console.log('CommunicationSection: Received new message data:', data);
-        
         if (messages && messages.length > 0) {
-          // 标准化消息格式，处理字段名差异
-          const normalizedMessages = messages.map(msg => {
-            const normalizedMsg = {
-              id: msg.id,
-              content: msg.content || msg.message, // 处理 content/message 字段差异
-              sender: this.getSenderName(msg.sender_type),
-              isUser: msg.sender_type === 'customer',
-              timestamp: msg.timestamp || msg.created_at, // 处理时间戳字段差异
-              created_at: msg.created_at,
-              sender_type: msg.sender_type,
-              message_type: msg.message_type,
-              is_read: msg.is_read
-            };
-            
-            console.log('Normalized message:', normalizedMsg);
-            return normalizedMsg;
+          // 通知父组件有新消息
+          this.$emit('new-messages', {
+            inquiryId: this.inquiryId,
+            messages: messages
           });
           
-          // 过滤掉已存在的消息，避免重复
-          const newMessages = normalizedMessages.filter(newMsg => {
-            return !this.allMessages.some(existingMsg => 
-              existingMsg.id === newMsg.id || 
-              (existingMsg.timestamp === newMsg.timestamp && existingMsg.content === newMsg.content)
-            );
-          });
-          
-          if (newMessages.length > 0) {
-            // 直接添加到本地消息列表
-            this.localMessages.push(...newMessages);
-            
-            // 同时通知父组件有新消息（保持向后兼容）
-            this.$emit('new-messages', {
-              inquiryId: this.inquiryId,
-              messages: newMessages
-            });
-            
-            console.log(`CommunicationSection: Directly displayed ${newMessages.length} new messages`);
-            
-            // 滚动到底部显示新消息
-            this.$nextTick(() => {
-              this.scrollToBottom();
-            });
-          }
+          console.log(`CommunicationSection: 收到 ${messages.length} 条新消息`);
         }
         
       } catch (error) {
-        console.error('CommunicationSection: Failed to handle new messages:', error);
-      }
-    },
-    
-    getSenderName(senderType) {
-      switch (senderType) {
-        case 'customer':
-          return this.$t('common.customer') || 'Customer';
-        case 'admin':
-          return this.$t('common.admin') || 'Admin';
-        case 'system':
-          return this.$t('common.system') || 'System';
-        default:
-          return senderType || this.$t('common.unknown') || 'Unknown';
+        console.error('CommunicationSection: 处理新消息失败:', error);
       }
     }
   }
@@ -382,7 +214,6 @@ export default {
   padding: $spacing-md;
   background: $gray-50;
   min-height: 0;
-  /* 移除max-height限制，让聊天历史区域能够充分利用可用空间 */
 }
 
 .chat-message {

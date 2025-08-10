@@ -19,6 +19,12 @@
           <el-input v-model="filters.userId" :placeholder="$t('inquiry.management.search_placeholder') || '输入用户ID'"
             clearable />
         </el-form-item>
+        <el-form-item :label="$t('admin.inquiry.filter.unread') || '未读消息'">
+          <el-select v-model="filters.unreadFilter" :placeholder="$t('admin.inquiry.filter.unread_placeholder') || '选择过滤条件'" clearable>
+            <el-option value="unread" :label="$t('admin.inquiry.filter.has_unread') || '有未读消息'" />
+            <el-option value="read" :label="$t('admin.inquiry.filter.no_unread') || '无未读消息'" />
+          </el-select>
+        </el-form-item>
         <el-form-item :label="$t('admin.inquiry.filter.dateRange') || '日期范围'">
           <el-date-picker v-model="dateRange" type="daterange" :range-separator="$t('admin.inquiry.filter.to') || '至'"
             :start-placeholder="$t('admin.inquiry.filter.startDate') || '开始日期'"
@@ -28,6 +34,10 @@
         <el-form-item>
           <el-button type="primary" @click="loadInquiries">{{ $t('common.search') || '搜索' }}</el-button>
           <el-button @click="resetFilters">{{ $t('common.reset') || '重置' }}</el-button>
+          <el-button type="success" @click="refreshData" :loading="refreshing">
+            <el-icon><Refresh /></el-icon>
+            {{ $t('common.refresh') || '刷新' }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -35,6 +45,24 @@
     <!-- 询价列表 -->
     <el-card class="inquiry-list-card">
       <el-table v-loading="loading" :data="inquiries" stripe>
+        <el-table-column :label="$t('admin.inquiry.table.unreadCount') || '未读消息'" width="120" fixed="left">
+          <template #default="{ row }">
+            <div class="unread-message-cell">
+              <el-badge v-if="row.unread_count > 0" :value="row.unread_count" type="danger">
+                <el-icon class="message-icon"><ChatDotRound /></el-icon>
+              </el-badge>
+              <span v-else class="no-unread">{{ $t('admin.inquiry.table.noUnread') || '无未读' }}</span>
+              <el-button 
+                v-if="row.unread_count > 0" 
+                type="text" 
+                size="small" 
+                @click="markAsRead(row.id)"
+                class="mark-read-btn">
+                {{ $t('admin.inquiry.action.markRead') || '标记已读' }}
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="user_inquiry_id" :label="$t('inquiry.management.table.id') || '询价单号'" width="120" />
         <el-table-column prop="title" :label="$t('admin.inquiry.table.title') || '标题'" min-width="150" />
         <el-table-column :label="$t('inquiry.management.table.user') || '用户'" width="150">
@@ -98,29 +126,33 @@
       :close-on-click-modal="false"
       class="inquiry-detail-dialog">
       <inquiry-detail v-if="detailDialogVisible && selectedInquiryId" :inquiry-id="selectedInquiryId"
-        @status-updated="handleStatusUpdated" @quote-updated="handleQuoteUpdated" />
+        @status-updated="handleStatusUpdated" @quote-updated="handleQuoteUpdated" @messages-read="handleMessagesRead" />
     </el-dialog>
   </div>
 </template>
 
 <script>
-
+import { ChatDotRound, Refresh } from '@element-plus/icons-vue'
 import InquiryDetail from '../../components/admin/InquiryDetail.vue'
 
 export default {
   name: 'InquiryManagement',
   components: {
-    InquiryDetail
+    InquiryDetail,
+    ChatDotRound,
+    Refresh
   },
   data() {
     return {
       loading: false,
+      refreshing: false,
       inquiries: [],
       filters: {
         status: '',
         userId: '',
         startDate: '',
-        endDate: ''
+        endDate: '',
+        unreadFilter: ''
       },
       dateRange: [],
       pagination: {
@@ -129,11 +161,53 @@ export default {
         total: 0
       },
       detailDialogVisible: false,
-      selectedInquiryId: null
+      selectedInquiryId: null,
+      userIdTimer: null
+    }
+  },
+  watch: {
+    // 监听筛选条件变化，自动重新加载数据
+    'filters.status'() {
+      this.pagination.page = 1
+      this.loadInquiries()
+    },
+    'filters.unreadFilter'() {
+      this.pagination.page = 1
+      this.loadInquiries()
+    },
+    'filters.userId'() {
+      // 用户ID输入有延迟，避免频繁请求
+      clearTimeout(this.userIdTimer)
+      this.userIdTimer = setTimeout(() => {
+        this.pagination.page = 1
+        this.loadInquiries()
+      }, 500)
     }
   },
   mounted() {
+    // 检查路由参数，如果有filter=unread则自动过滤未读消息
+    if (this.$route.query.filter === 'unread') {
+      this.filters.unreadFilter = 'unread'
+    }
+    
     this.loadInquiries()
+    
+    // 检查是否有查看询价详情的查询参数
+    const viewInquiryId = this.$route.query.view;
+    if (viewInquiryId) {
+      // 等待询价列表加载完成后自动打开详情对话框
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.viewDetail(parseInt(viewInquiryId));
+        }, 500); // 给一点时间让数据加载完成
+      });
+    }
+  },
+  beforeUnmount() {
+    // 清理定时器
+    if (this.userIdTimer) {
+      clearTimeout(this.userIdTimer)
+    }
   },
   methods: {
     async loadInquiries() {
@@ -180,7 +254,8 @@ export default {
         status: '',
         userId: '',
         startDate: '',
-        endDate: ''
+        endDate: '',
+        unreadFilter: ''
       }
       this.dateRange = []
       this.pagination.page = 1
@@ -229,6 +304,10 @@ export default {
       this.loadInquiries()
     },
     
+    handleMessagesRead() {
+      this.loadInquiries()
+    },
+    
     getStatusType(status) {
       const statusMap = {
         inquiried: 'warning',
@@ -257,6 +336,45 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+    
+    async refreshData() {
+      this.refreshing = true
+      try {
+        await this.loadInquiries()
+        this.$messageHandler.showSuccess(
+          this.$t('admin.inquiry.success.refreshed') || '数据已刷新',
+          'admin.inquiry.success.refreshed'
+        )
+      } catch (error) {
+        // 错误已经被统一处理
+      } finally {
+        this.refreshing = false
+      }
+    },
+    
+    async markAsRead(inquiryId) {
+      try {
+        await this.$api.putWithErrorHandler(`/admin/inquiries/${inquiryId}/messages/read`, {}, {
+          fallbackKey: 'admin.inquiry.error.markReadFailed'
+        })
+        
+        this.$messageHandler.showSuccess(
+          this.$t('admin.inquiry.success.markedAsRead') || '消息已标记为已读',
+          'admin.inquiry.success.markedAsRead'
+        )
+        
+        // 更新本地数据
+        const inquiry = this.inquiries.find(item => item.id === inquiryId)
+        if (inquiry) {
+          inquiry.unread_count = 0
+        }
+        
+        // 刷新数据以确保未读消息数同步
+        await this.loadInquiries()
+      } catch (error) {
+        // 错误已经被统一处理
+      }
     }
   }
 }
@@ -301,6 +419,33 @@ export default {
 
     .text-danger {
       color: #f56c6c;
+    }
+
+    .unread-message-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+
+      .message-icon {
+        font-size: 16px;
+        color: #409eff;
+      }
+
+      .no-unread {
+        color: #909399;
+        font-size: 12px;
+      }
+
+      .mark-read-btn {
+        padding: 0;
+        font-size: 11px;
+        color: #67c23a;
+        
+        &:hover {
+          color: #529b2e;
+        }
+      }
     }
 
     .pagination-wrapper {

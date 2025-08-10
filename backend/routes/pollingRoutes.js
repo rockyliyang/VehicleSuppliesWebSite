@@ -331,7 +331,7 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         requestId,
         inquiryId,
         duration: `${Date.now() - totalCountStart}ms`,
-        totalCount: totalCount.getFirstRow().total
+        totalCount: parseInt(totalCount.getFirstRow().total)
       });
       
       // 获取未读消息数（对于当前用户）
@@ -356,7 +356,7 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         message: getMessage('INQUIRY.MESSAGES.FETCH.SUCCESS'),
         data: {
           newMessages: messages,
-          totalCount: totalCount.getFirstRow().total,
+          totalCount: parseInt(totalCount.getFirstRow().total),
           unreadCount: unreadCount.getFirstRow().unread,
           hasNewMessages: messages.length > 0,
           lastMessageId: messages.length > 0 ? messages[messages.length - 1].id : lastMessageId,
@@ -555,15 +555,15 @@ router.get('/:inquiryId/messages/history', verifyToken, async (req, res) => {
       totalCount: totalCount.getFirstRow().total
     });
     
-    const totalPages = Math.ceil(totalCount.getFirstRow().total / limit);
-    const hasMore = offset + messages.getRows().length < totalCount.getFirstRow().total;
+    const totalPages = Math.ceil(parseInt(totalCount.getFirstRow().total) / limit);
+    const hasMore = offset + messages.getRows().length < parseInt(totalCount.getFirstRow().total);
     
     const responseData = {
       success: true,
       message: getMessage('INQUIRY.MESSAGES.FETCH.SUCCESS'),
       data: {
         messages: messages.getRows().reverse(), // 反转顺序，使其按时间正序
-        totalCount: totalCount.getFirstRow().total,
+        totalCount: parseInt(totalCount.getFirstRow().total),
         currentPage: parseInt(page),
         totalPages,
         hasMore
@@ -576,7 +576,7 @@ router.get('/:inquiryId/messages/history', verifyToken, async (req, res) => {
       userId,
       totalDuration: `${Date.now() - requestStartTime}ms`,
       messageCount: messages.getRowCount(),
-      totalCount: totalCount.getFirstRow().total,
+      totalCount: parseInt(totalCount.getFirstRow().total),
       page,
       totalPages,
       hasMore

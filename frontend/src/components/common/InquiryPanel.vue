@@ -4,15 +4,10 @@
       <!-- Inquiry List Sidebar -->
       <div class="inquiry-sidebar">
         <div class="inquiry-list-header">
-          <div class="header-buttons">
-            <button class="add-inquiry-btn" :disabled="!canAddNewInquiry" @click="addInquiry">
-              <i class="material-icons">add_circle_outline</i>
-              {{ $t('cart.newInquiry') || '新建询价单' }}
-            </button>
-            <button class="refresh-btn" @click="refreshInquiries" :title="$t('cart.refreshInquiries') || '刷新询价单'">
-              <i class="material-icons">refresh</i>
-            </button>
-          </div>
+          <button class="add-inquiry-btn" :disabled="!canAddNewInquiry" @click="addInquiry">
+            <i class="material-icons">add_circle_outline</i>
+            {{ $t('cart.newInquiry') || '新建询价单' }}
+          </button>
         </div>
 
         <div class="inquiry-list-container">
@@ -69,7 +64,7 @@
       </div>
 
       <!-- Inquiry Detail Panel -->
-      <InquiryDetailPanel :inquiry="activeInquiry" @remove-item="removeFromInquiry"
+      <InquiryDetailPanel :inquiry="activeInquiry" @remove-item="removeFromInquiry" @send-message="sendMessage"
         @item-added="handleItemAdded" @update-message="updateInquiryMessage"
         @checkout-inquiry="handleCheckoutInquiry" @new-messages-received="handleNewMessagesReceived" />
     </div>
@@ -96,7 +91,7 @@ export default {
     return {
       inquiries: [],
       activeInquiryId: null,
-      maxCustomInquiries: 10, // custom类型询价单限制
+      maxInquiries: 5,
       // Scroll control data
       showScrollControls: false,
       canScrollUp: false,
@@ -111,13 +106,7 @@ export default {
     },
     
     canAddNewInquiry() {
-      // 计算未支付的custom类型询价单数量
-      const unpaidCustomInquiries = this.inquiries.filter(inquiry => 
-        inquiry.status !== 'paid' && inquiry.inquiry_type === 'custom'
-      );
-      
-      // custom类型限制10个未支付询价单，single类型不限制
-      return unpaidCustomInquiries.length < this.maxCustomInquiries;
+      return this.inquiries.length < this.maxInquiries;
     },
     
     filteredInquiries() {
@@ -153,17 +142,6 @@ export default {
       await this.fetchInquiries();
     },
     
-    async refreshInquiries() {
-      try {
-        MessageHandler.showInfo(this.$t('cart.refreshingInquiries') || '正在刷新询价单...', 'INQUIRY.REFRESHING');
-        await this.fetchInquiries();
-        MessageHandler.showSuccess(this.$t('cart.inquiriesRefreshed') || '询价单已刷新', 'INQUIRY.REFRESHED');
-      } catch (error) {
-        console.error('刷新询价单失败:', error);
-        this.$messageHandler.showError(this.$t('cart.refreshInquiriesFailed') || '刷新询价单失败', 'INQUIRY.REFRESH.FAILED');
-      }
-    },
-    
     async fetchInquiries() {
       try {
         const response = await api.getWithErrorHandler('/inquiries', {
@@ -176,7 +154,6 @@ export default {
             name: inquiry.title,
             title: inquiry.title,
             status: inquiry.status,
-            inquiry_type: inquiry.inquiry_type || 'custom', // 默认为custom类型
             items: (inquiry.items || []).map(item => ({
               id: item.id,
               productId: item.product_id,
@@ -223,11 +200,6 @@ export default {
         if (response.success) {
           const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
           if (inquiry) {
-            // 更新询价基本信息，包括inquiry_type
-            inquiry.inquiry_type = response.data.inquiry.inquiry_type;
-            inquiry.status = response.data.inquiry.status;
-            inquiry.title = response.data.inquiry.title;
-            
             inquiry.items = response.data.items.map(item => ({
               id: item.id,
               productId: item.product_id,
@@ -264,16 +236,8 @@ export default {
     },
     
     async addInquiry() {
-      // 检查custom类型未支付询价单数量限制
-      const unpaidCustomInquiries = this.inquiries.filter(inquiry => 
-        inquiry.status !== 'paid' && inquiry.inquiry_type === 'custom'
-      );
-      
-      if (unpaidCustomInquiries.length >= this.maxCustomInquiries) {
-        this.$messageHandler.showWarning(
-          this.$t('cart.maxCustomInquiriesReached') || `最多只能创建 ${this.maxCustomInquiries} 个未支付的custom类型询价单`, 
-          'cart.warning.maxCustomInquiriesReached'
-        );
+      if (this.inquiries.length >= this.maxInquiries) {
+        this.$messageHandler.showWarning(this.$t('cart.maxInquiriesReached') || `最多只能创建 ${this.maxInquiries} 个询价单`, 'cart.warning.maxInquiriesReached');
         return null;
       }
       
@@ -547,7 +511,42 @@ export default {
       }
     },
     
-
+    async sendMessage(inquiryId, messageContent) {
+      const inquiry = this.inquiries.find(inquiry => inquiry.id === inquiryId);
+      if (!inquiry || !messageContent || !messageContent.trim()) return;
+      
+      const trimmedMessage = messageContent.trim();
+      inquiry.newMessage = '';
+      
+      try {
+        const response = await api.postWithErrorHandler(`/inquiries/${inquiryId}/messages`, {
+          message: trimmedMessage
+        }, {
+          fallbackKey: 'INQUIRY.SEND_MESSAGE.FAILED'
+        });
+        
+        if (response.success) {
+          const message = {
+            id: response.data.id || Date.now(),
+            sender: this.$t('inquiry.you') || '您',
+            content: trimmedMessage,
+            timestamp: Date.now(),
+            isUser: true
+          };
+          
+          inquiry.messages.push(message);
+          
+          this.$nextTick(() => {
+            if (this.$refs.chatHistory) {
+              this.$refs.chatHistory.scrollTop = this.$refs.chatHistory.scrollHeight;
+            }
+          });
+        }
+      } catch (error) {
+        console.error('发送消息失败:', error);
+        inquiry.newMessage = trimmedMessage;
+      }
+    },
     
     updateInquiryMessage(inquiryId, message) {
       const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
@@ -673,14 +672,8 @@ export default {
   border-bottom: $border-width-sm solid $border-light;
 }
 
-.header-buttons {
-  display: flex;
-  gap: $spacing-xs;
-  align-items: center;
-}
-
 .add-inquiry-btn {
-  flex: 1;
+  width: 100%;
   padding: $spacing-sm;
   background: $info-color;
   color: $white;
@@ -693,7 +686,6 @@ export default {
   justify-content: center;
   gap: $spacing-xs;
   transition: $transition-base;
-  min-width: 0; // 允许按钮收缩
 }
 
 .add-inquiry-btn:hover:not(:disabled) {
@@ -703,30 +695,6 @@ export default {
 .add-inquiry-btn:disabled {
   background: $gray-300;
   cursor: not-allowed;
-}
-
-.refresh-btn {
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  background: $success-color;
-  color: $white;
-  border: none;
-  border-radius: $border-radius-sm;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: $transition-base;
-}
-
-.refresh-btn:hover {
-  background: $success-dark;
-}
-
-.refresh-btn .material-icons {
-  font-size: $font-size-lg;
 }
 
 .inquiry-list-container {

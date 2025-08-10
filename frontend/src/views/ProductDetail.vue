@@ -183,7 +183,7 @@
         <div class="inquiry-window-body">
           <!-- 沟通组件 -->
           <CommunicationSection :messages="inquiryMessages" :inquiry-id="currentInquiryId" :items-count="1"
-            :status="inquiryStatus" :initial-message="initialInquiryMessage"
+            :status="inquiryStatus" :initial-message="initialInquiryMessage" @send-message="handleSendInquiryMessage"
             @update-message="handleUpdateInquiryMessage" @checkout="handleInquiryCheckout" @new-messages="handleNewMessages" />
         </div>
       </div>
@@ -589,15 +589,13 @@ export default {
        }
 
       try {
-        // 第一步：查找是否存在只包含当前商品的单品询价单
-        const findResponse = await this.$api.get(`/inquiries/product/${this.product.id}`, {
-          params: { inquiryType: 'single' }
-        });
+        // 第一步：查找是否存在只包含当前商品的询价单
+        const findResponse = await this.$api.get(`/inquiries/product/${this.product.id}`);
         
-        console.log('查询现有单品询价单响应:', findResponse.data);
+        console.log('查询现有询价单响应:', findResponse.data);
         
         if (findResponse.success && findResponse.data && findResponse.data.inquiry) {
-          // 找到现有单品询价单，直接使用
+          // 找到现有询价单，直接使用
           const existingInquiry = findResponse.data.inquiry;
           this.currentInquiryId = existingInquiry.id;
           
@@ -610,13 +608,12 @@ export default {
           // 显示浮动窗口
           this.showInquiryDialog = true;
           
-          this.$messageHandler.showSuccess('已打开现有单品询价单', 'product.success.inquiryOpened');
+          this.$messageHandler.showSuccess('已打开现有询价单', 'product.success.inquiryOpened');
         } else {
-          // 没有找到现有单品询价单，创建新的单品询价单
+          // 没有找到现有询价单，创建新的
           const titlePrefix = this.$t('cart.inquiryTitlePrefix') || '询价单';
           const createInquiryResponse = await this.$api.post('/inquiries', {
-            titlePrefix: titlePrefix,
-            inquiryType: 'single'  // 指定为单品询价
+            titlePrefix: titlePrefix
           });
           
           this.currentInquiryId = createInquiryResponse.data.id;
@@ -830,7 +827,30 @@ export default {
       this.inquiryStatus = 'pending';
       this.initialInquiryMessage = '';
     },
-
+    // 处理发送询价消息
+    async handleSendInquiryMessage(inquiryId, message) {
+      try {
+        const messageData = {
+          message: message
+        };
+        
+        const response = await this.$api.post(`inquiries/${inquiryId}/messages`, messageData);
+        
+        // 添加消息到本地列表
+        this.inquiryMessages.push({
+          id: response.data.id,
+          content: message,
+          sender: this.$store.getters.user?.name || '用户',
+          timestamp: new Date().toISOString(),
+          isUser: true
+        });
+        
+        this.$messageHandler.showSuccess(this.$t('messages.messageSent') || '消息发送成功', 'inquiry.success.messageSent');
+      } catch (error) {
+        console.error('发送消息失败:', error);
+        this.$messageHandler.showError(error, 'inquiry.error.sendMessageFailed');
+      }
+    },
     // 处理更新询价消息
     handleUpdateInquiryMessage(inquiryId, message) {
       // 实时更新消息内容（可用于草稿保存等功能）

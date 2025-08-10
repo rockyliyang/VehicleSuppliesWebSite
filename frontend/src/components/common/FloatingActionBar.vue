@@ -1,12 +1,12 @@
 <template>
-  <div class="floating-action-bar">
+  <div class="floating-action-bar" :class="{ 'expanded': isExpanded }" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
     <!-- 主按钮 -->
-    <div class="main-button">
+    <div class="main-button" @click="toggleExpanded">
       <i class="fas fa-bars"></i>
     </div>
     
     <!-- 向上弹出的菜单 -->
-    <div class="action-menu">
+    <div class="action-menu" :class="{ 'show': isExpanded }">
       <div class="action-item" @click="openWhatsApp">
         <div class="action-icon whatsapp">
           <i class="fab fa-whatsapp"></i>
@@ -34,10 +34,36 @@ import { mapGetters } from 'vuex'
 
 export default {
   name: 'FloatingActionBar',
+  data() {
+    return {
+      isExpanded: true, // 默认展开
+      hoverTimeout: null
+    }
+  },
   computed: {
     ...mapGetters(['cartItemCount'])
   },
   methods: {
+    toggleExpanded() {
+      this.isExpanded = !this.isExpanded
+    },
+    
+    handleMouseEnter() {
+      if (this.hoverTimeout) {
+        clearTimeout(this.hoverTimeout)
+        this.hoverTimeout = null
+      }
+      this.isExpanded = true
+    },
+    
+    handleMouseLeave() {
+      // 延迟收起，避免鼠标快速移动时意外收起
+      this.hoverTimeout = setTimeout(() => {
+        // 如果用户没有手动点击展开，则在鼠标离开后收起
+        // 这里可以根据需要调整逻辑
+      }, 300)
+    },
+    
     goToCart() {
       this.$router.push('/cart')
     },
@@ -112,9 +138,16 @@ export default {
       bottom: 55px;
       gap: 6px;
     }
+
+    // 显示菜单
+    &.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
   }
 
-  // 悬停时显示菜单
+  // 悬停时显示菜单（保持兼容性）
   &:hover .action-menu {
     opacity: 1;
     visibility: visible;

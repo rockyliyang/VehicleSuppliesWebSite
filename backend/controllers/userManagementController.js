@@ -243,7 +243,7 @@ class UserManagementController {
         WHERE ${whereClause}
       `, queryParams);
       
-      const total = countRows.getFirstRow().total;
+      const total = parseInt(countRows.getFirstRow().total);
       const totalPages = Math.ceil(total / limit);
       
       // 查询业务人员列表
@@ -416,9 +416,9 @@ class UserManagementController {
           updated_at: user.updated_at,
           business_groups: businessGroups,
           message_stats: {
-            total_messages: messageStats.getFirstRow().total_messages,
-            replied_messages: messageStats.getFirstRow().replied_messages,
-            processing_messages: messageStats.getFirstRow().processing_messages
+            total_messages: parseInt(messageStats.getFirstRow().total_messages) || 0,
+            replied_messages: parseInt(messageStats.getFirstRow().replied_messages) || 0,
+            processing_messages: parseInt(messageStats.getFirstRow().processing_messages) || 0
           }
         }
       });
@@ -472,7 +472,7 @@ class UserManagementController {
         WHERE ${whereClause}
       `, queryParams);
       
-      const total = countRows.getFirstRow().total;
+      const total = parseInt(countRows.getFirstRow().total);
       const totalPages = Math.ceil(total / limit);
       
       // 查询用户列表

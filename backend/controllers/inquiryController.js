@@ -32,11 +32,20 @@ exports.getUserInquiries = async (req, res) => {
         i.created_at,
         i.updated_at,
         COUNT(ii.id) as item_count,
-        SUM(CASE WHEN ii.unit_price IS NOT NULL THEN ii.quantity * ii.unit_price ELSE 0 END) as total_quoted_price
+        SUM(CASE WHEN ii.unit_price IS NOT NULL THEN ii.quantity * ii.unit_price ELSE 0 END) as total_quoted_price,
+        COALESCE(unread_counts.unread_count, 0) as unread_count
       FROM inquiries i
       LEFT JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = false
+      LEFT JOIN (
+        SELECT 
+          inquiry_id,
+          COUNT(*) as unread_count
+        FROM inquiry_messages 
+        WHERE is_read = 0 AND deleted = false AND sender_type = 'admin'
+        GROUP BY inquiry_id
+      ) unread_counts ON i.id = unread_counts.inquiry_id
       ${whereClause}
-      GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.inquiry_type, i.created_at, i.updated_at
+      GROUP BY i.id, i.guid, i.user_inquiry_id, i.title, i.status, i.inquiry_type, i.created_at, i.updated_at, unread_counts.unread_count
       ORDER BY i.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
@@ -51,7 +60,7 @@ exports.getUserInquiries = async (req, res) => {
       ${whereClause}
     `;
     const countResult = await query(countQuery, queryParams.slice(0, -2));
-    const total = countResult.getFirstRow().total;
+    const total = parseInt(countResult.getFirstRow().total);
     
     // 为每个询价单查询商品预览图片（最多5张）
     const inquiriesWithItems = [];
@@ -496,6 +505,44 @@ exports.sendMessage = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: getMessage('INQUIRY.MESSAGE.SEND_FAILED')
+    });
+  }
+};
+
+// 标记消息为已读
+exports.markMessagesAsRead = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { inquiryId } = req.params;
+    
+    // 验证询价是否存在且属于当前用户
+    const inquiryResult = await query(
+      'SELECT id, user_id FROM inquiries WHERE id = $1 AND user_id = $2 AND deleted = false',
+      [inquiryId, userId]
+    );
+    
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
+      });
+    }
+    
+    // 标记该询价单中所有管理员发送的未读消息为已读
+    await query(
+      'UPDATE inquiry_messages SET is_read = 1, updated_by = $1, updated_at = NOW() WHERE inquiry_id = $2 AND sender_type = \'admin\' AND is_read = 0 AND deleted = false',
+      [userId, inquiryId]
+    );
+    
+    return res.json({
+      success: true,
+      message: getMessage('INQUIRY.MESSAGE.MARK_READ_SUCCESS')
+    });
+  } catch (error) {
+    console.error('标记消息为已读失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('INQUIRY.MESSAGE.MARK_READ_FAILED')
     });
   }
 };

@@ -38,7 +38,7 @@ exports.getAdminTranslations = async (req, res) => {
       `SELECT COUNT(*) as total FROM language_translations WHERE ${whereClause}`,
       queryParams
     );
-    const total = countResult.getFirstRow().total;
+    const total = parseInt(countResult.getFirstRow().total);
     
     // 获取分页数据
     const rows = await query(
@@ -51,7 +51,7 @@ exports.getAdminTranslations = async (req, res) => {
       message: getMessage('LANGUAGE.GET_SUCCESS'),
       data: {
         translations: rows.getRows(),
-        total: total,
+        total: parseInt(total),
         page: parseInt(page),
         pageSize: limit
       }

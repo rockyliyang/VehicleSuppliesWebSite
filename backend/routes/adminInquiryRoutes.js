@@ -26,6 +26,10 @@ router.put('/items/batch-quote', adminInquiryController.batchUpdateItemQuotes);
 // POST /api/admin/inquiries/:inquiryId/messages
 router.post('/:inquiryId/messages', adminInquiryController.sendMessage);
 
+// 标记消息为已读（管理员）
+// PUT /api/admin/inquiries/:inquiryId/messages/read
+router.put('/:inquiryId/messages/read', adminInquiryController.markMessagesAsRead);
+
 // 更新询价状态（管理员）
 // PUT /api/admin/inquiries/:inquiryId/status
 router.put('/:inquiryId/status', adminInquiryController.updateInquiryStatus);

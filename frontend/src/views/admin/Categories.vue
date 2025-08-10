@@ -98,6 +98,14 @@ export default {
   created() {
     this.fetchCategories()
   },
+  mounted() {
+    // 检查是否有查询参数要求自动打开添加对话框
+    if (this.$route.query.add === 'true') {
+      this.$nextTick(() => {
+        this.handleAdd()
+      })
+    }
+  },
   methods: {
     // 获取分类列表
     async fetchCategories() {

@@ -365,7 +365,7 @@ exports.getAllProducts = async (req, res) => {
       message: getMessage('PRODUCT.LIST_SUCCESS'),
       data: {
         items: productsWithPriceRanges,
-        total: total.getFirstRow().total,
+        total: parseInt(total.getFirstRow().total),
         page: parseInt(page),
         limit: parseInt(limit)
       }
@@ -673,6 +673,100 @@ const parseFirstPrice = (priceString) => {
   return 0;
 };
 
+// 解析阿里巴巴国际站阶梯价格
+// 输入格式示例: "20 - 999 pieces$0.251000 - 9999 pieces$0.24>= 10000 pieces$0.23"
+const parseAlibabaPriceRanges = (priceString) => {
+  if (!priceString || typeof priceString !== 'string') {
+    return [];
+  }
+
+  const priceRanges = [];
+  
+  // 改进的正则表达式，更精确地匹配价格段
+  // 匹配格式：
+  // 1. "数字 - 数字 pieces$价格" (有范围)
+  // 2. ">= 数字 pieces$价格" (无上限)
+  // 3. "数字 pieces$价格" (单个数量)
+  
+  // 先预处理字符串，在价格段之间添加分隔符
+  let processedString = priceString;
+  
+  // 在 pieces$数字 后面如果紧跟数字（但不是小数点后的数字），则添加空格
+  // 使用更精确的正则表达式，避免在小数点后添加空格
+  processedString = processedString.replace(/pieces\$[\d.]+(?=\d+\s*-|\d+\s*pieces|>=)/g, match => match + ' ');
+  
+  const regex = /(>=\s*\d+\s*pieces\$[\d.]+|\d+\s*-\s*\d+\s*pieces\$[\d.]+|\d+\s*pieces\$[\d.]+)/g;
+  const segments = processedString.match(regex) || [];
+
+  segments.forEach((segment, index) => {
+    try {
+      // 提取价格
+      const priceMatch = segment.match(/\$([\d.]+)/);
+      if (!priceMatch) return;
+      
+      const price = parseFloat(priceMatch[1]);
+      if (isNaN(price)) return;
+
+      // 提取数量范围
+      let minQuantity = null;
+      let maxQuantity = null;
+
+      // 处理 ">= 数字" 格式
+      const geMatch = segment.match(/>=\s*(\d+)/);
+      if (geMatch) {
+        minQuantity = parseInt(geMatch[1]);
+        maxQuantity = null; // 无上限
+      } else {
+        // 处理 "数字 - 数字" 格式
+        const rangeMatch = segment.match(/(\d+)\s*-\s*(\d+)/);
+        if (rangeMatch) {
+          minQuantity = parseInt(rangeMatch[1]);
+          maxQuantity = parseInt(rangeMatch[2]);
+        } else {
+          // 处理单个数字格式
+          const singleMatch = segment.match(/(\d+)/);
+          if (singleMatch) {
+            minQuantity = parseInt(singleMatch[1]);
+            maxQuantity = null; // 单个数量默认无上限，后续会调整
+          }
+        }
+      }
+
+      if (minQuantity !== null) {
+        priceRanges.push({
+          min_quantity: minQuantity,
+          max_quantity: maxQuantity,
+          price: price,
+          sort_order: index
+        });
+      }
+    } catch (error) {
+      console.warn('解析价格段失败:', segment, error);
+    }
+  });
+
+  // 排序并调整范围
+  priceRanges.sort((a, b) => a.min_quantity - b.min_quantity);
+  
+  // 调整相邻范围的边界，确保没有重叠和遗漏
+  for (let i = 0; i < priceRanges.length - 1; i++) {
+    const current = priceRanges[i];
+    const next = priceRanges[i + 1];
+    
+    // 如果当前范围没有上限，设置为下一个范围的最小值减1
+    if (current.max_quantity === null) {
+      current.max_quantity = next.min_quantity - 1;
+    }
+    
+    // 确保范围连续，如果有间隙，调整当前范围的上限
+    if (current.max_quantity < next.min_quantity - 1) {
+      current.max_quantity = next.min_quantity - 1;
+    }
+  }
+
+  return priceRanges;
+};
+
 // 从1688导入产品
 exports.importFrom1688 = async (req, res) => {
   const connection = await getConnection();
@@ -694,7 +788,10 @@ exports.importFrom1688 = async (req, res) => {
       category_id
     } = req.body;
 
-    // 解析价格，提取第一个价格值
+    // 解析阶梯价格
+    const priceRanges = parseAlibabaPriceRanges(price);
+    
+    // 解析价格，提取第一个价格值（用作产品基础价格）
     const parsedPrice = parseFirstPrice(price);
 
     // 生成产品编号
@@ -739,7 +836,7 @@ exports.importFrom1688 = async (req, res) => {
         parsedPrice,
         parseInt(minOrderQuantity) || 0,
         'on_shelf', // 默认上架
-        'virtual', // 1688导入的产品默认为代销
+        'consignment', // 1688导入的产品默认为代销
         `供应商: ${supplierName || '未知'} | 位置: ${supplierLocation || '未知'} | 最小起订量: ${minOrderQuantity || '1'} ${unit || '件'}`,
         description || '',
         currentUserId,
@@ -748,6 +845,26 @@ exports.importFrom1688 = async (req, res) => {
     );
 
     const productId_new = result.getFirstRow().id;
+
+    // 保存阶梯价格到 product_price_ranges 表
+    if (priceRanges && priceRanges.length > 0) {
+      for (const range of priceRanges) {
+        await connection.query(
+          `INSERT INTO product_price_ranges (
+            product_id, min_quantity, max_quantity, price, sort_order, created_by, updated_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            productId_new,
+            range.min_quantity,
+            range.max_quantity,
+            range.price,
+            range.sort_order,
+            currentUserId,
+            currentUserId
+          ]
+        );
+      }
+    }
 
     // 图片已经通过 /api/product-images/upload 接口单独上传，这里不需要处理图片
 
@@ -764,7 +881,9 @@ exports.importFrom1688 = async (req, res) => {
         price: parsedPrice,
         stock: parseInt(minOrderQuantity) || 0,
         guid: result.getFirstRow().guid,
-        source_url: url
+        source_url: url,
+        price_ranges: priceRanges,
+        price_ranges_count: priceRanges ? priceRanges.length : 0
       }
     });
   } catch (error) {

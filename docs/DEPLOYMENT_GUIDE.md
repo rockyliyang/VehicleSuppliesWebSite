@@ -144,6 +144,22 @@ In production, Nginx replaces the proxy configuration from `vue.config.js` used 
 
     Replace the entire server block with the following configuration that handles all proxy routes and token forwarding:
 
+    map $http_origin $cors_origin {
+        default "";
+        # 具体域名优先
+        "~^https?://api\.autoeasetechx\.com$" $http_origin;
+        # 主前端域名
+        "~^https?://(www\.)?autoeasetechx\.com$" $http_origin;
+        "~^http://autoeasetechx\.local(:\d+)?$" $http_origin;
+        # 泛域名匹配
+        "~^https?://[\w-]+\.1688\.com$" $http_origin;
+        "~^https?://[\w-]+\.alibaba\.com$" $http_origin;
+        # 裸域名匹配（如需要）
+        "~^https?://1688\.com$" $http_origin;
+        "~^https?://alibaba\.com$" $http_origin;
+         "~^chrome-extension://[a-z0-9]+$" $http_origin;
+    }
+
     ```nginx
     server {
         listen 80;
@@ -160,10 +176,41 @@ In production, Nginx replaces the proxy configuration from `vue.config.js` used 
 
         # API routes - with token forwarding
         location /api {
-            # Extract the 'aex-token' cookie value
+            set $auth_header "";
+            set $token "";
+
+            if ($http_authorization) {
+                set $auth_header $http_authorization;
+            }
+
             if ($http_cookie ~* "aex-token=([^;]+)") {
                 set $token "$1";
+                set $auth_header "Bearer $token";
             }
+
+            # 1. 预检请求专用处理（关键！）
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' $cors_origin;
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+                add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type';
+                add_header 'Access-Control-Allow-Credentials' 'true';
+                add_header 'Access-Control-Max-Age' 86400;
+                add_header 'Vary' 'Origin';
+                add_header X-CORS-Debug "Preflight Passed" always;
+                add_header 'Content-Length' 0;
+                return 204;
+            }
+
+            # 2. 主请求的CORS头（保持一致）
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+            # 隐藏后端可能设置的 CORS 头
+            proxy_hide_header 'Access-Control-Allow-Origin';
+            proxy_hide_header 'Access-Control-Allow-Methods';
+            proxy_hide_header 'Access-Control-Allow-Headers';
 
             proxy_pass http://localhost:3000;
             proxy_http_version 1.1;
@@ -176,7 +223,7 @@ In production, Nginx replaces the proxy configuration from `vue.config.js` used 
             proxy_cache_bypass $http_upgrade;
 
             # Set the Authorization header for the backend
-            proxy_set_header Authorization "Bearer $token";
+            proxy_set_header Authorization $auth_header;
         }
 
         # Static files served by backend

@@ -34,7 +34,7 @@ exports.getOrders = async (req, res) => {
       'SELECT COUNT(*) as total FROM orders WHERE user_id = $1 AND deleted = false',
       [userId]
     );
-    const total = countResult.getFirstRow().total;
+    const total = parseInt(countResult.getFirstRow().total);
 
     // 获取订单列表
     const orders = await query(

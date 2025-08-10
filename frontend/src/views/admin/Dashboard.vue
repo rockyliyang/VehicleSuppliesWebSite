@@ -1,168 +1,237 @@
 <template>
   <div class="admin-dashboard">
-    <div class="page-header">
-      <h2>控制面板</h2>
-    </div>
-
-    <!-- 数据概览卡片 -->
-    <el-row :gutter="20" class="data-overview">
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="data-card">
-          <div class="data-icon">
-            <el-icon>
-              <Goods />
-            </el-icon>
-          </div>
-          <div class="data-info">
-            <div class="data-title">产品总数</div>
-            <div class="data-value">{{ statistics.products }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="data-card">
-          <div class="data-icon" style="background-color: #67C23A;">
-            <el-icon>
-              <User />
-            </el-icon>
-          </div>
-          <div class="data-info">
-            <div class="data-title">用户总数</div>
-            <div class="data-value">{{ statistics.users }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="data-card">
-          <div class="data-icon" style="background-color: #E6A23C;">
-            <el-icon>
-              <List />
-            </el-icon>
-          </div>
-          <div class="data-info">
-            <div class="data-title">订单总数</div>
-            <div class="data-value">{{ statistics.orders }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="data-card">
-          <div class="data-icon" style="background-color: #F56C6C;">
-            <el-icon>
-              <Message />
-            </el-icon>
-          </div>
-          <div class="data-info">
-            <div class="data-title">消息总数</div>
-            <div class="data-value">{{ statistics.messages }}</div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
     <!-- 快捷入口 -->
     <el-row :gutter="20" class="quick-access">
       <el-col :span="24">
         <el-card shadow="hover">
-          <template #header>
-            <span>快捷入口</span>
-          </template>
           <div class="quick-links">
-            <router-link to="/admin/products/add">
-              <el-button type="primary">
-                <el-icon>
-                  <Plus />
-                </el-icon>添加产品
-              </el-button>
-            </router-link>
-            <router-link to="/admin/categories">
-              <el-button type="success">
-                <el-icon>
-                  <FolderAdd />
-                </el-icon>管理分类
-              </el-button>
-            </router-link>
-            <router-link to="/admin/banners">
-              <el-button type="warning">
-                <el-icon>
-                  <PictureRounded />
-                </el-icon>管理Banner
-              </el-button>
-            </router-link>
-            <router-link to="/admin/users">
-              <el-button type="info">
-                <el-icon>
-                  <User />
-                </el-icon>用户管理
-              </el-button>
-            </router-link>
+            <el-button type="primary" @click="navigateToAddProduct">
+              <el-icon>
+                <Plus />
+              </el-icon>添加产品
+            </el-button>
+            <el-button type="success" @click="navigateToAddCategory">
+              <el-icon>
+                <FolderAdd />
+              </el-icon>添加分类
+            </el-button>
+            <el-button type="warning" @click="navigateTo('/admin/banners')">
+              <el-icon>
+                <PictureRounded />
+              </el-icon>管理Banner
+            </el-button>
+            <el-button type="success" plain @click="navigateTo('/admin/company')">
+              <el-icon>
+                <OfficeBuilding />
+              </el-icon>公司信息
+            </el-button>
+            <el-button type="info" @click="refreshDashboard">
+              <el-icon>
+                <Refresh />
+              </el-icon>刷新
+            </el-button>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- 最近产品和订单 -->
-    <el-row :gutter="20" class="recent-data">
-      <el-col :xs="24" :lg="12">
-        <el-card shadow="hover" class="recent-card">
-          <template #header>
-            <span>最新产品</span>
-            <router-link to="/admin/products" class="more-link">查看更多</router-link>
-          </template>
-          <el-table :data="recentProducts" style="width: 100%" size="small">
-            <el-table-column prop="id" label="ID" width="50" />
-            <el-table-column label="产品图片" width="60">
-              <template #default="{row}">
-                <el-image style="width: 40px; height: 40px" :src="row.image" fit="cover" :preview-src-list="[row.image]"
-                  v-if="row.image">
-                </el-image>
-                <span v-else>无图</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="name" label="产品名称" show-overflow-tooltip />
-            <el-table-column prop="created_at" label="创建时间" width="160">
-              <template #default="{row}">
-                {{ formatDate(row.created_at) }}
-              </template>
-            </el-table-column>
-          </el-table>
+    <!-- 数据概览卡片 -->
+    <el-row :gutter="24" class="data-overview">
+      <el-col :span="6" :lg="6" v-for="(item, index) in dataOverview" :key="index">
+        <el-card class="data-card" shadow="hover" @click="handleDataCardClick(item)">
+          <div class="data-content">
+            <div class="data-icon" :class="item.iconClass">
+              <el-icon>
+                <component :is="item.icon" />
+              </el-icon>
+            </div>
+            <div class="data-info">
+              <div class="data-title">{{ item.title }}</div>
+              <div class="data-value">{{ item.value }}</div>
+              <el-badge v-if="item.title === '未读消息数' && item.value > 0" :value="item.value"
+                class="data-badge unread-badge" type="danger" />
+            </div>
+          </div>
         </el-card>
       </el-col>
-      <el-col :xs="24" :lg="12">
-        <el-card shadow="hover" class="recent-card">
+    </el-row>
+
+    <!-- 详细统计信息 -->
+    <el-row :gutter="24" class="detailed-stats">
+      <el-col :span="8">
+        <el-card shadow="hover">
           <template #header>
-            <span>最新订单</span>
-            <router-link to="/admin/orders" class="more-link">查看更多</router-link>
+            <span>用户统计</span>
           </template>
-          <el-table :data="recentOrders" style="width: 100%" size="small">
-            <el-table-column prop="id" label="订单号" width="80" show-overflow-tooltip />
-            <el-table-column prop="user_name" label="用户" width="100" show-overflow-tooltip />
-            <el-table-column prop="amount" label="金额" width="100">
-              <template #default="{row}">
-                ¥{{ row.amount }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="状态" width="100">
-              <template #default="{row}">
-                <el-tag :type="getOrderStatusType(row.status)" size="small">
-                  {{ getOrderStatusText(row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="created_at" label="创建时间" width="160">
-              <template #default="{row}">
-                {{ formatDate(row.created_at) }}
-              </template>
-            </el-table-column>
-          </el-table>
+          <div class="stat-item">
+            <span class="stat-label">总用户数：</span>
+            <span class="stat-value">{{ (statistics.userStats && statistics.userStats.total_users) || 0 }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">普通用户：</span>
+            <span class="stat-value">{{ (statistics.userStats && statistics.userStats.regular_users) || 0 }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">企业用户：</span>
+            <span class="stat-value">{{ (statistics.userStats && statistics.userStats.business_users) || 0 }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">管理员：</span>
+            <span class="stat-value">{{ (statistics.userStats && statistics.userStats.admin_users) || 0 }}</span>
+          </div>
         </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card shadow="hover">
+          <template #header>
+            <span>询价统计</span>
+          </template>
+          <div class="stat-item">
+            <span class="stat-label">总询价数：</span>
+            <span class="stat-value">{{ (statistics.inquiryStats && statistics.inquiryStats.total_inquiries) || 0
+              }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">待处理：</span>
+            <span class="stat-value">{{ (statistics.inquiryStats && statistics.inquiryStats.pending_inquiries) || 0
+              }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">已批准：</span>
+            <span class="stat-value">{{ (statistics.inquiryStats && statistics.inquiryStats.approved_inquiries) || 0
+              }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">已拒绝：</span>
+            <span class="stat-value">{{ (statistics.inquiryStats && statistics.inquiryStats.rejected_inquiries) || 0
+              }}</span>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card shadow="hover">
+          <template #header>
+            <span>消息统计</span>
+          </template>
+          <div class="stat-item">
+            <span class="stat-label">总消息数：</span>
+            <span class="stat-value">{{ (statistics.messageStats && statistics.messageStats.total_messages) || 0
+              }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">未读消息：</span>
+            <span class="stat-value text-danger">{{ (statistics.messageStats && statistics.messageStats.unread_messages)
+              || 0
+              }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">管理员消息：</span>
+            <span class="stat-value">{{ (statistics.messageStats && statistics.messageStats.admin_messages) || 0
+              }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">用户消息：</span>
+            <span class="stat-value">{{ (statistics.messageStats && statistics.messageStats.user_messages) || 0
+              }}</span>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 产品和询价 -->
+    <el-row :gutter="24">
+      <el-col :span="12">
+        <div class="recent-section">
+          <h3>最新产品</h3>
+          <el-card shadow="hover" class="recent-table">
+            <el-table :data="recentProducts" style="width: 100%" @row-click="handleProductRowClick">
+              <el-table-column label="图片" width="80">
+                <template #default="scope">
+                  <el-image :src="scope.row.image || '/default-product.png'"
+                    :preview-src-list="scope.row.image ? [scope.row.image] : []" fit="cover" class="product-thumbnail"
+                    :preview-teleported="true">
+                    <template #error>
+                      <div class="image-slot">
+                        <el-icon>
+                          <PictureIcon />
+                        </el-icon>
+                      </div>
+                    </template>
+                  </el-image>
+                </template>
+              </el-table-column>
+              <el-table-column prop="name" label="产品名称" show-overflow-tooltip />
+              <el-table-column prop="price" label="价格" width="100">
+                <template #default="scope">
+                  ¥{{ scope.row.price }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-tag :type="scope.row.status === 'on_shelf' ? 'success' : 'info'" size="small">
+                    {{ scope.row.status === 'on_shelf' ? '上架' : '下架' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="created_at" label="创建时间" width="150">
+                <template #default="scope">
+                  {{ formatDate(scope.row.created_at) }}
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </div>
+      </el-col>
+      <el-col :span="12">
+        <div class="recent-section">
+          <h3>最新询价</h3>
+          <el-card shadow="hover" class="recent-table">
+            <el-table :data="recentInquiries" style="width: 100%" @row-click="handleInquiryRowClick">
+              <el-table-column label="询价用户" width="120">
+                <template #default="scope">
+                  <div class="user-info">
+                    <div class="user-name">{{ scope.row.user_name }}</div>
+                    <div class="user-email">{{ scope.row.user_email }}</div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="询价商品" show-overflow-tooltip>
+                <template #default="scope">
+                  <div class="product-info">
+                    <div class="product-summary">{{ scope.row.products_summary }}</div>
+                    <div class="item-count">共{{ scope.row.item_count }}件商品</div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="消息" width="80">
+                <template #default="scope">
+                  <span class="message-count" :class="scope.row.unread_messages > 0 ? 'has-unread' : 'no-unread'">
+                    {{ scope.row.unread_messages }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-tag :type="getInquiryStatusType(scope.row.status)" size="small">
+                    {{ getInquiryStatusText(scope.row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="created_at" label="创建时间" width="150">
+                <template #default="scope">
+                  {{ formatDate(scope.row.created_at) }}
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </div>
       </el-col>
     </el-row>
   </div>
 </template>
 
 <script>
-import { Goods, User, List, Message, Plus, FolderAdd, PictureRounded } from '@element-plus/icons-vue'
+import { Goods, User, List, Message, Plus, FolderAdd, PictureRounded, OfficeBuilding, Picture as PictureIcon, Refresh } from '@element-plus/icons-vue'
 
 export default {
   name: 'AdminDashboard',
@@ -173,7 +242,10 @@ export default {
     Message,
     Plus,
     FolderAdd,
-    PictureRounded
+    PictureRounded,
+    OfficeBuilding,
+    PictureIcon,
+    Refresh
   },
   data() {
     return {
@@ -181,97 +253,161 @@ export default {
         products: 0,
         users: 0,
         orders: 0,
-        messages: 0
+        messages: 0,
+        userStats: {
+          total_users: 0,
+          regular_users: 0,
+          business_users: 0,
+          admin_users: 0
+        },
+        inquiryStats: {
+          total_inquiries: 0,
+          pending_inquiries: 0,
+          approved_inquiries: 0,
+          rejected_inquiries: 0
+        },
+        messageStats: {
+          total_messages: 0,
+          unread_messages: 0,
+          admin_messages: 0,
+          user_messages: 0
+        }
       },
       recentProducts: [],
-      recentOrders: []
+      recentInquiries: []
+    }
+  },
+  computed: {
+    dataOverview() {
+      return [
+        {
+          title: '产品总数',
+          value: this.statistics.products,
+          icon: 'Goods',
+          iconClass: ''
+        },
+        {
+          title: '用户总数',
+          value: this.statistics.users,
+          icon: 'User',
+          iconClass: 'user-icon'
+        },
+        {
+          title: '询价总数',
+          value: this.statistics.orders,
+          icon: 'List',
+          iconClass: 'inquiry-icon'
+        },
+        {
+          title: '未读消息数',
+          value: this.statistics.messages,
+          icon: 'Message',
+          iconClass: 'message-icon'
+        }
+      ]
     }
   },
   created() {
     this.fetchStatistics()
     this.fetchRecentProducts()
-    this.fetchRecentOrders()
+    this.fetchRecentInquiries()
   },
   methods: {
     // 获取统计数据
     async fetchStatistics() {
       try {
-        // 实际项目中会调用后端API获取统计数据
-        // 这里模拟数据
-        this.statistics = {
-          products: 128,
-          users: 256,
-          orders: 64,
-          messages: 32
+        const response = await this.$api.get('/admin/stats/dashboard')
+        if (response.success) {
+          const data = response.data
+          this.statistics = {
+            products: parseInt(data.products) || 0,
+            users: parseInt(data.users) || 0,
+            orders: parseInt(data.orders) || 0,
+            messages: parseInt(data.messages) || 0,
+            // 扩展统计信息
+            userStats: {
+              total_users: (data.userStats && data.userStats.total_users) || 0,
+              regular_users: (data.userStats && data.userStats.regular_users) || 0,
+              business_users: (data.userStats && data.userStats.business_users) || 0,
+              admin_users: (data.userStats && data.userStats.admin_users) || 0
+            },
+            inquiryStats: {
+              total_inquiries: (data.inquiryStats && data.inquiryStats.total_inquiries) || 0,
+              pending_inquiries: (data.inquiryStats && data.inquiryStats.pending_inquiries) || 0,
+              approved_inquiries: (data.inquiryStats && data.inquiryStats.approved_inquiries) || 0,
+              rejected_inquiries: (data.inquiryStats && data.inquiryStats.rejected_inquiries) || 0
+            },
+            messageStats: {
+              total_messages: (data.messageStats && data.messageStats.total_messages) || 0,
+              unread_messages: (data.messageStats && data.messageStats.unread_messages) || 0,
+              admin_messages: (data.messageStats && data.messageStats.admin_messages) || 0,
+              user_messages: (data.messageStats && data.messageStats.user_messages) || 0
+            }
+          }
         }
       } catch (error) {
         console.error('获取统计数据失败:', error)
+        // 如果API调用失败，使用默认值
+        this.statistics = {
+          products: 0,
+          users: 0,
+          orders: 0,
+          messages: 0,
+          userStats: {
+            total_users: 0,
+            regular_users: 0,
+            business_users: 0,
+            admin_users: 0
+          },
+          inquiryStats: {
+            total_inquiries: 0,
+            pending_inquiries: 0,
+            approved_inquiries: 0,
+            rejected_inquiries: 0
+          },
+          messageStats: {
+            total_messages: 0,
+            unread_messages: 0,
+            admin_messages: 0,
+            user_messages: 0
+          }
+        }
       }
     },
     
     // 获取最新产品
     async fetchRecentProducts() {
       try {
-        const response = await this.$api.get('products', {
+        const response = await this.$api.get('/admin/stats/recent-products', {
           params: {
-            limit: 5,
-            sort_by: 'created_at',
-            sort_order: 'desc'
+            limit: 5
           }
         })
         
-        // response已经是标准格式，直接使用response.data
-        this.recentProducts = response.data?.items?.slice(0, 5) || []
+        if (response.success) {
+          this.recentProducts = response.data || []
+        }
       } catch (error) {
-        // 错误已在api.js中统一处理
-        console.error('获取最新产品失败')
+        console.error('获取最新产品失败:', error)
+        this.recentProducts = []
       }
     },
     
-    // 获取最新订单
-    async fetchRecentOrders() {
+    // 获取最新询价
+    async fetchRecentInquiries() {
       try {
-        // 实际项目中会调用后端API获取最新订单
-        // 这里模拟数据
-        this.recentOrders = [
-          {
-            id: 'ORD20230001',
-            user_name: '张三',
-            amount: 1299.00,
-            status: 1,
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 2)
-          },
-          {
-            id: 'ORD20230002',
-            user_name: '李四',
-            amount: 899.50,
-            status: 2,
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 5)
-          },
-          {
-            id: 'ORD20230003',
-            user_name: '王五',
-            amount: 2499.00,
-            status: 3,
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 24)
-          },
-          {
-            id: 'ORD20230004',
-            user_name: '赵六',
-            amount: 599.00,
-            status: 0,
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 36)
-          },
-          {
-            id: 'ORD20230005',
-            user_name: '钱七',
-            amount: 1799.00,
-            status: 4,
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 48)
+        const response = await this.$api.get('/admin/stats/recent-inquiries', {
+          params: {
+            limit: 5
           }
-        ]
+        })
+        
+        if (response.success) {
+          this.recentInquiries = response.data || []
+        }
       } catch (error) {
-        console.error('获取最新订单失败:', error)
+        console.error('获取最新询价失败:', error)
+        this.recentInquiries = []
       }
     },
     
@@ -281,28 +417,95 @@ export default {
       return new Date(date).toLocaleString()
     },
     
-    // 获取订单状态类型
-    getOrderStatusType(status) {
+    // 获取询价状态类型
+    getInquiryStatusType(status) {
       const types = {
-        0: 'info',    // 待付款
-        1: 'warning', // 待发货
-        2: 'primary', // 已发货
-        3: 'success', // 已完成
-        4: 'danger'   // 已取消
+        'inquiried': 'warning',  // 已询价
+        'approved': 'success',   // 已批准
+        'rejected': 'danger',    // 已拒绝
+        'paid': 'primary'        // 已付款
       }
       return types[status] || 'info'
     },
     
-    // 获取订单状态文本
-    getOrderStatusText(status) {
+    // 获取询价状态文本
+    getInquiryStatusText(status) {
       const texts = {
-        0: '待付款',
-        1: '待发货',
-        2: '已发货',
-        3: '已完成',
-        4: '已取消'
+        'inquiried': '已询价',
+        'approved': '已批准',
+        'rejected': '已拒绝',
+        'paid': '已付款'
       }
       return texts[status] || '未知'
+    },
+    
+    // 导航到指定页面
+    navigateTo(path) {
+      this.$router.push(path)
+    },
+    
+    // 导航到添加产品页面
+    navigateToAddProduct() {
+      this.$router.push('/admin/products').then(() => {
+        // 等待页面加载完成后模拟点击添加按钮
+        this.$nextTick(() => {
+          setTimeout(() => {
+            // 查找添加产品按钮并触发点击事件
+            const addButton = document.querySelector('.page-header .el-button--primary')
+            if (addButton) {
+              addButton.click()
+            }
+          }, 100)
+        })
+      })
+    },
+
+    // 导航到添加分类页面
+    navigateToAddCategory() {
+      this.$router.push('/admin/categories?add=true')
+    },
+
+    // 刷新仪表板
+    refreshDashboard() {
+      this.fetchStatistics()
+      this.fetchRecentProducts()
+      this.fetchRecentInquiries()
+      this.$message.success('仪表板已刷新')
+    },
+
+    // 处理数据卡片点击
+    handleDataCardClick(item) {
+      switch (item.title) {
+        case '产品总数':
+          this.navigateTo('/admin/products')
+          break
+        case '用户总数':
+          this.navigateTo('/admin/regular-users')
+          break
+        case '询价总数':
+          this.navigateTo('/admin/inquiries')
+          break
+        case '未读消息数':
+          // 跳转到询价管理页面并过滤未读消息
+          this.$router.push({
+            path: '/admin/inquiries',
+            query: { filter: 'unread' }
+          })
+          break
+      }
+    },
+
+    // 处理产品行点击
+    handleProductRowClick(row) {
+      // 由于产品管理使用对话框编辑模式，我们跳转到产品管理页面
+      // 可以考虑传递产品ID作为查询参数，让产品管理页面自动打开编辑对话框
+      this.$router.push(`/admin/products?edit=${row.id}`)
+    },
+
+    // 处理询价行点击
+    handleInquiryRowClick(row) {
+      // 跳转到询价管理页面，可以传递询价ID让其自动打开详情
+      this.$router.push(`/admin/inquiries?view=${row.id}`)
     }
   }
 }
@@ -310,11 +513,9 @@ export default {
 
 <style scoped>
 .admin-dashboard {
-  padding: 20px;
-}
-
-.page-header {
-  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 120px);
 }
 
 .data-overview {
@@ -322,43 +523,144 @@ export default {
 }
 
 .data-card {
+  height: 120px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.data-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.data-content {
   display: flex;
   align-items: center;
-  height: 100px;
-  margin-bottom: 20px;
+  height: 100%;
+  padding: 20px;
 }
 
 .data-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: #409EFF;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #409EFF, #66b3ff);
   color: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 30px;
-  margin-right: 15px;
+  font-size: 28px;
+  margin-right: 20px;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.user-icon {
+  background: linear-gradient(135deg, #67C23A, #85ce61);
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
+}
+
+.inquiry-icon {
+  background: linear-gradient(135deg, #E6A23C, #ebb563);
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3);
+}
+
+.message-icon {
+  background: linear-gradient(135deg, #F56C6C, #f78989);
+  box-shadow: 0 4px 12px rgba(245, 108, 108, 0.3);
 }
 
 .data-info {
   flex: 1;
+  position: relative;
 }
 
 .data-title {
   font-size: 14px;
   color: #909399;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .data-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #303133;
+  line-height: 1;
+}
+
+.data-badge {
+  position: absolute;
+  top: -8px;
+  right: 0;
+}
+
+.unread-badge {
+  font-size: 12px;
+}
+
+.quick-actions {
+  margin-bottom: 32px;
+}
+
+.quick-actions h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 20px;
+}
+
+.action-button {
+  width: 100%;
+  height: 80px;
+  border-radius: 12px;
+  border: 2px solid #e4e7ed;
+  background: #fff;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.action-button:hover {
+  border-color: #409EFF;
+  background: #ecf5ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(64, 158, 255, 0.2);
+}
+
+.action-button .el-icon {
   font-size: 24px;
-  font-weight: bold;
+  margin-bottom: 8px;
+  color: #409EFF;
+}
+
+.action-button span {
   color: #303133;
 }
 
+.recent-section {
+  margin-bottom: 16px;
+}
+
+.recent-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+
+.recent-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .quick-access {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .quick-links {
@@ -382,6 +684,137 @@ export default {
   text-decoration: none;
 }
 
+/* 产品缩略图样式 */
+.product-thumbnail {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.image-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50px;
+  height: 50px;
+  background: #f5f7fa;
+  color: #909399;
+  border-radius: 8px;
+}
+
+/* 用户信息样式 */
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #303133;
+  font-size: 14px;
+}
+
+.user-email {
+  font-size: 12px;
+  color: #909399;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+}
+
+/* 商品信息样式 */
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-summary {
+  font-weight: 500;
+  color: #303133;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-count {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 详细统计信息样式 */
+.detailed-stats {
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 16px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.text-danger {
+  color: #f56c6c !important;
+}
+
+/* 消息数字样式 */
+.message-count {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.message-count.has-unread {
+  background-color: #f56c6c;
+  color: #fff;
+}
+
+.message-count.no-unread {
+  background-color: #f0f2f5;
+  color: #909399;
+}
+
+/* 数据卡片点击样式 */
+.data-card {
+  cursor: pointer;
+}
+
+/* 表格行点击样式 */
+.recent-table .el-table__row {
+  cursor: pointer;
+}
+
+.recent-table .el-table__row:hover {
+  background-color: #f5f7fa;
+}
+
 @media (max-width: 768px) {
   .data-card {
     margin-bottom: 15px;
@@ -394,6 +827,10 @@ export default {
 
   .quick-links a {
     margin-bottom: 10px;
+  }
+
+  .detailed-stats .el-col {
+    margin-bottom: 20px;
   }
 }
 </style>

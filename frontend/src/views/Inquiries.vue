@@ -120,7 +120,7 @@
             :inquiry="selectedMobileInquiry" 
             :is-mobile="true"
             @remove-item="handleRemoveItem"
-
+            @send-message="handleSendMessage"
             @update-message="handleUpdateMessage"
             @checkout-inquiry="handleCheckoutInquiry"
             @item-added="handleMobileItemAdded"
@@ -392,7 +392,19 @@ export default {
       }
     },
     
-
+    // 处理发送消息事件
+    handleSendMessage(inquiryId, message) {
+      if (this.selectedMobileInquiry) {
+        const newMessage = {
+          id: Date.now(),
+          sender: this.$t('inquiry.you') || '您',
+          content: message,
+          timestamp: Date.now(),
+          isUser: true
+        };
+        this.selectedMobileInquiry.messages.push(newMessage);
+      }
+    },
     
     // 处理更新消息事件
     handleUpdateMessage(inquiryId, value) {

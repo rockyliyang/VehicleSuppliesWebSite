@@ -48,9 +48,14 @@
 
       <!-- 分页 -->
       <div class="pagination-container">
-        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper" :total="total"
-          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+        <el-pagination 
+          v-model:current-page="currentPage" 
+          v-model:page-size="pageSize" 
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper" 
+          :total="total"
+          @size-change="handleSizeChange" 
+          @current-change="handleCurrentChange" />
       </div>
     </el-card>
 
@@ -191,17 +196,39 @@ export default {
           params.search = this.searchKeyword
         }
         
+        console.log('请求参数:', params)
         const response = await this.$api.get('/language/admin/translations', { params })
+        console.log('API响应:', response)
+        
         if (response.success) {
           // 处理新的数据结构
           if (response.data.translations) {
             this.translations = response.data.translations
-            this.total = response.data.total
+            this.total = parseInt(response.data.total) || 0
           } else {
             // 兼容旧的数据结构
             this.translations = response.data.items || response.data
-            this.total = response.data.total || this.translations.length
+            this.total = parseInt(response.data.total) || this.translations.length
           }
+          
+          // 确保total至少等于当前数据长度
+          if (this.total < this.translations.length) {
+            this.total = this.translations.length
+          }
+          
+          // 确保分页相关的值都是数字类型
+          this.currentPage = parseInt(this.currentPage) || 1
+          this.pageSize = parseInt(this.pageSize) || 10
+          
+          console.log('处理后的数据:', {
+            translations: this.translations.length,
+            total: this.total,
+            currentPage: this.currentPage,
+            pageSize: this.pageSize,
+            totalType: typeof this.total,
+            currentPageType: typeof this.currentPage,
+            pageSizeType: typeof this.pageSize
+          })
         } else {
           this.$messageHandler.showError(response.message, 'admin.language.error.loadFailed')
         }

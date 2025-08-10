@@ -4,98 +4,98 @@
     <NavigationMenu :breadcrumb-items="breadcrumbItems" />
 
     <div class="container">
-      <!-- Contact Information 区域 -->
-      <div class="contact-info-section">
-        <div class="section-title">
-          <h2>{{ $t('contact.contactInfo') }}</h2>
-          <div class="title-underline"></div>
-        </div>
-
-        <div class="contact-info-main">
-          <!-- 左侧：公司信息和关注我们 -->
-          <div class="company-details">
-            <!-- 公司信息 -->
-            <div class="company-info">
-              <div class="info-item">
-                <div class="info-icon">
-                  <i class="el-icon-location-information"></i>
-                </div>
-                <div class="info-content">
-                  <h3>{{ $t('contact.address') }}</h3>
-                  <p>{{ companyInfo.address || '123 Auto Street, Vehicle City' }}</p>
-                </div>
-              </div>
-
-              <div class="info-item">
-                <div class="info-icon">
-                  <i class="el-icon-phone"></i>
-                </div>
-                <div class="info-content">
-                  <h3>{{ $t('contact.phone') }}</h3>
-                  <p>{{ companyInfo.phone || '+86 123 4567 8910' }}</p>
-                </div>
-              </div>
-
-              <div class="info-item">
-                <div class="info-icon">
-                  <i class="el-icon-message"></i>
-                </div>
-                <div class="info-content">
-                  <h3>{{ $t('contact.email') }}</h3>
-                  <p>{{ companyInfo.email || 'contact@autoease.com' }}</p>
-                </div>
-              </div>
-
-              <div class="info-item">
-                <div class="info-icon">
-                  <i class="el-icon-time"></i>
-                </div>
-                <div class="info-content">
-                  <h3>{{ $t('contact.businessHours') }}</h3>
-                  <p>{{ companyInfo.business_hours || '周一至周五: 9:00 - 18:00' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- 关注我们 -->
-            <div class="follow-us">
-              <h3>{{ $t('contact.followUs') }}</h3>
-              <div class="qrcode-container">
-                <div class="qrcode-item">
-                  <div class="qrcode-image">
-                    <img :src="companyInfo.wechat_qr_code || '../assets/images/qrcode.png'"
-                      :alt="$t('contact.wechatQrCode')" @error="handleImageError">
-                  </div>
-                  <p>{{ $t('contact.scanQrCode') }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 右侧：公司位置 -->
-          <div class="company-location">
-            <h3>{{ $t('contact.companyLocation') }}</h3>
-            <div class="map-container">
-              <img src="../assets/images/map.jpg" :alt="$t('contact.companyMap')" @error="handleImageError">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Message Board 区域 -->
-      <div class="message-board-section">
-        <!-- 联系表单 -->
-        <div class="contact-form-card">
+      <!-- 桌面端：Contact Information 在上，Message Board 在下 -->
+      <div class="desktop-layout">
+        <!-- Contact Information 区域 -->
+        <div class="contact-info-section">
           <div class="section-title">
-            <h2>{{ $t('contact.messageBoard') }}</h2>
+            <h2>{{ $t('contact.contactInfo') }}</h2>
             <div class="title-underline"></div>
           </div>
 
+          <!-- 桌面端布局 -->
+          <div class="contact-info-main">
+            <!-- 左侧：公司信息和关注我们 -->
+            <div class="company-details">
+              <!-- 公司信息 -->
+              <div class="company-info">
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="el-icon-location-information"></i>
+                  </div>
+                  <div class="info-content">
+                    <h3>{{ $t('contact.address') }}</h3>
+                    <p>{{ companyInfo.address || '123 Auto Street, Vehicle City' }}</p>
+                  </div>
+                </div>
 
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="el-icon-phone"></i>
+                  </div>
+                  <div class="info-content">
+                    <h3>{{ $t('contact.phone') }}</h3>
+                    <p>{{ companyInfo.phone || '+86 123 4567 8910' }}</p>
+                  </div>
+                </div>
 
-          <div class="contact-form">
-            <el-form ref="contactFormRef" :model="contactForm" :rules="contactRules" label-width="0px"
-              @submit.prevent="submitForm">
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="el-icon-message"></i>
+                  </div>
+                  <div class="info-content">
+                    <h3>{{ $t('contact.email') }}</h3>
+                    <p>{{ companyInfo.email || 'contact@autoease.com' }}</p>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="el-icon-time"></i>
+                  </div>
+                  <div class="info-content">
+                    <h3>{{ $t('contact.businessHours') }}</h3>
+                    <p>{{ companyInfo.business_hours || '周一至周五: 9:00 - 18:00' }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 关注我们 -->
+              <div class="follow-us">
+                <h3>{{ $t('contact.followUs') }}</h3>
+                <div class="qrcode-container">
+                  <div class="qrcode-item">
+                    <div class="qrcode-image">
+                      <img :src="getQrCodeUrl()" :alt="$t('contact.wechatQrCode')" @error="handleQrCodeError">
+                    </div>
+                    <p>{{ $t('contact.scanQrCode') }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 右侧：公司位置 -->
+            <div class="company-location">
+              <h3>{{ $t('contact.companyLocation') }}</h3>
+              <div class="map-container">
+                <img src="../assets/images/map.jpg" :alt="$t('contact.companyMap')" @error="handleImageError">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message Board 区域 -->
+        <div class="message-board-section">
+          <!-- 联系表单 -->
+          <div class="contact-form-card">
+            <div class="section-title">
+              <h2>{{ $t('contact.messageBoard') }}</h2>
+              <div class="title-underline"></div>
+            </div>
+
+            <div class="contact-form">
+              <el-form ref="contactFormRef" :model="contactForm" :rules="contactRules" label-width="0px"
+                @submit.prevent="submitForm">
               <div class="form-row">
                 <div class="form-col">
                   <el-form-item prop="name">
@@ -146,6 +146,89 @@
                 </el-button>
               </el-form-item>
             </el-form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 手机端：Message Board 在上，Contact Information 在下 -->
+      <div class="mobile-layout">
+        <!-- Message Board 区域 -->
+        <div class="message-board-section">
+          <!-- 联系表单 -->
+          <div class="contact-form-card">
+            <div class="section-title">
+              <h2>{{ $t('contact.messageBoard') }}</h2>
+              <div class="title-underline"></div>
+            </div>
+
+            <div class="contact-form">
+              <el-form ref="contactFormMobileRef" :model="contactForm" :rules="contactRules" label-width="0px"
+                @submit.prevent="submitForm">
+                <div class="form-row">
+                  <div class="form-col">
+                    <el-form-item prop="name">
+                      <FormInput v-model="contactForm.name" :placeholder="getPlaceholderWithRequired('contact.name')"
+                        :disabled="isLoggedIn" maxlength="50" show-word-limit />
+                    </el-form-item>
+                  </div>
+                  <div class="form-col">
+                    <el-form-item prop="email">
+                      <FormInput v-model="contactForm.email" :placeholder="getPlaceholderWithRequired('contact.email')"
+                        :disabled="isLoggedIn" maxlength="100" />
+                    </el-form-item>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-col">
+                    <el-form-item prop="phone">
+                      <FormInput v-model="contactForm.phone" :placeholder="getPlaceholderWithRequired('contact.phone')"
+                        :disabled="isLoggedIn" maxlength="20" />
+                    </el-form-item>
+                  </div>
+                  <div class="form-col">
+                    <el-form-item prop="captcha">
+                      <div class="captcha-container">
+                        <FormInput v-model="contactForm.captcha"
+                          :placeholder="getPlaceholderWithRequired('contact.captcha')" class="captcha-input" />
+                        <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img"
+                          :alt="$t('contact.captcha.alt')" :title="$t('contact.captcha.refresh')" />
+                      </div>
+                    </el-form-item>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-col-full">
+                    <el-form-item prop="subject">
+                      <FormInput v-model="contactForm.subject"
+                        :placeholder="getPlaceholderWithRequired('contact.subject')" maxlength="128" show-word-limit />
+                    </el-form-item>
+                  </div>
+                </div>
+                <el-form-item prop="message">
+                  <FormInput v-model="contactForm.message" type="textarea" :rows="6"
+                    :placeholder="getPlaceholderWithRequired('contact.message')" maxlength="2000" show-word-limit />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="submitForm" :loading="isSubmitting" class="submit-btn">
+                    {{ isSubmitting ? $t('contact.submitting') : $t('contact.submit.message') }}
+                  </el-button>
+                </el-form-item>
+              </el-form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Information 区域 -->
+        <div class="contact-info-section">
+          <!-- 手机端布局 - 只显示公司位置 -->
+          <div class="contact-info-main">
+            <div class="company-location-mobile">
+              <h3>{{ $t('contact.companyLocation') }}</h3>
+              <div class="map-container-mobile">
+                <img src="../assets/images/map.jpg" :alt="$t('contact.companyMap')" @error="handleImageError">
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -263,6 +346,7 @@ export default {
         const response = await this.$api.get('company')
         // response已经是标准格式，直接使用response.data
         this.companyInfo = response.data
+        console.info(this.companyInfo)
       } catch (error) {
         // 错误已在api.js中统一处理
         console.error('Failed to fetch company info')
@@ -287,8 +371,17 @@ export default {
       this.contactForm.captcha = ''; // 清空验证码输入框
     },
     
+    getQrCodeUrl() {
+      return this.companyInfo.wechat_qrcode || '../assets/images/qrcode.png';
+    },
+    
+    handleQrCodeError(event) {
+      event.target.src = '../assets/images/qrcode.png';
+    },
+    
     async submitForm() {
-      this.$refs.contactFormRef.validate(async (valid) => {
+      const formRef = this.$refs.contactFormRef || this.$refs.contactFormMobileRef;
+      formRef.validate(async (valid) => {
         if (valid) {
           this.isSubmitting = true;
           try {
@@ -315,7 +408,7 @@ export default {
             if (!this.isLoggedIn) {
               this.clearUserInfo();
             }
-            this.$refs.contactFormRef.clearValidate();
+            formRef.clearValidate();
           
           } catch (error) {
             // postWithErrorHandler 已经处理了错误显示，这里只需要处理一些特殊逻辑
@@ -332,7 +425,8 @@ export default {
       });
     },
     resetForm() {
-      this.$refs.contactFormRef.resetFields()
+      const formRef = this.$refs.contactFormRef || this.$refs.contactFormMobileRef;
+      formRef.resetFields();
     }
   }
 }
@@ -351,6 +445,21 @@ export default {
 .container {
   @include container;
   padding: 0 $spacing-lg;
+}
+
+// 桌面端和手机端布局控制
+.desktop-layout {
+  @include mobile {
+    display: none;
+  }
+}
+
+.mobile-layout {
+  display: none;
+  
+  @include mobile {
+    display: block;
+  }
 }
 
 .contact-info-section {
@@ -735,12 +844,12 @@ export default {
 }
 
 .map-container {
-    width: 100%;
-    height: $contact-map-mobile-height;
-    border-radius: $border-radius-md;
-    overflow: hidden;
-    box-shadow: $shadow-sm;
-    background: $background-light;
+  width: 100%;
+  height: $contact-map-mobile-height;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  background: $background-light;
 
   img {
     width: 100%;
@@ -787,6 +896,38 @@ export default {
 }
 
 
+
+// 手机端公司位置样式
+.company-location-mobile {
+  width: 100%;
+
+  h3 {
+    color: $text-primary;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-md;
+    text-align: center;
+  }
+
+  .map-container-mobile {
+    width: 100vw;
+    height: 100vw;
+    max-width: 100%;
+    max-height: 100vh;
+    margin-left: calc(-50vw + 50%);
+    border-radius: 0;
+    overflow: hidden;
+    background: $background-light;
+    position: relative;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+}
 
 // 响应式设计
 @include mobile {
@@ -930,18 +1071,18 @@ export default {
 
     .captcha-container {
       flex-direction: row;
-      gap: $spacing-md;
-      align-items: stretch;
+      gap: $spacing-sm;
+      align-items: center;
+      width: 100%;
     }
 
     .captcha-input {
       flex: 1;
-      min-width: 0;
     }
 
     .captcha-img {
-      width: $contact-captcha-width;
-      height: $contact-captcha-height;
+      width: 120px;
+      height: 60px;
       flex-shrink: 0;
     }
 
@@ -1072,15 +1213,20 @@ export default {
     }
 
     .captcha-container {
-      flex-direction: column;
+      flex-direction: row;
       gap: $spacing-sm;
+      align-items: center;
+      width: 100%;
+    }
+
+    .captcha-input {
+      flex: 1;
     }
 
     .captcha-img {
-      width: 100%;
-      max-width: $contact-captcha-width;
-      height: $contact-captcha-height;
-      align-self: center;
+      width: 120px;
+      height: 60px;
+      flex-shrink: 0;
     }
 
     .submit-btn {
@@ -1145,6 +1291,24 @@ export default {
   .company-location {
     .map-container {
       height: 100px;
+    }
+  }
+
+  .contact-form {
+    .captcha-container {
+      flex-direction: row;
+      gap: $spacing-xs;
+      align-items: center;
+    }
+
+    .captcha-input {
+      flex: 1;
+    }
+
+    .captcha-img {
+      width: 100px;
+      height: 55px;
+      flex-shrink: 0;
     }
   }
 }

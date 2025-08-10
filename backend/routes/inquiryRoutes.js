@@ -27,6 +27,9 @@ router.put('/:inquiryId/items/:itemId', inquiryController.updateItemInInquiry);
 // 发送询价消息
 router.post('/:inquiryId/messages', inquiryController.sendMessage);
 
+// 标记消息为已读
+router.put('/:inquiryId/messages/read', inquiryController.markMessagesAsRead);
+
 // 删除询价单中的商品
 router.delete('/:inquiryId/items/:itemId', inquiryController.removeItemFromInquiry);
 
