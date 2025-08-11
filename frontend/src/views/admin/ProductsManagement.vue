@@ -89,9 +89,10 @@
           {{ formatDate(row.created_at) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="280" fixed="right">
         <template #default="{row}">
           <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+          <el-button type="success" size="small" @click="handleManageLinks(row)">关联产品</el-button>
           <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
@@ -256,6 +257,7 @@
             <el-radio :label="'off_shelf'">下架</el-radio>
           </el-radio-group>
         </el-form-item>
+
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -268,6 +270,125 @@
     <!-- 图片预览 -->
     <el-dialog v-model="previewVisible">
       <img :src="previewUrl" alt="Preview" style="width: 100%">
+    </el-dialog>
+
+    <!-- 关联产品管理对话框 -->
+    <el-dialog v-model="linkManageVisible" title="关联产品管理" width="1000px" :close-on-click-modal="false">
+      <div class="link-manage-dialog">
+        <!-- 当前产品信息 -->
+        <div class="current-product-info">
+          <h4>当前产品: {{ currentManageProduct.name }} ({{ currentManageProduct.product_code }})</h4>
+        </div>
+        
+        <!-- 已关联产品列表 -->
+        <div class="linked-products-section">
+          <div class="section-header">
+            <h5>已关联产品 ({{ linkedProducts.length }})</h5>
+          </div>
+          <div class="linked-products-list" v-if="linkedProducts.length > 0">
+            <div v-for="(product, index) in linkedProducts" :key="product.link_id" class="linked-product-item">
+              <el-image 
+                :src="product.link_product_thumbnail" 
+                fit="cover" 
+                class="linked-product-image"
+                v-if="product.link_product_thumbnail">
+              </el-image>
+              <div v-else class="linked-product-no-image">无图片</div>
+              <div class="linked-product-info">
+                <div class="linked-product-name">{{ product.link_product_name }}</div>
+                <div class="linked-product-code">编号: {{ product.link_product_code }}</div>
+                <div class="linked-product-price">价格: ¥{{ product.link_product_price }}</div>
+              </div>
+              <div class="linked-product-actions">
+                <el-button type="danger" size="small" @click="removeLinkedProduct(index)">
+                  <el-icon><Delete /></el-icon>
+                  移除
+                </el-button>
+              </div>
+            </div>
+          </div>
+          <div v-else class="linked-products-empty">
+            暂无关联商品
+          </div>
+        </div>
+        
+        <!-- 添加新关联产品 -->
+        <div class="add-linked-section">
+          <div class="section-header">
+            <h5>添加关联产品</h5>
+          </div>
+          <el-form :model="linkedProductSearch" inline>
+            <el-form-item label="搜索商品">
+              <el-input 
+                v-model="linkedProductSearch.keyword" 
+                placeholder="输入商品名称或编号搜索"
+                style="width: 300px"
+                @keyup.enter="searchLinkedProducts"
+                clearable>
+              </el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="searchLinkedProducts" :loading="searchingProducts">
+                <el-icon><Search /></el-icon>
+                搜索
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+        
+        <div class="search-results" v-if="searchResults.length > 0">
+          <div class="search-results-header">
+            <span>搜索结果 ({{ searchResults.length }})</span>
+          </div>
+          <div class="search-results-list">
+            <div 
+              v-for="product in searchResults" 
+              :key="product.id" 
+              class="search-result-item"
+              :class="{ 'selected': selectedProducts.includes(product.id) }"
+              @click="toggleProductSelection(product)">
+              <el-checkbox 
+                :model-value="selectedProducts.includes(product.id)"
+                @change="toggleProductSelection(product)">
+              </el-checkbox>
+              <el-image 
+                :src="product.thumbnail_url" 
+                fit="cover" 
+                class="search-result-image"
+                v-if="product.thumbnail_url">
+              </el-image>
+              <div v-else class="search-result-no-image">无图片</div>
+              <div class="search-result-info">
+                <div class="search-result-name">{{ product.name }}</div>
+                <div class="search-result-code">编号: {{ product.product_code }}</div>
+                <div class="search-result-price">价格: ¥{{ product.price }}</div>
+                <div class="search-result-category">分类: {{ product.category_name }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div v-else-if="linkedProductSearch.keyword && !searchingProducts" class="no-search-results">
+          未找到相关商品
+        </div>
+        
+        <div v-else-if="!linkedProductSearch.keyword" class="search-placeholder">
+          请输入关键词搜索商品
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeLinkManageDialog">关闭</el-button>
+          <el-button 
+            type="primary" 
+            @click="confirmAddLinkedProducts" 
+            :disabled="selectedProducts.length === 0"
+            v-if="selectedProducts.length > 0">
+            添加选中商品 ({{ selectedProducts.length }})
+          </el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -389,7 +510,17 @@ export default {
         },
         placeholder: '请输入产品详情...'
       },
-      quillKey: 0
+      quillKey: 0,
+      // 关联商品相关数据
+      linkedProducts: [], // 当前产品的关联商品列表
+      linkManageVisible: false, // 关联产品管理对话框显示状态
+      currentManageProduct: {}, // 当前管理关联产品的产品信息
+      linkedProductSearch: {
+        keyword: ''
+      },
+      searchResults: [], // 搜索结果
+      selectedProducts: [], // 选中的商品ID列表
+      searchingProducts: false // 搜索加载状态
     }
   },
   computed: {
@@ -437,11 +568,13 @@ export default {
     // 获取产品分类列表
     async fetchCategories() {
       try {
-        const response = await this.$api.get('categories')
+        const response = await this.$api.getWithErrorHandler('categories', {
+          fallbackKey: 'admin.products.error.fetchCategoriesFailed'
+        })
         this.categoryOptions = response.data || []
       } catch (error) {
         console.error('获取分类失败:', error)
-        this.$messageHandler.showError(error, 'admin.products.error.fetchCategoriesFailed')
+        // 错误已由getWithErrorHandler处理，这里不需要再次显示
       }
     },
     
@@ -462,12 +595,15 @@ export default {
         if (this.filters.status !== '') params.status = this.filters.status
         if (this.filters.product_type !== '') params.product_type = this.filters.product_type
         
-        const response = await this.$api.get('products', { params })
+        const response = await this.$api.getWithErrorHandler('products', { 
+          params,
+          fallbackKey: 'admin.products.error.fetchProductsFailed'
+        })
         this.productList = response.data?.items || []
         this.pagination.total = response.data?.total || 0
       } catch (error) {
         console.error('获取产品列表失败:', error)
-        this.$messageHandler.showError(error, 'admin.products.error.fetchProductsFailed')
+        // 错误已由getWithErrorHandler处理，这里不需要再次显示
       } finally {
         this.loading = false
       }
@@ -481,13 +617,15 @@ export default {
       }
       
       try {
-        const response = await this.$api.post('products/generate-code', {
+        const response = await this.$api.postWithErrorHandler('products/generate-code', {
           category_id: this.productForm.category_id
+        }, {
+          fallbackKey: 'admin.products.error.generateCodeFailed'
         })
         this.productForm.product_code = response.data
       } catch (error) {
         console.error('生成产品编号失败:', error)
-        this.$messageHandler.showError(error, 'admin.products.error.generateCodeFailed')
+        // 错误已由postWithErrorHandler处理，这里不需要再次显示
       }
     },
     
@@ -600,7 +738,9 @@ export default {
           return false // 返回false阻止el-upload组件删除文件
         }
         
-        await this.$api.delete(`product-images/${file.id}`)
+        await this.$api.deleteWithErrorHandler(`product-images/${file.id}`, {
+          fallbackKey: 'admin.products.error.imageDeleteFailed'
+        })
         
         // 恢复手动操作thumbnailList和carouselList的逻辑
         // 从缩略图列表中移除
@@ -621,7 +761,7 @@ export default {
         return true // 返回true允许el-upload组件删除文件
       } catch (error) {
         console.error('删除图片失败:', error)
-        this.$messageHandler.showError(error, 'admin.products.error.imageDeleteFailed')
+        // 错误已由deleteWithErrorHandler处理，这里不需要再次显示
         return false // 返回false阻止el-upload组件删除文件
       }
     },
@@ -720,6 +860,7 @@ export default {
       }
       this.thumbnailList = []
       this.carouselList = []
+      this.linkedProducts = [] // 清空关联商品列表
       this.dialogVisible = true
       this.quillKey++;
       this.$nextTick(() => {
@@ -740,11 +881,15 @@ export default {
       })
       this.quillKey++;
       
-      // 获取产品图片和视频
+      // 获取产品图片、视频和关联商品
       try {
         const [thumbnailResponse, carouselResponse] = await Promise.all([
-          this.$api.get(`product-images?product_id=${row.id}&image_type=0`),
-          this.$api.get(`product-images?product_id=${row.id}&image_type=1`)
+          this.$api.getWithErrorHandler(`product-images?product_id=${row.id}&image_type=0`, {
+            fallbackKey: 'admin.products.error.fetchMediaFailed'
+          }),
+          this.$api.getWithErrorHandler(`product-images?product_id=${row.id}&image_type=1`, {
+            fallbackKey: 'admin.products.error.fetchMediaFailed'
+          })
         ])
         
         this.thumbnailList = thumbnailResponse.data.map(img => ({
@@ -758,9 +903,12 @@ export default {
           name: media.image_url.split('/').pop(),
           url: media.image_url
         }))
+        
+        // 获取关联商品
+        await this.fetchLinkedProducts()
       } catch (error) {
         console.error('获取产品媒体文件失败:', error)
-        this.$messageHandler.showError(error, 'admin.products.error.fetchMediaFailed')
+        // 错误已由getWithErrorHandler处理，这里不需要再次显示
       }
       
       this.dialogVisible = true
@@ -777,14 +925,48 @@ export default {
         type: 'warning'
       }).then(async () => {
         try {
-          const response = await this.$api.delete(`products/${row.id}`)
+          const response = await this.$api.deleteWithErrorHandler(`products/${row.id}`, {
+            fallbackKey: 'admin.products.error.deleteProductFailed'
+          })
           this.$messageHandler.showSuccess(response.message || '删除成功', 'product.success.deleteSuccess')
           this.fetchProducts()
         } catch (error) {
           console.error('删除产品失败:', error)
-          this.$messageHandler.showError(error, 'admin.products.error.deleteProductFailed')
+          // 错误已由deleteWithErrorHandler处理，这里不需要再次显示
         }
       }).catch(() => {})
+    },
+    
+    // 管理关联产品
+    async handleManageLinks(row) {
+      this.currentManageProduct = { ...row }
+      this.linkedProducts = []
+      this.searchResults = []
+      this.selectedProducts = []
+      this.linkedProductSearch.keyword = ''
+      
+      // 获取当前产品的关联产品列表
+      try {
+        const response = await this.$api.getWithErrorHandler(`products/${row.id}/links`, {
+          fallbackKey: 'admin.products.error.fetchLinkedProductsFailed'
+        })
+        this.linkedProducts = response.data || []
+      } catch (error) {
+        console.error('获取关联商品失败:', error)
+        // 错误已由getWithErrorHandler处理，这里不需要再次显示
+      }
+      
+      this.linkManageVisible = true
+    },
+    
+    // 关闭关联产品管理对话框
+    closeLinkManageDialog() {
+      this.linkManageVisible = false
+      this.currentManageProduct = {}
+      this.linkedProducts = []
+      this.searchResults = []
+      this.selectedProducts = []
+      this.linkedProductSearch.keyword = ''
     },
     
     // 阶梯价格验证
@@ -904,26 +1086,44 @@ export default {
           try {
             let response
             if (this.dialogStatus === 'create') {
-              response = await this.$api.postWithErrorHandler('products', this.productForm)
+              response = await this.$api.postWithErrorHandler('products', this.productForm, {
+                fallbackKey: 'admin.products.error.createProductFailed'
+              })
               // 新建产品后，关联图片和视频
               const productId = response.data.id
               
               // 关联所有上传的图片和视频到新创建的产品
               if (this.sessionId) {
-                await this.$api.post('product-images/assign', {
+                await this.$api.postWithErrorHandler('product-images/assign', {
                   product_id: productId,
                   session_id: this.sessionId
+                }, {
+                  fallbackKey: 'admin.products.error.assignImagesFailed'
+                })
+              }
+              
+              // 保存关联商品
+              if (this.linkedProducts.length > 0) {
+                const linkData = this.linkedProducts.map(product => ({
+                  link_product_id: product.link_product_id,
+                  link_type: 'buy_together'
+                }))
+                
+                await this.$api.postWithErrorHandler(`products/${productId}/links`, { links: linkData }, {
+                  fallbackKey: 'admin.products.error.addLinkedProductsFailed'
                 })
               }
             } else {
-              response = await this.$api.put(`products/${this.productForm.id}`, this.productForm)
+              response = await this.$api.putWithErrorHandler(`products/${this.productForm.id}`, this.productForm, {
+                fallbackKey: 'admin.products.error.updateProductFailed'
+              })
             }
             this.$messageHandler.showSuccess(response.message || (this.dialogStatus === 'create' ? '添加成功' : '更新成功'), this.dialogStatus === 'create' ? 'product.success.createSuccess' : 'product.success.updateSuccess')
             this.dialogVisible = false
             this.fetchProducts()
           } catch (error) {
             console.error(this.dialogStatus === 'create' ? '添加产品失败:' : '更新产品失败:', error)
-            this.$messageHandler.showError(error, this.dialogStatus === 'create' ? 'admin.products.error.createProductFailed' : 'admin.products.error.updateProductFailed')
+            // 错误已由相应的WithErrorHandler方法处理，这里不需要再次显示
           } finally {
             this.submitLoading = false
           }
@@ -956,7 +1156,8 @@ export default {
             headers: {
               'Content-Type': 'multipart/form-data',
               ...this.uploadHeaders
-            }
+            },
+            fallbackKey: 'admin.products.error.imageUploadFailed'
           });
           if (res.success && res.data && res.data.images && res.data.images[0]) {
             const url = res.data.images[0].path;
@@ -976,7 +1177,7 @@ export default {
             this.$messageHandler.showError(res.message, 'admin.products.error.imageUploadFailed');
           }
         } catch (err) {
-          this.$messageHandler.showError(err, 'admin.products.error.imageUploadFailed');
+          // 错误已由postWithErrorHandler处理，这里不需要再次显示
         }
       };
     },
@@ -1069,6 +1270,141 @@ export default {
             }
           }
         }
+      }
+    },
+    
+    // 关联商品相关方法
+    // 显示添加关联商品对话框
+    showAddLinkedProductDialog() {
+      this.addLinkedProductVisible = true
+      this.linkedProductSearch.keyword = ''
+      this.searchResults = []
+      this.selectedProducts = []
+    },
+    
+    // 搜索关联商品
+    async searchLinkedProducts() {
+      if (!this.linkedProductSearch.keyword.trim()) {
+        this.$messageHandler.showError('请输入搜索关键词', 'admin.products.error.searchKeywordRequired')
+        return
+      }
+      
+      this.searchingProducts = true
+      try {
+        const response = await this.$api.getWithErrorHandler('products', {
+          params: {
+            keyword: this.linkedProductSearch.keyword,
+            page: 1,
+            limit: 20,
+            status: 'on_shelf'
+          },
+          fallbackKey: 'admin.products.error.searchProductsFailed'
+        })
+        
+        // 过滤掉当前管理的商品和已关联的商品
+        const currentProductId = this.currentManageProduct.id || this.productForm.id
+        const linkedProductIds = this.linkedProducts.map(p => p.link_product_id)
+        
+        // 修正数据访问路径：response.data.items
+        const products = response.data.items || []
+        this.searchResults = products.filter(product => 
+          product.id !== currentProductId && !linkedProductIds.includes(product.id)
+        )
+        
+        if (this.searchResults.length === 0) {
+          this.$messageHandler.showInfo('未找到符合条件的商品', 'admin.products.info.noSearchResults')
+        }
+      } catch (error) {
+        console.error('搜索商品失败:', error)
+        // 错误已由getWithErrorHandler处理，这里不需要再次显示
+      } finally {
+        this.searchingProducts = false
+      }
+    },
+    
+    // 切换商品选择状态
+    toggleProductSelection(product) {
+      const index = this.selectedProducts.indexOf(product.id)
+      if (index > -1) {
+        this.selectedProducts.splice(index, 1)
+      } else {
+        this.selectedProducts.push(product.id)
+      }
+    },
+    
+
+    
+    // 确认添加关联商品
+    async confirmAddLinkedProducts() {
+      if (this.selectedProducts.length === 0) {
+        this.$messageHandler.showError('请选择要关联的商品', 'admin.products.error.noProductsSelected')
+        return
+      }
+      
+      try {
+        const productId = this.currentManageProduct.id
+        const linkData = this.selectedProducts.map(productId => ({
+          link_product_id: productId,
+          link_type: 'buy_together'
+        }))
+        
+        await this.$api.postWithErrorHandler(`products/${productId}/links`, { links: linkData }, {
+          fallbackKey: 'admin.products.error.addLinkedProductsFailed'
+        })
+        
+        // 重新获取关联商品列表
+        const response = await this.$api.getWithErrorHandler(`products/${productId}/links`, {
+          fallbackKey: 'admin.products.error.fetchLinkedProductsFailed'
+        })
+        this.linkedProducts = response.data || []
+        
+        // 清空搜索结果和选中状态
+        this.searchResults = []
+        this.selectedProducts = []
+        this.linkedProductSearch.keyword = ''
+        
+        this.$messageHandler.showSuccess('关联商品添加成功', 'admin.products.success.linkedProductsAdded')
+      } catch (error) {
+        console.error('添加关联商品失败:', error)
+        // 错误已由postWithErrorHandler处理，这里不需要再次显示
+      }
+    },
+    
+    // 移除关联商品
+    async removeLinkedProduct(index) {
+      const linkedProduct = this.linkedProducts[index]
+      
+      try {
+        const productId = this.currentManageProduct.id
+        await this.$api.deleteWithErrorHandler(`products/${productId}/links/${linkedProduct.id}`, {
+          fallbackKey: 'admin.products.error.removeLinkedProductFailed'
+        })
+        
+        // 重新获取关联商品列表
+        const response = await this.$api.getWithErrorHandler(`products/${productId}/links`, {
+          fallbackKey: 'admin.products.error.fetchLinkedProductsFailed'
+        })
+        this.linkedProducts = response.data || []
+        
+        this.$messageHandler.showSuccess('关联商品移除成功', 'admin.products.success.linkedProductRemoved')
+      } catch (error) {
+        console.error('移除关联商品失败:', error)
+        // 错误已由deleteWithErrorHandler处理，这里不需要再次显示
+      }
+    },
+    
+    // 获取关联商品列表
+    async fetchLinkedProducts() {
+      if (!this.productForm.id) return
+      
+      try {
+        const response = await this.$api.getWithErrorHandler(`products/${this.productForm.id}/links`, {
+          fallbackKey: 'admin.products.error.fetchLinkedProductsFailed'
+        })
+        this.linkedProducts = response.data || []
+      } catch (error) {
+        console.error('获取关联商品失败:', error)
+        // 错误已由getWithErrorHandler处理，这里不需要再次显示
       }
     }
   }
@@ -1341,6 +1677,171 @@ export default {
   white-space: nowrap;
 }
 
+/* 关联商品样式 */
+.linked-products-container {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #fafafa;
+  min-height: 100px;
+}
+
+.linked-products-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.linked-products-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.linked-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.linked-product-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.linked-product-item:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.1);
+}
+
+.linked-product-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+}
+
+.linked-product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linked-product-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  line-height: 1.2;
+}
+
+.linked-product-code {
+  font-size: 12px;
+  color: #909399;
+}
+
+.linked-product-price {
+  font-size: 14px;
+  color: #f56c6c;
+  font-weight: 500;
+}
+
+.linked-products-empty {
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+  padding: 20px;
+}
+
+/* 搜索商品对话框样式 */
+.search-products-container {
+  padding: 20px 0;
+}
+
+.search-form {
+  margin-bottom: 20px;
+}
+
+.search-results-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.search-result-item:hover {
+  border-color: #409eff;
+  background-color: #f0f9ff;
+}
+
+.search-result-item.selected {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.search-result-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+}
+
+.search-result-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-result-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  line-height: 1.2;
+}
+
+.search-result-code {
+  font-size: 12px;
+  color: #909399;
+}
+
+.search-result-price {
+  font-size: 14px;
+  color: #f56c6c;
+  font-weight: 500;
+}
+
+.search-result-category {
+  font-size: 12px;
+  color: #606266;
+}
+
+.search-no-results {
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+  padding: 40px 20px;
+}
+
 /* 对话框样式 */
 :deep(.el-dialog) {
   display: flex;
@@ -1480,5 +1981,136 @@ export default {
 
 .quill-editor-container :deep(.ql-image-resize-toolbar button:hover) {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* 关联产品管理对话框样式 */
+.link-manage-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.current-product-info {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #409eff;
+}
+
+.current-product-info h4 {
+  margin: 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.section-header h5 {
+  margin: 0;
+  color: #303133;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.linked-products-section {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 20px;
+  background: #fff;
+}
+
+.linked-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.linked-product-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  background: #fafafa;
+  transition: all 0.3s;
+}
+
+.linked-product-item:hover {
+  border-color: #409eff;
+  background: #f0f9ff;
+}
+
+.linked-product-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.linked-product-no-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #909399;
+  border: 1px solid #e4e7ed;
+}
+
+.linked-product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linked-product-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  line-height: 1.2;
+}
+
+.linked-product-code {
+  font-size: 12px;
+  color: #909399;
+}
+
+.linked-product-price {
+  font-size: 14px;
+  color: #f56c6c;
+  font-weight: 500;
+}
+
+.linked-product-actions {
+  flex-shrink: 0;
+}
+
+.linked-products-empty {
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.add-linked-section {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 20px;
+  background: #fff;
 }
 </style>

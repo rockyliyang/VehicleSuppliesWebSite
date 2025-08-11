@@ -16,4 +16,10 @@ router.post('/import-from-1688', verifyToken, productController.importFrom1688);
 router.put('/:id', verifyToken, productController.updateProduct);
 router.delete('/:id', verifyToken, productController.deleteProduct);
 
+// Product links routes - JWT auth required
+router.get('/:productId/links', productController.getProductLinks);
+router.post('/:productId/links', verifyToken, productController.addProductLink);
+router.put('/:productId/links', verifyToken, productController.updateProductLinks);
+router.delete('/:productId/links/:linkId', verifyToken, productController.deleteProductLink);
+
 module.exports = router;

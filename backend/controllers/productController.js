@@ -418,12 +418,34 @@ exports.getProductById = async (req, res) => {
       [req.params.id]
     );
 
+    // 查询关联商品（Buy Together）
+    const linkedProducts = await connection.query(`
+      SELECT 
+        pl.id as link_id,
+        pl.link_product_id,
+        pl.link_type,
+        pl.sort_order,
+        p.name as link_product_name,
+        p.product_code as link_product_code,
+        p.price as link_product_price,
+        p.status as link_product_status,
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1) as link_product_thumbnail
+      FROM product_links pl
+      LEFT JOIN products p ON pl.link_product_id = p.id
+      WHERE pl.product_id = $1 
+        AND pl.link_type = 'buy_together'
+        AND pl.deleted = false 
+        AND p.deleted = false
+      ORDER BY pl.sort_order ASC, pl.id ASC
+    `, [req.params.id]);
+
     // PostgreSQL 返回的 guid 已经是字符串格式
     const product = {
       ...rows.getFirstRow(),
       price_ranges: priceRanges.getRows(),
       thumbnail_url: mainImages.getRowCount() > 0 ? mainImages.getFirstRow().image_url : '',
-      detail_images: detailImages.getRows().map(img => img.image_url)
+      detail_images: detailImages.getRows().map(img => img.image_url),
+      linked_products: linkedProducts.getRows()
     };
 
     res.json({
@@ -1054,5 +1076,321 @@ exports.getPriceByQuantity = async (req, res) => {
       success: false,
       message: 'Failed to get product price'
     });
+  }
+};
+
+// 获取产品的关联商品
+exports.getProductLinks = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { linkType = 'buy_together' } = req.query;
+
+    // 查询产品是否存在
+    const productExists = await query(
+      'SELECT id FROM products WHERE id = $1 AND deleted = false',
+      [productId]
+    );
+
+    if (productExists.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('PRODUCT.NOT_FOUND')
+      });
+    }
+
+    // 查询关联商品
+    const links = await query(`
+      SELECT 
+        pl.id,
+        pl.link_product_id,
+        pl.link_type,
+        pl.sort_order,
+        p.name as link_product_name,
+        p.product_code as link_product_code,
+        p.price as link_product_price,
+        p.status as link_product_status,
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1) as link_product_thumbnail
+      FROM product_links pl
+      LEFT JOIN products p ON pl.link_product_id = p.id
+      WHERE pl.product_id = $1 
+        AND pl.link_type = $2 
+        AND pl.deleted = false 
+        AND p.deleted = false
+      ORDER BY pl.sort_order ASC, pl.id ASC
+    `, [productId, linkType]);
+
+    res.json({
+      success: true,
+      message: 'Product links retrieved successfully',
+      data: links.getRows()
+    });
+  } catch (error) {
+    console.error('获取产品关联失败:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get product links'
+    });
+  }
+};
+
+// 添加产品关联
+exports.addProductLink = async (req, res) => {
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const { productId } = req.params;
+    const { links, linkProductId, linkType = 'buy_together', sortOrder = 0 } = req.body;
+
+    // 验证主产品是否存在
+    const productExists = await connection.query(
+      'SELECT id FROM products WHERE id = $1 AND deleted = false',
+      [productId]
+    );
+
+    if (productExists.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('PRODUCT.NOT_FOUND')
+      });
+    }
+
+    const { v4: uuidv4 } = require('uuid');
+    const addedLinks = [];
+
+    // 支持批量添加（新格式）
+    if (links && Array.isArray(links) && links.length > 0) {
+      for (let i = 0; i < links.length; i++) {
+        const link = links[i];
+        const currentLinkProductId = link.link_product_id || link.linkProductId;
+        const currentLinkType = link.link_type || linkType;
+        const currentSortOrder = link.sort_order !== undefined ? link.sort_order : i;
+
+        // 验证关联产品是否存在
+        const linkProductExists = await connection.query(
+          'SELECT id FROM products WHERE id = $1 AND deleted = false',
+          [currentLinkProductId]
+        );
+
+        if (linkProductExists.getRowCount() === 0) {
+          console.warn(`Link product ${currentLinkProductId} not found, skipping`);
+          continue;
+        }
+
+        // 检查是否已存在相同的关联
+        const existingLink = await connection.query(
+          'SELECT id FROM product_links WHERE product_id = $1 AND link_product_id = $2 AND link_type = $3 AND deleted = false',
+          [productId, currentLinkProductId, currentLinkType]
+        );
+
+        if (existingLink.getRowCount() > 0) {
+          console.warn(`Product link already exists for ${currentLinkProductId}, skipping`);
+          continue;
+        }
+
+        // 生成GUID并添加产品关联
+        const guid = uuidv4();
+        const result = await connection.query(
+          `INSERT INTO product_links (
+            guid, product_id, link_product_id, link_type, sort_order, 
+            created_by, updated_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+          [guid, productId, currentLinkProductId, currentLinkType, currentSortOrder, req.userId, req.userId]
+        );
+
+        addedLinks.push({
+          id: result.getFirstRow().id,
+          product_id: productId,
+          link_product_id: currentLinkProductId,
+          link_type: currentLinkType,
+          sort_order: currentSortOrder
+        });
+      }
+    } 
+    // 兼容单个添加（旧格式）
+    else if (linkProductId) {
+      // 验证关联产品是否存在
+      const linkProductExists = await connection.query(
+        'SELECT id FROM products WHERE id = $1 AND deleted = false',
+        [linkProductId]
+      );
+
+      if (linkProductExists.getRowCount() === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Link product not found'
+        });
+      }
+
+      // 检查是否已存在相同的关联
+      const existingLink = await connection.query(
+        'SELECT id FROM product_links WHERE product_id = $1 AND link_product_id = $2 AND link_type = $3 AND deleted = false',
+        [productId, linkProductId, linkType]
+      );
+
+      if (existingLink.getRowCount() > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Product link already exists'
+        });
+      }
+
+      // 生成GUID并添加产品关联
+      const guid = uuidv4();
+      const result = await connection.query(
+        `INSERT INTO product_links (
+          guid, product_id, link_product_id, link_type, sort_order, 
+          created_by, updated_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [guid, productId, linkProductId, linkType, sortOrder, req.userId, req.userId]
+      );
+
+      addedLinks.push({
+        id: result.getFirstRow().id,
+        product_id: productId,
+        link_product_id: linkProductId,
+        link_type: linkType,
+        sort_order: sortOrder
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid link data provided'
+      });
+    }
+
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      message: `${addedLinks.length} product link(s) added successfully`,
+      data: addedLinks
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('添加产品关联失败:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add product link'
+    });
+  } finally {
+    connection.release();
+  }
+};
+
+// 删除产品关联
+exports.deleteProductLink = async (req, res) => {
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const { productId, linkId } = req.params;
+
+    // 检查关联是否存在
+    const existing = await connection.query(
+      'SELECT id FROM product_links WHERE id = $1 AND product_id = $2 AND deleted = false',
+      [linkId, productId]
+    );
+
+    if (existing.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product link not found'
+      });
+    }
+
+    // 软删除产品关联
+    await connection.query(
+      'UPDATE product_links SET deleted = true, updated_by = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [req.userId, linkId]
+    );
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: 'Product link deleted successfully'
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('删除产品关联失败:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete product link'
+    });
+  } finally {
+    connection.release();
+  }
+};
+
+// 批量更新产品关联
+exports.updateProductLinks = async (req, res) => {
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const { productId } = req.params;
+    const { links, linkType = 'buy_together' } = req.body;
+
+    // 验证主产品是否存在
+    const productExists = await connection.query(
+      'SELECT id FROM products WHERE id = $1 AND deleted = false',
+      [productId]
+    );
+
+    if (productExists.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('PRODUCT.NOT_FOUND')
+      });
+    }
+
+    // 删除现有的关联（软删除）
+    await connection.query(
+      'UPDATE product_links SET deleted = true, updated_by = $1, updated_at = CURRENT_TIMESTAMP WHERE product_id = $2 AND link_type = $3',
+      [req.userId, productId, linkType]
+    );
+
+    // 添加新的关联
+    if (links && Array.isArray(links) && links.length > 0) {
+      const { v4: uuidv4 } = require('uuid');
+      
+      for (let i = 0; i < links.length; i++) {
+        const link = links[i];
+        
+        // 验证关联产品是否存在
+        const linkProductExists = await connection.query(
+          'SELECT id FROM products WHERE id = $1 AND deleted = false',
+          [link.linkProductId]
+        );
+
+        if (linkProductExists.getRowCount() > 0) {
+          const guid = uuidv4();
+          await connection.query(
+            `INSERT INTO product_links (
+              guid, product_id, link_product_id, link_type, sort_order, 
+              created_by, updated_by
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [guid, productId, link.linkProductId, linkType, i, req.userId, req.userId]
+          );
+        }
+      }
+    }
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: 'Product links updated successfully'
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('更新产品关联失败:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update product links'
+    });
+  } finally {
+    connection.release();
   }
 };
