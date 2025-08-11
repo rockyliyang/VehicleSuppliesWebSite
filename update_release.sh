@@ -154,6 +154,18 @@ deploy_frontend() {
     chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${FRONTEND_DIR}
     chmod -R 750 ${FRONTEND_DIR}
 
+    # Create symbolic link from frontend/static to backend/public/static
+    echo_color "green" "[FRONTEND] Creating symbolic link to backend static files..."
+    sudo -u ${DEPLOY_USER} bash -c "
+        # Remove existing static link/directory if it exists
+        if [ -L '${FRONTEND_DIR}/static' ] || [ -d '${FRONTEND_DIR}/static' ]; then
+            rm -rf '${FRONTEND_DIR}/static'
+        fi
+        # Create symbolic link
+        ln -s '${BACKEND_DIR}/public/static' '${FRONTEND_DIR}/static'
+        echo 'Symbolic link created: ${FRONTEND_DIR}/static -> ${BACKEND_DIR}/public/static'
+    "
+
     # Restart Nginx
     echo_color "green" "[FRONTEND] Restarting Nginx..."
     systemctl restart nginx
@@ -194,6 +206,7 @@ fi
 # Clean up
 cd -
 rm -rf ${TEMP_DIR}
+
 
 echo_color "yellow" "=================================================="
 echo_color "green" "Deployment completed successfully!"

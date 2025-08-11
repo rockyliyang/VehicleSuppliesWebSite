@@ -16,6 +16,27 @@
           </span>
         </div>
       </div>
+
+      <!-- Action Buttons -->
+      <div v-if="showActionButtons" class="action-buttons">
+        <el-button 
+          type="primary" 
+          size="small" 
+          @click.stop="handleChatNow"
+          class="chat-btn">
+          <i class="fas fa-comments"></i>
+          {{ $t('product.chatNow') || 'Chat Now' }}
+        </el-button>
+        <el-button 
+          type="success" 
+          size="small" 
+          @click.stop="handleAddToCart"
+          :loading="addingToCart"
+          class="cart-btn">
+          <i class="fas fa-shopping-cart"></i>
+          {{ $t('product.addToCart') || 'Add to Cart' }}
+        </el-button>
+      </div>
     </div>
   </div>
 </template>
@@ -25,6 +46,8 @@ import { handleImageError } from '../../utils/imageUtils';
 
 export default {
   name: 'ProductCard',
+  components: {
+  },
   props: {
     product: {
       type: Object,
@@ -46,7 +69,16 @@ export default {
       type: String,
       default: 'default', // 'default' | 'home' | 'products'
       validator: value => ['default', 'home', 'products'].includes(value)
+    },
+    showActionButtons: {
+      type: Boolean,
+      default: false
     }
+  },
+  data() {
+    return {
+      addingToCart: false
+    };
   },
   computed: {
     cardStyleClass() {
@@ -84,6 +116,22 @@ export default {
     handleTitleClick() {
       this.$emit('title-click', this.product);
       this.$router.push(`/product/${this.product.id}`);
+    },
+    
+    handleChatNow() {
+      // 触发事件，让父组件处理询价逻辑（包括登录检查）
+      this.$emit('chat-now', {
+        product: this.product
+      });
+    },
+    
+    handleAddToCart() {
+      if (this.addingToCart) return;
+      
+      // 触发事件，让父组件处理添加到购物车逻辑（包括登录检查）
+      this.$emit('add-to-cart', {
+        product: this.product
+      });
     }
   }
 }
@@ -173,6 +221,7 @@ export default {
   align-items: center;
   gap: $spacing-sm;
   margin-top: auto;
+  margin-bottom: $spacing-md;
 }
 
 .product-footer-right {
@@ -207,6 +256,58 @@ export default {
   &:hover {
     color: $primary-dark;
   }
+}
+
+/* 操作按钮区域 */
+.action-buttons {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: auto;
+  flex-wrap: wrap;
+  
+  .el-button {
+    flex: 1;
+    min-width: 0;
+    font-size: $font-size-xs;
+    padding: $spacing-xs $spacing-sm;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    
+    i {
+      margin-right: $spacing-xs;
+      font-size: $font-size-sm;
+    }
+  }
+  
+  .chat-btn {
+    background-color: white;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    
+    &:hover {
+      background-color: #dc2626;
+      border-color: #dc2626;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  }
+  
+  .cart-btn {
+    background-color: white;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    
+    &:hover {
+      background-color: #dc2626;
+      border-color: #dc2626;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  }
+  
+
 }
 
 /* Home页面样式变体 */
@@ -305,6 +406,20 @@ export default {
 
   .product-price {
     font-size: $font-size-lg;
+  }
+  
+  .action-buttons {
+    gap: $spacing-xs;
+    
+    .el-button {
+      font-size: $font-size-xs;
+      padding: $spacing-xs;
+      
+      i {
+        margin-right: 2px;
+        font-size: $font-size-xs;
+      }
+    }
   }
 }
 

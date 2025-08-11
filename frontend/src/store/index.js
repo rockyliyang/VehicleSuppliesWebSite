@@ -165,7 +165,7 @@ export default createStore({
         // 调用check-token接口，如果cookie中有有效token，后端会验证并返回用户信息
         const response = await api.post('/users/check-token')
         if (response.success) {
-            commit('setUser', response.data)
+            commit('setUser', response.data.user)
         }
       } catch (error) {
         // token无效或不存在，保持未登录状态

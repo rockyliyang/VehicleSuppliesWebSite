@@ -100,18 +100,16 @@
               <p>{{ product.short_description }}</p>
             </div>
             <div class="product-actions">
-              <!-- 数量选择器单独一行 -->
-              <div class="quantity-selector">
-                <label class="quantity-label">{{ $t('productDetail.quantity') || '数量' }}:</label>
-                <el-input-number v-model="quantity" :min="1" :max="product.stock" size="default"></el-input-number>
-              </div>
-
-              <!-- 按钮组单独一行 -->
+              <!-- 按钮组 -->
               <div class="action-buttons">
                 <el-button type="primary" @click="addToCart" :disabled="product.product_type === 'self_operated' && product.stock <= 0" :loading="addingToCart"
                   class="add-to-cart-btn">
                   <span v-if="!addingToCart">{{ $t('buttons.addToCart') }}</span>
                   <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
+                </el-button>
+                <el-button type="success" @click="openBuyNowDialog" :disabled="product.product_type === 'self_operated' && product.stock <= 0"
+                  class="buy-now-btn">
+                  {{ $t('buttons.buyNow') || '立即购买' }}
                 </el-button>
                 <el-button class="chat-button" @click="createInquiry">{{
                   $t('buttons.chat') || 'Chat' }}</el-button>
@@ -190,66 +188,11 @@
     </div>
 
     <!-- 邮件对话框 -->
-    <el-dialog v-model="showEmailDialog" :title="$t('productDetail.emailDialog.title')" width="600px" center>
-      <div class="email-dialog-content">
-        <!-- 邮件表单 -->
-        <el-form ref="emailFormRef" :model="emailForm" :rules="emailRules" label-width="0px">
-          <div class="form-row">
-            <div class="form-col">
-              <el-form-item prop="name">
-                <FormInput v-model="emailForm.name" :placeholder="getPlaceholderWithRequired('contact.name')"
-                  :disabled="isLoggedIn" maxlength="50" show-word-limit />
-              </el-form-item>
-            </div>
-            <div class="form-col">
-              <el-form-item prop="email">
-                <FormInput v-model="emailForm.email" :placeholder="getPlaceholderWithRequired('contact.email')"
-                  :disabled="isLoggedIn" maxlength="100" />
-              </el-form-item>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-col">
-              <el-form-item prop="phone">
-                <FormInput v-model="emailForm.phone" :placeholder="getPlaceholderWithRequired('contact.phone')"
-                  :disabled="isLoggedIn" maxlength="20" />
-              </el-form-item>
-            </div>
-            <div class="form-col">
-              <el-form-item prop="captcha">
-                <div class="captcha-container">
-                  <FormInput v-model="emailForm.captcha" :placeholder="getPlaceholderWithRequired('contact.captcha')"
-                    class="captcha-input" />
-                  <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img" :alt="$t('contact.captcha.alt')"
-                    :title="$t('contact.captcha.refresh')" />
-                </div>
-              </el-form-item>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-col-full">
-              <el-form-item prop="subject">
-                <FormInput v-model="emailForm.subject" :placeholder="getPlaceholderWithRequired('contact.subject')"
-                  maxlength="128" show-word-limit />
-              </el-form-item>
-            </div>
-          </div>
-          <el-form-item prop="message">
-            <FormInput v-model="emailForm.message" type="textarea" :rows="6"
-              :placeholder="getPlaceholderWithRequired('contact.message')" maxlength="2000" show-word-limit />
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showEmailDialog = false">{{ $t('common.cancel') }}</el-button>
-          <el-button type="primary" @click="submitEmailForm" :loading="isSubmittingEmail">
-            {{ isSubmittingEmail ? $t('productDetail.emailDialog.sending') : $t('productDetail.emailDialog.send') }}
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <MessageDialog
+      v-model:visible="showEmailDialog"
+      :product="product"
+      @email-sent="handleEmailSent"
+    />
 
     <!-- 登录对话框 -->
     <div v-if="loginDialogVisible" class="login-dialog-overlay">
@@ -258,18 +201,27 @@
           @close="loginDialogVisible = false" />
       </div>
     </div>
+
+    <!-- 立即购买对话框 -->
+    <BuyNowDialog 
+      v-model="showBuyNowDialog" 
+      :product="product"
+      :initial-quantity="1"
+      @checkout="handleBuyNowCheckout" />
   </div>
 </template>
 
 <script>
 // 使用全局注册的$api替代axios
 import { handleImageError } from '../utils/imageUtils';
-import { addToCart } from '../utils/cartUtils';
+import { handleChatNow, handleAddToCart, handleLoginSuccess, loadInquiryMessages, addBrowsingHistory, checkFavoriteStatus } from '../utils/productUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import CommunicationSection from '../components/common/CommunicationSection.vue'
 import LoginDialog from '../components/common/LoginDialog.vue'
-import FormInput from '@/components/common/FormInput.vue'
+
+import BuyNowDialog from '@/components/common/BuyNowDialog.vue'
+import MessageDialog from '@/components/common/MessageDialog.vue'
 import { FullScreen, Close } from '@element-plus/icons-vue';
 
 export default {
@@ -279,7 +231,9 @@ export default {
     NavigationMenu,
     CommunicationSection,
     LoginDialog,
-    FormInput,
+
+    BuyNowDialog,
+    MessageDialog,
     FullScreen,
     Close
   },
@@ -336,45 +290,8 @@ export default {
       initialInquiryMessage: '',
       loginDialogVisible: false,
       pendingAction: null, // 'inquiry' 或 'addToCart'
-      // 邮件对话框相关数据
+      // 对话框状态
       showEmailDialog: false,
-      isSubmittingEmail: false,
-      captchaUrl: '/api/users/captcha?' + Date.now(),
-      emailForm: {
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: '',
-        captcha: ''
-      },
-      emailRules: {
-        name: [
-          { required: true, message: this.$t('contact.name.required'), trigger: 'blur' },
-          { max: 50, message: this.$t('contact.name.tooLong'), trigger: 'blur' }
-        ],
-        email: [
-          { required: true, message: this.$t('contact.email.required'), trigger: 'blur' },
-          { type: 'email', message: this.$t('contact.email.invalid'), trigger: 'blur' },
-          { max: 100, message: this.$t('contact.email.tooLong'), trigger: 'blur' }
-        ],
-        phone: [
-          { required: true, message: this.$t('contact.phone.required'), trigger: 'blur' },
-          { pattern: /^[\d\s\-+()]+$/, message: this.$t('contact.phone.invalid'), trigger: 'blur' },
-          { max: 20, message: this.$t('contact.phone.tooLong'), trigger: 'blur' }
-        ],
-        subject: [
-          { required: true, message: this.$t('contact.subject.required'), trigger: 'blur' },
-          { max: 128, message: this.$t('contact.subject.tooLong'), trigger: 'blur' }
-        ],
-        message: [
-          { required: true, message: this.$t('contact.message.required'), trigger: 'blur' },
-          { max: 2000, message: this.$t('contact.message.tooLong'), trigger: 'blur' }
-        ],
-        captcha: [
-          { required: true, message: this.$t('contact.captcha.required'), trigger: 'blur' }
-        ]
-      },
       // 收藏相关
       favoriteLoading: false,
       isFavorited: false
@@ -558,8 +475,8 @@ export default {
         
         // 如果用户已登录，添加浏览历史和检查收藏状态
         if (this.isLoggedIn) {
-          this.addBrowsingHistory()
-          this.checkFavoriteStatus()
+          await addBrowsingHistory(this.product.id, this)
+          await this.checkFavoriteStatusLocal()
         }
       } catch (error) {
         console.error('获取产品详情失败:', error)
@@ -580,62 +497,16 @@ export default {
       }
     },
     async createInquiry() {
-       // 检查用户是否已登录
-       if (!this.$store.getters.isLoggedIn) {
-         // 显示登录对话框（覆盖整个屏幕）
-         this.pendingAction = 'inquiry';
-         this.loginDialogVisible = true;
-         return;
-       }
-
-      try {
-        // 第一步：查找是否存在只包含当前商品的询价单
-        const findResponse = await this.$api.get(`/inquiries/product/${this.product.id}`);
-        
-        console.log('查询现有询价单响应:', findResponse.data);
-        
-        if (findResponse.success && findResponse.data && findResponse.data.inquiry) {
-          // 找到现有询价单，直接使用
-          const existingInquiry = findResponse.data.inquiry;
-          this.currentInquiryId = existingInquiry.id;
-          
-          // 加载现有消息
-          await this.loadInquiryMessages();
-          
-          // 清空初始消息，不显示默认信息
-          this.initialInquiryMessage = '';
-          
-          // 显示浮动窗口
-          this.showInquiryDialog = true;
-          
-          this.$messageHandler.showSuccess('已打开现有询价单', 'product.success.inquiryOpened');
-        } else {
-          // 没有找到现有询价单，创建新的
-          const titlePrefix = this.$t('cart.inquiryTitlePrefix') || '询价单';
-          const createInquiryResponse = await this.$api.post('/inquiries', {
-            titlePrefix: titlePrefix
-          });
-          
-          this.currentInquiryId = createInquiryResponse.data.id;
-          
-          // 添加商品到询价单（不传递单价，由管理员后续设置）
-          await this.$api.post(`/inquiries/${this.currentInquiryId}/items`, {
-            productId: this.product.id,
-            quantity: this.quantity || 1
-          });
-          
-          // 清空初始消息，不显示默认信息
-          this.initialInquiryMessage = '';
-          this.inquiryMessages = [];
-          
-          // 显示浮动窗口
-          this.showInquiryDialog = true;
-          
-          this.$messageHandler.showSuccess(this.$t('messages.inquiryCreated') || '询价单创建成功', 'product.success.inquiryCreated');
-        }
-      } catch (error) {
-        console.error('创建询价单失败:', error);
-        this.$messageHandler.showError(error, 'product.error.createInquiryFailed');
+      const success = await handleChatNow(
+        this.product, 
+        this, 
+        this.showLoginDialog, 
+        this.showInquiryDialogWithData
+      );
+      
+      if (!success) {
+        // 如果失败，可能是需要登录
+        this.pendingAction = 'inquiry';
       }
     },
     contactUs() {
@@ -645,26 +516,19 @@ export default {
     async addToCart() {
       if (this.addingToCart) return;
       
-      // 检查用户是否已登录
-      if (!this.$store.getters.isLoggedIn) {
-        // 显示登录对话框（覆盖整个屏幕）
+      const success = await handleAddToCart(
+        this.product, 
+        this, 
+        this.showLoginDialog, 
+        (loading) => {
+          this.addingToCart = loading;
+        }
+      );
+      
+      if (!success) {
+        // 如果失败，可能是需要登录
         this.pendingAction = 'addToCart';
-        this.loginDialogVisible = true;
-        return;
-      }
-      
-      this.addingToCart = true;
-      
-      try {
-        // 使用公共的购物车工具函数
-        await addToCart(this.product, {
-            store: this.$store,
-            router: this.$router,
-            api: this.$api,
-            messageHandler: this.$messageHandler,
-            $bus: this.$bus
-          }, this.quantity);
-          
+      } else {
         // 添加成功后的视觉反馈
         this.$nextTick(() => {
           const button = this.$el.querySelector('.add-to-cart-btn');
@@ -675,10 +539,6 @@ export default {
             }, 1000);
           }
         });
-      } catch (error) {
-        console.error('添加到购物车失败:', error);
-      } finally {
-        this.addingToCart = false;
       }
     },
     submitInquiry() {
@@ -827,30 +687,7 @@ export default {
       this.inquiryStatus = 'pending';
       this.initialInquiryMessage = '';
     },
-    // 处理发送询价消息
-    async handleSendInquiryMessage(inquiryId, message) {
-      try {
-        const messageData = {
-          message: message
-        };
-        
-        const response = await this.$api.post(`inquiries/${inquiryId}/messages`, messageData);
-        
-        // 添加消息到本地列表
-        this.inquiryMessages.push({
-          id: response.data.id,
-          content: message,
-          sender: this.$store.getters.user?.name || '用户',
-          timestamp: new Date().toISOString(),
-          isUser: true
-        });
-        
-        this.$messageHandler.showSuccess(this.$t('messages.messageSent') || '消息发送成功', 'inquiry.success.messageSent');
-      } catch (error) {
-        console.error('发送消息失败:', error);
-        this.$messageHandler.showError(error, 'inquiry.error.sendMessageFailed');
-      }
-    },
+ 
     // 处理更新询价消息
     handleUpdateInquiryMessage(inquiryId, message) {
       // 实时更新消息内容（可用于草稿保存等功能）
@@ -909,23 +746,11 @@ export default {
     },
     // 加载询价消息
     async loadInquiryMessages() {
-      try {
-        const response = await this.$api.get(`/inquiries/${this.currentInquiryId}`);
-        if (response.data && response.data.data) {
-          const messages = response.data.data.messages || [];
-          this.inquiryMessages = messages.map(msg => ({
-            id: msg.id,
-            content: msg.message,
-            sender: msg.sender_name || (msg.sender_type === 'user' ? '用户' : '客服'),
-            timestamp: msg.created_at,
-            isUser: msg.sender_type === 'user'
-          }));
-          this.inquiryStatus = response.data.data.inquiry.status || 'pending';
-        }
-      } catch (error) {
-        console.error('加载询价消息失败:', error);
-        this.inquiryMessages = [];
-      }
+      if (!this.currentInquiryId) return;
+      
+      const result = await loadInquiryMessages(this.currentInquiryId, this);
+      this.inquiryMessages = result.messages;
+      this.inquiryStatus = result.status;
     },
     // 放大询价窗口（预留功能）
     expandInquiryDialog() {
@@ -933,114 +758,30 @@ export default {
       this.$messageHandler.showInfo('放大功能正在开发中', 'inquiry.info.expandFeature');
     },
     // 邮件对话框相关方法
-    getPlaceholderWithRequired(key) {
-      // 获取字段名（去掉contact.前缀）
-      const fieldName = key.replace('contact.', '');
-      // 检查该字段是否在验证规则中标记为必填
-      const isRequired = this.emailRules[fieldName] && 
-        this.emailRules[fieldName].some(rule => rule.required === true);
-      
-      const fieldText = this.$t(key);
-      return isRequired ? `* ${fieldText}` : fieldText;
-    },
     openEmailDialog() {
-       // 填充用户信息（如果已登录）
-       if (this.isLoggedIn) {
-         this.fillEmailUserInfo();
-       } else {
-         this.clearEmailUserInfo();
-       }
-       
-       // 设置默认主题
-       this.emailForm.subject = this.$t('productDetail.emailDialog.title');
-       
-       // 设置默认消息内容
-       this.emailForm.message = '';
-       
-       this.showEmailDialog = true;
-       this.refreshCaptcha();
-     },
-    fillEmailUserInfo() {
-      if (this.userInfo && Object.keys(this.userInfo).length > 0) {
-        this.emailForm.name = this.userInfo.username || '';
-        this.emailForm.email = this.userInfo.email || '';
-        this.emailForm.phone = this.userInfo.phone || '';
-      }
+      this.showEmailDialog = true;
     },
-    clearEmailUserInfo() {
-      this.emailForm.name = '';
-      this.emailForm.email = '';
-      this.emailForm.phone = '';
-    },
-    refreshCaptcha() {
-      this.captchaUrl = '/api/users/captcha?' + Date.now();
-      this.emailForm.captcha = ''; // 清空验证码输入框
-    },
-    async submitEmailForm() {
-      this.$refs.emailFormRef.validate(async (valid) => {
-        if (valid) {
-          this.isSubmittingEmail = true;
-          try {
-            const submitData = {
-              name: this.emailForm.name,
-              email: this.emailForm.email,
-              phone: this.emailForm.phone,
-              subject: this.emailForm.subject,
-              message: this.emailForm.message,
-              captcha: this.emailForm.captcha,
-              // 添加产品相关信息
-              productId: this.product.id,
-              productName: this.product.name,
-              productPrice: this.product.price
-            };
-            
-            await this.$api.postWithErrorHandler('contact/messages', submitData);
-            
-            this.$messageHandler.showSuccess(
-              this.$t('productDetail.emailDialog.success'), 
-              'productDetail.emailDialog.success'
-            );
-            
-            // 重置表单，但保留用户信息（如果已登录）
-            this.emailForm.subject = '';
-            this.emailForm.message = '';
-            this.emailForm.captcha = '';
-            this.refreshCaptcha(); // 重置后刷新验证码
-            if (!this.isLoggedIn) {
-              this.clearEmailUserInfo();
-            }
-            this.$refs.emailFormRef.clearValidate();
-            this.showEmailDialog = false;
-          
-          } catch (error) {
-            // postWithErrorHandler 已经处理了错误显示，这里只需要处理一些特殊逻辑
-            console.error('Submit email form error:', error);
-            this.$messageHandler.showError(
-              this.$t('productDetail.emailDialog.failed'), 
-              'productDetail.emailDialog.failed'
-            );
-          } finally {
-            this.isSubmittingEmail = false;
-          }
-        } else {
-          this.$messageHandler.showError(
-            this.$t('contact.error.formIncomplete'), 
-            'contact.error.formIncomplete'
-          );
-        }
-      });
+    handleEmailSent() {
+      this.showEmailDialog = false;
+      this.$messageHandler.showSuccess(
+        this.$t('productDetail.emailDialog.success'), 
+        'productDetail.emailDialog.success'
+      );
     },
     // 处理登录成功
-     handleLoginSuccess() {
+     async handleLoginSuccess() {
        this.loginDialogVisible = false;
        
-       // 根据用户之前的操作执行相应的功能
-       if (this.pendingAction === 'inquiry') {
-         this.createInquiry();
-       } else if (this.pendingAction === 'addToCart') {
-         this.addToCart();
-       } else if (this.pendingAction === 'email') {
-         this.openEmailDialog();
+       if (this.pendingAction && this.product) {
+         await handleLoginSuccess(
+           this.pendingAction,
+           this.product,
+           this,
+           this.showInquiryDialogWithData,
+           (loading) => {
+             this.addingToCart = loading;
+           }
+         );
        }
        
        // 清除待执行的操作
@@ -1048,39 +789,35 @@ export default {
        
        // 登录成功后添加浏览历史和检查收藏状态
        if (this.product && this.product.id) {
-         this.addBrowsingHistory();
-         this.checkFavoriteStatus();
+         await addBrowsingHistory(this.product.id, this);
+         await this.checkFavoriteStatusLocal();
        }
      },
      
-     // 添加浏览历史
-     async addBrowsingHistory() {
-       if (!this.isLoggedIn || !this.product.id) return;
+     // 显示登录对话框
+     showLoginDialog(action) {
+       this.pendingAction = action;
+       this.loginDialogVisible = true;
+     },
+
+     // 显示询价对话框
+     showInquiryDialogWithData(data) {
+       this.currentInquiryId = data.inquiryId;
+       this.initialInquiryMessage = '';
+       this.showInquiryDialog = true;
        
-       try {
-         await this.$api.post('user-products', {
-           product_id: this.product.id,
-           type: 'viewed'
-         });
-       } catch (error) {
-         console.error('添加浏览历史失败:', error);
-         // 浏览历史失败不影响用户体验，不显示错误消息
+       // 如果不是新询价单，加载消息
+       if (!data.isNew) {
+         this.loadInquiryMessages();
        }
      },
      
-     // 检查收藏状态
-     async checkFavoriteStatus() {
+     // 检查收藏状态（本地方法）
+     async checkFavoriteStatusLocal() {
        if (!this.isLoggedIn || !this.product.id) return;
        
-       try {
-         const response = await this.$api.get(`user-products/check/${this.product.id}`, {
-           params: { type: 'favorite' }
-         });
-         this.isFavorited = response.data.exists;
-       } catch (error) {
-         console.error('检查收藏状态失败:', error);
-         this.isFavorited = false;
-       }
+       const result = await checkFavoriteStatus(this.product.id, this);
+       this.isFavorited = result;
      },
      
      // 切换收藏状态
@@ -1123,10 +860,40 @@ export default {
        } finally {
          this.favoriteLoading = false;
        }
+     },
+     
+     // 立即购买相关方法
+     openBuyNowDialog() {
+       // 检查用户是否已登录
+       if (!this.isLoggedIn) {
+         this.pendingAction = 'buyNow';
+         this.loginDialogVisible = true;
+         return;
+       }
+       
+       this.showBuyNowDialog = true;
+     },
+     
+     // 处理结账事件
+     handleCheckout(orderData) {
+       this.showBuyNowDialog = false;
+       
+       // 将订单数据存储到sessionStorage，供UnifiedCheckout使用
+       sessionStorage.setItem('selectedCartItems', JSON.stringify([orderData]));
+       
+       // 跳转到结算页面
+       this.$router.push({
+         name: 'UnifiedCheckout'
+       });
      }
   }
 }
 </script>
+
+<!-- Quill 全局样式 - 不能使用 scoped -->
+<style lang="scss">
+@import '@/assets/styles/_quill-global.scss';
+</style>
 
 <style lang="scss" scoped>
 @import '@/assets/styles/_variables';
@@ -2343,6 +2110,300 @@ export default {
     max-height: none;
     border-radius: 0;
     box-shadow: none;
+  }
+}
+
+/* 立即购买弹窗样式 */
+.buy-now-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(3px);
+}
+
+.buy-now-dialog {
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.buy-now-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $border-light;
+  background: $gray-50;
+}
+
+.buy-now-title {
+  margin: 0;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+}
+
+.buy-now-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: $border-radius-sm;
+  color: $text-secondary;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: $gray-200;
+    color: $text-primary;
+  }
+
+  .el-icon {
+    font-size: $font-size-lg;
+  }
+}
+
+.buy-now-content {
+  padding: $spacing-lg;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.product-summary {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius-md;
+  margin-bottom: $spacing-lg;
+}
+
+.product-image-small {
+  width: 60px;
+  height: 60px;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.product-info-small {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-name-small {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+  margin-bottom: $spacing-xs;
+  line-height: $line-height-normal;
+  word-wrap: break-word;
+}
+
+.product-code-small {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  word-wrap: break-word;
+}
+
+.quantity-section {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+  padding: $spacing-md;
+  border: 1px solid $border-light;
+  border-radius: $border-radius-md;
+  background: $white;
+}
+
+.quantity-label {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $text-primary;
+  min-width: 60px;
+}
+
+/* 调整数量输入框宽度 */
+.quantity-section :deep(.el-input-number) {
+  width: 150px;
+}
+
+.quantity-section :deep(.el-input-number .el-input__inner) {
+  text-align: center;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+}
+
+.price-section {
+  margin-bottom: $spacing-lg;
+}
+
+.price-breakdown {
+  padding: $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius-md;
+  border: 1px solid $border-light;
+}
+
+.unit-price,
+.total-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.total-price {
+  padding-top: $spacing-sm;
+  border-top: 1px solid $border-light;
+  margin-top: $spacing-sm;
+}
+
+.price-label {
+  font-size: $font-size-md;
+  color: $text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.price-value {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $primary-color;
+
+  &.total {
+    font-size: $font-size-lg;
+    color: $success-color;
+  }
+}
+
+.tier-price-hint {
+  padding: $spacing-md;
+  background: $info-light;
+  border-radius: $border-radius-md;
+  border: 1px solid $info-color;
+  margin-bottom: $spacing-lg;
+}
+
+.tier-price-title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.tier-price-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.tier-price-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: $font-size-sm;
+}
+
+.tier-quantity {
+  color: $text-secondary;
+}
+
+.tier-price {
+  font-weight: $font-weight-semibold;
+  color: $primary-color;
+}
+
+.buy-now-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  border-top: 1px solid $border-light;
+  background: $gray-50;
+}
+
+.buy-now-btn {
+  background: $success-color !important;
+  border-color: $success-color !important;
+  
+  &:hover:not(:disabled) {
+    background: darken($success-color, 10%) !important;
+    border-color: darken($success-color, 10%) !important;
+  }
+}
+
+/* 移动端立即购买弹窗样式 */
+@include mobile {
+  .buy-now-dialog {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .buy-now-content {
+    padding: $spacing-md;
+  }
+
+  .product-summary {
+    padding: $spacing-sm;
+    margin-bottom: $spacing-md;
+  }
+
+  .quantity-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+    padding: $spacing-sm;
+  }
+
+  .quantity-label {
+    min-width: auto;
+  }
+
+  .price-breakdown {
+    padding: $spacing-sm;
+  }
+
+  .tier-price-hint {
+    padding: $spacing-sm;
+    margin-bottom: $spacing-md;
+  }
+
+  .buy-now-footer {
+    padding: $spacing-md;
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    .el-button {
+      width: 100%;
+    }
   }
 }
 </style>

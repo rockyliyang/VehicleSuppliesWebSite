@@ -42,7 +42,7 @@
         <!-- Product Grid -->
         <div class="product-grid">
           <ProductCard v-for="product in displayProducts" :key="product.id" :product="product" :show-description="true"
-            :show-arrow="true" :default-description="'Powerful suction with long battery life'" card-style="home"
+            :show-arrow="true" :default-description="product.short_description || 'Powerful suction with long battery life'" card-style="home"
             @card-click="handleProductClick" @title-click="handleProductClick" />
         </div>
 
@@ -81,8 +81,8 @@
             </div>
           </div>
           <div class="about-image">
-            <img :src="aboutImageUrl || require('@/assets/images/about-company.jpg')"
-              alt="About Us" @error="handleImageError" />
+            <img :src="aboutImageUrl || require('@/assets/images/about-company.jpg')" alt="About Us"
+              @error="handleImageError" />
           </div>
         </div>
         <!-- 移动端More按钮 - 独立行 -->
@@ -211,6 +211,11 @@ export default {
   }
 }
 </script>
+
+<!-- Quill 全局样式 - 不能使用 scoped -->
+<style lang="scss">
+@import '@/assets/styles/_quill-global.scss';
+</style>
 
 <style lang="scss" scoped>
 @import '@/assets/styles/_variables.scss';
@@ -512,12 +517,12 @@ export default {
     .desktop-button {
       margin-top: $spacing-xl;
       display: none;
-      
+
       @media (min-width: $breakpoint-tablet) {
         display: block;
       }
     }
-    
+
   }
 }
 
@@ -526,7 +531,7 @@ export default {
   margin-top: $spacing-lg;
   width: 100%;
   display: block;
-  
+
   @media (min-width: $breakpoint-tablet) {
     display: none !important;
   }

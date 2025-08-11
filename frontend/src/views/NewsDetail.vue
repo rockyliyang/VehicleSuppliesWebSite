@@ -359,6 +359,11 @@ export default {
 }
 </script>
 
+<!-- Quill 全局样式 - 不能使用 scoped -->
+<style lang="scss">
+@import '@/assets/styles/_quill-global.scss';
+</style>
+
 <style lang="scss" scoped>
 @import '@/assets/styles/_variables.scss';
 @import '@/assets/styles/_mixins.scss';

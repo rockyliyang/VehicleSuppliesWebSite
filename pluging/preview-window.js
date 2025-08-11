@@ -586,10 +586,10 @@ async function uploadProduct(productData, selectedImages) {
             img.src = imageUrl;
           });
           
-          return `<p><img src="${relativePath}" data-size="${dimensions.width},${dimensions.height}" width="750"></p>`;
+          return `<p class="ql-align-center"><img src="${relativePath}" data-size="${dimensions.width},${dimensions.height}" width="750"></p>`;
         } catch (error) {
           // 如果获取尺寸失败，使用默认值
-          return `<p><img src="${relativePath}" data-size="750,750" width="750"></p>`;
+          return `<p class="ql-align-center"><img src="${relativePath}" data-size="750,750" width="750"></p>`;
         }
       }));
       

@@ -334,6 +334,32 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'productDetail.emailDialog.success', 'zh-CN', '邮件发送成功'),
 (gen_random_uuid(), 'productDetail.emailDialog.failed', 'en', 'Failed to send email'),
 (gen_random_uuid(), 'productDetail.emailDialog.failed', 'zh-CN', '邮件发送失败'),
+(gen_random_uuid(), 'productDetail.emailDialog.sendSuccess', 'en', 'Email sent successfully'),
+(gen_random_uuid(), 'productDetail.emailDialog.sendSuccess', 'zh-CN', '邮件发送成功'),
+(gen_random_uuid(), 'productDetail.emailDialog.sendError', 'en', 'Failed to send email'),
+(gen_random_uuid(), 'productDetail.emailDialog.sendError', 'zh-CN', '邮件发送失败'),
+(gen_random_uuid(), 'productDetail.emailDialog.defaultSubject', 'en', 'Inquiry about {productName}'),
+(gen_random_uuid(), 'productDetail.emailDialog.defaultSubject', 'zh-CN', '关于{productName}的询价'),
+(gen_random_uuid(), 'productDetail.emailDialog.defaultMessage', 'en', 'Hello, I am interested in {productName}. Please provide more information about pricing and availability.'),
+(gen_random_uuid(), 'productDetail.emailDialog.defaultMessage', 'zh-CN', '您好，我对{productName}感兴趣，请提供更多关于价格和库存的信息。'),
+
+-- BuyNowDialog 相关翻译
+(gen_random_uuid(), 'productDetail.buyNow.title', 'en', 'Buy Now'),
+(gen_random_uuid(), 'productDetail.buyNow.title', 'zh-CN', '立即购买'),
+(gen_random_uuid(), 'productDetail.buyNow.unitPrice', 'en', 'Unit Price'),
+(gen_random_uuid(), 'productDetail.buyNow.unitPrice', 'zh-CN', '单价'),
+(gen_random_uuid(), 'productDetail.buyNow.totalPrice', 'en', 'Total Price'),
+(gen_random_uuid(), 'productDetail.buyNow.totalPrice', 'zh-CN', '总价'),
+(gen_random_uuid(), 'productDetail.buyNow.tierPrices', 'en', 'Tier Prices'),
+(gen_random_uuid(), 'productDetail.buyNow.tierPrices', 'zh-CN', '阶梯价格'),
+(gen_random_uuid(), 'productDetail.buyNow.pieces', 'en', 'pieces'),
+(gen_random_uuid(), 'productDetail.buyNow.pieces', 'zh-CN', '件'),
+(gen_random_uuid(), 'productDetail.buyNow.processing', 'en', 'Processing...'),
+(gen_random_uuid(), 'productDetail.buyNow.processing', 'zh-CN', '处理中...'),
+(gen_random_uuid(), 'productDetail.buyNow.checkout', 'en', 'Checkout'),
+(gen_random_uuid(), 'productDetail.buyNow.checkout', 'zh-CN', '结算'),
+(gen_random_uuid(), 'productDetail.buyNow.checkoutError', 'en', 'Checkout failed'),
+(gen_random_uuid(), 'productDetail.buyNow.checkoutError', 'zh-CN', '结算失败'),
 
 -- USER_MANAGEMENT相关
 (gen_random_uuid(), 'USER_MANAGEMENT.REQUIRED_FIELDS_MISSING', 'en', 'Required fields are missing'),
@@ -898,6 +924,10 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'validation.phoneRequired', 'zh-CN', '电话号码为必填项'),
 (gen_random_uuid(), 'validation.messageRequired', 'en', 'Message is required'),
 (gen_random_uuid(), 'validation.messageRequired', 'zh-CN', '留言内容为必填项'),
+(gen_random_uuid(), 'validation.subjectRequired', 'en', 'Subject is required'),
+(gen_random_uuid(), 'validation.subjectRequired', 'zh-CN', '主题为必填项'),
+(gen_random_uuid(), 'validation.captchaRequired', 'en', 'Verification code is required'),
+(gen_random_uuid(), 'validation.captchaRequired', 'zh-CN', '验证码为必填项'),
 
 -- 消息相关
 (gen_random_uuid(), 'messages.addToInquirySuccess', 'en', 'Added {quantity} {name} to inquiry list successfully'),
@@ -1497,8 +1527,12 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- 通用错误处理相关
 INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- 通用错误消息
+(gen_random_uuid(), 'common.error.title', 'en', 'Error'),
+(gen_random_uuid(), 'common.error.title', 'zh-CN', '错误提示'),
 (gen_random_uuid(), 'common.error.tokenExpired', 'en', 'Session expired, please login again'),
-(gen_random_uuid(), 'common.error.tokenExpired', 'zh-CN', '会话已过期，请重新登录');
+(gen_random_uuid(), 'common.error.tokenExpired', 'zh-CN', '会话已过期，请重新登录'),
+(gen_random_uuid(), 'common.error.captchaFailed', 'en', 'Failed to load verification code'),
+(gen_random_uuid(), 'common.error.captchaFailed', 'zh-CN', '验证码加载失败');
 
 -- 分页组件翻译键
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -1849,8 +1883,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'INQUIRY.DELETE.FAILED', 'zh-CN', '询价单删除失败'),
 
 -- 新增询价管理前端翻译键
-(gen_random_uuid(), 'inquiry.management.title', 'en', 'Inquiries'),
-(gen_random_uuid(), 'inquiry.management.title', 'zh-CN', '询价管理'),
+(gen_random_uuid(), 'inquiry.management.title', 'en', 'My Inquiries'),
+(gen_random_uuid(), 'inquiry.management.title', 'zh-CN', '我的询价单'),
 (gen_random_uuid(), 'inquiry.management.status_filter', 'en', 'Select Status'),
 (gen_random_uuid(), 'inquiry.management.status_filter', 'zh-CN', '选择状态'),
 (gen_random_uuid(), 'inquiry.management.search_placeholder', 'en', 'Enter User ID'),
@@ -2453,8 +2487,6 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'admin.inquiry.error.loadFailed', 'zh-CN', '加载询价单失败'),
 (gen_random_uuid(), 'admin.inquiry.error.statusUpdateFailed', 'en', 'Failed to update inquiry status'),
 (gen_random_uuid(), 'admin.inquiry.error.statusUpdateFailed', 'zh-CN', '更新询价状态失败'),
-(gen_random_uuid(), 'inquiry.management.title', 'en', 'Inquiry Management'),
-(gen_random_uuid(), 'inquiry.management.title', 'zh-CN', '询价管理'),
 (gen_random_uuid(), 'admin.inquiry.description', 'en', 'Manage user inquiries, view inquiry details, handle quotes and messages'),
 (gen_random_uuid(), 'admin.inquiry.description', 'zh-CN', '管理用户询价单，查看询价详情，处理报价和消息'),
 (gen_random_uuid(), 'admin.inquiry.filter.status', 'en', 'Status'),
@@ -3308,6 +3340,74 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'admin.products.type.consignment', 'en', 'Consignment'),
 (gen_random_uuid(), 'admin.products.type.consignment', 'zh-CN', '代销'),
 (gen_random_uuid(), 'admin.products.type.self_operated', 'en', 'Self-operated'),
-(gen_random_uuid(), 'admin.products.type.self_operated', 'zh-CN', '自营')
+(gen_random_uuid(), 'admin.products.type.self_operated', 'zh-CN', '自营'),
+
+-- 立即购买功能翻译键
+(gen_random_uuid(), 'buttons.buyNow', 'en', 'Buy Now'),
+(gen_random_uuid(), 'buttons.buyNow', 'zh-CN', '立即购买'),
+(gen_random_uuid(), 'buttons.adding', 'en', 'Adding...'),
+(gen_random_uuid(), 'buttons.adding', 'zh-CN', '添加中...'),
+(gen_random_uuid(), 'productDetail.buyNow.title', 'en', 'Buy Now'),
+(gen_random_uuid(), 'productDetail.buyNow.title', 'zh-CN', '立即购买'),
+(gen_random_uuid(), 'productDetail.buyNow.unitPrice', 'en', 'Unit Price'),
+(gen_random_uuid(), 'productDetail.buyNow.unitPrice', 'zh-CN', '单价'),
+(gen_random_uuid(), 'productDetail.buyNow.totalPrice', 'en', 'Total Price'),
+(gen_random_uuid(), 'productDetail.buyNow.totalPrice', 'zh-CN', '总价'),
+(gen_random_uuid(), 'productDetail.buyNow.tierPrices', 'en', 'Prices'),
+(gen_random_uuid(), 'productDetail.buyNow.tierPrices', 'zh-CN', '阶梯价格'),
+(gen_random_uuid(), 'productDetail.buyNow.pieces', 'en', 'pieces'),
+(gen_random_uuid(), 'productDetail.buyNow.pieces', 'zh-CN', '件'),
+(gen_random_uuid(), 'productDetail.buyNow.checkout', 'en', 'Checkout'),
+(gen_random_uuid(), 'productDetail.buyNow.checkout', 'zh-CN', '结算'),
+(gen_random_uuid(), 'productDetail.buyNow.processing', 'en', 'Processing...'),
+(gen_random_uuid(), 'productDetail.buyNow.processing', 'zh-CN', '处理中...'),
+(gen_random_uuid(), 'productDetail.buyNow.checkoutError', 'en', 'Checkout failed, please try again'),
+(gen_random_uuid(), 'productDetail.buyNow.checkoutError', 'zh-CN', '处理结算失败，请重试'),
+
+-- ProductCard 数量输入相关翻译键
+(gen_random_uuid(), 'product.quantity', 'en', 'Quantity'),
+(gen_random_uuid(), 'product.quantity', 'zh-CN', '数量'),
+(gen_random_uuid(), 'product.quantityPlaceholder', 'en', 'Enter quantity'),
+(gen_random_uuid(), 'product.quantityPlaceholder', 'zh-CN', '请输入数量'),
+(gen_random_uuid(), 'product.quickBuy', 'en', 'Quick Buy'),
+(gen_random_uuid(), 'product.quickBuy', 'zh-CN', '快速购买'),
+(gen_random_uuid(), 'product.quantityError', 'en', 'Please enter a valid quantity'),
+(gen_random_uuid(), 'product.quantityError', 'zh-CN', '请输入有效的数量'),
+(gen_random_uuid(), 'product.minQuantity', 'en', 'Minimum quantity is 1'),
+(gen_random_uuid(), 'product.minQuantity', 'zh-CN', '最小数量为1'),
+(gen_random_uuid(), 'product.chatNow', 'en', 'Chat Now'),
+(gen_random_uuid(), 'product.chatNow', 'zh-CN', '立即咨询'),
+(gen_random_uuid(), 'product.addToCart', 'en', 'Add to Cart'),
+(gen_random_uuid(), 'product.addToCart', 'zh-CN', '加入购物车'),
+
+-- 询价浮动窗口相关翻译键
+(gen_random_uuid(), 'inquiry.window.title', 'en', 'Product Inquiry'),
+(gen_random_uuid(), 'inquiry.window.title', 'zh-CN', '产品询价'),
+(gen_random_uuid(), 'inquiry.window.expand', 'en', 'Expand'),
+(gen_random_uuid(), 'inquiry.window.expand', 'zh-CN', '展开'),
+(gen_random_uuid(), 'inquiry.window.close', 'en', 'Close'),
+(gen_random_uuid(), 'inquiry.window.close', 'zh-CN', '关闭'),
+(gen_random_uuid(), 'inquiry.create.failed', 'en', 'Failed to create inquiry'),
+(gen_random_uuid(), 'inquiry.create.failed', 'zh-CN', '创建询价失败'),
+(gen_random_uuid(), 'inquiry.product.added', 'en', 'Product added to inquiry'),
+(gen_random_uuid(), 'inquiry.product.added', 'zh-CN', '产品已添加到询价'),
+(gen_random_uuid(), 'inquiry.product.addFailed', 'en', 'Failed to add product to inquiry'),
+(gen_random_uuid(), 'inquiry.product.addFailed', 'zh-CN', '添加产品到询价失败'),
+
+-- productUtils.js 相关翻译键
+(gen_random_uuid(), 'common.customerService', 'en', 'Customer Service'),
+(gen_random_uuid(), 'common.customerService', 'zh-CN', '客服'),
+(gen_random_uuid(), 'product.log.createInquirySuccess', 'en', 'Inquiry created successfully'),
+(gen_random_uuid(), 'product.log.createInquirySuccess', 'zh-CN', '询价单创建成功'),
+(gen_random_uuid(), 'product.log.loadInquiryMessagesFailed', 'en', 'Failed to load inquiry messages'),
+(gen_random_uuid(), 'product.log.loadInquiryMessagesFailed', 'zh-CN', '加载询价消息失败'),
+(gen_random_uuid(), 'product.log.addToCartFailed', 'en', 'Failed to add to cart'),
+(gen_random_uuid(), 'product.log.addToCartFailed', 'zh-CN', '添加到购物车失败'),
+(gen_random_uuid(), 'product.log.unknownPendingAction', 'en', 'Unknown pending action'),
+(gen_random_uuid(), 'product.log.unknownPendingAction', 'zh-CN', '未知的待处理操作'),
+(gen_random_uuid(), 'product.log.addBrowsingHistoryFailed', 'en', 'Failed to add browsing history'),
+(gen_random_uuid(), 'product.log.addBrowsingHistoryFailed', 'zh-CN', '添加浏览历史失败'),
+(gen_random_uuid(), 'product.log.checkFavoriteStatusFailed', 'en', 'Failed to check favorite status'),
+(gen_random_uuid(), 'product.log.checkFavoriteStatusFailed', 'zh-CN', '检查收藏状态失败')
 
 ON CONFLICT (code, lang) WHERE deleted = FALSE DO UPDATE SET value= EXCLUDED.value;

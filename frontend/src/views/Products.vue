@@ -25,8 +25,10 @@
         <!-- Modern Products Grid -->
         <div class="products-grid">
           <ProductCard v-for="product in products" :key="product.id" :product="product" :show-description="true"
-            :show-arrow="true" :default-description="'Powerful suction with long battery life'" card-style="products"
-            @card-click="handleProductClick" @title-click="handleProductClick" />
+            :show-arrow="true" :show-quantity-input="true" :show-action-buttons="true"
+            :default-description="product.short_description || 'Powerful suction with long battery life'"
+            card-style="products" @card-click="handleProductClick" @title-click="handleProductClick"
+            @chat-now="handleChatNowEvent" @add-to-cart="handleAddToCartEvent" />
         </div>
 
         <!-- No Products Message -->
@@ -44,22 +46,65 @@
         </div>
       </div>
     </div>
+
+    <!-- 询价浮动窗口 -->
+    <div v-if="showInquiryDialog" class="inquiry-floating-window" :class="{ 'show': showInquiryDialog }">
+      <div class="inquiry-window-content">
+        <div class="inquiry-window-header">
+          <h4 class="header-title">{{ $t('cart.salesCommunication') || 'Sales Communication' }}</h4>
+          <div class="header-buttons">
+            <button class="expand-btn" @click="expandInquiryDialog" title="放大窗口">
+              <el-icon>
+                <FullScreen />
+              </el-icon>
+            </button>
+            <button class="close-btn" @click="closeInquiryDialog" title="关闭窗口">
+              <el-icon>
+                <Close />
+              </el-icon>
+            </button>
+          </div>
+        </div>
+        <div class="inquiry-window-body">
+          <!-- 沟通组件 -->
+          <CommunicationSection :messages="inquiryMessages" :inquiry-id="currentInquiryId" :items-count="1"
+            :status="inquiryStatus" :initial-message="initialInquiryMessage"
+            @update-message="handleUpdateInquiryMessage" @checkout="handleInquiryCheckout"
+            @new-messages="handleNewMessages" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 登录对话框 -->
+    <div v-if="loginDialogVisible" class="login-dialog-overlay">
+      <div class="login-dialog-container">
+        <LoginDialog :show-close-button="true" @login-success="handleLoginSuccessEvent"
+          @close="loginDialogVisible = false" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { handleImageError } from '../utils/imageUtils';
-import { addToCart } from '../utils/cartUtils';
+import { handleChatNow, handleAddToCart, handleLoginSuccess, loadInquiryMessages } from '../utils/productUtils';
 import ProductCard from '../components/common/ProductCard.vue';
 import PageBanner from '../components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
+import CommunicationSection from '../components/common/CommunicationSection.vue';
+import LoginDialog from '../components/common/LoginDialog.vue';
+import { FullScreen, Close } from '@element-plus/icons-vue';
 
 export default {
   name: 'ProductsPage',
   components: {
     ProductCard,
     PageBanner,
-    NavigationMenu
+    NavigationMenu,
+    CommunicationSection,
+    LoginDialog,
+    FullScreen,
+    Close
   },
   data() {
     return {
@@ -69,7 +114,18 @@ export default {
       currentPage: 1,
       loading: false,
       totalProducts: 0,
-      pageSize: 10
+      pageSize: 10,
+      // 询价相关状态
+      showInquiryDialog: false,
+      currentInquiryId: null,
+      inquiryMessages: [],
+      inquiryStatus: 'active',
+      initialInquiryMessage: '',
+      // 登录相关状态
+      loginDialogVisible: false,
+      pendingAction: null,
+      pendingProduct: null,
+      pendingQuantity: 1
     }
   },
   computed: {
@@ -148,14 +204,15 @@ export default {
       this.fetchProducts()
     },
     async addToInquiry(product) {
-      // 使用公共的购物车工具函数
-      await addToCart(product, {
-          store: this.$store,
-          router: this.$router,
-          api: this.$api,
-          messageHandler: this.$messageHandler,
-          $bus: this.$bus
-        });
+      // 使用公共的handleAddToCart工具函数
+      await handleAddToCart(
+        product, 
+        this, 
+        this.showLoginDialog, 
+        () => {
+          // 设置加载状态的回调
+        }
+      );
     },
     
     // 处理分页变化
@@ -164,6 +221,122 @@ export default {
       this.fetchProducts()
       // 滚动到页面顶部
       window.scrollTo(0, 0)
+    },
+
+    // 处理 Chat Now 事件
+    async handleChatNowEvent(data) {
+      const { product } = data;
+      
+      const success = await handleChatNow(
+        product, 
+        this, 
+        this.showLoginDialog, 
+        this.showInquiryDialogWithData
+      );
+      
+      if (!success) {
+        // 如果失败，可能是需要登录
+        this.pendingProduct = product;
+        this.pendingQuantity = 1;
+      }
+    },
+
+    // 处理 Add to Cart 事件
+    async handleAddToCartEvent(data) {
+      const { product } = data;
+      
+      const success = await handleAddToCart(
+        product, 
+        this, 
+        this.showLoginDialog, 
+        () => {
+          // 这里可以设置产品卡片的加载状态，但由于ProductCard已经简化，暂时不处理
+        }
+      );
+      
+      if (!success) {
+        // 如果失败，可能是需要登录
+        this.pendingProduct = product;
+        this.pendingQuantity = 1;
+      }
+    },
+
+    // 显示登录对话框
+    showLoginDialog(action) {
+      this.pendingAction = action;
+      this.loginDialogVisible = true;
+    },
+
+    // 显示询价对话框
+    showInquiryDialogWithData(data) {
+      this.currentInquiryId = data.inquiryId;
+      this.initialInquiryMessage = '';
+      this.showInquiryDialog = true;
+      
+      // 如果是新询价单，加载消息
+      if (!data.isNew) {
+        this.loadInquiryMessagesData();
+      }
+    },
+
+    // 加载询价消息
+    async loadInquiryMessagesData() {
+      if (!this.currentInquiryId) return;
+      
+      const result = await loadInquiryMessages(this.currentInquiryId, this);
+      this.inquiryMessages = result.messages;
+      this.inquiryStatus = result.status;
+    },
+
+    // 处理登录成功事件
+    async handleLoginSuccessEvent() {
+      this.loginDialogVisible = false;
+      
+      if (this.pendingAction && this.pendingProduct) {
+        await handleLoginSuccess(
+          this.pendingAction,
+          this.pendingProduct,
+          this,
+          this.showInquiryDialogWithData,
+          () => {
+            // 设置加载状态的回调
+          }
+        );
+      }
+      
+      // 清除待执行的操作
+      this.pendingAction = null;
+      this.pendingProduct = null;
+      this.pendingQuantity = 1;
+    },
+
+    // 关闭询价对话框
+    closeInquiryDialog() {
+      this.showInquiryDialog = false;
+      this.currentInquiryId = null;
+      this.inquiryMessages = [];
+    },
+
+    // 展开询价对话框
+    expandInquiryDialog() {
+      // 可以实现全屏展开功能
+      console.log('展开询价对话框');
+    },
+
+
+    // 处理更新询价消息
+    handleUpdateInquiryMessage(message) {
+      console.log('更新询价消息:', message);
+    },
+
+    // 处理询价结算
+    handleInquiryCheckout() {
+      console.log('询价结算');
+    },
+
+    // 处理新消息
+    handleNewMessages(messages) {
+      this.inquiryMessages = messages;
     }
   }
 }
@@ -508,5 +681,142 @@ export default {
 
 .mr-2 {
   margin-right: $spacing-sm;
+}
+
+/* 询价浮动窗口样式 */
+.inquiry-floating-window {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 380px;
+  height: 500px;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 9999;
+  transform: translateY(100%) scale(0.8);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  border: 1px solid $border-light;
+
+  &.show {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.inquiry-window-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.inquiry-window-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+  border-bottom: $border-width-sm solid $border-light;
+  background: $gray-50;
+  min-height: 50px;
+
+  .header-title {
+    margin: 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+  }
+
+  .header-buttons {
+    display: flex;
+    gap: $spacing-xs;
+
+    .expand-btn,
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: $font-size-lg;
+      color: $text-secondary;
+      cursor: pointer;
+      padding: $spacing-xs;
+      border-radius: $border-radius-sm;
+      transition: all 0.2s ease;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: $gray-200;
+        color: $text-primary;
+      }
+    }
+  }
+}
+
+.inquiry-window-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .inquiry-floating-window {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    height: 400px;
+
+    &.show {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .inquiry-window-header {
+    padding: $spacing-md;
+
+    .header-title {
+      font-size: $font-size-lg;
+    }
+  }
+}
+
+/* 登录对话框样式 */
+.login-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.login-dialog-container {
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 移动端登录对话框适配 */
+@media (max-width: 768px) {
+  .login-dialog-container {
+    max-width: 95%;
+    width: 95%;
+    margin: $spacing-md;
+  }
 }
 </style>

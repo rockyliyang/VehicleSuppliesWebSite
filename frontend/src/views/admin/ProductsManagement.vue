@@ -961,7 +961,17 @@ export default {
           if (res.success && res.data && res.data.images && res.data.images[0]) {
             const url = res.data.images[0].path;
             const range = quill.getSelection();
-            quill.insertEmbed(range ? range.index : 0, 'image', url);
+            const index = range ? range.index : 0;
+            
+            // 插入图片
+            quill.insertEmbed(index, 'image', url);
+            
+            // 设置图片居中样式
+            quill.setSelection(index + 1);
+            quill.format('align', 'center');
+            
+            // 移动光标到图片后面
+            quill.setSelection(index + 1);
           } else {
             this.$messageHandler.showError(res.message, 'admin.products.error.imageUploadFailed');
           }

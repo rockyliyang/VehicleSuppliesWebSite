@@ -9,8 +9,8 @@ export function createTranslateFunction(store) {
   }
 }
 
-// 添加商品到购物车的工具函数
-export async function addToCart(product, context, quantity = 1) {
+// 处理添加到购物车的逻辑
+export async function handleAddToCart(product, context) {
   const { store, router, api, messageHandler, $bus } = context
   
   // 使用公共翻译函数
@@ -38,8 +38,7 @@ export async function addToCart(product, context, quantity = 1) {
   try {
     // 调用后端API添加到购物车
     const response = await api.postWithErrorHandler('/cart/add', {
-      productId: product.id,
-      quantity: quantity
+      productId: product.id
     }, {
       fallbackKey: 'cart.error.addFailed'
     })

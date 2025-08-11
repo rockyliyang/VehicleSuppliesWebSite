@@ -54,7 +54,7 @@
             </el-form-item>
 
             <el-form-item class="button-form-item">
-              <button @click="submitForm" :disabled="loading" class="register-button">
+              <button type="button" @click.prevent="submitForm" :disabled="loading" class="register-button">
                 {{ loading ? ($t('register.registering') || '注册中...') : ($t('register.register') || '注册') }}
               </button>
             </el-form-item>
@@ -235,8 +235,15 @@ export default {
       this.captchaUrl = '/api/users/captcha?' + Date.now();
     },
     submitForm() {
-      this.$refs.formRef.validate(async valid => {
-        if (!valid) return;
+      this.$refs.formRef.validate(async (valid, fields) => {
+        if (!valid) {
+          // 显示第一个验证错误
+          const firstErrorField = Object.keys(fields)[0];
+          const firstError = fields[firstErrorField][0];
+          this.$messageHandler.showError(firstError.message, 'register.error.validationFailed','notification');
+          return;
+        }
+        
         this.loading = true;
         try {
           const res = await this.$api.postWithErrorHandler('/users/register', {
@@ -259,7 +266,7 @@ export default {
           }
         } catch (error) {
           console.error('注册失败:', error);
-          this.$message.error(error.response?.data?.message || this.$t('register.registerFailed'));
+          this.$messageHandler.showError(error, 'register.error.failed');
           this.refreshCaptcha();
         } finally {
           this.loading = false;
@@ -279,11 +286,11 @@ export default {
   min-height: 100vh;
   background-color: #f8f9fa;
   @include flex-column;
-  
+
   /* 防闪烁：初始状态隐藏内容 */
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
-  
+
   /* 页面就绪后显示内容 */
   &.page-ready {
     opacity: 1;

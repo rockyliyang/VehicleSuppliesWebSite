@@ -102,7 +102,7 @@ router.post('/register', async (req, res) => {
     const defaultBusinessGroupId = defaultGroupRows.getRowCount() > 0 ? defaultGroupRows.getFirstRow().id : null;
     
     await query(
-      'INSERT INTO users (username, email, password, is_active, activation_token, user_role, business_group_id, currency, created_by, updated_by) VALUES ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9)',
+      'INSERT INTO users (username, email, password, is_active, activation_token, user_role, business_group_id, currency, created_by, updated_by) VALUES ($1, $2, $3, 0, $4, $5, $6, $7, $8, $9)',
       [username, email, hashedPassword, activation_token, 'user', defaultBusinessGroupId, 'USD', null, null]
     );
     

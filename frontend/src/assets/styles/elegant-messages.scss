@@ -3,35 +3,56 @@
 
 /* 错误消息样式 */
 .elegant-error-message {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+  background: $white !important;
   border: none !important;
-  border-radius: $border-radius-md !important;
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3) !important;
-  color: $white !important;
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-xl !important;
+  color: $text-primary !important;
   font-weight: $font-weight-medium !important;
   backdrop-filter: blur(10px);
   animation: slideInDown 0.3s ease-out;
+  min-width: 400px !important;
+  max-width: 480px !important;
+  padding: $spacing-xl !important;
+  border-left: 4px solid #ff4757 !important;
 
   .el-message__content {
-    color: $white !important;
-    font-size: $font-size-sm;
-    line-height: $line-height-normal;
+    color: $text-secondary !important;
+    font-size: $font-size-lg !important;
+    line-height: $line-height-relaxed !important;
+    margin-left: $spacing-lg !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .error-title {
+    font-size: $font-size-2xl !important;
+    font-weight: $font-weight-bold !important;
+    color: $text-primary !important;
+    margin-bottom: $spacing-sm !important;
+    line-height: $line-height-tight !important;
   }
 
   .el-message__closeBtn {
-    color: rgba(255, 255, 255, 0.8) !important;
-    font-size: $font-size-md;
+    color: $gray-500 !important;
+    font-size: $font-size-lg !important;
     transition: $transition-base;
+    top: $spacing-sm !important;
+    right: $spacing-sm !important;
+    position: absolute !important;
+    z-index: 10 !important;
 
     &:hover {
-      color: $white !important;
+      color: $gray-700 !important;
       transform: scale(1.1);
     }
   }
 
   .el-message__icon {
-    color: $white !important;
-    font-size: $font-size-md;
+    color: #ff4757 !important;
+    font-size: $font-size-2xl !important;
+    margin-right: $spacing-md !important;
+    margin-top: 2px !important;
   }
 }
 

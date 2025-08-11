@@ -90,8 +90,10 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client,
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [orderId, item.product_id, item.quantity, item.price, item.product_name || item.name, item.product_code, userId, userId]
     );
+    
+    // 只对自营商品扣减库存
     await client.query(
-      `UPDATE products SET stock = stock - $1, updated_by = $2 WHERE id = $3 AND deleted = false`,
+      `UPDATE products SET stock = stock - $1, updated_by = $2 WHERE id = $3 AND deleted = false AND product_type = 'self_operated'`,
       [item.quantity, userId, item.product_id]
     );
     
@@ -129,7 +131,7 @@ exports.createPayPalOrder = async (req, res) => {
         source = 'inquiry';
       } else {
         const dbCartItems = await connection.query(
-          `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
+          `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock, p.product_type 
            FROM cart_items ci 
            JOIN products p ON ci.product_id = p.id 
            WHERE ci.user_id = $1 AND ci.deleted = false AND p.deleted = false`,
@@ -307,7 +309,7 @@ exports.createCommonOrder = async (req, res) => {
         source = 'inquiry';
       } else {
         const dbCartItems = await connection.query(
-          `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock 
+          `SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.product_code, p.stock, p.product_type 
            FROM cart_items ci 
            JOIN products p ON ci.product_id = p.id 
            WHERE ci.user_id = $1 AND ci.deleted = false AND p.deleted = false`,

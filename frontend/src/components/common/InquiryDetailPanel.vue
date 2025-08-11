@@ -5,16 +5,16 @@
       <template v-if="isMobile">
         <!-- Sales Communication -->
         <CommunicationSection :messages="inquiry.messages" :inquiry-id="inquiry.id" :items-count="inquiry.items.length"
-          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile" @send-message="handleSendMessage"
-          @update-message="updateMessage" @checkout="handleCheckout" @new-messages="handleNewMessages" />
+          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile" @update-message="updateMessage"
+          @checkout="handleCheckout" @new-messages="handleNewMessages" />
 
         <!-- Products Section -->
         <div class="inquiry-items-section">
           <div class="section-header">
             <h4 class="section-title">{{ $t('products.products') || 'Products' }}</h4>
-            <!-- 添加产品按钮 - 移到标题旁边 -->
-            <button v-if="inquiry.status === 'inquiried' && !showAddProduct" @click="showAddProduct = true"
-              class="add-product-btn-header">
+            <!-- 添加产品按钮 - 移到标题旁边，single类型的询价不允许添加商品 -->
+            <button v-if="inquiry.status === 'inquiried' && !showAddProduct && inquiry.inquiry_type !== 'single'"
+              @click="showAddProduct = true" class="add-product-btn-header">
               <i class="material-icons">add</i>
               {{ $t('inquiry.addProduct') || '添加产品' }}
             </button>
@@ -47,7 +47,8 @@
                   </div>
                 </div>
                 <div class="item-actions">
-                  <button class="remove-item-btn remove-inquiry-item-btn"
+                  <!-- single类型的询价不允许删除商品 -->
+                  <button v-if="inquiry.inquiry_type !== 'single'" class="remove-item-btn remove-inquiry-item-btn"
                     @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)"
                     :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
@@ -128,9 +129,9 @@
         <div class="inquiry-items-section">
           <div class="section-header">
             <h4 class="section-title">{{ $t('products.products') || 'Products' }}</h4>
-            <!-- 添加产品按钮 - 移到标题旁边 -->
-            <button v-if="inquiry.status === 'inquiried' && !showAddProduct" @click="showAddProduct = true"
-              class="add-product-btn-header">
+            <!-- 添加产品按钮 - 移到标题旁边，single类型的询价不允许添加商品 -->
+            <button v-if="inquiry.status === 'inquiried' && !showAddProduct && inquiry.inquiry_type !== 'single'"
+              @click="showAddProduct = true" class="add-product-btn-header">
               <i class="material-icons">add</i>
               {{ $t('inquiry.addProduct') || '添加产品' }}
             </button>
@@ -163,7 +164,8 @@
                   </div>
                 </div>
                 <div class="item-actions">
-                  <button class="remove-item-btn remove-inquiry-item-btn"
+                  <!-- single类型的询价不允许删除商品 -->
+                  <button v-if="inquiry.inquiry_type !== 'single'" class="remove-item-btn remove-inquiry-item-btn"
                     @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)"
                     :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
@@ -239,8 +241,8 @@
 
         <!-- Sales Communication -->
         <CommunicationSection :messages="inquiry.messages" :inquiry-id="inquiry.id" :items-count="inquiry.items.length"
-          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile" @send-message="handleSendMessage"
-          @update-message="updateMessage" @checkout="handleCheckout" />
+          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile" @update-message="updateMessage"
+          @checkout="handleCheckout" />
       </template>
     </div>
 
@@ -272,7 +274,7 @@ export default {
       default: false
     }
   },
-  emits: ['remove-item', 'send-message', 'update-message', 'checkout-inquiry', 'item-added', 'new-messages-received'],
+  emits: ['remove-item', 'update-message', 'checkout-inquiry', 'item-added', 'new-messages-received'],
   data() {
     return {
       newMessage: '',
@@ -318,35 +320,27 @@ export default {
         return getPriceRangeDisplayUtil(item, formatPrice);
       }
     },
-    handleSendMessage(inquiryId, message) {
-      this.$emit('send-message', inquiryId, message);
-      this.newMessage = '';
-    },
+
     updateMessage(inquiryId, value) {
       this.newMessage = value;
       this.$emit('update-message', inquiryId, value);
     },
     
-    // 处理新消息事件
-    handleNewMessages(newMessages) {
-      if (!newMessages || newMessages.length === 0) return;
+    // 处理新消息事件（简化版本，消息显示由 CommunicationSection 直接处理）
+    handleNewMessages(eventData) {
+      if (!eventData || !eventData.messages || eventData.messages.length === 0) return;
       
-      // 检查消息是否已存在，避免重复添加
-      const validNewMessages = newMessages.filter(newMessage => {
-        return !this.inquiry.messages.some(msg => 
-          msg.id === newMessage.id || 
-          (msg.timestamp === newMessage.timestamp && msg.content === newMessage.content)
-        );
-      });
+      const { messages } = eventData;
       
-      if (validNewMessages.length > 0) {
-        // 通过事件通知父组件更新消息列表
-        this.$emit('new-messages-received', validNewMessages);
-        
+      if (messages.length > 0) {
         // 显示新消息提示
-        validNewMessages.forEach(newMessage => {
-          this.$messageHandler.showInfo(`收到新消息: ${newMessage.content.substring(0, 50)}${newMessage.content.length > 50 ? '...' : ''}`);
+        messages.forEach(newMessage => {
+          if (this.$messageHandler) {
+            this.$messageHandler.showInfo(`收到新消息: ${newMessage.content.substring(0, 50)}${newMessage.content.length > 50 ? '...' : ''}`);
+          }
         });
+        
+        console.log(`InquiryDetailPanel: 收到 ${messages.length} 条新消息提示`);
       }
     },
     handleCheckout(inquiryId) {

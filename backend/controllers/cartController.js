@@ -77,7 +77,8 @@ exports.getUserCart = async (req, res) => {
 exports.addToCart = async (req, res) => {
   try {
     const userId = req.userId;
-    const { productId, quantity = 1 } = req.body;
+    const { productId } = req.body;
+    const quantity = 1;
     
     if (!productId) {
       return res.status(400).json({
@@ -86,8 +87,8 @@ exports.addToCart = async (req, res) => {
       });
     }
     
-    // 检查商品是否存在且有库存
-    const product = await query('SELECT id, stock FROM products WHERE id = $1 AND deleted = false', [productId]);
+    // 检查商品是否存在
+    const product = await query('SELECT id, stock, product_type FROM products WHERE id = $1 AND deleted = false', [productId]);
     
     if (!product || product.getRowCount() === 0) {
       return res.status(404).json({
@@ -96,7 +97,9 @@ exports.addToCart = async (req, res) => {
       });
     }
     
-    if (product.getFirstRow().stock < quantity) {
+    // 只对自营商品检查库存
+    const productData = product.getFirstRow();
+    if (productData.product_type === 'self_operated' && productData.stock < quantity) {
       return res.status(400).json({
         success: false,
         message: getMessage('CART.INSUFFICIENT_STOCK')
@@ -110,18 +113,11 @@ exports.addToCart = async (req, res) => {
     );
     
     if (existingItem && existingItem.getRowCount() > 0) {
-      // 更新数量
-      const newQuantity = existingItem.getFirstRow().quantity + quantity;
-      
-      await query(
-        'UPDATE cart_items SET quantity = $1, updated_by = $2, updated_at = NOW() WHERE id = $3',
-        [newQuantity, userId, existingItem.getFirstRow().id]
-      );
-      
+      // 商品已存在，不修改数量，直接返回成功
       return res.json({
         success: true,
-        message: getMessage('CART.UPDATE_SUCCESS'),
-        data: { id: existingItem.getFirstRow().id, quantity: newQuantity }
+        message: getMessage('CART.ADD_SUCCESS'),
+        data: { id: existingItem.getFirstRow().id, quantity: existingItem.getFirstRow().quantity }
       });
     } else {
       // 添加新商品到购物车
@@ -161,7 +157,7 @@ exports.updateCartItem = async (req, res) => {
     
     // 检查购物车项是否存在且属于当前用户
     const cartItem = await query(
-      `SELECT ci.id, ci.product_id, p.stock 
+      `SELECT ci.id, ci.product_id, p.stock, p.product_type 
        FROM cart_items ci 
        JOIN products p ON ci.product_id = p.id 
        WHERE ci.id = $1 AND ci.user_id = $2 AND ci.deleted = false`,
@@ -175,8 +171,9 @@ exports.updateCartItem = async (req, res) => {
       });
     }
     
-    // 检查库存
-    if (cartItem.getFirstRow().stock < quantity) {
+    // 只对自营商品检查库存
+    const cartItemData = cartItem.getFirstRow();
+    if (cartItemData.product_type === 'self_operated' && cartItemData.stock < quantity) {
       return res.status(400).json({
         success: false,
         message: getMessage('CART.INSUFFICIENT_STOCK')

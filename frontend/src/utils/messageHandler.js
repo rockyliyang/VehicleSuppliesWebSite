@@ -1,4 +1,4 @@
-import { ElMessage, ElNotification, ElMessageBox } from 'element-plus'
+import { ElMessage,  ElMessageBox } from 'element-plus'
 import store from '../store'
 
 // 错误消息映射
@@ -198,31 +198,25 @@ class MessageHandler {
    * @param {string} fallbackKey 
    * @param {string} type 
    */
-  static showError(error, fallbackKey, type = 'message') {
+  static showError(error, fallbackKey) {
     const rawMessage = extractErrorMessage(error)
     if (!fallbackKey) 
       fallbackKey = error.fallbackKey
     
-    const translatedMessage = translateErrorMessage(rawMessage, fallbackKey)
+    const translatedMessage = translateErrorMessage(rawMessage, fallbackKey);
+    const errorTitle = getTranslation('common.error.title', '错误提示');
     
-    if (type === 'notification') {
-      ElNotification({
-        title: getTranslation('common.error.title'),
-        message: translatedMessage,
-        type: 'error',
-        duration: 4000,
-        showClose: true,
-        customClass: 'elegant-error-notification'
-      })
-    } else {
-      ElMessage({
-        message: translatedMessage,
-        type: 'error',
-        duration: 3000,
-        showClose: true,
-        customClass: 'elegant-error-message'
-      })
-    }
+    // 创建带有标题的消息内容
+    const messageContent = `<div class="error-title">${errorTitle}</div><div>${translatedMessage}</div>`;
+    
+    ElMessage({
+      message: messageContent,
+      type: 'error',
+      duration: 4000,
+      showClose: true,
+      customClass: 'elegant-error-message',
+      dangerouslyUseHTMLString: true
+    });
   }
   
   /**
