@@ -1580,6 +1580,7 @@ export default {
   font-weight: $font-weight-bold;
   color: $primary-color;
   margin-bottom: $spacing-lg;
+  text-align: left;
 }
 
 /* 阶梯价格样式 */
@@ -1593,7 +1594,7 @@ export default {
 .price-range-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   padding: 12px 16px;
   background-color: #f8f9fa;
   border-radius: 8px;
@@ -1606,7 +1607,7 @@ export default {
   color: #666;
   font-weight: 400;
   margin-bottom: 4px;
-  text-align: center;
+  text-align: left;
   line-height: 1.2;
 }
 
@@ -1614,7 +1615,7 @@ export default {
   font-size: 20px;
   font-weight: bold;
   color: #333;
-  text-align: center;
+  text-align: left;
 }
 
 .single-price {
@@ -2178,6 +2179,7 @@ export default {
   .product-price {
     font-size: $font-size-2xl;
     margin-bottom: $spacing-md;
+    text-align: left;
   }
 
   .product-stock {

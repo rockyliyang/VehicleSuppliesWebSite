@@ -101,7 +101,7 @@ const formatPriceRangeDisplay = (priceRanges, currencySymbol = '$') => {
 // Generate a unique product code
 exports.generateProductCode = async (req, res) => {
   try {
-    const { category_id } = req.query;
+    const { category_id } = req.body;
     
     // 获取分类信息
     const category = await query(

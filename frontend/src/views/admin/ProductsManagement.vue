@@ -9,25 +9,26 @@
     <el-card class="filter-card">
       <el-form :model="filters" inline>
         <el-form-item :label="$t('admin.products.filter.keyword') || '关键词'">
-          <el-input v-model="filters.keyword" :placeholder="$t('admin.products.filter.keyword_placeholder') || '产品名称/编号'" 
-            style="width: 200px;" @keyup.enter="handleFilter" />
+          <el-input v-model="filters.keyword"
+            :placeholder="$t('admin.products.filter.keyword_placeholder') || '产品名称/编号'" style="width: 200px;"
+            @keyup.enter="handleFilter" />
         </el-form-item>
         <el-form-item :label="$t('admin.products.filter.category') || '产品分类'">
-          <el-select v-model="filters.category" :placeholder="$t('admin.products.filter.category_placeholder') || '选择产品分类'" 
-            clearable style="width: 200px">
+          <el-select v-model="filters.category"
+            :placeholder="$t('admin.products.filter.category_placeholder') || '选择产品分类'" clearable style="width: 200px">
             <el-option v-for="item in categoryOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('admin.products.filter.status') || '状态'">
-          <el-select v-model="filters.status" :placeholder="$t('admin.products.filter.status_placeholder') || '选择状态'" 
+          <el-select v-model="filters.status" :placeholder="$t('admin.products.filter.status_placeholder') || '选择状态'"
             clearable style="width: 120px">
             <el-option :label="$t('admin.products.status.on_shelf') || '上架'" value="1" />
             <el-option :label="$t('admin.products.status.off_shelf') || '下架'" value="0" />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('admin.products.filter.type') || '产品类型'">
-          <el-select v-model="filters.product_type" :placeholder="$t('admin.products.filter.type_placeholder') || '选择产品类型'" 
-            clearable style="width: 120px">
+          <el-select v-model="filters.product_type"
+            :placeholder="$t('admin.products.filter.type_placeholder') || '选择产品类型'" clearable style="width: 120px">
             <el-option :label="$t('admin.products.type.consignment') || '代销'" value="consignment" />
             <el-option :label="$t('admin.products.type.self_operated') || '自营'" value="self_operated" />
           </el-select>
@@ -104,42 +105,73 @@
     </div>
 
     <!-- 产品表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加产品' : '编辑产品'" v-model="dialogVisible" width="900px" top="5vh"
-      :close-on-click-modal="false">
+    <el-dialog v-model="dialogVisible" fullscreen :close-on-click-modal="false" :show-close="false">
+      <template #header>
+        <div class="dialog-header">
+          <h4>{{ dialogStatus === 'create' ? '添加产品' : '编辑产品' }}</h4>
+          <el-button type="primary" @click="dialogVisible = false" class="return-btn-circle" circle>
+            <el-icon>
+              <ArrowLeft />
+            </el-icon>
+          </el-button>
+        </div>
+      </template>
       <el-form :model="productForm" :rules="rules" ref="productFormRef" label-width="100px">
-        <el-form-item label="产品名称" prop="name">
-          <el-input v-model="productForm.name" placeholder="请输入产品名称" />
-        </el-form-item>
-        <el-form-item label="产品编号" prop="product_code">
-          <el-input v-model="productForm.product_code" placeholder="请输入产品编号" maxlength="64" show-word-limit>
-            <template #append>
-              <el-button @click="generateProductCode">生成编号</el-button>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="产品分类" prop="category_id">
-          <el-select v-model="productForm.category_id" placeholder="请选择产品分类" style="width: 100%">
-            <el-option v-for="item in categoryOptions" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="产品类型" prop="product_type">
-          <el-radio-group v-model="productForm.product_type">
-            <el-radio label="consignment">代销</el-radio>
-            <el-radio label="self_operated">自营</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="产品价格" prop="price">
-          <el-input v-model.number="productForm.price" placeholder="请输入产品价格">
-            <template #prepend>¥</template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="阶梯价格">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="产品名称" prop="name">
+              <el-input v-model="productForm.name" placeholder="请输入产品名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="产品编号" prop="product_code">
+              <el-input v-model="productForm.product_code" placeholder="请输入产品编号" maxlength="64" show-word-limit>
+                <template #append>
+                  <el-button @click="generateProductCode">生成编号</el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="产品分类" prop="category_id">
+              <el-select v-model="productForm.category_id" placeholder="请选择产品分类" style="width: 100%">
+                <el-option v-for="item in categoryOptions" :key="item.id" :label="item.name" :value="item.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="排序" prop="sort_order">
+              <el-input-number v-model="productForm.sort_order" :min="0" placeholder="请输入排序值（数值越大越排前）"
+                style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="产品类型" prop="product_type">
+              <el-radio-group v-model="productForm.product_type">
+                <el-radio label="consignment">代销</el-radio>
+                <el-radio label="self_operated">自营</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="产品库存" prop="stock">
+              <el-input-number v-model="productForm.stock" :min="0" :max="999999" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="阶梯价格" prop="price_ranges">
           <div class="price-ranges-container">
             <div v-for="(range, index) in productForm.price_ranges" :key="index" class="price-range-item">
-              <el-input-number v-model="range.min_quantity" :min="1" placeholder="最小数量" style="width: 120px" />
+              <el-input-number v-model="range.min_quantity" :min="1" placeholder="最小数量" style="width: 120px"
+                :disabled="index > 0" />
               <span class="range-separator">-</span>
               <el-input-number v-model="range.max_quantity" :min="range.min_quantity || 1" placeholder="最大数量"
-                style="width: 120px" />
+                style="width: 120px" @change="handleMaxQuantityChange(index)" />
               <span class="range-separator">件</span>
               <el-input-number v-model="range.price" :min="0" :precision="2" placeholder="单价" style="width: 120px" />
               <span class="range-separator">元</span>
@@ -153,20 +185,13 @@
             </el-button>
           </div>
         </el-form-item>
-        <el-form-item label="产品库存" prop="stock">
-          <el-input-number v-model="productForm.stock" :min="0" :max="999999" />
-        </el-form-item>
-        <el-form-item label="排序" prop="sort_order">
-          <el-input-number v-model="productForm.sort_order" :min="0" placeholder="请输入排序值（数值越大越排前）"
-            style="width: 100%" />
-        </el-form-item>
+
         <el-form-item label="产品图片" prop="images">
           <el-upload class="product-image-uploader" action="/api/product-images/upload?image_type=0"
-            :headers="uploadHeaders" :data="uploadData"
-            :file-list="thumbnailList" list-type="picture-card" :on-preview="handleMediaPreview"
-            :on-remove="handleRemove" :on-success="handleUploadSuccess" :before-upload="beforeImageUpload"
-            :name="'images'" :limit="1" :multiple="false" :show-file-list="true">
-            <template v-if="thumbnailList.length < 1">
+            :headers="uploadHeaders" :data="uploadData" :file-list="thumbnailList" list-type="picture-card"
+            :on-preview="handleMediaPreview" :on-remove="handleRemove" :on-success="handleUploadSuccess"
+            :before-upload="beforeImageUpload" :name="'images'" :limit="10" :multiple="true" :show-file-list="true">
+            <template v-if="thumbnailList.length < 10">
               <el-icon>
                 <Plus />
               </el-icon>
@@ -175,10 +200,9 @@
         </el-form-item>
         <el-form-item label="轮播媒体" prop="carousel_media">
           <el-upload ref="uploadRef" class="product-media-uploader" action="/api/product-images/upload?image_type=1"
-            :headers="uploadHeaders" :data="uploadData"
-            :file-list="carouselList" list-type="picture-card" :on-preview="handleMediaPreview"
-            :on-remove="handleRemove" :on-success="handleUploadSuccess" :before-upload="beforeMediaUpload"
-            :name="'images'" :limit="10" :multiple="true" :show-file-list="true">
+            :headers="uploadHeaders" :data="uploadData" :file-list="carouselList" list-type="picture-card"
+            :on-preview="handleMediaPreview" :on-remove="handleRemove" :on-success="handleUploadSuccess"
+            :before-upload="beforeMediaUpload" :name="'images'" :limit="10" :multiple="true" :show-file-list="true">
             <el-icon>
               <Plus />
             </el-icon>
@@ -221,8 +245,10 @@
           <el-input type="textarea" v-model="productForm.short_description" :rows="4" placeholder="请输入产品简介" />
         </el-form-item>
         <el-form-item label="产品详情" prop="full_description">
-          <quill-editor ref="quillEditor" v-model="productForm.full_description" :options="quillOptions" :key="quillKey"
-            style="height: 300px" @change="onQuillChange" @ready="onQuillReady" />
+          <div class="quill-editor-container">
+            <quill-editor ref="quillEditor" v-model="productForm.full_description" :options="quillOptions"
+              :key="quillKey" @change="onQuillChange" @ready="onQuillReady" />
+          </div>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="productForm.status">
@@ -247,10 +273,15 @@
 </template>
 
 <script>
-import { Plus, Search, Refresh, Document, Delete, ZoomIn, VideoPlay } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Document, Delete, ZoomIn, VideoPlay, ArrowLeft } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/format'
 import { quillEditor } from 'vue3-quill'
 import { getAuthToken } from '@/utils/api'
+import { Quill } from 'vue3-quill'
+import ImageResize from 'quill-resize-module'
+
+// 注册Quill模块
+Quill.register('modules/resize', ImageResize)
 
 export default {
   name: 'AdminProducts',
@@ -262,6 +293,7 @@ export default {
     Delete,
     ZoomIn,
     VideoPlay,
+    ArrowLeft,
     quillEditor
   },
   data() {
@@ -299,7 +331,7 @@ export default {
         product_type: 'consignment',
         price: '',
         price_ranges: [
-          { min_quantity: 1, max_quantity: 99, price: 0 }
+          { min_quantity: 1, max_quantity: null, price: 0 }
         ],
         stock: 0,
         sort_order: 0,
@@ -316,30 +348,46 @@ export default {
         category_id: [{ required: true, message: "请选择产品分类", trigger: "change" }],
         product_type: [{ required: true, message: "请选择产品类型", trigger: "change" }],
         price: [
-          { required: true, message: "请输入产品价格", trigger: "blur" },
-          { type: "number", message: "价格必须为数字", trigger: "blur" }
+          { type: "number", min: 0, message: "价格必须大于等于0", trigger: "blur" }
+        ],
+        price_ranges: [
+          { required: true, message: "请设置阶梯价格", trigger: "blur" },
+          { validator: this.validatePriceRanges, trigger: "blur" }
         ]
       },
       sessionId: localStorage.getItem("session_id") || (Date.now() + "-" + Math.random().toString(36).substr(2, 9)),
       quillOptions: {
+        theme: 'snow',
         modules: {
-          toolbar: [
-            ["bold", "italic", "underline", "strike"],
-            ["blockquote", "code-block"],
-            [{ "header": 1 }, { "header": 2 }],
-            [{ "list": "ordered" }, { "list": "bullet" }],
-            [{ "script": "sub" }, { "script": "super" }],
-            [{ "indent": "-1" }, { "indent": "+1" }],
-            [{ "direction": "rtl" }],
-            [{ "size": ["small", false, "large", "huge"] }],
-            [{ "header": [1, 2, 3, 4, 5, 6, false] }],
-            [{ "color": [] }, { "background": [] }],
-            [{ "font": [] }],
-            [{ "align": [] }],
-            ["link", "image", "video"],
-            ["clean"]
-          ]
-        }
+          toolbar: {
+            container: [
+              ["bold", "italic", "underline", "strike"],
+              ["blockquote", "code-block"],
+              [{ "header": 1 }, { "header": 2 }],
+              [{ "list": "ordered" }, { "list": "bullet" }],
+              [{ "script": "sub" }, { "script": "super" }],
+              [{ "indent": "-1" }, { "indent": "+1" }],
+              [{ "direction": "rtl" }],
+              [{ "size": ["small", false, "large", "huge"] }],
+              [{ "header": [1, 2, 3, 4, 5, 6, false] }],
+              [{ "color": [] }, { "background": [] }],
+              [{ "font": [] }],
+              [{ "align": [] }],
+              ["link", "image", "video"],
+              ["clean"]
+            ]
+          },
+          resize: {
+            locale: {
+              altTip: '按住Alt键拖拽可等比例缩放',
+              floatLeft: '左浮动',
+              floatRight: '右浮动',
+              center: '居中',
+              restore: '恢复默认'
+            }
+          }
+        },
+        placeholder: '请输入产品详情...'
       },
       quillKey: 0
     }
@@ -368,16 +416,6 @@ export default {
     }
   },
   mounted() {
-    // 配置quill图片上传钩子
-    this.$nextTick(() => {
-      if (this.$refs.quillEditor && this.$refs.quillEditor.getQuill) {
-        const quill = this.$refs.quillEditor.getQuill();
-        quill.getModule('toolbar').addHandler('image', () => {
-          this.handleQuillImageUpload(quill);
-        });
-      }
-    });
-
     // 检查是否有编辑产品的查询参数
     const editProductId = this.$route.query.edit;
     if (editProductId) {
@@ -443,7 +481,9 @@ export default {
       }
       
       try {
-        const response = await this.$api.get(`products/generate-code?category_id=${this.productForm.category_id}`)
+        const response = await this.$api.post('products/generate-code', {
+          category_id: this.productForm.category_id
+        })
         this.productForm.product_code = response.data
       } catch (error) {
         console.error('生成产品编号失败:', error)
@@ -671,7 +711,7 @@ export default {
         category_id: '',
         product_type: 'consignment',
         price: '',
-        price_ranges: [{ min_quantity: 1, max_quantity: 99, price: 0 }],
+        price_ranges: [{ min_quantity: 1, max_quantity: null, price: 0 }],
         stock: 0,
         sort_order: 0,
         short_description: '',
@@ -696,7 +736,7 @@ export default {
         full_description: row.full_description || '',
         price_ranges: row.price_ranges && row.price_ranges.length > 0 
           ? row.price_ranges 
-          : [{ min_quantity: 1, max_quantity: 99, price: Number(row.price) || 0 }]
+          : [{ min_quantity: 1, max_quantity: null, price: Number(row.price) || 0 }]
       })
       this.quillKey++;
       
@@ -747,8 +787,49 @@ export default {
       }).catch(() => {})
     },
     
+    // 阶梯价格验证
+    validatePriceRanges(rule, value, callback) {
+      if (!value || value.length === 0) {
+        callback(new Error('请设置阶梯价格'))
+        return
+      }
+      
+      // 检查是否有多个无穷大值（max_quantity为null）
+      let infinityCount = 0
+      for (let i = 0; i < value.length; i++) {
+        const range = value[i]
+        if (!range.min_quantity || range.min_quantity < 1) {
+          callback(new Error(`第${i + 1}个阶梯的最小数量必须大于0`))
+          return
+        }
+        if (range.max_quantity !== null && range.max_quantity < range.min_quantity) {
+          callback(new Error(`第${i + 1}个阶梯的最大数量不能小于最小数量`))
+          return
+        }
+        if (range.max_quantity === null || range.max_quantity === undefined) {
+          infinityCount++
+        }
+      }
+      
+      // 只能有一个无穷大值，且必须是最后一个
+      if (infinityCount > 1) {
+        callback(new Error('只能有一个价格阶梯的最大数量为无穷大'))
+        return
+      }
+      
+      if (infinityCount === 1) {
+        const lastRange = value[value.length - 1]
+        if (lastRange.max_quantity !== null && lastRange.max_quantity !== undefined) {
+          callback(new Error('无穷大的价格阶梯必须是最后一个'))
+          return
+        }
+      }
+      
+      callback()
+    },
+    
     // 验证阶梯价格范围的客户端函数
-    validatePriceRanges(priceRanges) {
+    validatePriceRangesOld(priceRanges) {
       if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
         return { valid: false, message: '价格范围必须是非空数组' };
       }
@@ -811,7 +892,7 @@ export default {
         if (valid) {
           // 验证阶梯价格（如果提供）
           if (this.productForm.price_ranges && this.productForm.price_ranges.length > 0) {
-            const validation = this.validatePriceRanges(this.productForm.price_ranges);
+            const validation = this.validatePriceRangesOld(this.productForm.price_ranges);
             if (!validation.valid) {
               this.$messageHandler.showError(`价格范围验证失败: ${validation.message}`, 'admin.products.error.priceRangeValidationFailed');
               return;
@@ -900,33 +981,84 @@ export default {
       }
     },
     onQuillReady(quill) {
+      console.log('QuillEditor ready:', quill);
+      
+      // 确保工具栏存在
+      const toolbar = quill.getModule('toolbar');
+      if (!toolbar) {
+        console.error('QuillEditor toolbar not found');
+        return;
+      }
+      
       // 强制设置内容，兼容v-model不生效的情况
-      if (quill && this.productForm.full_description) {
+      if (this.productForm.full_description) {
         quill.root.innerHTML = this.productForm.full_description;
       }
-      if (quill && quill.getModule('toolbar')) {
-        quill.getModule('toolbar').addHandler('image', () => {
-          this.handleQuillImageUpload(quill);
-        });
+      
+      // 设置图片上传处理器
+      toolbar.addHandler('image', () => {
+        this.handleQuillImageUpload(quill);
+      });
+      
+      // 确保工具栏可见
+      this.$nextTick(() => {
+        const toolbarElement = quill.container.querySelector('.ql-toolbar');
+        if (toolbarElement) {
+          toolbarElement.style.display = 'block';
+          toolbarElement.style.visibility = 'visible';
+        }
+      });
+    },
+    
+    // 处理最大数量变化
+    handleMaxQuantityChange(index) {
+      const currentRange = this.productForm.price_ranges[index]
+      if (currentRange.max_quantity !== null && currentRange.max_quantity > 0) {
+        // 检查是否已经有下一个阶梯
+        if (index === this.productForm.price_ranges.length - 1) {
+          // 自动添加下一个阶梯
+          this.productForm.price_ranges.push({
+            min_quantity: currentRange.max_quantity + 1,
+            max_quantity: null,
+            price: 0
+          })
+        } else {
+          // 更新下一个阶梯的最小数量
+          this.productForm.price_ranges[index + 1].min_quantity = currentRange.max_quantity + 1
+        }
       }
     },
     
     // 添加价格区间
     addPriceRange() {
-      const lastRange = this.productForm.price_ranges[this.productForm.price_ranges.length - 1];
-      const newMinQuantity = lastRange ? (lastRange.max_quantity || 0) + 1 : 1;
-      // 新增的价格区间默认为无穷大（max_quantity: null）
+      const lastRange = this.productForm.price_ranges[this.productForm.price_ranges.length - 1]
+      const newMinQuantity = lastRange.max_quantity ? lastRange.max_quantity + 1 : 100
+      
       this.productForm.price_ranges.push({
         min_quantity: newMinQuantity,
         max_quantity: null,
         price: 0
-      });
+      })
     },
     
     // 删除价格区间
     removePriceRange(index) {
       if (this.productForm.price_ranges.length > 1) {
         this.productForm.price_ranges.splice(index, 1);
+        
+        // 重新调整后续阶梯的min_quantity
+        for (let i = index; i < this.productForm.price_ranges.length; i++) {
+          if (i === 0) {
+            // 第一个阶梯的min_quantity始终为1
+            this.productForm.price_ranges[i].min_quantity = 1;
+          } else {
+            // 后续阶梯的min_quantity基于前一个阶梯的max_quantity
+            const prevRange = this.productForm.price_ranges[i - 1];
+            if (prevRange.max_quantity !== null && prevRange.max_quantity > 0) {
+              this.productForm.price_ranges[i].min_quantity = prevRange.max_quantity + 1;
+            }
+          }
+        }
       }
     }
   }
@@ -1164,6 +1296,20 @@ export default {
   background-color: #fafafa;
 }
 
+.infinity-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 32px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #409eff;
+  background-color: #f0f9ff;
+  border: 1px solid #b3d8ff;
+  border-radius: 4px;
+}
+
 .price-range-item {
   display: flex;
   align-items: center;
@@ -1183,5 +1329,146 @@ export default {
   color: #606266;
   font-weight: 500;
   white-space: nowrap;
+}
+
+/* 对话框样式 */
+:deep(.el-dialog) {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+:deep(.el-dialog__header) {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+:deep(.el-dialog__body) {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+:deep(.el-dialog__footer) {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+/* 对话框头部样式 */
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.dialog-header h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.return-btn-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+  border: none;
+  background: linear-gradient(135deg, #409eff 0%, #66b3ff 100%);
+}
+
+.return-btn-circle:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
+  background: linear-gradient(135deg, #66b3ff 0%, #409eff 100%);
+}
+
+.return-btn-circle .el-icon {
+  font-size: 18px;
+  color: #fff;
+}
+
+/* Quill编辑器样式 */
+.quill-editor-container {
+  height: 800px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.quill-editor-container :deep(.ql-toolbar) {
+  border: none;
+  border-bottom: 1px solid #dcdfe6;
+  background-color: #fafafa;
+  padding: 8px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.quill-editor-container :deep(.ql-container) {
+  flex: 1;
+  border: none;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+}
+
+.quill-editor-container :deep(.ql-editor) {
+  flex: 1;
+  padding: 15px;
+  line-height: 1.6;
+  font-size: 14px;
+  overflow-y: auto;
+  border: none;
+  min-height: 0;
+}
+
+.quill-editor-container :deep(.ql-editor.ql-blank::before) {
+  color: #c0c4cc;
+  font-style: normal;
+}
+
+/* Quill图片调整大小样式 */
+.quill-editor-container :deep(.ql-image-resize) {
+  border: 2px solid #409eff;
+}
+
+.quill-editor-container :deep(.ql-image-resize-handle) {
+  width: 8px;
+  height: 8px;
+  background: #409eff;
+  border: 1px solid #fff;
+  border-radius: 50%;
+}
+
+.quill-editor-container :deep(.ql-image-resize-toolbar) {
+  background: #409eff;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.quill-editor-container :deep(.ql-image-resize-toolbar button) {
+  color: #fff;
+  border: none;
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.quill-editor-container :deep(.ql-image-resize-toolbar button:hover) {
+  background: rgba(255, 255, 255, 0.2);
 }
 </style>
