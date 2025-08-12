@@ -19,20 +19,11 @@
 
       <!-- Action Buttons -->
       <div v-if="showActionButtons" class="action-buttons">
-        <el-button 
-          type="primary" 
-          size="small" 
-          @click.stop="handleChatNow"
-          class="chat-btn">
+        <el-button type="primary" size="small" @click.stop="handleChatNow" class="chat-btn">
           <i class="fas fa-comments"></i>
           {{ $t('product.chatNow') || 'Chat Now' }}
         </el-button>
-        <el-button 
-          type="success" 
-          size="small" 
-          @click.stop="handleAddToCart"
-          :loading="addingToCart"
-          class="cart-btn">
+        <el-button type="success" size="small" @click.stop="handleAddToCart" :loading="addingToCart" class="cart-btn">
           <i class="fas fa-shopping-cart"></i>
           {{ $t('product.addToCart') || 'Add to Cart' }}
         </el-button>
@@ -63,7 +54,7 @@ export default {
     },
     defaultDescription: {
       type: String,
-      default: 'Powerful suction with long battery life'
+      default: ''
     },
     cardStyle: {
       type: String,
@@ -264,7 +255,7 @@ export default {
   gap: $spacing-sm;
   margin-top: auto;
   flex-wrap: wrap;
-  
+
   .el-button {
     flex: 1;
     min-width: 0;
@@ -272,18 +263,18 @@ export default {
     padding: $spacing-xs $spacing-sm;
     border-radius: 8px;
     transition: all 0.2s ease;
-    
+
     i {
       margin-right: $spacing-xs;
       font-size: $font-size-sm;
     }
   }
-  
+
   .chat-btn {
     background-color: white;
     border: 1px solid #d1d5db;
     color: #374151;
-    
+
     &:hover {
       background-color: #dc2626;
       border-color: #dc2626;
@@ -292,12 +283,12 @@ export default {
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
   }
-  
+
   .cart-btn {
     background-color: white;
     border: 1px solid #d1d5db;
     color: #374151;
-    
+
     &:hover {
       background-color: #dc2626;
       border-color: #dc2626;
@@ -306,7 +297,7 @@ export default {
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
   }
-  
+
 
 }
 
@@ -341,7 +332,7 @@ export default {
 
   .product-arrow {
     color: $primary-color;
-    
+
     i {
       font-size: $font-size-lg;
     }
@@ -379,7 +370,7 @@ export default {
 
   .product-arrow {
     color: $primary-color;
-    
+
     i {
       font-size: $font-size-lg;
     }
@@ -407,14 +398,14 @@ export default {
   .product-price {
     font-size: $font-size-lg;
   }
-  
+
   .action-buttons {
     gap: $spacing-xs;
-    
+
     .el-button {
       font-size: $font-size-xs;
       padding: $spacing-xs;
-      
+
       i {
         margin-right: 2px;
         font-size: $font-size-xs;

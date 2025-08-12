@@ -42,7 +42,7 @@
         <!-- Product Grid -->
         <div class="product-grid">
           <ProductCard v-for="product in displayProducts" :key="product.id" :product="product" :show-description="true"
-            :show-arrow="true" :default-description="product.short_description || 'Powerful suction with long battery life'" card-style="home"
+            :show-arrow="true" :default-description="product.short_description || ''" card-style="home"
             @card-click="handleProductClick" @title-click="handleProductClick" />
         </div>
 

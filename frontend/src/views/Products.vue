@@ -26,9 +26,9 @@
         <div class="products-grid">
           <ProductCard v-for="product in products" :key="product.id" :product="product" :show-description="true"
             :show-arrow="true" :show-quantity-input="true" :show-action-buttons="true"
-            :default-description="product.short_description || 'Powerful suction with long battery life'"
-            card-style="products" @card-click="handleProductClick" @title-click="handleProductClick"
-            @chat-now="handleChatNowEvent" @add-to-cart="handleAddToCartEvent" />
+            :default-description="product.short_description || ''" card-style="products"
+            @card-click="handleProductClick" @title-click="handleProductClick" @chat-now="handleChatNowEvent"
+            @add-to-cart="handleAddToCartEvent" />
         </div>
 
         <!-- No Products Message -->
