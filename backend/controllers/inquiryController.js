@@ -728,7 +728,7 @@ exports.findInquiryByProduct = async (req, res) => {
   try {
     const userId = req.userId;
     const { productId } = req.params;
-    const { inquiryType } = req.query; // 从查询参数获取询价类型
+    const { inquiryType } = req.body; // 从请求体获取询价类型
     
     if (!productId) {
       return res.status(400).json({

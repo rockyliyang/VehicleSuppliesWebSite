@@ -20,6 +20,14 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 
 -- FLOATING_ACTION_BAR相关 - 新增
 INSERT INTO language_translations (guid, code, lang, value) VALUES
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.WHATSAPP', 'en', 'WhatsApp'),
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.WHATSAPP', 'zh-CN', 'WhatsApp'),
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.INQUIRIES', 'en', 'Inquiries'),
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.INQUIRIES', 'zh-CN', '询价'),
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.ORDERS', 'en', 'Orders'),
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.ORDERS', 'zh-CN', '订单'),
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.CART', 'en', 'Cart'),
+(gen_random_uuid(), 'FLOATING_ACTION_BAR.CART', 'zh-CN', '购物车'),
 (gen_random_uuid(), 'FLOATING_ACTION_BAR.WHATSAPP_MESSAGE', 'en', 'Hello, I need to inquire about product information'),
 (gen_random_uuid(), 'FLOATING_ACTION_BAR.WHATSAPP_MESSAGE', 'zh-CN', '您好，我需要咨询产品信息');
 

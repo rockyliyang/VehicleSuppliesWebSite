@@ -318,11 +318,18 @@ export default {
     },
 
     // 展开询价对话框
-    expandInquiryDialog() {
-      // 可以实现全屏展开功能
-      console.log('展开询价对话框');
+   expandInquiryDialog() {
+      if (this.currentInquiryId) {
+        // 跳转到询价单管理页面，并传递当前询价单ID
+        this.$router.push({
+          path: '/inquiry-management',
+          query: { inquiryId: this.currentInquiryId }
+        });
+      } else {
+        // 如果没有当前询价单ID，直接跳转到询价单管理页面
+        this.$router.push('/inquiry-management');
+      }
     },
-
 
     // 处理更新询价消息
     handleUpdateInquiryMessage(message) {

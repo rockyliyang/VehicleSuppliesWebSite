@@ -119,6 +119,7 @@
             <span>{{ $t('orders') || '我的订单' }}</span>
           </div>
           <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('inquiries')">
+
             <i class="fas fa-file-alt"></i>
             <span>{{ $t('inquiry.management.title') || '询价单管理' }}</span>
           </div>
@@ -473,7 +474,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  
+
   /* 默认桌面端样式 */
   min-width: $spacing-6xl - $spacing-lg; // 约120px
   max-width: $auth-logo-width + $spacing-lg; // 约200px  
@@ -853,6 +854,7 @@ export default {
     transform: translateY(100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -864,14 +866,14 @@ export default {
   align-items: center;
   padding: $spacing-lg $spacing-xl;
   border-bottom: $border-width-sm solid $gray-200;
-  
+
   h3 {
     margin: 0;
     font-size: $font-size-xl;
     font-weight: $font-weight-semibold;
     color: $text-primary;
   }
-  
+
   .close-btn {
     @include flex-center;
     width: $spacing-3xl;
@@ -882,12 +884,12 @@ export default {
     cursor: pointer;
     border-radius: $border-radius-full;
     transition: $transition-base;
-    
+
     &:hover {
       background: $gray-100;
       color: $text-primary;
     }
-    
+
     i {
       font-size: $font-size-lg;
     }
@@ -910,28 +912,28 @@ export default {
   background: none;
   width: 100%;
   text-align: left;
-  
+
   &:hover {
     background: $gray-50;
     color: $primary-color;
   }
-  
+
   &.logout-item {
     color: $error-color;
-    
+
     &:hover {
       background: rgba($error-color, 0.05);
       color: $error-color;
     }
   }
-  
+
   i {
     font-size: $font-size-lg;
     width: $spacing-xl;
     text-align: center;
     flex-shrink: 0;
   }
-  
+
   span {
     font-size: $font-size-lg;
     font-weight: $font-weight-medium;

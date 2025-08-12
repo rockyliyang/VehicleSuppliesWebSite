@@ -454,8 +454,33 @@ export default {
     },
     
     // 处理路由参数
-    handleRouteParams() {
-      const { action, filter } = this.$route.query;
+    async handleRouteParams() {
+      const { action, filter, inquiryId } = this.$route.query;
+      
+      // 如果有inquiryId参数，自动定位到对应的inquiry
+      if (inquiryId) {
+        await this.loadInquiries(); // 确保询价单数据已加载
+        
+        const targetInquiry = this.inquiries.find(inquiry => inquiry.id == inquiryId);
+        if (targetInquiry) {
+          // 在移动端，直接跳转到详情页
+          if (window.innerWidth <= 768) {
+            await this.selectInquiry(targetInquiry);
+          } else {
+            // 在桌面端，显示桌面布局并通知InquiryPanel组件
+            this.$nextTick(() => {
+              this.showDesktopLayout();
+              if (this.$refs.inquiryPanel) {
+                this.$refs.inquiryPanel.selectInquiryById(inquiryId);
+              }
+            });
+          }
+        } else {
+          // 如果找不到对应的inquiry，显示提示信息
+          this.$messageHandler.showWarning('未找到指定的询价单', 'inquiry.notFound');
+        }
+        return;
+      }
       
       if (action === 'create' || filter === 'paid' || filter === 'unpaid') {
         // 如果有这些参数，在移动端显示桌面布局

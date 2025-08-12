@@ -4,26 +4,36 @@
     <div class="main-button" @click="toggleExpanded">
       <i class="fas fa-bars"></i>
     </div>
-    
+
     <!-- 向上弹出的菜单 -->
     <div class="action-menu" :class="{ 'show': isExpanded }">
       <div class="action-item" @click="openWhatsApp">
         <div class="action-icon whatsapp">
           <i class="fab fa-whatsapp"></i>
         </div>
+        <span class="action-text">{{ $t('FLOATING_ACTION_BAR.WHATSAPP') || 'WhatsApp' }}</span>
       </div>
-      
+
+      <div class="action-item" @click="goToInquiries">
+        <div class="action-icon">
+          <i class="fas fa-question-circle"></i>
+        </div>
+        <span class="action-text">{{ $t('FLOATING_ACTION_BAR.INQUIRIES') || 'Inquiries' }}</span>
+      </div>
+
       <div class="action-item" @click="goToOrders">
         <div class="action-icon">
           <i class="fas fa-list-alt"></i>
         </div>
+        <span class="action-text">{{ $t('FLOATING_ACTION_BAR.ORDERS') || 'Orders' }}</span>
       </div>
-      
+
       <div class="action-item" @click="goToCart">
         <div class="action-icon">
           <i class="fas fa-shopping-cart"></i>
           <span v-if="cartItemCount > 0" class="badge">{{ cartItemCount }}</span>
         </div>
+        <span class="action-text">{{ $t('FLOATING_ACTION_BAR.CART') || 'Cart' }}</span>
       </div>
     </div>
   </div>
@@ -49,6 +59,11 @@ export default {
     
     goToCart() {
       this.$router.push('/cart')
+    },
+    
+    goToInquiries() {
+      // 跳转到询价单管理页面，让路由守卫处理登录验证
+      this.$router.push('/inquiry-management')
     },
     
     goToOrders() {
@@ -78,30 +93,36 @@ export default {
   top: 50%;
   transform: translateY(-50%);
   z-index: 1000;
-  
-  // 主按钮 - 紧贴右边框
+
+  // 主按钮 - 贴合右边缘的半圆形按钮
   .main-button {
-    width: 50px;
-    height: 50px;
-    background: $primary-color;
-    border-radius: 25px 0 0 25px; // 左侧圆角，右侧直角贴边
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+    border-radius: 28px 0 0 28px; // 左侧圆角，右侧直角贴边
     @include flex-center;
     color: $white;
-    font-size: $font-size-lg;
+    font-size: 20px;
     cursor: pointer;
-    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
+    box-shadow: -4px 0 20px rgba($primary-color, 0.3), -2px 0 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-right: none; // 移除右边框
 
     &:hover {
-      background: $primary-dark;
-      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+      transform: translateX(-4px);
+      box-shadow: -6px 0 25px rgba($primary-color, 0.4), -4px 0 12px rgba(0, 0, 0, 0.2);
+    }
+
+    &:active {
+      transform: translateX(-2px) scale(0.98);
     }
 
     @media (max-width: $breakpoint-mobile) {
-      width: 45px;
-      height: 45px;
-      font-size: $font-size-md;
+      width: 50px;
+      height: 50px;
+      font-size: 18px;
     }
   }
 
@@ -109,100 +130,154 @@ export default {
   .action-menu {
     position: absolute;
     right: 0;
-    bottom: 60px; // 在主按钮上方
+    bottom: 70px;
     @include flex-column;
-    gap: $spacing-xs;
+    gap: 12px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(20px);
-    transition: all 0.3s ease;
+    transform: translateY(30px) scale(0.8);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
     @media (max-width: $breakpoint-mobile) {
-      bottom: 55px;
-      gap: 6px;
+      bottom: 65px;
+      gap: 10px;
     }
 
     // 显示菜单
     &.show {
       opacity: 1;
       visibility: visible;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 
   .action-item {
-    width: 50px;
-    height: 50px;
-    background: $white;
-    border-radius: 25px 0 0 25px; // 与主按钮保持一致的样式
-    @include flex-center;
+    min-width: 140px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 24px 0 0 24px; // 左侧圆角，右侧直角贴边
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 16px 0 12px;
     cursor: pointer;
-    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1), -2px 0 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-right: none; // 移除右边框
 
     &:hover {
-      background: $gray-50;
-      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
-      transform: translateX(-8px);
+      background: rgba(255, 255, 255, 1);
+      box-shadow: -6px 0 25px rgba(0, 0, 0, 0.15), -4px 0 12px rgba(0, 0, 0, 0.08);
+      transform: translateX(-12px) translateY(-2px);
+    }
+
+    &:active {
+      transform: translateX(-8px) scale(0.98);
     }
 
     @media (max-width: $breakpoint-mobile) {
-      width: 45px;
-      height: 45px;
+      min-width: 120px;
+      height: 44px;
+      padding: 0 12px 0 10px;
+      border-radius: 22px 0 0 22px; // 移动端也保持半圆设计
     }
 
     .action-icon {
       position: relative;
-      font-size: $font-size-lg;
+      font-size: 18px;
       color: $gray-600;
-      transition: color 0.3s ease;
+      transition: all 0.3s ease;
+      margin-right: 10px;
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      @include flex-center;
+      border-radius: 50%;
+      background: rgba($gray-100, 0.5);
 
       @media (max-width: $breakpoint-mobile) {
-        font-size: $font-size-md;
+        font-size: 16px;
+        margin-right: 8px;
+        width: 22px;
+        height: 22px;
       }
 
       &.whatsapp {
         color: #25d366;
+        background: rgba(37, 211, 102, 0.1);
       }
-
-
 
       .badge {
         position: absolute;
-        top: -8px;
-        right: -8px;
-        background: $error-color;
+        top: -6px;
+        right: -6px;
+        background: linear-gradient(135deg, $error-color 0%, darken($error-color, 10%) 100%);
         color: $white;
         border-radius: 50%;
         width: 18px;
         height: 18px;
         @include flex-center;
-        font-size: $font-size-xs;
+        font-size: 10px;
         font-weight: $font-weight-bold;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 
         @media (max-width: $breakpoint-mobile) {
           width: 16px;
           height: 16px;
-          font-size: 10px;
-          top: -6px;
-          right: -6px;
+          font-size: 9px;
+          top: -5px;
+          right: -5px;
         }
+      }
+    }
+
+    .action-text {
+      font-size: 14px;
+      color: $gray-700;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: color 0.3s ease;
+      letter-spacing: 0.3px;
+
+      @media (max-width: $breakpoint-mobile) {
+        font-size: 13px;
       }
     }
 
     &:hover {
       .action-icon {
         color: $primary-color;
+        background: rgba($primary-color, 0.1);
+        transform: scale(1.1);
 
         &.whatsapp {
           color: #25d366;
-        }
-
-        &.wechat {
-          color: #07c160;
+          background: rgba(37, 211, 102, 0.15);
         }
       }
+
+      .action-text {
+        color: $primary-color;
+        font-weight: 600;
+      }
+    }
+
+    // 为每个按钮添加不同的延迟动画
+    &:nth-child(1) {
+      transition-delay: 0.1s;
+    }
+    &:nth-child(2) {
+      transition-delay: 0.15s;
+    }
+    &:nth-child(3) {
+      transition-delay: 0.2s;
+    }
+    &:nth-child(4) {
+      transition-delay: 0.25s;
     }
   }
 }

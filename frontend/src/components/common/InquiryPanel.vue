@@ -628,6 +628,30 @@ export default {
       } else {
         this.activeInquiryId = null;
       }
+    },
+    
+    // 设置活跃的tab（供外部调用）
+    setActiveTab(tab) {
+      this.switchPaymentTab(tab);
+    },
+    
+    // 根据ID选择询价单（供外部调用）
+    async selectInquiryById(inquiryId) {
+      const targetInquiry = this.inquiries.find(inquiry => inquiry.id == inquiryId);
+      if (targetInquiry) {
+        // 根据询价单状态切换到对应的tab
+        if (targetInquiry.status === 'paid') {
+          this.switchPaymentTab('paid');
+        } else {
+          this.switchPaymentTab('unpaid');
+        }
+        
+        // 切换到指定的询价单
+        await this.switchTab(inquiryId);
+        
+        return true;
+      }
+      return false;
     }
   }
 };

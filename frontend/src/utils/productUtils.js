@@ -11,7 +11,9 @@
 export async function createOrOpenInquiry(product, context) {
   try {
     // 第一步：查找是否存在只包含当前商品的询价单
-    const findResponse = await context.$api.getWithErrorHandler(`/inquiries/product/${product.id}`, {
+    const findResponse = await context.$api.postWithErrorHandler(`/inquiries/product/${product.id}`, {
+        inquiryType: 'single'
+      },{
       fallbackKey: 'product.error.findInquiryFailed'
     });
     

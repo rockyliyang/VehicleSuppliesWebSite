@@ -175,10 +175,7 @@
             </div>
 
             <div class="total-and-button">
-              <div class="total-price">
-                <span class="total-label">{{ $t('productDetail.buyTogether.totalPrice') }}:</span>
-                <span class="total-amount">{{ $store.getters.formatPrice(totalPrice) }}</span>
-              </div>
+              <!-- 总价显示已隐藏 -->
               <div class="action-buttons">
                 <el-button type="primary" size="large" @click="addAllToCart" :disabled="!hasSelectedProducts"
                   :loading="addingAllToCart" class="add-all-btn">
@@ -999,10 +996,18 @@ export default {
       this.inquiryMessages = result.messages;
       this.inquiryStatus = result.status;
     },
-    // 放大询价窗口（预留功能）
+    // 放大询价窗口 - 跳转到My Inquiries页面
     expandInquiryDialog() {
-      // 预留放大功能，暂时显示提示
-      this.$messageHandler.showInfo('放大功能正在开发中', 'inquiry.info.expandFeature');
+      if (this.currentInquiryId) {
+        // 跳转到询价单管理页面，并传递当前询价单ID
+        this.$router.push({
+          path: '/inquiry-management',
+          query: { inquiryId: this.currentInquiryId }
+        });
+      } else {
+        // 如果没有当前询价单ID，直接跳转到询价单管理页面
+        this.$router.push('/inquiry-management');
+      }
     },
     // 邮件对话框相关方法
     openEmailDialog() {
