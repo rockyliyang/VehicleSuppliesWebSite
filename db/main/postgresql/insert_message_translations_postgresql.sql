@@ -924,6 +924,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'buttons.addToCart', 'zh-CN', '加入购物车'),
 (gen_random_uuid(), 'buttons.addToInquiry', 'en', 'Add to Inquiry'),
 (gen_random_uuid(), 'buttons.addToInquiry', 'zh-CN', '加入询价'),
+(gen_random_uuid(), 'buttons.sendToInquiry', 'en', 'Send to Inquiry'),
+(gen_random_uuid(), 'buttons.sendToInquiry', 'zh-CN', '发送询价'),
 (gen_random_uuid(), 'buttons.contactUs', 'en', 'Contact Us'),
 (gen_random_uuid(), 'buttons.contactUs', 'zh-CN', '联系我们'),
 (gen_random_uuid(), 'productDetail.shareTo', 'en', 'Share to'),
@@ -1384,7 +1386,33 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'login.error.checkInput', 'en', 'Please check your input'),
 (gen_random_uuid(), 'login.error.checkInput', 'zh-CN', '请检查输入信息'),
 (gen_random_uuid(), 'login.error.phoneFormat', 'en', 'Phone number format error'),
-(gen_random_uuid(), 'login.error.phoneFormat', 'zh-CN', '手机号码格式错误');
+(gen_random_uuid(), 'login.error.phoneFormat', 'zh-CN', '手机号码格式错误'),
+
+-- 新增缺失的第三方登录翻译键
+(gen_random_uuid(), 'login.continueWithApple', 'en', 'Continue With Apple'),
+(gen_random_uuid(), 'login.continueWithApple', 'zh-CN', '使用Apple登录'),
+(gen_random_uuid(), 'login.continueWithGoogle', 'en', 'Continue With Google'),
+(gen_random_uuid(), 'login.continueWithGoogle', 'zh-CN', '使用Google登录'),
+(gen_random_uuid(), 'login.continueWithFacebook', 'en', 'Continue With Facebook'),
+(gen_random_uuid(), 'login.continueWithFacebook', 'zh-CN', '使用Facebook登录'),
+
+-- 新增第三方登录错误信息翻译键
+(gen_random_uuid(), 'login.error.appleNotAvailable', 'en', 'Apple Sign In not available'),
+(gen_random_uuid(), 'login.error.appleNotAvailable', 'zh-CN', 'Apple登录不可用'),
+(gen_random_uuid(), 'login.error.googleNotAvailable', 'en', 'Google Identity Services not loaded'),
+(gen_random_uuid(), 'login.error.googleNotAvailable', 'zh-CN', 'Google身份服务未加载'),
+(gen_random_uuid(), 'login.error.facebookNotAvailable', 'en', 'Facebook Sign In not available'),
+(gen_random_uuid(), 'login.error.facebookNotAvailable', 'zh-CN', 'Facebook登录不可用'),
+(gen_random_uuid(), 'login.error.facebookCancelled', 'en', 'Facebook login cancelled'),
+(gen_random_uuid(), 'login.error.facebookCancelled', 'zh-CN', 'Facebook登录已取消'),
+(gen_random_uuid(), 'login.error.thirdPartyFailed', 'en', 'Third party login failed'),
+(gen_random_uuid(), 'login.error.thirdPartyFailed', 'zh-CN', '第三方登录失败'),
+(gen_random_uuid(), 'login.error.appleAuthFailed', 'en', 'Apple authentication failed'),
+(gen_random_uuid(), 'login.error.appleAuthFailed', 'zh-CN', 'Apple认证失败'),
+(gen_random_uuid(), 'login.error.googleAuthFailed', 'en', 'Google authentication failed'),
+(gen_random_uuid(), 'login.error.googleAuthFailed', 'zh-CN', 'Google认证失败'),
+(gen_random_uuid(), 'login.error.facebookAuthFailed', 'en', 'Facebook authentication failed'),
+(gen_random_uuid(), 'login.error.facebookAuthFailed', 'zh-CN', 'Facebook认证失败');
 
 -- Register.vue 翻译键
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -1905,6 +1933,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'INQUIRY.DELETE.SUCCESS', 'zh-CN', '询价单删除成功'),
 (gen_random_uuid(), 'INQUIRY.DELETE.FAILED', 'en', 'Failed to delete inquiry'),
 (gen_random_uuid(), 'INQUIRY.DELETE.FAILED', 'zh-CN', '询价单删除失败'),
+(gen_random_uuid(), 'inquiry.deleteSuccess', 'en', 'Inquiry deleted successfully'),
+(gen_random_uuid(), 'inquiry.deleteSuccess', 'zh-CN', '询价单删除成功'),
 (gen_random_uuid(), 'INQUIRY.ERROR.GENERAL', 'en', 'An error occurred while processing inquiry'),
 (gen_random_uuid(), 'INQUIRY.ERROR.GENERAL', 'zh-CN', '处理询价时发生错误'),
 (gen_random_uuid(), 'INQUIRY.ERROR.NETWORK', 'en', 'Network error, please try again'),

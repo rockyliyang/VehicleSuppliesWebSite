@@ -45,7 +45,8 @@
         </el-form>
       </el-tab-pane>
 
-      <el-tab-pane :label="$t('login.phoneLogin') || '手机登录'" name="phone">
+      <!-- 手机登录tab页已隐藏 -->
+      <!-- <el-tab-pane :label="$t('login.phoneLogin') || '手机登录'" name="phone">
         <el-form :model="phoneForm" :rules="phoneRules" ref="phoneForm" class="login-form">
           <el-form-item prop="phone">
             <FormInput v-model="phoneForm.phone" :placeholder="$t('login.phonePlaceholder') || '请输入手机号码'"
@@ -67,7 +68,7 @@
             </button>
           </el-form-item>
         </el-form>
-      </el-tab-pane>
+      </el-tab-pane> -->
     </el-tabs>
 
     <div class="login-footer">
@@ -268,14 +269,7 @@ export default {
       this.initGoogleAPI();
       
       // 初始化Facebook SDK
-      if (typeof FB !== 'undefined') {
-        FB.init({
-          appId: process.env.VUE_APP_FACEBOOK_APP_ID || 'your_facebook_app_id',
-          cookie: true,
-          xfbml: true,
-          version: 'v18.0'
-        });
-      }
+      this.initFacebookSDK();
     },
     
     initGoogleAPI() {
@@ -286,6 +280,64 @@ export default {
         // 如果Google Identity Services还未加载，等待一段时间后重试
         setTimeout(() => {
           this.initGoogleAPI();
+        }, 500);
+      }
+    },
+    
+    initFacebookSDK() {
+      // 检查Facebook SDK是否已加载
+      if (typeof FB !== 'undefined') {
+        const appId = process.env.VUE_APP_FACEBOOK_APP_ID;
+        console.log('Facebook SDK loaded, initializing with App ID:', appId);
+        
+        if (!appId || appId === 'your_facebook_app_id' || appId === 'your_facebook_app_id_here') {
+          console.error('Facebook App ID not configured properly. Please set VUE_APP_FACEBOOK_APP_ID in .env file');
+          console.warn('Facebook login will be disabled until a valid App ID is configured');
+          return;
+        }
+        
+        try {
+          // 使用稳定的API版本
+          const apiVersion = 'v18.0';
+          console.log(`Initializing Facebook SDK with version ${apiVersion}`);
+          
+          FB.init({
+            appId: appId,
+            cookie: true,
+            xfbml: true,
+            version: apiVersion,
+            status: true // 启用状态检查
+          });
+          
+          console.log('Facebook SDK initialized successfully');
+          
+          // 等待SDK完全初始化后再检查登录状态
+          setTimeout(() => {
+            if (typeof FB.getLoginStatus === 'function') {
+              FB.getLoginStatus((response) => {
+                console.log('Facebook login status:', response);
+                if (response.status === 'connected') {
+                  console.log('User is already logged in to Facebook');
+                } else if (response.status === 'not_authorized') {
+                  console.log('User is logged in to Facebook but not authorized for this app');
+                } else {
+                  console.log('User is not logged in to Facebook');
+                }
+              });
+            } else {
+              console.warn('FB.getLoginStatus is not available');
+            }
+          }, 100);
+          
+        } catch (error) {
+          console.error('Facebook SDK initialization failed:', error);
+          console.error('This may be due to an invalid App ID or network issues');
+        }
+      } else {
+        console.log('Facebook SDK not loaded yet, retrying...');
+        // 如果Facebook SDK还未加载，等待一段时间后重试
+        setTimeout(() => {
+          this.initFacebookSDK();
         }, 500);
       }
     },
@@ -412,15 +464,16 @@ export default {
           throw new Error(this.$t('login.error.googleNotAvailable') || 'Google Identity Services not loaded');
         }
         
-        // 使用Google Sign-In方式，避免重定向URI问题
-        const credential = await new Promise((resolve, reject) => {
-          google.accounts.id.initialize({
+        // 直接使用OAuth2弹窗登录，避免One Tap造成的双重弹窗问题
+        const tokenResponse = await new Promise((resolve, reject) => {
+          const popup = google.accounts.oauth2.initTokenClient({
             client_id: process.env.VUE_APP_GOOGLE_CLIENT_ID || 'your_google_client_id',
+            scope: 'email profile openid',
             callback: (response) => {
-              if (response.credential) {
-                resolve(response.credential);
+              if (response.access_token) {
+                resolve(response);
               } else {
-                reject(new Error('No credential received'));
+                reject(new Error('No access token received'));
               }
             },
             error_callback: (error) => {
@@ -428,57 +481,23 @@ export default {
             }
           });
           
-          // 使用One Tap或弹窗登录
-          google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              // 如果One Tap不可用，使用弹窗登录
-              const popup = google.accounts.oauth2.initTokenClient({
-                client_id: process.env.VUE_APP_GOOGLE_CLIENT_ID || 'your_google_client_id',
-                scope: 'email profile openid',
-                callback: async (tokenResponse) => {
-                  if (tokenResponse.access_token) {
-                    try {
-                      // 获取用户信息
-                      const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenResponse.access_token}`);
-                      const userInfo = await userInfoResponse.json();
-                      
-                      // 发送到后端验证
-                      const result = await this.$api.postWithErrorHandler('/auth/google/callback', {
-                        accessToken: tokenResponse.access_token,
-                        userInfo: userInfo
-                      }, {
-                        fallbackKey: 'login.error.googleAuthFailed'
-                      });
-                      
-                      this.handleLoginSuccess(result.data);
-                    } catch (error) {
-                      this.handleLoginError(error, 'Google');
-                    } finally {
-                      this.socialLoading.google = false;
-                    }
-                  } else {
-                    reject(new Error('No access token received'));
-                  }
-                },
-                error_callback: (error) => {
-                  reject(error);
-                }
-              });
-              popup.requestAccessToken();
-            }
-          });
+          // 直接请求访问令牌
+          popup.requestAccessToken();
         });
         
-        // 如果使用ID Token方式
-        if (credential) {
-          const result = await this.$api.postWithErrorHandler('/auth/google/callback', {
-            idToken: credential
-          }, {
-            fallbackKey: 'login.error.googleAuthFailed'
-          });
-          
-          this.handleLoginSuccess(result.data);
-        }
+        // 获取用户信息
+        const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenResponse.access_token}`);
+        const userInfo = await userInfoResponse.json();
+        
+        // 发送到后端验证
+        const result = await this.$api.postWithErrorHandler('/auth/google/callback', {
+          accessToken: tokenResponse.access_token,
+          userInfo: userInfo
+        }, {
+          fallbackKey: 'login.error.googleAuthFailed'
+        });
+        
+        this.handleLoginSuccess(result.data);
         
       } catch (error) {
         this.handleLoginError(error, 'Google');
@@ -491,37 +510,68 @@ export default {
     async loginWithFacebook() {
       try {
         this.socialLoading.facebook = true;
+        console.log('Facebook login initiated...');
         
         // 检查Facebook SDK是否可用
         if (typeof FB === 'undefined') {
-          throw new Error(this.$t('login.error.facebookNotAvailable') || 'Facebook Sign In not available');
+          console.error('Facebook SDK not available');
+          throw new Error(this.$t('login.error.facebookNotAvailable') || 'Facebook SDK not loaded. Please refresh the page and try again.');
         }
         
-        FB.login((response) => {
-          if (response.authResponse) {
-            // 获取用户信息
-            FB.api('/me', { fields: 'name,email' }, async (userInfo) => {
-              try {
-                // 发送到后端验证
-                const result = await this.$api.postWithErrorHandler('/auth/facebook/callback', {
-                  accessToken: response.authResponse.accessToken,
-                  userID: response.authResponse.userID,
-                  user: userInfo
-                }, {
-                  fallbackKey: 'login.error.facebookAuthFailed'
-                });
-                
-                this.handleLoginSuccess(result.data);
-              } catch (error) {
-                this.handleLoginError(error, 'Facebook');
-              }
-            });
-          } else {
-            throw new Error(this.$t('login.error.facebookCancelled') || 'Facebook login cancelled');
-          }
-        }, { scope: 'email' });
+        // 检查Facebook SDK是否已初始化
+        if (!window.fbAsyncInit || !FB.getAccessToken) {
+          console.error('Facebook SDK not properly initialized');
+          throw new Error('Facebook SDK not properly initialized. Please refresh the page and try again.');
+        }
+        
+        console.log('Facebook SDK available, calling FB.login...');
+        
+        // 使用Promise包装FB.login以便更好地处理异步操作
+        const loginResponse = await new Promise((resolve, reject) => {
+          FB.login((response) => {
+            console.log('Facebook login response:', response);
+            if (response.authResponse && response.authResponse.accessToken) {
+              resolve(response);
+            } else if (response.status === 'not_authorized') {
+              reject(new Error('User denied Facebook login permission'));
+            } else if (response.status === 'unknown') {
+              reject(new Error('Facebook login failed. Please try again.'));
+            } else {
+              reject(new Error(this.$t('login.error.facebookCancelled') || 'Facebook login was cancelled'));
+            }
+          }, { scope: 'email' });
+        });
+        
+        console.log('Facebook login successful, getting user info...');
+        
+        // 获取用户信息
+        const userInfo = await new Promise((resolve, reject) => {
+          FB.api('/me', { fields: 'name,email' }, (response) => {
+            console.log('Facebook user info response:', response);
+            if (response && !response.error) {
+              resolve(response);
+            } else {
+              reject(new Error('Failed to get user info from Facebook'));
+            }
+          });
+        });
+        
+        console.log('Sending Facebook auth data to backend...');
+        
+        // 发送到后端验证
+        const result = await this.$api.postWithErrorHandler('/auth/facebook/callback', {
+          accessToken: loginResponse.authResponse.accessToken,
+          userID: loginResponse.authResponse.userID,
+          user: userInfo
+        }, {
+          fallbackKey: 'login.error.facebookAuthFailed'
+        });
+        
+        console.log('Facebook login completed successfully');
+        this.handleLoginSuccess(result.data);
         
       } catch (error) {
+        console.error('Facebook login error:', error);
         this.handleLoginError(error, 'Facebook');
       } finally {
         this.socialLoading.facebook = false;
@@ -598,6 +648,29 @@ export default {
   &:hover {
     color: #666;
     background-color: #f5f5f5;
+  }
+}
+
+.close-button-top {
+  position: absolute;
+  top: $spacing-md;
+  right: $spacing-md;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 10;
+
+  &:hover {
+    background-color: $gray-100;
+    color: $text-primary;
   }
 }
 

@@ -115,7 +115,7 @@
                 <el-button class="chat-button" @click="createInquiry">{{
                   $t('buttons.chat') || 'Chat' }}</el-button>
                 <el-button class="email-button" @click="openEmailDialog">{{
-                  $t('buttons.message') || 'Message' }}</el-button>
+                  $t('buttons.sendToInquiry') || 'Send to Inquiry' }}</el-button>
               </div>
             </div>
             <div class="product-share">
@@ -624,6 +624,13 @@ export default {
     async addAllToCart() {
       if (this.addingAllToCart || !this.hasSelectedProducts) return
       
+      // 检查用户是否登录
+      if (!this.isLoggedIn) {
+        this.pendingAction = 'addAllToCart'
+        this.loginDialogVisible = true
+        return
+      }
+      
       try {
         this.addingAllToCart = true
         const selectedProducts = []
@@ -1028,6 +1035,8 @@ export default {
          // 处理特殊的sendAllToInquiry操作
          if (this.pendingAction === 'sendAllToInquiry') {
            await this.sendAllToInquiry();
+         } else if (this.pendingAction === 'addAllToCart') {
+           await this.addAllToCart();
          } else {
            await handleLoginSuccess(
              this.pendingAction,
@@ -1348,7 +1357,7 @@ export default {
 .product-detail-content {
   flex: 1;
   display: flex;
-  gap: $spacing-4xl;
+  gap: $spacing-xl; /* 减少间距从64px到24px，给商品信息区域更多空间 */
   align-items: flex-start;
 }
 
@@ -1692,8 +1701,8 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: $spacing-md;
-  flex-wrap: wrap;
+  gap: $spacing-sm; /* 减少按钮间距从16px到8px */
+  flex-wrap: nowrap; /* 防止按钮换行 */
   align-items: center;
 }
 
@@ -1703,7 +1712,7 @@ export default {
   background-color: $gray-200 !important;
   color: $gray-700 !important;
   border-color: $gray-200 !important;
-  padding: $spacing-md $spacing-xl !important;
+  padding: $spacing-md $spacing-lg !important; /* 减少水平padding */
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
 
@@ -1719,7 +1728,7 @@ export default {
   background-color: $gray-200 !important;
   color: $gray-700 !important;
   border-color: $gray-200 !important;
-  padding: $spacing-md $spacing-xl !important;
+  padding: $spacing-md $spacing-lg !important; /* 减少水平padding */
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
 
@@ -1735,7 +1744,7 @@ export default {
   background-color: #67C23A !important;
   color: white !important;
   border-color: #67C23A !important;
-  padding: $spacing-md $spacing-xl !important;
+  padding: $spacing-md $spacing-lg !important; /* 减少水平padding */
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
   border-radius: $border-radius-md !important;
@@ -1760,7 +1769,7 @@ export default {
   background-color: #409EFF !important;
   color: white !important;
   border-color: #409EFF !important;
-  padding: $spacing-md $spacing-xl !important;
+  padding: $spacing-md $spacing-lg !important; /* 减少水平padding */
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
   border-radius: $border-radius-md !important;
