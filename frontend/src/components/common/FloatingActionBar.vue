@@ -46,13 +46,45 @@ export default {
   name: 'FloatingActionBar',
   data() {
     return {
-      isExpanded: false // 默认不展开，完全由点击控制
+      isExpanded: false, // 初始状态，将在mounted中根据屏幕尺寸设置
+      isMobile: false
     }
   },
   computed: {
     ...mapGetters(['cartItemCount'])
   },
+  mounted() {
+    // 初始化时检测屏幕尺寸并设置默认状态
+    this.checkScreenSize()
+    // 监听窗口大小变化
+    window.addEventListener('resize', this.handleResize)
+  },
+  beforeUnmount() {
+    // 清理事件监听器
+    window.removeEventListener('resize', this.handleResize)
+  },
   methods: {
+    checkScreenSize() {
+      // 检测是否为移动端（768px以下）
+      this.isMobile = window.innerWidth <= 768
+      // 电脑端默认展开，手机端默认收起
+      this.isExpanded = !this.isMobile
+    },
+    
+    handleResize() {
+      // 窗口大小变化时重新检测并调整状态
+      const wasMobile = this.isMobile
+      this.checkScreenSize()
+      
+      // 如果从移动端切换到桌面端，自动展开
+      // 如果从桌面端切换到移动端，自动收起
+      if (wasMobile && !this.isMobile) {
+        this.isExpanded = true
+      } else if (!wasMobile && this.isMobile) {
+        this.isExpanded = false
+      }
+    },
+    
     toggleExpanded() {
       this.isExpanded = !this.isExpanded
     },

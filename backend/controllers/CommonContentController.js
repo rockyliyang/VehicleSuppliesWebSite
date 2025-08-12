@@ -671,9 +671,9 @@ exports.uploadImages = async (req, res) => {
         for (const file of files) {
             // 生成唯一文件名
             const fileExtension = path.extname(file.originalname);
-            const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}${fileExtension}`;
+            const fileName = `images-${image_type}-${nav_id}-${content_id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}${fileExtension}`;
             const filePath = path.join(uploadDir, fileName);
-            const relativePath = `/public/static/images/${fileName}`;
+            const relativePath = `/static/images/${fileName}`;
 
             // 保存文件
             await fs.promises.writeFile(filePath, file.buffer);

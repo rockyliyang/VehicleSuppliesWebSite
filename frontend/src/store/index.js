@@ -199,21 +199,6 @@ export default createStore({
     updateCartItemQuantity({ commit }, payload) {
       commit('updateCartItemQuantity', payload)
     },
-    fetchCategories({ commit }) {
-      // 实际项目中这里会调用API
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const categories = [
-            { id: 1, name: '汽车吸尘器' },
-            { id: 2, name: '车载充电器' },
-            { id: 3, name: '汽车应急启动电源' },
-            { id: 4, name: '其他' }
-          ]
-          commit('setCategories', categories)
-          resolve(categories)
-        }, 500)
-      })
-    },
 
   },
   getters: {

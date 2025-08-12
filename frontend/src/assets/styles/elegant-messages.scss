@@ -79,14 +79,7 @@
     display: flex !important;
     flex-direction: column !important;
 
-    &::before {
-      content: '操作成功' !important;
-      font-size: $font-size-2xl !important;
-      font-weight: $font-weight-bold !important;
-      color: $text-primary !important;
-      margin-bottom: $spacing-sm !important;
-      line-height: $line-height-tight !important;
-    }
+    /* 标题文本应该通过JavaScript国际化设置，而不是在CSS中硬编码 */
   }
 
   .el-message__closeBtn {
@@ -135,22 +128,17 @@
     display: flex !important;
     flex-direction: column !important;
 
-    &::before {
-      content: '警告提示' !important;
-      font-size: $font-size-2xl !important;
-      font-weight: $font-weight-bold !important;
-      color: $text-primary !important;
-      margin-bottom: $spacing-sm !important;
-      line-height: $line-height-tight !important;
-    }
+    /* 标题文本应该通过JavaScript国际化设置，而不是在CSS中硬编码 */
   }
 
   .el-message__closeBtn {
     color: $gray-500 !important;
     font-size: $font-size-xl !important;
     transition: $transition-base;
-    top: $spacing-lg !important;
-    right: $spacing-lg !important;
+    top: $spacing-sm !important;
+    right: $spacing-sm !important;
+    position: absolute !important;
+    z-index: 10 !important;
 
     &:hover {
       color: $gray-700 !important;
@@ -189,22 +177,17 @@
     display: flex !important;
     flex-direction: column !important;
 
-    &::before {
-      content: '信息提示' !important;
-      font-size: $font-size-2xl !important;
-      font-weight: $font-weight-bold !important;
-      color: $text-primary !important;
-      margin-bottom: $spacing-sm !important;
-      line-height: $line-height-tight !important;
-    }
+    /* 标题文本应该通过JavaScript国际化设置，而不是在CSS中硬编码 */
   }
 
   .el-message__closeBtn {
     color: $gray-500 !important;
     font-size: $font-size-xl !important;
     transition: $transition-base;
-    top: $spacing-lg !important;
-    right: $spacing-lg !important;
+    top: $spacing-sm !important;
+    right: $spacing-sm !important;
+    position: absolute !important;
+    z-index: 10 !important;
 
     &:hover {
       color: $gray-700 !important;

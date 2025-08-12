@@ -37,7 +37,8 @@ export async function createOrOpenInquiry(product, context) {
       // 没有找到现有询价单，创建新的
       const titlePrefix = context.$t('cart.inquiryTitlePrefix') || 'Inquiry';
       const createInquiryResponse = await context.$api.postWithErrorHandler('/inquiries', {
-        titlePrefix: titlePrefix
+        titlePrefix: titlePrefix,
+        inquiryType: 'single'
       }, {
         fallbackKey: 'product.error.createInquiryFailed'
       });

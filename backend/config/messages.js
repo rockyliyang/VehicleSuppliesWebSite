@@ -405,6 +405,52 @@ const MESSAGES = {
     ASSIGN_FAILED: 'Failed to assign product images'
   },
 
+  // 产品评论相关
+  PRODUCT_REVIEW: {
+    CREATE_SUCCESS: 'Product review created successfully',
+    CREATE_FAILED: 'Failed to create product review',
+    GET_SUCCESS: 'Product review retrieved successfully',
+    GET_FAILED: 'Failed to retrieve product review',
+    LIST_GET_SUCCESS: 'Product reviews retrieved successfully',
+    LIST_GET_FAILED: 'Failed to retrieve product reviews',
+    UPDATE_SUCCESS: 'Product review updated successfully',
+    UPDATE_FAILED: 'Failed to update product review',
+    DELETE_SUCCESS: 'Product review deleted successfully',
+    DELETE_FAILED: 'Failed to delete product review',
+    NOT_FOUND: 'Product review not found',
+    ALREADY_REVIEWED: 'You have already reviewed this product',
+    INVALID_RATING: 'Rating must be between 1 and 5',
+    PRODUCT_ID_REQUIRED: 'Product ID is required',
+    RATING_REQUIRED: 'Rating is required',
+    REVIEW_CONTENT_TOO_LONG: 'Review content cannot exceed 2000 characters',
+    ADMIN_REPLY_SUCCESS: 'Admin reply added successfully',
+    ADMIN_REPLY_FAILED: 'Failed to add admin reply',
+    STATUS_UPDATE_SUCCESS: 'Review status updated successfully',
+    STATUS_UPDATE_FAILED: 'Failed to update review status',
+    INVALID_STATUS: 'Invalid review status',
+    PERMISSION_DENIED: 'Permission denied for this operation',
+    STATS_GET_SUCCESS: 'Review statistics retrieved successfully',
+    STATS_GET_FAILED: 'Failed to retrieve review statistics'
+  },
+
+  // 产品评论图片相关
+  PRODUCT_REVIEW_IMAGE: {
+    UPLOAD_SUCCESS: 'Review image uploaded successfully',
+    UPLOAD_FAILED: 'Failed to upload review image',
+    NO_FILE_UPLOADED: 'No file uploaded',
+    INVALID_FILE_TYPE: 'Invalid file type, only images (jpg, jpeg, png, gif, webp) are allowed',
+    IMAGE_TOO_LARGE: 'Image file size cannot exceed 5MB',
+    GET_SUCCESS: 'Review images retrieved successfully',
+    GET_FAILED: 'Failed to retrieve review images',
+    NOT_FOUND: 'Review image not found',
+    DELETE_SUCCESS: 'Review image deleted successfully',
+    DELETE_FAILED: 'Failed to delete review image',
+    ORDER_UPDATE_SUCCESS: 'Review image order updated successfully',
+    ORDER_UPDATE_FAILED: 'Failed to update review image order',
+    REVIEW_ID_REQUIRED: 'Review ID is required',
+    MAX_IMAGES_EXCEEDED: 'Maximum 5 images allowed per review'
+  },
+
   // 询价相关
   INQUIRY: {
     CREATE: {

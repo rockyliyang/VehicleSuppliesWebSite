@@ -207,7 +207,17 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'CART.COUNT_GET_FAILED', 'en', 'Failed to get cart count'),
 (gen_random_uuid(), 'CART.COUNT_GET_FAILED', 'zh-CN', '获取购物车数量失败'),
 (gen_random_uuid(), 'CART.ERROR.ADD_FAILED', 'en', 'Failed to add product to cart'),
-(gen_random_uuid(), 'CART.ERROR.ADD_FAILED', 'zh-CN', '添加商品到购物车失败');
+(gen_random_uuid(), 'CART.ERROR.ADD_FAILED', 'zh-CN', '添加商品到购物车失败'),
+(gen_random_uuid(), 'cart.confirm.removeSelected', 'en', 'Are you sure you want to remove selected items?'),
+(gen_random_uuid(), 'cart.confirm.removeSelected', 'zh-CN', '确定要移除选中的商品吗？'),
+(gen_random_uuid(), 'cart.deleteInquiryConfirm', 'en', 'Are you sure you want to delete this inquiry?'),
+(gen_random_uuid(), 'cart.deleteInquiryConfirm', 'zh-CN', '确定要删除这个询价吗？'),
+(gen_random_uuid(), 'message.success.title', 'en', 'Operation Successful'),
+(gen_random_uuid(), 'message.success.title', 'zh-CN', '操作成功'),
+(gen_random_uuid(), 'message.warning.title', 'en', 'Warning'),
+(gen_random_uuid(), 'message.warning.title', 'zh-CN', '警告提示'),
+(gen_random_uuid(), 'message.info.title', 'en', 'Information'),
+(gen_random_uuid(), 'message.info.title', 'zh-CN', '信息提示');
 
 -- PAYMENT相关
 INSERT INTO language_translations (guid, code, lang, value) VALUES

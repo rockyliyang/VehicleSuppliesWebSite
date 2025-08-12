@@ -279,7 +279,7 @@
         <div class="current-product-info">
           <h4>当前产品: {{ currentManageProduct.name }} ({{ currentManageProduct.product_code }})</h4>
         </div>
-        
+
         <!-- 已关联产品列表 -->
         <div class="linked-products-section">
           <div class="section-header">
@@ -287,10 +287,7 @@
           </div>
           <div class="linked-products-list" v-if="linkedProducts.length > 0">
             <div v-for="(product, index) in linkedProducts" :key="product.link_id" class="linked-product-item">
-              <el-image 
-                :src="product.link_product_thumbnail" 
-                fit="cover" 
-                class="linked-product-image"
+              <el-image :src="product.link_product_thumbnail" fit="cover" class="linked-product-image"
                 v-if="product.link_product_thumbnail">
               </el-image>
               <div v-else class="linked-product-no-image">无图片</div>
@@ -301,7 +298,9 @@
               </div>
               <div class="linked-product-actions">
                 <el-button type="danger" size="small" @click="removeLinkedProduct(index)">
-                  <el-icon><Delete /></el-icon>
+                  <el-icon>
+                    <Delete />
+                  </el-icon>
                   移除
                 </el-button>
               </div>
@@ -311,7 +310,7 @@
             暂无关联商品
           </div>
         </div>
-        
+
         <!-- 添加新关联产品 -->
         <div class="add-linked-section">
           <div class="section-header">
@@ -319,42 +318,32 @@
           </div>
           <el-form :model="linkedProductSearch" inline>
             <el-form-item label="搜索商品">
-              <el-input 
-                v-model="linkedProductSearch.keyword" 
-                placeholder="输入商品名称或编号搜索"
-                style="width: 300px"
-                @keyup.enter="searchLinkedProducts"
-                clearable>
+              <el-input v-model="linkedProductSearch.keyword" placeholder="输入商品名称或编号搜索" style="width: 300px"
+                @keyup.enter="searchLinkedProducts" clearable>
               </el-input>
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="searchLinkedProducts" :loading="searchingProducts">
-                <el-icon><Search /></el-icon>
+                <el-icon>
+                  <Search />
+                </el-icon>
                 搜索
               </el-button>
             </el-form-item>
           </el-form>
         </div>
-        
+
         <div class="search-results" v-if="searchResults.length > 0">
           <div class="search-results-header">
             <span>搜索结果 ({{ searchResults.length }})</span>
           </div>
           <div class="search-results-list">
-            <div 
-              v-for="product in searchResults" 
-              :key="product.id" 
-              class="search-result-item"
-              :class="{ 'selected': selectedProducts.includes(product.id) }"
-              @click="toggleProductSelection(product)">
-              <el-checkbox 
-                :model-value="selectedProducts.includes(product.id)"
+            <div v-for="product in searchResults" :key="product.id" class="search-result-item"
+              :class="{ 'selected': selectedProducts.includes(product.id) }" @click="toggleProductSelection(product)">
+              <el-checkbox :model-value="selectedProducts.includes(product.id)"
                 @change="toggleProductSelection(product)">
               </el-checkbox>
-              <el-image 
-                :src="product.thumbnail_url" 
-                fit="cover" 
-                class="search-result-image"
+              <el-image :src="product.thumbnail_url" fit="cover" class="search-result-image"
                 v-if="product.thumbnail_url">
               </el-image>
               <div v-else class="search-result-no-image">无图片</div>
@@ -367,23 +356,20 @@
             </div>
           </div>
         </div>
-        
+
         <div v-else-if="linkedProductSearch.keyword && !searchingProducts" class="no-search-results">
           未找到相关商品
         </div>
-        
+
         <div v-else-if="!linkedProductSearch.keyword" class="search-placeholder">
           请输入关键词搜索商品
         </div>
       </div>
-      
+
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="closeLinkManageDialog">关闭</el-button>
-          <el-button 
-            type="primary" 
-            @click="confirmAddLinkedProducts" 
-            :disabled="selectedProducts.length === 0"
+          <el-button type="primary" @click="confirmAddLinkedProducts" :disabled="selectedProducts.length === 0"
             v-if="selectedProducts.length > 0">
             添加选中商品 ({{ selectedProducts.length }})
           </el-button>
@@ -1152,7 +1138,8 @@ export default {
         formData.append('image_type', 2);
         formData.append('session_id', this.sessionId);
         try {
-          const res = await this.$api.postWithErrorHandler('/product-images/upload', formData, {
+          const res = await this.$api.postWithErrorHandler(`/product-images/upload?image_type=2`, formData, {
+
             headers: {
               'Content-Type': 'multipart/form-data',
               ...this.uploadHeaders

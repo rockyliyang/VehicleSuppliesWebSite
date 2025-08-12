@@ -33,6 +33,8 @@ const thirdPartyAuthRoutes = require('./routes/thirdPartyAuthRoutes');
 const addressRoutes = require('./routes/addressRoutes');
 const userProductRoutes = require('./routes/userProductRoutes');
 const orderManagementRoutes = require('./routes/orderManagementRoutes');
+const productReviewRoutes = require('./routes/productReviewRoutes');
+const productReviewImageRoutes = require('./routes/productReviewImageRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -91,6 +93,8 @@ app.use('/api/auth', thirdPartyAuthRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api', userProductRoutes);
 app.use('/api/order-management', orderManagementRoutes);
+app.use('/api/product-reviews', productReviewRoutes);
+app.use('/api/product-review-images', productReviewImageRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));

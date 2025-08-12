@@ -53,7 +53,8 @@
                       <button class="quantity-btn" @click="increaseQuantity(item)">+</button>
                     </div>
                   </td>
-                  <td class="subtotal-cell">{{ $store.getters.formatPrice((item.calculatedPrice || item.price) * item.quantity) }}</td>
+                  <td class="subtotal-cell">{{ $store.getters.formatPrice((item.calculatedPrice || item.price) *
+                    item.quantity) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -99,7 +100,8 @@
                 </div>
                 <div class="subtotal-info">
                   <span class="subtotal-label">{{ $t('cart.subtotal') || '小计' }}:</span>
-                  <span class="subtotal-value">{{ $store.getters.formatPrice((item.calculatedPrice || item.price) * item.quantity) }}</span>
+                  <span class="subtotal-value">{{ $store.getters.formatPrice((item.calculatedPrice || item.price) *
+                    item.quantity) }}</span>
                 </div>
               </div>
               <!-- 移除手机端单个商品的删除按钮 -->
@@ -114,19 +116,20 @@
               <span>{{ $t('cart.total') || '总计' }}:</span>
               <span class="total-price">{{ $store.getters.formatPrice(selectedTotal) }}</span>
             </div>
+
             <div class="cart-actions">
-              <button class="continue-shopping-btn" @click="$router.push('/products')">
-                {{ $t('cart.continueShopping') || '继续购物' }}
-              </button>
-              <button class="remove-selected-btn" @click="removeSelectedItems">
-                {{ $t('cart.removeSelected') || '删除选中商品' }}
+              <button class="checkout-btn" @click="checkout4">
+                <i class="material-icons">payment</i>
+                {{ $t('cart.checkout') || '结算' }}
               </button>
               <button class="inquiry-btn" @click="addSelectedToInquiry">
                 {{ $t('cart.inquiry') || '询价' }}
               </button>
-              <button class="checkout-btn" @click="checkout4">
-                <i class="material-icons">payment</i>
-                {{ $t('cart.checkout') || '结算' }}
+              <button class="remove-selected-btn" @click="removeSelectedItems">
+                {{ $t('cart.removeSelected') || '删除选中商品' }}
+              </button>
+              <button class="continue-shopping-btn" @click="$router.push('/products')">
+                {{ $t('cart.continueShopping') || '继续购物' }}
               </button>
             </div>
           </div>
@@ -851,7 +854,7 @@ export default {
   &:hover {
     background: #dc2626;
   }
-  
+
   &:disabled {
     background: $gray-400;
     cursor: not-allowed;
@@ -1044,11 +1047,11 @@ export default {
   .mobile-only {
     display: none !important;
   }
-  
+
   .cart-table-wrapper {
     display: block !important;
   }
-  
+
   .cart-cards {
     display: none !important;
   }

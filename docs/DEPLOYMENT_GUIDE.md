@@ -53,7 +53,8 @@ user nginx;
 sudo systemctl restart nginx
 
 ### create deploy user
-sudo useradd -m -s /bin/bash vehicle_web_deploy
+sudo useradd -m -s /bin/bash web_deploy
+sudo usermod -aG web_deployer nginx
 
 
 
