@@ -51,92 +51,43 @@
 
     <!-- Mobile Header -->
     <div class="mobile-header">
-      <!-- First Row: Logo, Language, Cart, User -->
+      <!-- Single Row: Logo, Cart & User -->
       <div class="mobile-header-row">
-        <div class="logo">
+        <!-- Center: Logo -->
+        <div class="logo mobile-logo-center">
           <router-link to="/">
             <img :src="companyInfo.logo_url || logoImage" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'"
               @error="handleImageError" />
           </router-link>
         </div>
 
+        <!-- Right: Cart & User Actions -->
         <div class="mobile-actions">
-          <!-- Language Selector -->
-          <div class="language-selector">
-            <select v-model="currentLanguage" @change="handleLanguageChange($event.target.value)"
-              class="language-select">
-              <option v-for="lang in supportedLanguages" :key="lang" :value="lang">
-                {{ getLanguageDisplay(lang) }}
-              </option>
-            </select>
-          </div>
           <!-- Cart Button -->
           <a href="#" @click.prevent="handleCartClick" class="action-btn cart-button">
             <span class="material-icons icon-md">shopping_cart</span>
             <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
           </a>
-          <!-- Mobile User Button -->
+          <!-- Mobile User Button - Direct to settings -->
           <button @click="handleMobileUserClick" class="mobile-user-btn" :class="{ 'user-logged-in': isLoggedIn }">
             <i class="fas fa-user"></i>
           </button>
         </div>
       </div>
 
-      <!-- Second Row: Navigation Menu -->
+      <!-- Mobile Navigation Row -->
       <div class="mobile-nav-row">
         <div class="mobile-nav-buttons">
-          <router-link to="/" class="mobile-nav-btn"
-            :class="{ 'nav-active': $route.path === '/' }">{{$t('home')}}</router-link>
-          <router-link to="/about" class="mobile-nav-btn"
-            :class="{ 'nav-active': $route.path === '/about' }">{{$t('about')}}</router-link>
-          <router-link to="/products" class="mobile-nav-btn"
-            :class="{ 'nav-active': $route.path === '/products' }">{{$t('products')}}</router-link>
-          <router-link to="/news" class="mobile-nav-btn"
-            :class="{ 'nav-active': $route.path === '/news' }">{{$t('news')}}</router-link>
-          <router-link to="/contact" class="mobile-nav-btn"
-            :class="{ 'nav-active': $route.path === '/contact' }">{{$t('contact')}}</router-link>
+          <router-link to="/" exact-active-class="nav-active" class="mobile-nav-btn">{{$t('home')}}</router-link>
+          <router-link to="/about" active-class="nav-active" class="mobile-nav-btn">{{$t('about')}}</router-link>
+          <router-link to="/products" active-class="nav-active" class="mobile-nav-btn">{{$t('products')}}</router-link>
+          <router-link to="/news" active-class="nav-active" class="mobile-nav-btn">{{$t('news')}}</router-link>
+          <router-link to="/contact" active-class="nav-active" class="mobile-nav-btn">{{$t('contact')}}</router-link>
         </div>
       </div>
     </div>
 
-    <!-- Mobile User Menu -->
-    <div class="mobile-user-menu" v-show="mobileUserMenuOpen">
-      <div class="mobile-user-menu-overlay" @click="closeMobileUserMenu"></div>
-      <div class="mobile-user-menu-content">
-        <div class="mobile-user-menu-header">
-          <h3>用户菜单</h3>
-          <button @click="closeMobileUserMenu" class="close-btn">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="mobile-user-menu-list">
-          <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('settings')">
-            <i class="fas fa-cog"></i>
-            <span>{{ $t('userSettings.title') || '我的' }}</span>
-          </div>
-          <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('orders')">
-            <i class="fas fa-shopping-bag"></i>
-            <span>{{ $t('orders') || '我的订单' }}</span>
-          </div>
-          <div v-if="isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('inquiries')">
 
-            <i class="fas fa-file-alt"></i>
-            <span>{{ $t('inquiry.management.title') || '询价单管理' }}</span>
-          </div>
-          <div v-if="isLoggedIn" class="menu-item logout-item" @click="handleMobileMenuCommand('logout')">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>{{ $t('logout') || '退出登录' }}</span>
-          </div>
-          <div v-if="!isLoggedIn" class="menu-item" @click="handleMobileMenuCommand('login')">
-            <i class="fas fa-sign-in-alt"></i>
-            <span>{{ $t('login') || '登录' }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mobile Navigation Overlay -->
-    <div class="mobile-nav-overlay" v-show="mobileMenuOpen" @click="closeMobileMenu"></div>
     <!-- 登录对话框 -->
     <el-dialog title="用户登录" v-model="loginDialogVisible" width="400px" center class="login-dialog">
       <el-form :model="loginForm" :rules="loginRules" ref="loginForm">
@@ -190,7 +141,6 @@ export default {
         loginDialogVisible: false,
         // 移动端状态
         isMobile: false,
-        mobileUserMenuOpen: false,
         // 语言显示名称映射
         languageDisplayMap: {
           'zh-CN': '中文',
@@ -382,31 +332,15 @@ export default {
     // 移动端检测
     checkMobile() {
       this.isMobile = window.innerWidth <= 900;
-      if (!this.isMobile) {
-        this.mobileMenuOpen = false;
-      }
     },
     
-
-    
-    // 移动端用户按钮点击
+    // 移动端用户按钮点击 - 直接跳转到用户设置
     handleMobileUserClick() {
       if (this.isLoggedIn) {
-        this.mobileUserMenuOpen = true;
+        this.$router.push('/user/settings');
       } else {
         this.$router.push('/login');
       }
-    },
-    
-    // 关闭移动端用户菜单
-    closeMobileUserMenu() {
-      this.mobileUserMenuOpen = false;
-    },
-    
-    // 处理移动端菜单命令
-    handleMobileMenuCommand(command) {
-      this.closeMobileUserMenu();
-      this.handleUserMenu(command);
     },
     
     // 获取语言显示名称
@@ -811,133 +745,6 @@ export default {
 
   &:hover {
     color: $primary-color;
-  }
-}
-
-/* Mobile User Menu */
-.mobile-user-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: $z-index-mobile-nav + 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.mobile-user-menu-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1;
-}
-
-.mobile-user-menu-content {
-  position: relative;
-  z-index: 2;
-  background: $white;
-  width: 100%;
-  max-width: 400px;
-  margin: $spacing-lg;
-  border-radius: $border-radius-lg $border-radius-lg 0 0;
-  box-shadow: $shadow-lg;
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.mobile-user-menu-header {
-  @include flex-between;
-  align-items: center;
-  padding: $spacing-lg $spacing-xl;
-  border-bottom: $border-width-sm solid $gray-200;
-
-  h3 {
-    margin: 0;
-    font-size: $font-size-xl;
-    font-weight: $font-weight-semibold;
-    color: $text-primary;
-  }
-
-  .close-btn {
-    @include flex-center;
-    width: $spacing-3xl;
-    height: $spacing-3xl;
-    background: none;
-    border: none;
-    color: $text-secondary;
-    cursor: pointer;
-    border-radius: $border-radius-full;
-    transition: $transition-base;
-
-    &:hover {
-      background: $gray-100;
-      color: $text-primary;
-    }
-
-    i {
-      font-size: $font-size-lg;
-    }
-  }
-}
-
-.mobile-user-menu-list {
-  padding: $spacing-md 0;
-}
-
-.menu-item {
-  @include flex-center;
-  justify-content: flex-start;
-  gap: $spacing-lg;
-  padding: $spacing-lg $spacing-xl;
-  color: $text-primary;
-  cursor: pointer;
-  transition: $transition-base;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-
-  &:hover {
-    background: $gray-50;
-    color: $primary-color;
-  }
-
-  &.logout-item {
-    color: $error-color;
-
-    &:hover {
-      background: rgba($error-color, 0.05);
-      color: $error-color;
-    }
-  }
-
-  i {
-    font-size: $font-size-lg;
-    width: $spacing-xl;
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  span {
-    font-size: $font-size-lg;
-    font-weight: $font-weight-medium;
-    flex: 1;
   }
 }
 

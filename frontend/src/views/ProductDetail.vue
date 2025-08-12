@@ -2234,22 +2234,44 @@ export default {
       flex-direction: column;
       align-items: stretch;
       gap: $spacing-sm;
+      width: 100%;
 
       .el-button {
-        width: 100%;
-        font-size: $font-size-sm;
-        padding: $spacing-sm $spacing-md;
+        width: 100% !important;
+        font-size: $font-size-md !important;
+        padding: $spacing-md $spacing-lg !important;
+        height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: $border-radius-md !important;
+        font-weight: $font-weight-medium !important;
+        margin: 0 !important; /* 移除所有按钮的边距 */
+      }
+
+      :deep(.add-to-cart-btn) {
+        background-color: $primary-color !important;
+        border-color: $primary-color !important;
+        color: white !important;
+      }
+
+      :deep(.buy-now-btn) {
+        background-color: $success-color !important;
+        border-color: $success-color !important;
+        color: white !important;
       }
 
       :deep(.chat-button) {
-        padding: $spacing-md $spacing-lg !important;
-        font-size: $font-size-md !important;
+        background-color: #67C23A !important;
+        border-color: #67C23A !important;
+        color: white !important;
         box-shadow: 0 2px 6px rgba(103, 194, 58, 0.25) !important;
       }
 
       :deep(.email-button) {
-        padding: $spacing-md $spacing-lg !important;
-        font-size: $font-size-md !important;
+        background-color: #409EFF !important;
+        border-color: #409EFF !important;
+        color: white !important;
         box-shadow: 0 2px 6px rgba(64, 158, 255, 0.25) !important;
       }
     }
@@ -2864,74 +2886,140 @@ export default {
 /* 移动端样式 */
 @include mobile {
   .buy-together-section {
-    padding: $spacing-lg;
+    padding: $spacing-md;
     margin-bottom: $spacing-lg;
+    background: $white;
+    border-radius: $border-radius-lg;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .buy-together-title {
-    font-size: $font-size-xl;
-    margin-bottom: $spacing-md;
+    font-size: $font-size-lg;
+    margin-bottom: $spacing-lg;
+    text-align: center;
+    color: $text-primary;
+    font-weight: $font-weight-semibold;
   }
 
   .buy-together-products {
     flex-direction: column;
-    gap: $spacing-sm;
+    gap: $spacing-md;
+    align-items: center;
+    margin-bottom: $spacing-lg;
   }
 
   .buy-together-item {
-    min-width: 80px;
-    max-width: 100px;
+    width: 100%;
+    max-width: 280px;
+    display: flex;
+    align-items: center;
+    padding: $spacing-sm;
+    border: 1px solid $border-light;
+    border-radius: $border-radius-md;
+    background: $gray-50;
   }
 
   .plus-icon {
-    transform: rotate(90deg);
-    margin: $spacing-xs 0;
+    font-size: $font-size-xl;
+    color: $primary-color;
+    font-weight: $font-weight-bold;
+    text-align: center;
+    margin: $spacing-sm 0;
+    transform: none; /* 移除旋转 */
   }
 
   .buy-together-summary {
-    gap: $spacing-sm;
+    gap: $spacing-md;
+  }
+
+  .selected-products-info {
+    margin-bottom: $spacing-lg;
   }
 
   .total-and-button {
     flex-direction: column;
-    gap: $spacing-md;
+    gap: $spacing-lg;
     text-align: center;
+    padding: $spacing-lg;
+    background: $gray-50;
   }
 
   .action-buttons {
     flex-direction: column;
     width: 100%;
+    gap: $spacing-md;
   }
 
   .add-all-btn,
   .send-all-inquiry-btn {
     width: 100%;
     min-width: unset;
+    height: 48px;
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+    border-radius: $border-radius-md;
+    margin: 0 !important; /* 移除按钮边距 */
   }
 
   .product-image {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
+    border-radius: $border-radius-sm;
+    object-fit: cover;
+    margin-right: $spacing-md;
   }
 
   .product-info-item {
-    padding: $spacing-xs 0;
+    padding: $spacing-sm 0;
+    border-bottom: 1px solid $border-light;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &:last-child {
+      border-bottom: none;
+    }
 
     .product-name {
-      font-size: $font-size-xs;
+      font-size: $font-size-sm;
+      color: $text-primary;
+      font-weight: $font-weight-medium;
+      flex: 1;
+      margin-right: $spacing-md;
     }
 
     .product-price {
-      font-size: $font-size-xs;
+      font-size: $font-size-sm;
+      color: $primary-color;
+      font-weight: $font-weight-bold;
     }
   }
 
   .product-name {
-    font-size: $font-size-sm;
+    font-size: $font-size-md;
+    color: $text-primary;
   }
 
   .product-price {
     font-size: $font-size-md;
+    color: $primary-color;
+    font-weight: $font-weight-bold;
+  }
+
+  /* 复选框样式优化 */
+  :deep(.el-checkbox) {
+    width: 100%;
+    
+    .el-checkbox__label {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      padding-left: $spacing-md;
+    }
+
+    .el-checkbox__input {
+      margin-right: $spacing-sm;
+    }
   }
 }
 

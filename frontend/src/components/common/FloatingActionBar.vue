@@ -46,7 +46,7 @@ export default {
   name: 'FloatingActionBar',
   data() {
     return {
-      isExpanded: true // 默认展开，完全由点击控制
+      isExpanded: false // 默认不展开，完全由点击控制
     }
   },
   computed: {

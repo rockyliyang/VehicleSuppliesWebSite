@@ -8,6 +8,19 @@
     <div class="container">
       <!-- 移除原来的页面标题，因为已经在PageBanner中显示 -->
       
+      <!-- Logout Button -->
+      <div class="logout-container">
+        <el-button 
+          type="danger" 
+          plain
+          @click="handleLogout"
+          class="logout-btn"
+        >
+          <el-icon><SwitchButton /></el-icon>
+          <span>{{ $t('logout') || '退出登录' }}</span>
+        </el-button>
+      </div>
+      
       <!-- Account Information -->
       <div class="settings-card">
         <h2 class="section-title">{{ $t('userSettings.accountInfo.title') }}</h2>
@@ -109,7 +122,7 @@
 </template>
 
 <script>
-import { Location, Star, Clock, ArrowRight } from '@element-plus/icons-vue'
+import { Location, Star, Clock, ArrowRight, SwitchButton } from '@element-plus/icons-vue'
 import PageBanner from '@/components/common/PageBanner.vue'
 import NavigationMenu from '@/components/common/NavigationMenu.vue'
 
@@ -120,6 +133,7 @@ export default {
     Star,
     Clock,
     ArrowRight,
+    SwitchButton,
     PageBanner,
     NavigationMenu
   },
@@ -207,6 +221,23 @@ export default {
     
     goToBrowsingHistory() {
       this.$router.push('/browsing-history');
+    },
+    
+    // 处理登出逻辑 - 与Header组件中的实现保持一致
+    async handleLogout() {
+      try {
+        // 调用后端登出接口清除cookie
+        await this.$api.post('/users/logout');
+        // 清除前端状态
+        this.$store.commit('setUser', null);
+        this.$messageHandler.showSuccess('已退出登录', 'login.success.logoutSuccess');
+        this.$router.push('/login');
+      } catch (error) {
+        console.error('登出失败:', error);
+        // 即使API调用失败，也清除前端状态
+        this.$store.commit('setUser', null);
+        this.$router.push('/login');
+      }
     }
 
   }
@@ -226,6 +257,23 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   padding: $spacing-2xl;
+}
+
+.logout-container {
+  display: block;
+  margin-bottom: $spacing-lg;
+}
+
+.logout-btn {
+  width: 100%;
+  height: 48px;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+  
+  .el-icon {
+    margin-right: $spacing-sm;
+    font-size: $font-size-xl;
+  }
 }
 
 

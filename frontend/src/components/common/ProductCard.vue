@@ -21,11 +21,11 @@
       <div v-if="showActionButtons" class="action-buttons">
         <el-button type="primary" size="small" @click.stop="handleChatNow" class="chat-btn">
           <i class="fas fa-comments"></i>
-          {{ $t('product.chatNow') || 'Chat Now' }}
+          <span class="button-text">{{ $t('product.chatNow') || 'Chat Now' }}</span>
         </el-button>
         <el-button type="success" size="small" @click.stop="handleAddToCart" :loading="addingToCart" class="cart-btn">
           <i class="fas fa-shopping-cart"></i>
-          {{ $t('product.addToCart') || 'Add to Cart' }}
+          <span class="button-text">{{ $t('product.addToCart') || 'Add to Cart' }}</span>
         </el-button>
       </div>
     </div>
@@ -405,10 +405,16 @@ export default {
     .el-button {
       font-size: $font-size-xs;
       padding: $spacing-xs;
+      min-width: 40px;
+      justify-content: center;
 
       i {
-        margin-right: 2px;
-        font-size: $font-size-xs;
+        margin-right: 0;
+        font-size: $font-size-sm;
+      }
+
+      .button-text {
+        display: none; // 手机端隐藏按钮文字
       }
     }
   }
