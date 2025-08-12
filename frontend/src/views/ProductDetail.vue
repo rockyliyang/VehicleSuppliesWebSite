@@ -102,13 +102,14 @@
             <div class="product-actions">
               <!-- 按钮组 -->
               <div class="action-buttons">
-                <el-button type="primary" @click="addToCart" :disabled="product.product_type === 'self_operated' && product.stock <= 0" :loading="addingToCart"
+                <el-button type="primary" @click="addToCart"
+                  :disabled="product.product_type === 'self_operated' && product.stock <= 0" :loading="addingToCart"
                   class="add-to-cart-btn">
                   <span v-if="!addingToCart">{{ $t('buttons.addToCart') }}</span>
                   <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
                 </el-button>
-                <el-button type="success" @click="openBuyNowDialog" :disabled="product.product_type === 'self_operated' && product.stock <= 0"
-                  class="buy-now-btn">
+                <el-button type="success" @click="openBuyNowDialog"
+                  :disabled="product.product_type === 'self_operated' && product.stock <= 0" class="buy-now-btn">
                   {{ $t('buttons.buyNow') || '立即购买' }}
                 </el-button>
                 <el-button class="chat-button" @click="createInquiry">{{
@@ -129,7 +130,69 @@
           </div>
         </div>
       </div>
+      <!-- 一起购买组件 -->
+      <div v-if="buyTogetherProducts.length > 0" class="buy-together-section">
+        <h2 class="buy-together-title">{{ $t('productDetail.buyTogether.title') }}</h2>
+        <div class="buy-together-content">
+          <div class="buy-together-products">
+            <!-- 当前商品 -->
+            <div class="buy-together-item current-product">
+              <div class="product-checkbox">
+                <el-checkbox v-model="currentProductSelected" @change="updateTotalPrice">
+                  <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError" class="product-image">
+                </el-checkbox>
+              </div>
+            </div>
 
+            <!-- 加号 -->
+            <div class="plus-icon">+</div>
+
+            <!-- 推荐商品 -->
+            <div v-for="(item, index) in buyTogetherProducts" :key="item.id" class="buy-together-item">
+              <div class="product-checkbox">
+                <el-checkbox v-model="item.selected" @change="updateTotalPrice">
+                  <img :src="item.thumbnail_url" :alt="item.name" @error="handleImageError" class="product-image">
+                </el-checkbox>
+              </div>
+              <div v-if="index < buyTogetherProducts.length - 1" class="plus-icon">+</div>
+            </div>
+          </div>
+
+          <!-- 总价和购买按钮 -->
+          <div class="buy-together-summary">
+            <!-- 商品详细信息列表 -->
+            <div class="selected-products-info">
+              <div v-if="currentProductSelected" class="product-info-item">
+                <span class="product-name">{{ product.name }}</span>
+                <span class="product-price">{{ $store.getters.formatPrice(getCurrentProductPrice()) }}</span>
+              </div>
+              <template v-for="item in buyTogetherProducts" :key="item.id">
+                <div v-if="item.selected" class="product-info-item">
+                  <span class="product-name">{{ item.name }}</span>
+                  <span class="product-price">{{ $store.getters.formatPrice(item.price) }}</span>
+                </div>
+              </template>
+            </div>
+
+            <div class="total-and-button">
+              <div class="total-price">
+                <span class="total-label">{{ $t('productDetail.buyTogether.totalPrice') }}:</span>
+                <span class="total-amount">{{ $store.getters.formatPrice(totalPrice) }}</span>
+              </div>
+              <div class="action-buttons">
+                <el-button type="primary" size="large" @click="addAllToCart" :disabled="!hasSelectedProducts"
+                  :loading="addingAllToCart" class="add-all-btn">
+                  {{ $t('productDetail.buyTogether.addAllToCart') }}
+                </el-button>
+                <el-button type="success" size="large" @click="sendAllToInquiry" :disabled="!hasSelectedProducts"
+                  :loading="sendingAllToInquiry" class="send-all-inquiry-btn">
+                  {{ $t('productDetail.buyTogether.sendAllToInquiry') }}
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- 产品描述区域 -->
       <div class="description-section">
         <h2 class="description-title">
@@ -182,17 +245,14 @@
           <!-- 沟通组件 -->
           <CommunicationSection :messages="inquiryMessages" :inquiry-id="currentInquiryId" :items-count="1"
             :status="inquiryStatus" :initial-message="initialInquiryMessage" @send-message="handleSendInquiryMessage"
-            @update-message="handleUpdateInquiryMessage" @checkout="handleInquiryCheckout" @new-messages="handleNewMessages" />
+            @update-message="handleUpdateInquiryMessage" @checkout="handleInquiryCheckout"
+            @new-messages="handleNewMessages" />
         </div>
       </div>
     </div>
 
     <!-- 邮件对话框 -->
-    <MessageDialog
-      v-model:visible="showEmailDialog"
-      :product="product"
-      @email-sent="handleEmailSent"
-    />
+    <MessageDialog v-model:visible="showEmailDialog" :product="product" @email-sent="handleEmailSent" />
 
     <!-- 登录对话框 -->
     <div v-if="loginDialogVisible" class="login-dialog-overlay">
@@ -203,10 +263,7 @@
     </div>
 
     <!-- 立即购买对话框 -->
-    <BuyNowDialog 
-      v-model="showBuyNowDialog" 
-      :product="product"
-      :initial-quantity="1"
+    <BuyNowDialog v-model="showBuyNowDialog" :product="product" :initial-quantity="1"
       @checkout="handleBuyNowCheckout" />
   </div>
 </template>
@@ -294,7 +351,13 @@ export default {
       showEmailDialog: false,
       // 收藏相关
       favoriteLoading: false,
-      isFavorited: false
+      isFavorited: false,
+      // 一起购买相关
+      buyTogetherProducts: [],
+      currentProductSelected: true,
+      totalPrice: 0,
+      addingAllToCart: false,
+      sendingAllToInquiry: false
     }
   },
   computed: {
@@ -397,6 +460,18 @@ export default {
         height: height + 'px',
         display: 'block',
       };
+    },
+    // 一起购买相关计算属性
+    hasSelectedProducts() {
+      return this.currentProductSelected || this.buyTogetherProducts.some(item => item.selected);
+    },
+    showBuyNowDialog: {
+      get() {
+        return this.$store.state.showBuyNowDialog || false;
+      },
+      set(value) {
+        this.$store.commit('setShowBuyNowDialog', value);
+      }
     }
   },
   watch: {
@@ -473,6 +548,9 @@ export default {
         // 获取相关产品（同类别的其他产品）
         this.fetchRelatedProducts()
         
+        // 获取一起购买的商品
+        this.fetchBuyTogetherProducts()
+        
         // 如果用户已登录，添加浏览历史和检查收藏状态
         if (this.isLoggedIn) {
           await addBrowsingHistory(this.product.id, this)
@@ -496,6 +574,175 @@ export default {
         this.$messageHandler.showError(error, 'product.error.fetchRelatedFailed')
       }
     },
+    // 获取一起购买的商品
+    async fetchBuyTogetherProducts() {
+      if (!this.productId) return
+      try {
+        const response = await this.$api.getWithErrorHandler(`products/${this.productId}/buy-together`, {
+          errorMessageKey: 'productDetail.buyTogether.loadError'
+        })
+        
+        if (response && response.data) {
+          // 为每个商品添加选中状态，默认选中
+          this.buyTogetherProducts = response.data.map(item => ({
+            ...item,
+            selected: true
+          }))
+          
+          // 初始化总价
+          this.updateTotalPrice()
+        }
+      } catch (error) {
+        console.error('获取一起购买商品失败:', error)
+        // 错误已由getWithErrorHandler处理，这里不需要再次显示
+      }
+    },
+    // 获取当前商品价格
+    getCurrentProductPrice() {
+      // 如果有阶梯价格，返回最低价格
+      if (this.product.price_ranges && this.product.price_ranges.length > 0) {
+        return Math.min(...this.product.price_ranges.map(range => range.price))
+      }
+      return this.product.price || 0
+    },
+    // 更新总价
+    updateTotalPrice() {
+      let total = 0
+      
+      // 当前商品价格
+      if (this.currentProductSelected) {
+        total += this.getCurrentProductPrice()
+      }
+      
+      // 一起购买商品价格
+      this.buyTogetherProducts.forEach(item => {
+        if (item.selected) {
+          total += item.price || 0
+        }
+      })
+      
+      this.totalPrice = total
+    },
+    // 全部加入购物车
+    async addAllToCart() {
+      if (this.addingAllToCart || !this.hasSelectedProducts) return
+      
+      try {
+        this.addingAllToCart = true
+        const selectedProducts = []
+        
+        // 添加当前商品
+        if (this.currentProductSelected) {
+          selectedProducts.push({
+            productId: this.product.id
+          })
+        }
+        
+        // 添加选中的一起购买商品
+        this.buyTogetherProducts.forEach(item => {
+          if (item.selected) {
+            selectedProducts.push({
+              productId: item.id
+            })
+          }
+        })
+        
+        // 批量添加到购物车
+        for (const productData of selectedProducts) {
+          await this.$api.postWithErrorHandler('cart/add', productData, {
+            fallbackKey: 'cart.error.addFailed'
+          })
+        }
+        
+        this.$messageHandler.showSuccess(
+          this.$t('cart.addSuccess'),
+          'cart.addSuccess'
+        )
+        
+        // 更新购物车数量
+        this.$store.dispatch('updateCartCount')
+        
+      } catch (error) {
+        console.error('批量添加到购物车失败:', error)
+        this.$messageHandler.showError(error, 'cart.addError')
+      } finally {
+        this.addingAllToCart = false
+      }
+    },
+    
+    // 全部发送询价
+    async sendAllToInquiry() {
+      if (this.sendingAllToInquiry || !this.hasSelectedProducts) return
+      
+      // 检查用户是否登录
+      if (!this.isLoggedIn) {
+        this.pendingAction = 'sendAllToInquiry'
+        this.loginDialogVisible = true
+        return
+      }
+      
+      try {
+        this.sendingAllToInquiry = true
+        
+        // 收集选中的商品
+        const selectedProducts = []
+        
+        // 添加当前商品
+        if (this.currentProductSelected) {
+          selectedProducts.push({
+            productId: this.product.id,
+            quantity: 1,
+            unitPrice: this.product.price
+          })
+        }
+        
+        // 添加选中的一起购买商品
+        this.buyTogetherProducts.forEach(item => {
+          if (item.selected) {
+            selectedProducts.push({
+              productId: item.id,
+              quantity: 1,
+              unitPrice: item.price
+            })
+          }
+        })
+        
+        // 创建询价单 - 使用正确的API路径和参数
+        const titlePrefix = this.$t('cart.inquiryTitlePrefix') || '询价单'
+        const inquiryResponse = await this.$api.postWithErrorHandler('/inquiries', {
+          titlePrefix: titlePrefix
+        }, {
+          fallbackKey: 'INQUIRY.CREATE.FAILED'
+        })
+        
+        if (inquiryResponse.success) {
+          const inquiryId = inquiryResponse.data.id
+          
+          // 将商品添加到询价单 - 使用正确的API路径和参数
+          for (const product of selectedProducts) {
+            await this.$api.postWithErrorHandler(`/inquiries/${inquiryId}/items`, {
+              productId: product.productId,
+              quantity: product.quantity,
+              unitPrice: product.unitPrice
+            }, {
+              fallbackKey: 'INQUIRY.ADD_ITEM.FAILED'
+            })
+          }
+          
+          this.$messageHandler.showSuccess(
+            this.$t('productDetail.buyTogether.sendToInquirySuccess'),
+            'productDetail.buyTogether.sendToInquirySuccess'
+          )
+        }
+        
+      } catch (error) {
+        console.error('批量发送询价失败:', error)
+        this.$messageHandler.showError(error, 'productDetail.buyTogether.sendToInquiryError')
+      } finally {
+        this.sendingAllToInquiry = false
+      }
+    },
+    
     async createInquiry() {
       const success = await handleChatNow(
         this.product, 
@@ -773,15 +1020,20 @@ export default {
        this.loginDialogVisible = false;
        
        if (this.pendingAction && this.product) {
-         await handleLoginSuccess(
-           this.pendingAction,
-           this.product,
-           this,
-           this.showInquiryDialogWithData,
-           (loading) => {
-             this.addingToCart = loading;
-           }
-         );
+         // 处理特殊的sendAllToInquiry操作
+         if (this.pendingAction === 'sendAllToInquiry') {
+           await this.sendAllToInquiry();
+         } else {
+           await handleLoginSuccess(
+             this.pendingAction,
+             this.product,
+             this,
+             this.showInquiryDialogWithData,
+             (loading) => {
+               this.addingToCart = loading;
+             }
+           );
+         }
        }
        
        // 清除待执行的操作
@@ -1085,7 +1337,7 @@ export default {
 .product-detail-main {
   display: flex;
   gap: $spacing-4xl;
-  margin-bottom: $spacing-4xl;
+  margin-bottom: $spacing-sm;
 }
 
 .product-detail-content {
@@ -1346,7 +1598,7 @@ export default {
   font-size: $font-size-3xl;
   font-weight: $font-weight-bold;
   color: $primary-color;
-  margin-bottom: $spacing-lg;
+  margin-bottom: $spacing-md;
   text-align: left;
 }
 
@@ -2349,7 +2601,7 @@ export default {
 .buy-now-btn {
   background: $success-color !important;
   border-color: $success-color !important;
-  
+
   &:hover:not(:disabled) {
     background: darken($success-color, 10%) !important;
     border-color: darken($success-color, 10%) !important;
@@ -2405,5 +2657,300 @@ export default {
       width: 100%;
     }
   }
+}
+
+/* 一起购买组件样式 */
+.buy-together-section {
+  background: $white;
+  border: 1px solid $border-light;
+  border-radius: $border-radius-lg;
+  padding: $spacing-xl;
+  margin-bottom: $spacing-2xl;
+  box-shadow: $shadow-sm;
+}
+
+.buy-together-title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  margin-bottom: $spacing-lg;
+  text-align: left;
+}
+
+.buy-together-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.buy-together-products {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.buy-together-item {
+  flex: 0 0 auto;
+  min-width: 100px;
+  max-width: 120px;
+}
+
+.product-checkbox {
+  border: none;
+  border-radius: $border-radius-md;
+  padding: $spacing-sm;
+  background: transparent;
+  transition: all 0.3s ease;
+  text-align: center;
+
+  &:hover {
+    background: rgba($primary-color, 0.05);
+  }
+}
+
+.product-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: $border-radius-sm;
+  background: $gray-50;
+  display: block;
+  margin: 0 auto;
+}
+
+.plus-icon {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $text-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  flex-shrink: 0;
+}
+
+.buy-together-summary {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.selected-products-info {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.product-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-xs 0;
+  background: transparent;
+  border: none;
+
+  .product-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $text-primary;
+    flex: 1;
+    margin-right: $spacing-md;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .product-price {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $primary-color;
+    flex-shrink: 0;
+  }
+}
+
+.total-and-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  background: $gray-50;
+  border-radius: $border-radius-md;
+  border: 1px solid $border-light;
+}
+
+.buy-together-summary .total-price {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.total-price {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.total-label {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+  color: $text-secondary;
+}
+
+.total-amount {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $primary-color;
+}
+
+.action-buttons {
+  display: flex;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.add-all-btn {
+  @include button-primary;
+  @include button-lg;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  padding: $spacing-md $spacing-xl;
+  flex: 1;
+  min-width: 140px;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-dark !important;
+    border-color: $primary-dark !important;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.send-all-inquiry-btn {
+  @include button-lg;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  padding: $spacing-md $spacing-xl;
+  flex: 1;
+  min-width: 140px;
+  background-color: $success-color;
+  border-color: $success-color;
+  color: $white;
+
+  &:hover:not(:disabled) {
+    background-color: darken($success-color, 10%) !important;
+    border-color: darken($success-color, 10%) !important;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.current-product .product-checkbox {
+  background: rgba($primary-color, 0.1);
+}
+
+/* 移动端样式 */
+@include mobile {
+  .buy-together-section {
+    padding: $spacing-lg;
+    margin-bottom: $spacing-lg;
+  }
+
+  .buy-together-title {
+    font-size: $font-size-xl;
+    margin-bottom: $spacing-md;
+  }
+
+  .buy-together-products {
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+
+  .buy-together-item {
+    min-width: 80px;
+    max-width: 100px;
+  }
+
+  .plus-icon {
+    transform: rotate(90deg);
+    margin: $spacing-xs 0;
+  }
+
+  .buy-together-summary {
+    gap: $spacing-sm;
+  }
+
+  .total-and-button {
+    flex-direction: column;
+    gap: $spacing-md;
+    text-align: center;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .add-all-btn,
+  .send-all-inquiry-btn {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .product-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .product-info-item {
+    padding: $spacing-xs 0;
+
+    .product-name {
+      font-size: $font-size-xs;
+    }
+
+    .product-price {
+      font-size: $font-size-xs;
+    }
+  }
+
+  .product-name {
+    font-size: $font-size-sm;
+  }
+
+  .product-price {
+    font-size: $font-size-md;
+  }
+}
+
+/* Element UI 复选框样式调整 */
+:deep(.el-checkbox) {
+  width: 100%;
+
+  .el-checkbox__label {
+    width: 100%;
+    padding-left: $spacing-sm;
+  }
+
+  .el-checkbox__input {
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: $primary-color;
+  border-color: $primary-color;
+}
+
+:deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+  color: $text-primary;
 }
 </style>

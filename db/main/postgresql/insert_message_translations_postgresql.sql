@@ -128,7 +128,11 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'PRODUCT.GET_BY_CATEGORY_SUCCESS', 'en', 'Products by category retrieved successfully'),
 (gen_random_uuid(), 'PRODUCT.GET_BY_CATEGORY_SUCCESS', 'zh-CN', '分类产品获取成功'),
 (gen_random_uuid(), 'PRODUCT.GET_BY_CATEGORY_FAILED', 'en', 'Products by category retrieval failed'),
-(gen_random_uuid(), 'PRODUCT.GET_BY_CATEGORY_FAILED', 'zh-CN', '分类产品获取失败');
+(gen_random_uuid(), 'PRODUCT.GET_BY_CATEGORY_FAILED', 'zh-CN', '分类产品获取失败'),
+(gen_random_uuid(), 'PRODUCT.BUY_TOGETHER_SUCCESS', 'en', 'Buy together products retrieved successfully'),
+(gen_random_uuid(), 'PRODUCT.BUY_TOGETHER_SUCCESS', 'zh-CN', '一起购买商品获取成功'),
+(gen_random_uuid(), 'PRODUCT.BUY_TOGETHER_FAILED', 'en', 'Buy together products retrieval failed'),
+(gen_random_uuid(), 'PRODUCT.BUY_TOGETHER_FAILED', 'zh-CN', '一起购买商品获取失败');
 
 -- PRODUCT_IMAGE相关
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -193,7 +197,9 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'CART.CLEAR_FAILED', 'en', 'Failed to clear cart'),
 (gen_random_uuid(), 'CART.CLEAR_FAILED', 'zh-CN', '购物车清空失败'),
 (gen_random_uuid(), 'CART.COUNT_GET_FAILED', 'en', 'Failed to get cart count'),
-(gen_random_uuid(), 'CART.COUNT_GET_FAILED', 'zh-CN', '获取购物车数量失败');
+(gen_random_uuid(), 'CART.COUNT_GET_FAILED', 'zh-CN', '获取购物车数量失败'),
+(gen_random_uuid(), 'CART.ERROR.ADD_FAILED', 'en', 'Failed to add product to cart'),
+(gen_random_uuid(), 'CART.ERROR.ADD_FAILED', 'zh-CN', '添加商品到购物车失败');
 
 -- PAYMENT相关
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -1881,6 +1887,10 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'INQUIRY.DELETE.SUCCESS', 'zh-CN', '询价单删除成功'),
 (gen_random_uuid(), 'INQUIRY.DELETE.FAILED', 'en', 'Failed to delete inquiry'),
 (gen_random_uuid(), 'INQUIRY.DELETE.FAILED', 'zh-CN', '询价单删除失败'),
+(gen_random_uuid(), 'INQUIRY.ERROR.GENERAL', 'en', 'An error occurred while processing inquiry'),
+(gen_random_uuid(), 'INQUIRY.ERROR.GENERAL', 'zh-CN', '处理询价时发生错误'),
+(gen_random_uuid(), 'INQUIRY.ERROR.NETWORK', 'en', 'Network error, please try again'),
+(gen_random_uuid(), 'INQUIRY.ERROR.NETWORK', 'zh-CN', '网络错误，请重试'),
 
 -- 新增询价管理前端翻译键
 (gen_random_uuid(), 'inquiry.management.title', 'en', 'My Inquiries'),
@@ -2359,6 +2369,24 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'productDetail.favoriteError', 'zh-CN', '收藏失败'),
 (gen_random_uuid(), 'productDetail.unfavoriteError', 'en', 'Failed to remove from favorites'),
 (gen_random_uuid(), 'productDetail.unfavoriteError', 'zh-CN', '取消收藏失败'),
+
+-- 一起购买功能翻译键
+(gen_random_uuid(), 'productDetail.buyTogether.title', 'en', 'Frequently bought together'),
+(gen_random_uuid(), 'productDetail.buyTogether.title', 'zh-CN', '一起购买'),
+(gen_random_uuid(), 'productDetail.buyTogether.totalPrice', 'en', 'Total price'),
+(gen_random_uuid(), 'productDetail.buyTogether.totalPrice', 'zh-CN', '总价'),
+(gen_random_uuid(), 'productDetail.buyTogether.addAllToCart', 'en', 'Add all to Cart'),
+(gen_random_uuid(), 'productDetail.buyTogether.addAllToCart', 'zh-CN', '全部加入购物车'),
+(gen_random_uuid(), 'productDetail.buyTogether.sendAllToInquiry', 'en', 'Send all to inquiry'),
+(gen_random_uuid(), 'productDetail.buyTogether.sendAllToInquiry', 'zh-CN', '全部发送询价'),
+(gen_random_uuid(), 'productDetail.buyTogether.inquiryTitle', 'en', 'Bulk Product Inquiry'),
+(gen_random_uuid(), 'productDetail.buyTogether.inquiryTitle', 'zh-CN', '批量商品询价'),
+(gen_random_uuid(), 'productDetail.buyTogether.sendToInquirySuccess', 'en', 'Products sent to inquiry successfully'),
+(gen_random_uuid(), 'productDetail.buyTogether.sendToInquirySuccess', 'zh-CN', '商品已成功发送询价'),
+(gen_random_uuid(), 'productDetail.buyTogether.sendToInquiryError', 'en', 'Failed to send products to inquiry'),
+(gen_random_uuid(), 'productDetail.buyTogether.sendToInquiryError', 'zh-CN', '发送商品询价失败'),
+(gen_random_uuid(), 'productDetail.buyTogether.loadError', 'en', 'Failed to load related products'),
+(gen_random_uuid(), 'productDetail.buyTogether.loadError', 'zh-CN', '加载相关商品失败'),
 
 -- BrowsingHistory.vue 新增翻译键
 (gen_random_uuid(), 'userSettings.noBrowsingHistoryDesc', 'en', 'Start browsing products to see your history here'),

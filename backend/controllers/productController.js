@@ -139,6 +139,76 @@ exports.generateProductCode = async (req, res) => {
   }
 };
 
+// 获取一起购买的商品
+exports.getBuyTogetherProducts = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // 查询产品是否存在
+    const productExists = await query(
+      'SELECT id FROM products WHERE id = $1 AND deleted = false',
+      [productId]
+    );
+
+    if (productExists.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('PRODUCT.NOT_FOUND')
+      });
+    }
+
+    // 查询一起购买的商品
+    const buyTogetherProducts = await query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.product_code,
+        p.price,
+        p.status,
+        p.short_description,
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1) as thumbnail_url,
+        pl.sort_order
+      FROM product_links pl
+      LEFT JOIN products p ON pl.link_product_id = p.id
+      WHERE pl.product_id = $1 
+        AND pl.link_type = 'buy_together' 
+        AND pl.deleted = false 
+        AND p.deleted = false
+        AND p.status = 'on_shelf'
+      ORDER BY pl.sort_order ASC, pl.id ASC
+      LIMIT 10
+    `, [productId]);
+
+    const products = buyTogetherProducts.getRows();
+
+    // 为每个产品获取阶梯价格
+    const productsWithPriceRanges = [];
+    for (const product of products) {
+      const priceRanges = await query(
+        'SELECT min_quantity, max_quantity, price FROM product_price_ranges WHERE product_id = $1 ORDER BY min_quantity ASC',
+        [product.id]
+      );
+      
+      productsWithPriceRanges.push({
+        ...product,
+        price_ranges: priceRanges.getRows()
+      });
+    }
+
+    res.json({
+      success: true,
+      message: getMessage('PRODUCT.BUY_TOGETHER_SUCCESS'),
+      data: productsWithPriceRanges
+    });
+  } catch (error) {
+    console.error('获取一起购买商品失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('PRODUCT.BUY_TOGETHER_FAILED')
+    });
+  }
+};
+
 // Create a new product
 exports.createProduct = async (req, res) => {
   const connection = await getConnection();
