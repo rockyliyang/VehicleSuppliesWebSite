@@ -50,8 +50,6 @@ echo ==================================================
 echo [BUILD] Creating final release archive...
 tar -czvf release.tar.gz -C %RELEASE_DIR% .
 
-rem 7. Clean up temporary release directory
-rmdir /s /q %RELEASE_DIR%
 
 echo ==================================================
 echo Build process completed successfully!

@@ -17,6 +17,31 @@
       </button>
     </div>
 
+    <el-form :model="loginForm" :rules="loginRules" ref="loginForm" class="login-form">
+      <el-form-item prop="username">
+        <FormInput v-model="loginForm.username" :placeholder="$t('login.usernamePlaceholder') || '请输入用户名/邮箱'"
+          :prefix-icon="User" />
+      </el-form-item>
+      <el-form-item prop="password">
+        <FormInput v-model="loginForm.password" type="password"
+          :placeholder="$t('login.passwordPlaceholder') || '请输入密码'" :prefix-icon="Lock" :show-password="true"
+          @enter="submitLogin" />
+      </el-form-item>
+      <div class="remember-forgot">
+        <el-checkbox v-model="rememberMe" class="remember-checkbox">
+          {{ $t('login.rememberMe') || '记住我' }}
+        </el-checkbox>
+        <router-link to="/forgot-password" class="forgot-password">
+          {{ $t('login.forgotPassword') || '忘记密码?' }}
+        </router-link>
+      </div>
+      <el-form-item class="button-form-item">
+        <button type="button" @click="submitLogin" :disabled="loading" class="login-button">
+          {{ loading ? ($t('login.loggingIn') || '登录中...') : ($t('login.login') || '登录') }}
+        </button>
+      </el-form-item>
+    </el-form>
+    <!--
     <el-tabs v-model="activeTab" class="login-tabs">
       <el-tab-pane :label="$t('login.accountLogin') || '账号登录'" name="account">
         <el-form :model="loginForm" :rules="loginRules" ref="loginForm" class="login-form">
@@ -45,8 +70,7 @@
         </el-form>
       </el-tab-pane>
 
-      <!-- 手机登录tab页已隐藏 -->
-      <!-- <el-tab-pane :label="$t('login.phoneLogin') || '手机登录'" name="phone">
+      <el-tab-pane :label="$t('login.phoneLogin') || '手机登录'" name="phone">
         <el-form :model="phoneForm" :rules="phoneRules" ref="phoneForm" class="login-form">
           <el-form-item prop="phone">
             <FormInput v-model="phoneForm.phone" :placeholder="$t('login.phonePlaceholder') || '请输入手机号码'"
@@ -68,9 +92,9 @@
             </button>
           </el-form-item>
         </el-form>
-      </el-tab-pane> -->
+      </el-tab-pane> 
     </el-tabs>
-
+-->
     <div class="login-footer">
       <p class="footer-text">
         {{ $t('login.noAccount') || '还没有账号?' }}
@@ -82,20 +106,20 @@
         {{ $t('login.socialLogin') || '或者使用以下方式登录' }}
       </p>
       <div class="social-login">
-        <button @click="loginWithApple" :disabled="socialLoading.apple" class="social-button apple-button">
+        <!--button @click="loginWithApple" :disabled="socialLoading.apple" class="social-button apple-button">
           <AppleIcon class="social-icon" />
           <span>{{ $t('login.continueWithApple') || 'Continue With Apple' }}</span>
-        </button>
+        </button-->
 
         <button @click="loginWithGoogle" :disabled="socialLoading.google" class="social-button google-button">
           <GoogleIcon class="social-icon" />
           <span>{{ $t('login.continueWithGoogle') || 'Continue With Google' }}</span>
         </button>
 
-        <button @click="loginWithFacebook" :disabled="socialLoading.facebook" class="social-button facebook-button">
+        <!--button @click="loginWithFacebook" :disabled="socialLoading.facebook" class="social-button facebook-button">
           <FacebookIcon class="social-icon" />
           <span>{{ $t('login.continueWithFacebook') || 'Continue With Facebook' }}</span>
-        </button>
+        </button-->
       </div>
     </div>
   </div>
@@ -117,9 +141,9 @@ export default {
   name: 'LoginDialog',
   components: {
     FormInput,
-    AppleIcon,
+    //AppleIcon,
     GoogleIcon,
-    FacebookIcon
+    //FacebookIcon
   },
   props: {
     showCloseButton: {

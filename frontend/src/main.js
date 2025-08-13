@@ -8,6 +8,10 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import './assets/css/global.css'
 import './assets/styles/elegant-messages.scss'
+// Material Icons
+import 'material-icons/iconfont/material-icons.css'
+// Font Awesome
+import '@fortawesome/fontawesome-free/css/all.css'
 import api from './utils/api'
 import MessageHandler from './utils/messageHandler'
 import { createTranslateFunction } from './utils/cartUtils'
