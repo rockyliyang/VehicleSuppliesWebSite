@@ -3,7 +3,8 @@ node_modules/
 /dist
 /build
 dist/
-public/
+public/keys
+public/static
 
 
 # 环境变量文件
