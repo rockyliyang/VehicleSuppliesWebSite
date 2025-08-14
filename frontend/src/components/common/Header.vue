@@ -22,7 +22,7 @@
       <!-- Actions -->
       <div class="user-actions">
         <!-- Language Switcher -->
-        <LanguageSwitcher />
+        <LanguageSwitcher class="mobile-only" />
         <!-- Cart Button -->
         <a href="#" @click.prevent="handleCartClick" class="action-btn cart-button">
           <span class="material-icons icon-md">shopping_cart</span>

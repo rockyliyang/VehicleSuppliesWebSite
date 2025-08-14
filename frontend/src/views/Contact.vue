@@ -76,9 +76,13 @@
 
             <!-- 右侧：公司位置 -->
             <div class="company-location">
-              <h3>{{ $t('contact.companyLocation') }}</h3>
-              <div class="map-container">
-                <img src="../assets/images/map.jpg" :alt="$t('contact.companyMap')" @error="handleImageError">
+
+              <div class="map-container" @click="handleMapClick" style="cursor: pointer;">
+                <img src="../assets/images/googlemap.png" :alt="$t('contact.companyMap')" @error="handleImageError">
+                <div class="map-overlay">
+                  <i class="el-icon-location"></i>
+                  <span>{{ $t('contact.clickToViewMap') }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -96,56 +100,56 @@
             <div class="contact-form">
               <el-form ref="contactFormRef" :model="contactForm" :rules="contactRules" label-width="0px"
                 @submit.prevent="submitForm">
-              <div class="form-row">
-                <div class="form-col">
-                  <el-form-item prop="name">
-                    <FormInput v-model="contactForm.name" :placeholder="getPlaceholderWithRequired('contact.name')"
-                      :disabled="isLoggedIn" maxlength="50" show-word-limit />
-                  </el-form-item>
+                <div class="form-row">
+                  <div class="form-col">
+                    <el-form-item prop="name">
+                      <FormInput v-model="contactForm.name" :placeholder="getPlaceholderWithRequired('contact.name')"
+                        :disabled="isLoggedIn" maxlength="50" show-word-limit />
+                    </el-form-item>
+                  </div>
+                  <div class="form-col">
+                    <el-form-item prop="email">
+                      <FormInput v-model="contactForm.email" :placeholder="getPlaceholderWithRequired('contact.email')"
+                        :disabled="isLoggedIn" maxlength="100" />
+                    </el-form-item>
+                  </div>
                 </div>
-                <div class="form-col">
-                  <el-form-item prop="email">
-                    <FormInput v-model="contactForm.email" :placeholder="getPlaceholderWithRequired('contact.email')"
-                      :disabled="isLoggedIn" maxlength="100" />
-                  </el-form-item>
+                <div class="form-row">
+                  <div class="form-col">
+                    <el-form-item prop="phone">
+                      <FormInput v-model="contactForm.phone" :placeholder="getPlaceholderWithRequired('contact.phone')"
+                        :disabled="isLoggedIn" maxlength="20" />
+                    </el-form-item>
+                  </div>
+                  <div class="form-col">
+                    <el-form-item prop="captcha">
+                      <div class="captcha-container">
+                        <FormInput v-model="contactForm.captcha"
+                          :placeholder="getPlaceholderWithRequired('contact.captcha')" class="captcha-input" />
+                        <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img"
+                          :alt="$t('contact.captcha.alt')" :title="$t('contact.captcha.refresh')" />
+                      </div>
+                    </el-form-item>
+                  </div>
                 </div>
-              </div>
-              <div class="form-row">
-                <div class="form-col">
-                  <el-form-item prop="phone">
-                    <FormInput v-model="contactForm.phone" :placeholder="getPlaceholderWithRequired('contact.phone')"
-                      :disabled="isLoggedIn" maxlength="20" />
-                  </el-form-item>
+                <div class="form-row">
+                  <div class="form-col-full">
+                    <el-form-item prop="subject">
+                      <FormInput v-model="contactForm.subject"
+                        :placeholder="getPlaceholderWithRequired('contact.subject')" maxlength="128" show-word-limit />
+                    </el-form-item>
+                  </div>
                 </div>
-                <div class="form-col">
-                  <el-form-item prop="captcha">
-                    <div class="captcha-container">
-                      <FormInput v-model="contactForm.captcha"
-                        :placeholder="getPlaceholderWithRequired('contact.captcha')" class="captcha-input" />
-                      <img :src="captchaUrl" @click="refreshCaptcha" class="captcha-img"
-                        :alt="$t('contact.captcha.alt')" :title="$t('contact.captcha.refresh')" />
-                    </div>
-                  </el-form-item>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-col-full">
-                  <el-form-item prop="subject">
-                    <FormInput v-model="contactForm.subject"
-                      :placeholder="getPlaceholderWithRequired('contact.subject')" maxlength="128" show-word-limit />
-                  </el-form-item>
-                </div>
-              </div>
-              <el-form-item prop="message">
-                <FormInput v-model="contactForm.message" type="textarea" :rows="6"
-                  :placeholder="getPlaceholderWithRequired('contact.message')" maxlength="2000" show-word-limit />
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" @click="submitForm" :loading="isSubmitting" class="submit-btn">
-                  {{ isSubmitting ? $t('contact.submitting') : $t('contact.submit.message') }}
-                </el-button>
-              </el-form-item>
-            </el-form>
+                <el-form-item prop="message">
+                  <FormInput v-model="contactForm.message" type="textarea" :rows="6"
+                    :placeholder="getPlaceholderWithRequired('contact.message')" maxlength="2000" show-word-limit />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="submitForm" :loading="isSubmitting" class="submit-btn">
+                    {{ isSubmitting ? $t('contact.submitting') : $t('contact.submit.message') }}
+                  </el-button>
+                </el-form-item>
+              </el-form>
             </div>
           </div>
         </div>
@@ -225,8 +229,12 @@
           <div class="contact-info-main">
             <div class="company-location-mobile">
               <h3>{{ $t('contact.companyLocation') }}</h3>
-              <div class="map-container-mobile">
-                <img src="../assets/images/map.jpg" :alt="$t('contact.companyMap')" @error="handleImageError">
+              <div class="map-container-mobile" @click="handleMapClick" style="cursor: pointer;">
+                <img src="../assets/images/googlemap.png" :alt="$t('contact.companyMap')" @error="handleImageError">
+                <div class="map-overlay">
+                  <i class="el-icon-location"></i>
+                  <span>{{ $t('contact.clickToViewMap') }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -254,6 +262,11 @@ export default {
       companyInfo: {},
       isSubmitting: false,
       captchaUrl: '/api/users/captcha?' + Date.now(),
+      // 公司地址信息
+      companyAddress: {
+        lat: 22.560263,
+        lng: 113.868678
+      },
       contactForm: {
         name: '',
         email: '',
@@ -427,8 +440,136 @@ export default {
     resetForm() {
       const formRef = this.$refs.contactFormRef || this.$refs.contactFormMobileRef;
       formRef.resetFields();
+    },
+    
+    // 检查Google地图是否可用
+    async checkGoogleMapsAvailability() {
+      try {
+
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 5000); // 5秒超时
+
+        // 尝试访问Google Maps API来检查可用性
+        await fetch('https://maps.googleapis.com/maps/api/js?key=test', {
+          method: 'HEAD',
+          mode: 'no-cors',
+          cache: 'no-cache',
+          signal: controller.signal
+        });
+        return true;
+      } catch (error) {
+        // 如果无法访问Google Maps，返回false
+        return false;
+      }
+    },
+    
+    // 处理地图点击事件
+    async handleMapClick() {
+      try {
+        // 显示加载提示
+        this.$messageHandler.showInfo(
+          this.$t('contact.checkingMapService'),
+          'contact.checkingMapService'
+        );
+        console.log('start check google is available');
+        // 检查Google地图可用性
+        const isGoogleMapsAvailable = await this.checkGoogleMapsAvailability();
+        console.log('end check google is available result', isGoogleMapsAvailable);
+        if (isGoogleMapsAvailable) {
+          // 使用Google地图
+          this.openGoogleMaps();
+        } else {
+          // 使用百度地图
+          this.openBaiduMaps();
+        }
+      } catch (error) {
+        console.error('Map service check failed:', error);
+        // 如果检查失败，默认使用百度地图
+        this.openBaiduMaps();
+      }
+    },
+    
+    // 打开Google地图
+    openGoogleMaps() {
+
+      const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.companyInfo.address)}`;
+
+      
+      this.$messageHandler.showSuccess(
+        this.$t('contact.openingGoogleMaps'),
+        'contact.openingGoogleMaps'
+      );
+      
+      try {
+        const newWindow = window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+          // 如果弹窗被阻止，给出提示
+          this.$messageHandler.showWarning(
+          this.$t('contact.popupBlocked')
+        );
+        }
+      } catch (error) {
+        console.error('Failed to open Google Maps:', error);
+        this.$messageHandler.showError(
+          this.$t('contact.mapOpenFailed')
+        );
+      }
+    },
+    
+    // 打开百度地图
+    openBaiduMaps() {
+      const baiduMapsUrl = `https://map.baidu.com/search/宝安互联网产业基地/@${this.companyAddress.lat},${this.companyAddress.lng},17z?querytype=s&da_src=shareurl`;
+      console.log('Baidu Maps URL:', baiduMapsUrl);
+      this.$messageHandler.showInfo(
+        this.$t('contact.openingBaiduMaps'),
+        'contact.openingBaiduMaps'
+      );
+      
+      // 尝试多种方式打开百度地图
+      try {
+        const newWindow = window.open(baiduMapsUrl, '_blank', 'noopener,noreferrer');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+          // 如果弹窗被阻止，给出提示
+          this.$messageHandler.showWarning(
+            this.$t('contact.popupBlocked')
+          );
+        }
+      } catch (error) {
+        console.error('Failed to open Baidu Maps:', error);
+        this.$messageHandler.showError(
+          this.$t('contact.mapOpenFailed')
+        );
+      }
+    },
+
+       // 打开百度地图
+    openBaiduMaps2() {
+      const baiduMapsUrl = `https://map.baidu.com/search/宝安互联网产业基地/@${this.companyAddress.lat},${this.companyAddress.lng},17z?querytype=s&da_src=shareurl`;
+      console.log('Baidu Maps URL:', baiduMapsUrl);
+      this.$messageHandler.showInfo(
+        this.$t('contact.openingBaiduMaps'),
+        'contact.openingBaiduMaps'
+      );
+      
+      // 尝试多种方式打开百度地图
+      try {
+        const newWin = window.open("about:blank", "_blank");
+       console.log('after window open', newWin);
+
+        if (!newWin || newWin.closed || typeof newWin.closed == 'undefined') {
+          // 如果弹窗被阻止，直接跳转
+          newWin.location.href = baiduMapsUrl;
+        }
+      } catch (error) {
+        console.error('Failed to open Baidu Maps:', error);
+        // 备用方案：直接跳转
+        //window.location.href = baiduMapsUrl;
+      }
     }
+  
   }
+
+  
 }
 </script>
 
@@ -456,7 +597,7 @@ export default {
 
 .mobile-layout {
   display: none;
-  
+
   @include mobile {
     display: block;
   }
@@ -479,7 +620,60 @@ export default {
 
 .company-location {
   flex: 1;
-  max-width: 50%;
+  max-width: 60%;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-container,
+.map-container-mobile {
+  position: relative;
+  overflow: hidden;
+  border-radius: $border-radius-md;
+  transition: all $transition-base;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+
+    .map-overlay {
+      opacity: 1;
+    }
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all $transition-base;
+  }
+}
+
+.map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all $transition-base;
+
+  i {
+    font-size: 2rem;
+    margin-bottom: $spacing-sm;
+  }
+
+  span {
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    text-align: center;
+  }
 }
 
 .message-board-section {
@@ -582,11 +776,12 @@ export default {
 
   .map-container {
     width: 100%;
-    height: $contact-map-height;
+    height: 500px;
     border-radius: $border-radius-md;
     overflow: hidden;
     box-shadow: $shadow-sm;
     background: $background-light;
+
 
     img {
       width: 100%;

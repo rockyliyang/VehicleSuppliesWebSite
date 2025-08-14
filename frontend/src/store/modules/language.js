@@ -28,8 +28,9 @@ const actions = {
   async initLanguage({ commit, dispatch }) {
     console.log('initLanguage start' );
     // 尝试从本地存储获取语言设置
-    const savedLang = localStorage.getItem('app_language');
-    
+    let savedLang = localStorage.getItem('app_language');
+    savedLang = 'en'; //now we always use en, we will support other lang later
+
     if (savedLang) {
       // 如果有保存的语言设置，使用它
       commit('SET_CURRENT_LANGUAGE', savedLang);
