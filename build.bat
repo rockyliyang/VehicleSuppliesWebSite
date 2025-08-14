@@ -22,12 +22,10 @@ mkdir "%RELEASE_DIR%"
 echo [BUILD] Starting frontend build...
 cd "%FRONTEND_DIR%"
 call npm install
+:: Set output directory to release/frontend_dist to avoid move operation
+set "VUE_OUTPUT_DIR=../%RELEASE_DIR%/frontend_dist"
 call npm run build
 cd ..
-
-:: 3. Move frontend build to release directory
-echo [BUILD] Moving frontend assets to release directory...
-move "%FRONTEND_DIR%\dist" "%RELEASE_DIR%\frontend_dist"
 
 :: 4. Package Backend
 echo [BUILD] Packaging backend application...
@@ -53,7 +51,7 @@ tar -czvf release.tar.gz -C %RELEASE_DIR% .
 echo ==================================================
 echo [DEPLOY] Uploading release to server...
 echo Uploading release.tar.gz to 43.139.94.61:/release/
-::scp -i "C:\Code\keys\tencent_ind_web_sever.pem" release.tar.gz root@43.139.94.61:/release/
+scp -i "C:\Code\keys\tencent_ind_web_sever.pem" release.tar.gz root@43.139.94.61:/release/
 
 rmdir /s /q "%RELEASE_DIR%"
 

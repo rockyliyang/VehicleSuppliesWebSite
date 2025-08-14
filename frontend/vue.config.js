@@ -2,6 +2,8 @@ const { defineConfig } = require('@vue/cli-service')
 const path = require('path')
 
 module.exports = defineConfig({
+  // 动态设置输出目录，支持构建时指定
+  outputDir: process.env.VUE_OUTPUT_DIR || 'dist',
   devServer: {
     port: process.env.VUE_APP_PORT || 8080,
     host: '0.0.0.0',

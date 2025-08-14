@@ -532,7 +532,7 @@ export default {
     uploadData() {
       // 只有在编辑现有产品时才传递product_id，新建产品时只传递session_id
       const data = { session_id: this.sessionId }
-      if (this.dialogStatus === 'edit' && this.productForm.id) {
+      if (this.dialogStatus === 'update' && this.productForm.id) {
         data.product_id = this.productForm.id
       }
       return data
@@ -2117,11 +2117,11 @@ export default {
 .price-ranges {
   .price-range-item {
     margin-bottom: 2px;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
-    
+
     .range-text {
       font-size: 12px;
       color: #606266;
