@@ -95,6 +95,9 @@ app.use('/api', userProductRoutes);
 app.use('/api/order-management', orderManagementRoutes);
 app.use('/api/product-reviews', productReviewRoutes);
 app.use('/api/product-review-images', productReviewImageRoutes);
+
+// 国家省份数据路由
+app.use('/api', userRoutes);
 // 前端静态文件（生产环境）
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));

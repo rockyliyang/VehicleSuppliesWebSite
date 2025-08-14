@@ -8,7 +8,7 @@ class AddressController {
       const userId = req.userId;
       
       const addresses = await query(
-        'SELECT * FROM user_addresses WHERE user_id = $1 AND deleted = false ORDER BY is_default DESC, created_at DESC',
+        'SELECT id, guid, user_id, recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label, created_at, updated_at FROM user_addresses WHERE user_id = $1 AND deleted = false ORDER BY is_default DESC, created_at DESC',
         [userId]
       );
       
@@ -34,7 +34,7 @@ class AddressController {
       const addressId = req.params.id;
       
       const addresses = await query(
-        'SELECT * FROM user_addresses WHERE id = $1 AND user_id = $2 AND deleted = false',
+        'SELECT id, guid, user_id, recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label, created_at, updated_at FROM user_addresses WHERE id = $1 AND user_id = $2 AND deleted = false',
         [addressId, userId]
       );
       
@@ -65,7 +65,7 @@ class AddressController {
   async createAddress(req, res) {
     try {
       const userId = req.userId;
-      const { recipient_name, phone, address, postal_code, is_default, label } = req.body;
+      const { recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label } = req.body;
       
       // 验证必填字段
       if (!recipient_name || !phone || !address) {
@@ -85,8 +85,8 @@ class AddressController {
       }
       
       const result = await query(
-        'INSERT INTO user_addresses (user_id, recipient_name, phone, address, postal_code, is_default, label, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-        [userId, recipient_name, phone, address, postal_code || '', is_default || false, label || 'home', userId, userId]
+        'INSERT INTO user_addresses (user_id, recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id, guid, user_id, recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label, created_at, updated_at',
+        [userId, recipient_name, phone, address, postal_code || '', country || null, state || null, city || null, phone_country_code || null, is_default || false, label || 'home', userId, userId]
       );
       
       res.status(201).json({
@@ -109,11 +109,11 @@ class AddressController {
     try {
       const userId = req.userId;
       const addressId = req.params.id;
-      const { recipient_name, phone, address, postal_code, is_default, label } = req.body;
+      const { recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label } = req.body;
       
       // 验证地址是否存在且属于当前用户
       const existingAddresses = await query(
-        'SELECT * FROM user_addresses WHERE id = $1 AND user_id = $2 AND deleted = false',
+        'SELECT id FROM user_addresses WHERE id = $1 AND user_id = $2 AND deleted = false',
         [addressId, userId]
       );
       
@@ -143,8 +143,8 @@ class AddressController {
       }
       
       const result = await query(
-        'UPDATE user_addresses SET recipient_name = $1, phone = $2, address = $3, postal_code = $4, is_default = $5, label = $6, updated_by = $7 WHERE id = $8 AND user_id = $9 RETURNING *',
-        [recipient_name, phone, address, postal_code || '', is_default || false, label || 'home', userId, addressId, userId]
+        'UPDATE user_addresses SET recipient_name = $1, phone = $2, address = $3, postal_code = $4, country = $5, state = $6, city = $7, phone_country_code = $8, is_default = $9, label = $10, updated_by = $11 WHERE id = $12 AND user_id = $13 RETURNING id, guid, user_id, recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label, created_at, updated_at',
+        [recipient_name, phone, address, postal_code || '', country || null, state || null, city || null, phone_country_code || null, is_default || false, label || 'home', userId, addressId, userId]
       );
       
       res.json({
@@ -170,7 +170,7 @@ class AddressController {
       
       // 验证地址是否存在且属于当前用户
       const existingAddresses = await query(
-        'SELECT * FROM user_addresses WHERE id = $1 AND user_id = $2 AND deleted = false',
+        'SELECT id, guid, user_id, recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label, created_at, updated_at FROM user_addresses WHERE id = $1 AND user_id = $2 AND deleted = false',
         [addressId, userId]
       );
       
@@ -211,7 +211,7 @@ class AddressController {
       
       // 验证地址是否存在且属于当前用户
       const existingAddresses = await query(
-        'SELECT * FROM user_addresses WHERE id = $1 AND user_id = $2 AND deleted = false',
+        'SELECT id FROM user_addresses WHERE id = $1 AND user_id = $2 AND deleted = false',
         [addressId, userId]
       );
       
@@ -231,7 +231,7 @@ class AddressController {
       
       // 设置指定地址为默认
       const result = await query(
-        'UPDATE user_addresses SET is_default = true, updated_by = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+        'UPDATE user_addresses SET is_default = true, updated_by = $1 WHERE id = $2 AND user_id = $3 RETURNING id, guid, user_id, recipient_name, phone, address, postal_code, country, state, city, phone_country_code, is_default, label, created_at, updated_at',
         [userId, addressId, userId]
       );
       

@@ -39,7 +39,9 @@ exports.getOrders = async (req, res) => {
     // 获取订单列表
     const orders = await query(
       `SELECT id, order_guid, total_amount, status, payment_method, 
-              created_at, updated_at, shipping_name, shipping_phone 
+              created_at, updated_at, shipping_name, shipping_phone,
+              shipping_address, shipping_zip_code, shipping_country,
+              shipping_state, shipping_city, shipping_phone_country_code
        FROM orders 
        WHERE user_id = $1 AND deleted = false 
        ORDER BY created_at DESC 
@@ -87,7 +89,8 @@ exports.getOrderDetail = async (req, res) => {
     const orders = await query(
       `SELECT id, order_guid, total_amount, status, payment_method, payment_id, 
               created_at, updated_at, shipping_name, shipping_phone, 
-              shipping_email, shipping_address, shipping_zip_code 
+              shipping_email, shipping_address, shipping_zip_code,
+              shipping_country, shipping_state, shipping_city, shipping_phone_country_code
        FROM orders 
        WHERE id = $1 AND user_id = $2 AND deleted = false`,
       [orderId, userId]
@@ -113,7 +116,10 @@ exports.getOrderDetail = async (req, res) => {
 
     // 获取物流信息
     const logistics = await query(
-      `SELECT id, tracking_number, carrier, status, location, description, created_at 
+      `SELECT id, logistics_company_id, shipping_no, shipping_status, shipping_name,
+              shipping_phone, shipping_email, shipping_address, shipping_zip_code,
+              shipping_country, shipping_state, shipping_city, shipping_phone_country_code,
+              tracking_info, notes, created_at, updated_at
        FROM logistics 
        WHERE order_id = $1 AND deleted = false 
        ORDER BY created_at DESC`,

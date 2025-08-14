@@ -28,8 +28,9 @@
           <el-input-number 
             v-model="quantity" 
             :min="1" 
-            :max="product.stock" 
+            :max="maxQuantity" 
             size="default"
+            controls-position="right"
             @change="calculatePrice">
           </el-input-number>
         </div>
@@ -120,6 +121,14 @@ export default {
     },
     totalPrice() {
       return this.unitPrice * this.quantity
+    },
+    maxQuantity() {
+      // 如果商品类型是自营商品，需要检查库存限制
+      if (this.product.productType === 'self_operated') {
+        return this.product.stock || 999999
+      }
+      // 其他类型商品没有库存限制
+      return 999999
     }
   },
   watch: {
@@ -165,11 +174,17 @@ export default {
       try {
         this.processingCheckout = true
         
+        // 构造符合UnifiedCheckout期望格式的数据
         const checkoutData = {
-          product: this.product,
+          id: this.product.id,
+          product_id: this.product.id,
+          product_code: this.product.product_code,
+          name: this.product.name,
+          image_url: this.product.thumbnail_url || this.product.image_url,
           quantity: this.quantity,
-          unitPrice: this.unitPrice,
-          totalPrice: this.totalPrice
+          price: this.unitPrice,
+          calculatedPrice: this.unitPrice,
+          selected: true
         }
         
         this.$emit('checkout', checkoutData)

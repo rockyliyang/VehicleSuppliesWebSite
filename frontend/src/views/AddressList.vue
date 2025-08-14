@@ -34,20 +34,40 @@
 
           <!-- 地址信息区域 -->
           <div class="address-info">
-            <div class="recipient-info">
-              <span class="name">{{ address.recipient_name }}</span>
-              <span class="phone">{{ address.phone }}</span>
+            <div class="field-row">
+              <span class="field-label">{{ $t('address.fields.name') }}:</span>
+              <span class="field-value">{{ address.recipient_name || '-' }}</span>
             </div>
-            <div class="address-content">
-              <p class="address">{{ address.address }}</p>
-              <div class="address-meta">
-                <span v-if="address.postal_code" class="postal-code">
-                  {{ address.postal_code }}
-                </span>
-                <span v-if="address.label" class="label">
-                  {{ address.label }}
-                </span>
-              </div>
+            <div class="field-row">
+              <span class="field-label">{{ $t('address.fields.phone') }}:</span>
+              <span class="field-value">
+                <span v-if="address.phone_country_code" class="country-code">{{ address.phone_country_code }}</span>
+                {{ address.phone || '-' }}
+              </span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">{{ $t('address.fields.country') }}:</span>
+              <span class="field-value">{{ getCountryName(address.country) || '-' }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">{{ $t('address.fields.state') }}:</span>
+              <span class="field-value">{{ getStateName(address.country, address.state) || address.state || '-' }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">{{ $t('address.fields.city') }}:</span>
+              <span class="field-value">{{ address.city || '-' }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">{{ $t('address.fields.address') }}:</span>
+              <span class="field-value">{{ address.address || '-' }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">{{ $t('address.fields.postalCode') }}:</span>
+              <span class="field-value">{{ address.postal_code || '-' }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">{{ $t('address.fields.label') }}:</span>
+              <span class="field-value">{{ address.label || '-' }}</span>
             </div>
           </div>
 
@@ -68,7 +88,12 @@
     </div>
 
     <!-- 地址对话框 -->
-    <AddressDialog v-model="dialogVisible" :address-data="currentAddress" @success="handleDialogSuccess" />
+    <AddressDialog 
+      v-model="dialogVisible" 
+      :address-data="currentAddress" 
+      :countries="countries"
+      :states-data="statesData"
+      @success="handleDialogSuccess" />
   </div>
 </template>
 
@@ -77,6 +102,7 @@ import { Plus } from '@element-plus/icons-vue'
 import AddressDialog from '@/components/AddressDialog.vue'
 import PageBanner from '@/components/common/PageBanner.vue'
 import NavigationMenu from '@/components/common/NavigationMenu.vue'
+import { mapGetters, mapActions } from 'vuex'
 
 export default {
   name: 'AddressList',
@@ -91,10 +117,13 @@ export default {
       loading: false,
       dialogVisible: false,
       currentAddress: null,
-      Plus
+      Plus,
+      // 移除本地的countries和statesData，改为使用store
     }
   },
   computed: {
+    ...mapGetters('countryState', ['countries', 'statesData', 'getCountryName']),
+    
     breadcrumbItems() {
       return [
         {
@@ -108,10 +137,13 @@ export default {
       ]
     }
   },
-  created() {
+  async created() {
+    await this.loadCountryStateData()
     this.fetchAddresses()
   },
   methods: {
+    ...mapActions('countryState', ['loadCountryStateData']),
+
     // 获取地址列表
     async fetchAddresses() {
       try {
@@ -182,6 +214,18 @@ export default {
           console.error('Failed to delete address:', error)
         }
       }
+    },
+
+    // 获取国家名称 - 现在使用store中的getter
+    getCountryName(countryCode) {
+      return this.$store.getters['countryState/getCountryName'](countryCode)
+    },
+
+    // 获取省份名称
+    getStateName(countryCode, stateName) {
+      if (!countryCode || !stateName) return ''
+      // 如果已经是省份名称，直接返回
+      return stateName
     }
   }
 }
@@ -215,6 +259,7 @@ export default {
 
 .address-cards {
   display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: $spacing-lg;
 }
 
@@ -245,25 +290,64 @@ export default {
   margin-bottom: $spacing-lg;
 }
 
-.recipient-info {
-  @include flex-start;
-  gap: $spacing-md;
-  flex-wrap: wrap;
-  margin-bottom: $spacing-md;
-
-  .name {
-    font-weight: $font-weight-semibold;
-    color: $text-primary;
-    font-size: $font-size-lg;
-  }
-
-  .phone {
+.field-row {
+  display: flex;
+  margin-bottom: $spacing-sm;
+  align-items: flex-start;
+  
+  .field-label {
+    min-width: 80px;
+    font-weight: $font-weight-medium;
     color: $text-secondary;
+    font-size: $font-size-sm;
+    margin-right: $spacing-md;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  
+  .field-value {
+    color: $text-primary;
     font-size: $font-size-md;
+    flex: 1;
+    word-break: break-word;
+    
+    .country-code {
+      color: $primary-color;
+      font-weight: $font-weight-medium;
+      margin-right: $spacing-xs;
+    }
+  }
+  
+  &:first-child .field-value {
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-lg;
   }
 }
 
 .address-content {
+  .location-info {
+    @include flex-start;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-sm;
+    flex-wrap: wrap;
+    
+    .country, .state, .city {
+      color: $text-secondary;
+      font-size: $font-size-sm;
+      background-color: $background-light;
+      padding: 2px $spacing-xs;
+      border-radius: $border-radius-sm;
+      border: 1px solid $border-light;
+    }
+    
+    .country {
+      color: $primary-color;
+      background-color: rgba($primary-color, 0.1);
+      border-color: rgba($primary-color, 0.2);
+      font-weight: $font-weight-medium;
+    }
+  }
+  
   .address {
     margin: 0 0 $spacing-sm 0;
     color: $text-primary;
@@ -316,6 +400,7 @@ export default {
   }
 
   .address-cards {
+    grid-template-columns: 1fr;
     gap: $spacing-md;
   }
 

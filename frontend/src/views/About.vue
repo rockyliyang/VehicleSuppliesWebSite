@@ -27,11 +27,6 @@
           </div>
 
           <div v-else-if="currentContent" class="content-section">
-            <div class="content-header">
-              <h2>{{ currentContent.title || getCurrentNavName() }}</h2>
-              <div class="title-underline"></div>
-            </div>
-
             <div class="content-body" v-html="currentContent.content"></div>
           </div>
 

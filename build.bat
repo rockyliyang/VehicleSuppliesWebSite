@@ -50,10 +50,23 @@ echo ==================================================
 echo [BUILD] Creating final release archive...
 tar -czvf release.tar.gz -C %RELEASE_DIR% .
 
+echo ==================================================
+echo [DEPLOY] Uploading release to server...
+echo Uploading release.tar.gz to 43.139.94.61:/release/
+::scp -i "C:\Code\keys\tencent_ind_web_sever.pem" release.tar.gz root@43.139.94.61:/release/
+
+rmdir /s /q "%RELEASE_DIR%"
+
+if %ERRORLEVEL% EQU 0 (
+    echo [DEPLOY] Upload completed successfully!
+) else (
+    echo [DEPLOY] Upload failed with error code %ERRORLEVEL%
+    echo Please check your SSH key and server connectivity.
+)
 
 echo ==================================================
-echo Build process completed successfully!
-echo Final release artifact 'release.tar.gz' has been created.
+echo Build and deployment process completed!
+echo Final release artifact 'release.tar.gz' has been created and uploaded.
 echo ==================================================
 echo ==================================================
 

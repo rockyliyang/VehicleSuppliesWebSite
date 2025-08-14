@@ -5,18 +5,21 @@ const crypto = require('crypto');
 const svgCaptcha = require('svg-captcha');
 const { query } = require('../db/db');
 const { sendMail } = require('../utils/email');
+const fs = require('fs');
+const path = require('path');
+const zlib = require('zlib');
 
 // 获取邮件翻译
 async function getEmailTranslations(language = 'zh-CN') {
   try {
     const rows = await query(
-      'SELECT translation_key, translation_value FROM translations WHERE language = $1 AND translation_key LIKE $2',
+      'SELECT code, value FROM language_translations WHERE lang = $1 AND code LIKE $2',
       [language, 'EMAIL_TEMPLATE.%']
     );
     
     const translations = {};
     rows.getRows().forEach(row => {
-      translations[row.translation_key] = row.translation_value;
+      translations[row.code] = row.value;
     });
     
     return translations;
@@ -535,6 +538,122 @@ router.get('/captcha', (req, res) => {
   
   res.type('svg');
   res.status(200).send(captcha.data);
+});
+
+// 国家和省份数据缓存
+let countriesCache = null;
+let statesCache = null;
+let lastModified = {
+  countries: null,
+  states: null
+};
+
+// 加载国家和省份数据
+function loadCountryStateData() {
+  try {
+    const countriesPath = path.join(__dirname, '../public/country_state/countries.json');
+    const statesPath = path.join(__dirname, '../public/country_state/states.json');
+    
+    // 检查文件修改时间
+    const countriesStats = fs.statSync(countriesPath);
+    const statesStats = fs.statSync(statesPath);
+    
+    const countriesModified = countriesStats.mtime.getTime();
+    const statesModified = statesStats.mtime.getTime();
+    
+    // 如果文件有更新或缓存为空，重新加载数据
+    if (!countriesCache || lastModified.countries !== countriesModified) {
+      const countriesData = JSON.parse(fs.readFileSync(countriesPath, 'utf8'));
+      countriesCache = countriesData.map(country => ({
+        id: country.id,
+        name: country.name,
+        iso3: country.iso3,
+        phone_code: country.phone_code
+      }));
+      lastModified.countries = countriesModified;
+    }
+    
+    if (!statesCache || lastModified.states !== statesModified) {
+      const statesData = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
+      statesCache = statesData.map(state => ({
+        id: state.id,
+        name: state.name,
+        country_id: state.country_id,
+        state_code: state.state_code
+      }));
+      lastModified.states = statesModified;
+    }
+    
+    return {
+      countries: countriesCache,
+      states: statesCache,
+      lastModified: {
+        countries: lastModified.countries,
+        states: lastModified.states
+      }
+    };
+  } catch (error) {
+    console.error('加载国家省份数据失败:', error);
+    return null;
+  }
+}
+
+// 获取国家和省份数据
+router.get('/country-state-data', (req, res) => {
+  try {
+    const clientLastModified = {
+      countries: parseInt(req.query.countries_last_modified) || 0,
+      states: parseInt(req.query.states_last_modified) || 0
+    };
+    
+    const data = loadCountryStateData();
+    if (!data) {
+      return res.status(500).json({
+        success: false,
+        message: getMessage('LOAD_DATA_FAILED'),
+        data: null
+      });
+    }
+    
+    // 检查是否需要更新
+    const needUpdate = 
+      clientLastModified.countries !== data.lastModified.countries ||
+      clientLastModified.states !== data.lastModified.states;
+    
+    if (!needUpdate) {
+      return res.json({
+        success: true,
+        message: getMessage('DATA_NO_UPDATE'),
+        data: {
+          updated: false,
+          last_modified: data.lastModified
+        }
+      });
+    }
+    
+    // 返回数据
+    const responseData = {
+      countries: data.countries,
+      states: data.states,
+      last_modified: data.lastModified
+    };
+    
+    res.json({
+      success: true,
+      message: getMessage('DATA_UPDATED'),
+      data: {
+        updated: true,
+        ...responseData
+      }
+    });
+  } catch (error) {
+    console.error('获取国家省份数据失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('SERVER_ERROR'),
+      data: null
+    });
+  }
 });
 
 module.exports = router;

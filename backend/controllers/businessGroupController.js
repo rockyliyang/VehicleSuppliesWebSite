@@ -84,7 +84,7 @@ class BusinessGroupController {
       const insertResult = await query(`
         INSERT INTO business_groups (group_name, group_email, description, is_default, created_by, updated_by)
         VALUES ($1, $2, $3, $4, $5, $6)
-      `, [group_name, group_email, description, is_default, req.userId, req.userId]);
+      `, [group_name, group_email, description, 0, req.userId, req.userId]);
       
       const groupId = insertResult.getFirstRow().id;
       
@@ -366,9 +366,9 @@ class BusinessGroupController {
       // 更新业务组
       const updateResult = await query(`
         UPDATE business_groups 
-        SET group_name = $1, group_email = $2, description = $3, is_default = $4, updated_by = $5
-        WHERE id = $6 AND deleted = false
-      `, [group_name, group_email, description, is_default, req.userId, id]);
+        SET group_name = $1, group_email = $2, description = $3, updated_by = $4
+        WHERE id = $5 AND deleted = false
+      `, [group_name, group_email, description, req.userId, id]);
       
       if (updateResult.affectedRows === 0) {
         return res.status(404).json({

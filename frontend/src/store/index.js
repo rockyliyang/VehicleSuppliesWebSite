@@ -1,5 +1,6 @@
 import { createStore } from 'vuex'
 import languageModule from './modules/language.js'
+import countryStateModule from './modules/countryState.js'
 import api from '../utils/api.js'
 
 // 货币符号映射
@@ -90,7 +91,9 @@ export default createStore({
     // 购物车状态
     cartItems: [],
     // 登录对话框状态
-    showLoginDialog: false
+    showLoginDialog: false,
+    // 立即购买对话框状态
+    showBuyNowDialog: false
   },
   mutations: {
     setUser(state, user) {
@@ -140,6 +143,9 @@ export default createStore({
     },
     setShowLoginDialog(state, show) {
       state.showLoginDialog = show
+    },
+    setShowBuyNowDialog(state, show) {
+      state.showBuyNowDialog = show
     }
   },
   actions: {
@@ -198,6 +204,17 @@ export default createStore({
     },
     updateCartItemQuantity({ commit }, payload) {
       commit('updateCartItemQuantity', payload)
+    },
+    // 获取分类数据
+    async fetchCategories({ commit }) {
+      try {
+        const response = await api.get('categories')
+        if (response.success) {
+          commit('setCategories', response.data)
+        }
+      } catch (error) {
+        console.error('获取分类失败:', error)
+      }
     },
 
   },
@@ -268,9 +285,12 @@ export default createStore({
       }))
     },
     // 登录对话框状态
-    showLoginDialog: state => state.showLoginDialog
+    showLoginDialog: state => state.showLoginDialog,
+    // 立即购买对话框状态
+    showBuyNowDialog: state => state.showBuyNowDialog
   },
   modules: {
-    language: languageModule
+    language: languageModule,
+    countryState: countryStateModule
   }
 })

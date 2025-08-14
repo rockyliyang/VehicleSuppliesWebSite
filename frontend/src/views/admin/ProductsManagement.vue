@@ -71,9 +71,22 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="price" label="价格" width="120" sortable="custom">
+      <el-table-column prop="price" label="价格" width="180" sortable="custom">
         <template #default="{row}">
-          <span>{{ row.price ? "¥" + row.price : "面议" }}</span>
+          <div v-if="row.price_ranges && row.price_ranges.length > 0" class="price-ranges">
+            <div v-for="(range, index) in row.price_ranges" :key="index" class="price-range-item">
+              <span class="range-text">
+                <span v-if="range.max_quantity !== null && range.max_quantity !== undefined">
+                  {{ range.min_quantity }}-{{ range.max_quantity }}件
+                </span>
+                <span v-else>
+                  ≥{{ range.min_quantity }}件
+                </span>
+                : ¥{{ range.price }}
+              </span>
+            </div>
+          </div>
+          <span v-else>{{ row.price ? "¥" + row.price : "面议" }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="stock" label="库存" width="100" sortable="custom" />
@@ -2099,5 +2112,22 @@ export default {
   border-radius: 8px;
   padding: 20px;
   background: #fff;
+}
+
+.price-ranges {
+  .price-range-item {
+    margin-bottom: 2px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .range-text {
+      font-size: 12px;
+      color: #606266;
+      display: block;
+      line-height: 1.2;
+    }
+  }
 }
 </style>

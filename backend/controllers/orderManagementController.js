@@ -68,6 +68,10 @@ class OrderManagementController {
           o.shipping_email,
           o.shipping_address,
           o.shipping_zip_code,
+          o.shipping_country,
+          o.shipping_state,
+          o.shipping_city,
+          o.shipping_phone_country_code,
           o.created_at,
           o.updated_at,
           l.id as logistics_id,
@@ -80,6 +84,10 @@ class OrderManagementController {
           l.shipping_email as logistics_shipping_email,
           l.shipping_address as logistics_shipping_address,
           l.shipping_zip_code as logistics_shipping_zip_code,
+          l.shipping_country as logistics_shipping_country,
+          l.shipping_state as logistics_shipping_state,
+          l.shipping_city as logistics_shipping_city,
+          l.shipping_phone_country_code as logistics_shipping_phone_country_code,
           l.notes as logistics_notes
         FROM orders o
         LEFT JOIN users u ON o.user_id = u.id
@@ -199,6 +207,10 @@ class OrderManagementController {
         shipping_email,
         shipping_address,
         shipping_zip_code,
+        shipping_country,
+        shipping_state,
+        shipping_city,
+        shipping_phone_country_code,
         shipping_status,
         notes
       } = req.body;
@@ -256,11 +268,15 @@ class OrderManagementController {
               shipping_email = $5,
               shipping_address = $6,
               shipping_zip_code = $7,
-              shipping_status = $8,
-              notes = $9,
+              shipping_country = $8,
+              shipping_state = $9,
+              shipping_city = $10,
+              shipping_phone_country_code = $11,
+              shipping_status = $12,
+              notes = $13,
               updated_at = CURRENT_TIMESTAMP,
-              updated_by = $10
-            WHERE order_id = $11 AND deleted = FALSE
+              updated_by = $14
+            WHERE order_id = $15 AND deleted = FALSE
           `;
           
           await connection.query(updateQuery, [
@@ -271,6 +287,10 @@ class OrderManagementController {
             shipping_email,
             shipping_address,
             shipping_zip_code,
+            shipping_country,
+            shipping_state,
+            shipping_city,
+            shipping_phone_country_code,
             shipping_status,
             notes,
             userId,
@@ -282,8 +302,9 @@ class OrderManagementController {
             INSERT INTO logistics (
               order_id, logistics_company_id, shipping_no, shipping_name,
               shipping_phone, shipping_email, shipping_address, shipping_zip_code,
+              shipping_country, shipping_state, shipping_city, shipping_phone_country_code,
               shipping_status, notes, created_by, updated_by
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15)
           `;
           
           await connection.query(insertQuery, [
@@ -295,6 +316,10 @@ class OrderManagementController {
             shipping_email,
             shipping_address,
             shipping_zip_code,
+            shipping_country,
+            shipping_state,
+            shipping_city,
+            shipping_phone_country_code,
             shipping_status,
             notes,
             userId
@@ -377,7 +402,27 @@ class OrderManagementController {
       // 查询订单基本信息
       const orderQuery = `
         SELECT 
-          o.*,
+          o.id,
+          o.order_guid,
+          o.user_id,
+          o.total_amount,
+          o.status,
+          o.payment_method,
+          o.payment_id,
+          o.shipping_name,
+          o.shipping_phone,
+          o.shipping_email,
+          o.shipping_address,
+          o.shipping_zip_code,
+          o.shipping_country,
+          o.shipping_state,
+          o.shipping_city,
+          o.shipping_phone_country_code,
+          o.created_at,
+          o.updated_at,
+          o.created_by,
+          o.updated_by,
+          o.deleted,
           u.username,
           u.email as user_email,
           l.id as logistics_id,
@@ -390,6 +435,10 @@ class OrderManagementController {
           l.shipping_email as logistics_shipping_email,
           l.shipping_address as logistics_shipping_address,
           l.shipping_zip_code as logistics_shipping_zip_code,
+          l.shipping_country as logistics_shipping_country,
+          l.shipping_state as logistics_shipping_state,
+          l.shipping_city as logistics_shipping_city,
+          l.shipping_phone_country_code as logistics_shipping_phone_country_code,
           l.tracking_info,
           l.notes as logistics_notes,
           l.created_at as logistics_created_at,

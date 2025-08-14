@@ -6,7 +6,7 @@ const fs = require('fs');
 // 获取公司信息
 exports.getCompanyInfo = async (req, res) => {
   try {
-    const rows = await query('SELECT * FROM company_info WHERE deleted = false LIMIT 1');
+    const rows = await query('SELECT id, guid, company_name, contact_name, address, phone, email, description, logo_url, wechat_qrcode, created_at, updated_at FROM company_info WHERE deleted = false LIMIT 1');
     if (rows.getRowCount() === 0) {
       return res.json({ success: false, message: getMessage('COMPANY.NO_FILE_UPLOADED'), data: null });
     }

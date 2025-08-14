@@ -38,7 +38,8 @@
             </el-table-column>
             <el-table-column :label="$t('checkout.subtotal') || '小计'" width="120" align="right">
               <template #default="{row}">
-                <span class="subtotal-price">{{ $store.getters.formatPrice((row.calculatedPrice || row.price) * row.quantity) }}</span>
+                <span class="subtotal-price">{{ $store.getters.formatPrice((row.calculatedPrice || row.price) *
+                  row.quantity) }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -70,16 +71,49 @@
                 <el-input v-model="shippingInfo.name" :placeholder="$t('checkout.namePlaceholder') || '收货人姓名'"
                   :readonly="isOrderDetail" clearable />
               </el-form-item>
-              <el-form-item prop="phone">
-                <el-input v-model="shippingInfo.phone" :placeholder="$t('checkout.phonePlaceholder') || '手机号码'"
+              <el-form-item prop="country">
+                <el-select v-model="shippingInfo.country" :placeholder="$t('checkout.countryPlaceholder') || '选择国家'"
+                  :disabled="isOrderDetail" clearable @change="handleCountryChange">
+                  <el-option v-for="country in countries" :key="country.iso3" :label="country.name"
+                    :value="country.name">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </div>
+            <div class="form-row">
+              <el-form-item prop="state">
+                <el-select v-if="currentStates.length > 0" v-model="shippingInfo.state"
+                  :placeholder="$t('checkout.statePlaceholder') || '选择省份'"
+                  :disabled="isOrderDetail || !shippingInfo.country" clearable @change="handleStateChange">
+                  <el-option v-for="state in currentStates" :key="state.id" :label="state.name" :value="state.name">
+                  </el-option>
+                </el-select>
+                <el-input v-else v-model="shippingInfo.state" :placeholder="$t('checkout.statePlaceholder') || '选择省份'"
+                  :readonly="isOrderDetail" clearable />
+              </el-form-item>
+              <el-form-item prop="city">
+                <el-input v-model="shippingInfo.city" :placeholder="$t('checkout.cityPlaceholder') || '城市'"
                   :readonly="isOrderDetail" clearable />
               </el-form-item>
             </div>
             <div class="form-row">
+              <el-form-item class="phone-input-group">
+                <el-select v-model="shippingInfo.phone_country_code"
+                  :placeholder="$t('checkout.countryCodePlaceholder') || '区号'" :disabled="isOrderDetail" clearable
+                  class="country-code-select">
+                  <el-option v-for="country in countries" :key="country.iso3" :label="country.phone_code"
+                    :value="country.phone_code">
+                  </el-option>
+                </el-select>
+                <el-input v-model="shippingInfo.phone" :placeholder="$t('checkout.phonePlaceholder') || '手机号码'"
+                  :readonly="isOrderDetail" clearable class="phone-number-input" />
+              </el-form-item>
               <el-form-item>
                 <el-input v-model="shippingInfo.email" :placeholder="$t('checkout.emailPlaceholder') || '邮箱地址'"
                   :readonly="isOrderDetail" clearable autocomplete="off" />
               </el-form-item>
+            </div>
+            <div class="form-row">
               <el-form-item prop="zipCode">
                 <el-input v-model="shippingInfo.zipCode" :placeholder="$t('checkout.zipCodePlaceholder') || '邮政编码'"
                   :readonly="isOrderDetail" clearable />
@@ -217,22 +251,42 @@
 
                 <div class="address-content">
                   <div class="address-row">
-                    <span class="field-inline">
-                      <strong>{{ $t('checkout.recipientName') || '收件人' }}:</strong> {{ address.recipient_name }}
-                    </span>
+                    <div class="field-group">
+                      <span class="field-label">{{ $t('checkout.recipientName') || '收件人' }}:</span>
+                      <span class="field-value">{{ address.recipient_name }}</span>
+                    </div>
                   </div>
                   <div class="address-row">
-                    <span class="field-inline">
-                      <strong>{{ $t('checkout.phone') || '联系电话' }}:</strong> {{ address.phone }}
-                    </span>
-                    <span class="field-inline">
-                      <strong>{{ $t('checkout.postalCode') || '邮编' }}:</strong> {{ address.postal_code }}
-                    </span>
+                    <div class="field-group">
+                      <span class="field-label">{{ $t('checkout.country') || '国家' }}:</span>
+                      <span class="field-value">{{ address.country }}</span>
+                    </div>
+                    <div class="field-group">
+                      <span class="field-label">{{ $t('checkout.state') || '省份' }}:</span>
+                      <span class="field-value">{{ address.state }}</span>
+                    </div>
                   </div>
                   <div class="address-row">
-                    <span class="field-inline">
-                      <strong>{{ $t('checkout.address') || '地址' }}:</strong> {{ address.address }}
-                    </span>
+                    <div class="field-group">
+                      <span class="field-label">{{ $t('checkout.city') || '城市' }}:</span>
+                      <span class="field-value">{{ address.city }}</span>
+                    </div>
+                    <div class="field-group">
+                      <span class="field-label">{{ $t('checkout.postalCode') || '邮编' }}:</span>
+                      <span class="field-value">{{ address.postal_code }}</span>
+                    </div>
+                  </div>
+                  <div class="address-row">
+                    <div class="field-group">
+                      <span class="field-label">{{ $t('checkout.phone') || '联系电话' }}:</span>
+                      <span class="field-value">{{ address.phone_country_code }} {{ address.phone }}</span>
+                    </div>
+                  </div>
+                  <div class="address-row">
+                    <div class="field-group">
+                      <span class="field-label">{{ $t('checkout.address') || '地址' }}:</span>
+                      <span class="field-value">{{ address.address }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -279,6 +333,7 @@
 <script>
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
+import { validateInternationalPhone } from '@/utils/validation.js';
 import { 
   ShoppingCart, 
   Location, 
@@ -318,7 +373,17 @@ export default {
     return {
       orderItems: [],
       orderTotal: 0,
-      shippingInfo: { name: '', phone: '', email: '', address: '', zipCode: '' },
+      shippingInfo: { 
+        name: '', 
+        phone: '', 
+        phone_country_code: '', 
+        email: '', 
+        address: '', 
+        zipCode: '', 
+        country: '',
+        state: '',
+        city: '' 
+      },
       addressList: [], // 地址列表
       selectedAddressId: null, // 选中的地址ID
       showAddressDialog: false, // 显示地址选择对话框
@@ -334,7 +399,22 @@ export default {
         ],
         phone: [
           { required: true, message: this.$t('checkout.phoneRequired') || '请输入手机号码', trigger: 'blur' },
-          { pattern: /^1[3-9]\d{9}$/, message: this.$t('checkout.phoneFormat') || '请输入正确的手机号码格式', trigger: 'blur' }
+          { 
+            validator: (rule, value, callback) => {
+              if (!value) {
+                callback(new Error(this.$t('checkout.phoneRequired') || '请输入手机号码'));
+                return;
+              }
+              
+              if (!validateInternationalPhone(value)) {
+                callback(new Error(this.$t('checkout.phoneFormatInvalid') || '请输入正确的电话号码格式'));
+                return;
+              }
+              
+              callback();
+            },
+            trigger: 'blur'
+          }
         ],
         email: [
           { type: 'email', message: this.$t('checkout.emailFormat') || '请输入正确的邮箱格式', trigger: 'blur' }
@@ -344,8 +424,13 @@ export default {
           { min: 10, max: 200, message: this.$t('checkout.addressLength') || '地址长度在 10 到 200 个字符', trigger: 'blur' }
         ],
         zipCode: [
-          { required: true, message: this.$t('checkout.zipCodeRequired') || '请输入邮政编码', trigger: 'blur' },
-          { pattern: /^\d{6}$/, message: this.$t('checkout.zipCodeFormat') || '请输入正确的邮政编码格式', trigger: 'blur' }
+          { required: true, message: this.$t('checkout.zipCodeRequired') || '请输入邮政编码', trigger: 'blur' }
+        ],
+        country: [
+          { required: true, message: this.$t('checkout.countryRequired') || '请选择国家', trigger: 'change' }
+        ],
+        state: [
+          { required: true, message: this.$t('checkout.stateRequired') || '请选择省份', trigger: 'change' }
         ]
       },
       activePaymentTab: 'paypal',
@@ -362,7 +447,8 @@ export default {
       qrcodeTimerInterval: null,
       autoRefreshTimer: null,
       currentPaymentMethod: '',
-      isPollingRequest: false // 支付状态轮询请求标志
+      isPollingRequest: false, // 支付状态轮询请求标志
+
     };
   },
   computed: {
@@ -376,12 +462,26 @@ export default {
         items.push({ text: this.$t('checkout.title') || '结算' });
       }
       return items;
+    },
+    countries() {
+      return this.$store.getters['countryState/countries'] || [];
+    },
+    currentStates() {
+      if (!this.shippingInfo.country || !this.countries || this.countries.length === 0) {
+        return [];
+      }
+      const country = this.countries.find(c => c.name === this.shippingInfo.country);
+      if (!country) {
+        return [];
+      }
+      return this.$store.getters['countryState/getStatesByCountry'](country.iso3) || [];
     }
   },
   created() {
     this.initOrderItems();
     this.fetchPayPalConfig();
     this.loadAddressList();
+    this.loadCountryStateData();
   },
   mounted() {
     // 不做任何PayPal相关操作
@@ -525,9 +625,13 @@ export default {
             this.shippingInfo = {
               name: response.data.order.shipping_name || '',
               phone: response.data.order.shipping_phone || '',
+              phone_country_code: response.data.order.shipping_phone_country_code || '',
               email: response.data.order.shipping_email || '',
               address: response.data.order.shipping_address || '',
-              zipCode: response.data.order.shipping_zip_code || ''
+              zipCode: response.data.order.shipping_zip_code || '',
+              country: response.data.order.shipping_country || '',
+              state: response.data.order.shipping_state || '',
+              city: response.data.order.shipping_city || ''
             };
           }
         } else {
@@ -622,9 +726,13 @@ export default {
                 shippingInfo: {
                   name: this.shippingInfo.name,
                   phone: this.shippingInfo.phone,
+                  phone_country_code: this.shippingInfo.phone_country_code,
                   email: this.shippingInfo.email,
                   shipping_address: this.shippingInfo.address,
-                  shipping_zip_code: this.shippingInfo.zipCode
+                  shipping_zip_code: this.shippingInfo.zipCode,
+                  shipping_country: this.shippingInfo.country,
+                  shipping_state: this.shippingInfo.state,
+                  shipping_city: this.shippingInfo.city
                 },
                 orderItems: this.orderItems.map(item => ({
                   product_id: item.product_id,
@@ -915,8 +1023,12 @@ export default {
          // 清空地址信息
          this.shippingInfo.name = '';
          this.shippingInfo.phone = '';
+         this.shippingInfo.phone_country_code = '';
          this.shippingInfo.address = '';
          this.shippingInfo.zipCode = '';
+         this.shippingInfo.country = '';
+         this.shippingInfo.state = '';
+         this.shippingInfo.city = '';
          this.selectedAddressId = null;
          return;
        }
@@ -925,8 +1037,12 @@ export default {
        if (address) {
          this.shippingInfo.name = address.recipient_name || '';
          this.shippingInfo.phone = address.phone || '';
+         this.shippingInfo.phone_country_code = address.phone_country_code || '';
          this.shippingInfo.address = address.address || '';
          this.shippingInfo.zipCode = address.postal_code || '';
+         this.shippingInfo.country = address.country || '';
+         this.shippingInfo.state = address.state || '';
+         this.shippingInfo.city = address.city || '';
          this.selectedAddressId = addressId;
        }
      },
@@ -944,6 +1060,26 @@ export default {
        this.selectedAddressId = address.id;
        this.selectAddress(address.id);
        this.showAddressDialog = false;
+     },
+     async loadCountryStateData() {
+       try {
+         await this.$store.dispatch('countryState/loadCountryStateData');
+       } catch (error) {
+         console.error('加载国家省份数据失败:', error);
+       }
+     },
+     handleCountryChange(countryName) {
+       if (countryName && this.countries && this.countries.length > 0) {
+         const country = this.countries.find(c => c.name === countryName);
+         if (country) {
+           this.shippingInfo.phone_country_code = country.phone_code;
+         }
+       }
+       this.shippingInfo.state = '';
+       this.shippingInfo.city = '';
+     },
+     handleStateChange() {
+       this.shippingInfo.city = '';
      },
      confirmAddressSelection() {
        if (this.selectedAddressId) {
@@ -1223,6 +1359,53 @@ export default {
 .shipping-form :deep(.el-form-item__label) {
   flex-shrink: 0;
   margin-right: 0;
+}
+
+/* 电话输入框组样式 */
+.phone-input-group {
+  display: flex;
+  gap: $spacing-sm;
+  width: 100%;
+
+  .country-code-select {
+    flex: 0 0 140px;
+
+    :deep(.el-select__wrapper) {
+      height: 44px;
+      border-radius: $border-radius-md;
+      border: 1px solid $border-light;
+      transition: all 0.3s ease;
+
+      &:hover {
+        border-color: $primary-color;
+      }
+
+      &.is-focused {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+      }
+    }
+  }
+
+  .phone-number-input {
+    flex: 1;
+
+    :deep(.el-input__wrapper) {
+      height: 44px;
+      border-radius: $border-radius-md;
+      border: 1px solid $border-light;
+      transition: all 0.3s ease;
+
+      &:hover {
+        border-color: $primary-color;
+      }
+
+      &.is-focused {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+      }
+    }
+  }
 }
 
 .shipping-form :deep(.el-form-item__content) {
@@ -1962,37 +2145,41 @@ export default {
 
 .address-row {
   display: flex;
-  gap: $spacing-xl;
-  align-items: flex-start;
-}
-
-.address-row:nth-child(2) {
-  /* 第二行：电话和邮编并排 */
   gap: $spacing-lg;
-
-  .field-inline:first-child {
-    flex: 1;
-    max-width: 60%;
-  }
-
-  .field-inline:last-child {
-    flex: 0 0 auto;
-    min-width: 100px;
-    margin-left: $spacing-sm;
-  }
+  align-items: flex-start;
+  margin-bottom: $spacing-sm;
 }
 
-.field-inline {
-  font-size: $font-size-sm;
-  color: $text-primary;
+.address-row:last-child {
+  margin-bottom: 0;
+}
+
+.field-group {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+  margin-left: $spacing-sm;
+}
+
+.field-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  text-align: right;
+  width: 100px;
+  flex-shrink: 0;
+  margin-right: $spacing-md;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.field-value {
+  font-size: 14px;
+  color: #333;
   line-height: 1.5;
   word-break: break-word;
-}
-
-.field-inline strong {
-  color: $text-secondary;
-  font-weight: $font-weight-semibold;
-  margin-right: $spacing-xs;
+  flex: 1;
 }
 
 .address-actions {
@@ -2052,11 +2239,11 @@ export default {
 
 .custom-dialog {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 600px;
-  max-height: 80vh;
+  max-width: 1000px;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
 }
@@ -2065,16 +2252,26 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #ebeef5;
+  padding: 24px 32px;
+  border-bottom: 2px solid #e4e7ed;
   flex-shrink: 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 12px 12px 0 0;
 }
 
 .custom-dialog-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: #303133;
+  font-size: 22px;
+  font-weight: 600;
+  color: #2c3e50;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.custom-dialog-title::before {
+  content: '📍';
+  font-size: 24px;
 }
 
 .custom-dialog-close {

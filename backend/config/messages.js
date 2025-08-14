@@ -523,6 +523,14 @@ const MESSAGES = {
       CANNOT_DELETE_WITH_MESSAGES: 'INQUIRY.BUSINESS.CANNOT_DELETE_WITH_MESSAGES',
       PRODUCT_NOT_AVAILABLE: 'INQUIRY.BUSINESS.PRODUCT_NOT_AVAILABLE'
     }
+  },
+
+  // 国家省份数据相关
+  COUNTRY_STATE: {
+    GET_SUCCESS: 'Country and state data retrieved successfully',
+    GET_FAILED: 'Failed to retrieve country and state data',
+    DATA_NOT_MODIFIED: 'Country and state data not modified',
+    FILE_READ_ERROR: 'Failed to read country or state data file'
   }
 };
 

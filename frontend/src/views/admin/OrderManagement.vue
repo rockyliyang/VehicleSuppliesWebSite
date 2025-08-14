@@ -3,15 +3,16 @@
     <div class="page-header">
       <h1>{{ $t('order.management.title', 'Order Management') }}</h1>
       <p v-if="!isAdmin" class="page-description">{{ $t("order.management.description.user", "View and manage your orders") }}</p>
-      <p v-else class="page-description">{{ $t("order.management.description.admin", "Manage all orders and logistics") }}</p>
+      <p v-else class="page-description">{{ $t("order.management.description.admin", "Manage all orders and logistics")
+        }}</p>
     </div>
 
     <!-- 筛选条件 -->
     <el-card class="filter-card">
       <el-form :model="filters" inline>
         <el-form-item :label="$t('order.filter.status', 'Status') || '状态'">
-          <el-select v-model="filters.status" :placeholder="$t('order.filter.allStatus', 'All Status') || '选择状态'" clearable
-            style="width: 150px;">
+          <el-select v-model="filters.status" :placeholder="$t('order.filter.allStatus', 'All Status') || '选择状态'"
+            clearable style="width: 150px;">
             <el-option value="pending" :label="$t('order.status.pending', 'Pending') || '待处理'" />
             <el-option value="confirmed" :label="$t('order.status.confirmed', 'Confirmed') || '已确认'" />
             <el-option value="shipped" :label="$t('order.status.shipped', 'Shipped') || '已发货'" />
@@ -21,7 +22,8 @@
         </el-form-item>
         <el-form-item v-if="isAdmin" :label="$t('order.filter.user', 'User') || '用户'">
           <el-select v-model="filters.userId" :placeholder="$t('order.filter.userPlaceholder', 'Select user') || '选择用户'"
-            clearable filterable remote :remote-method="handleUserSearch" :loading="userSearchLoading" style="width: 200px;">
+            clearable filterable remote :remote-method="handleUserSearch" :loading="userSearchLoading"
+            style="width: 200px;">
             <el-option v-for="user in userOptions" :key="user.id" :label="`${user.username} (${user.email})`"
               :value="user.id">
             </el-option>
@@ -83,7 +85,8 @@
         </el-table-column>
         <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'" width="120">
           <template #default="{ row }">
-            <el-tag v-if="row.shipping_status" :type="getLogisticsStatusType(row.shipping_status)">{{ formatLogisticsStatus(row.shipping_status) }}</el-tag>
+            <el-tag v-if="row.shipping_status" :type="getLogisticsStatusType(row.shipping_status)">{{
+              formatLogisticsStatus(row.shipping_status) }}</el-tag>
             <span v-else class="text-secondary">{{ $t('order.logistics.noLogistics', 'No Logistics') || '无物流' }}</span>
           </template>
         </el-table-column>
@@ -91,9 +94,9 @@
 
       <!-- 分页 -->
       <div class="pagination-wrapper">
-        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]" :total="totalOrders" layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
+          :total="totalOrders" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+          @current-change="handleCurrentChange" />
       </div>
     </el-card>
 
@@ -109,7 +112,7 @@
           </div>
           <button @click="closeOrderDetail" class="close-btn">&times;</button>
         </div>
-        
+
         <div class="modal-body">
           <div class="order-detail-grid">
             <!-- 订单基本信息卡片 -->
@@ -146,7 +149,8 @@
             </div>
 
             <!-- 物流信息卡片 -->
-            <div class="detail-card logistics-info-card" v-if="selectedOrder.logistics_company_name || selectedOrder.shipping_no">
+            <div class="detail-card logistics-info-card"
+              v-if="selectedOrder.logistics_company_name || selectedOrder.shipping_no">
               <div class="card-header">
                 <h4>{{ $t('order.detail.logisticsInfo', 'Logistics Information') }}</h4>
               </div>
@@ -219,7 +223,7 @@
           </div>
           <button @click="closeLogisticsModal" class="close-btn">&times;</button>
         </div>
-        
+
         <div class="modal-body">
           <form @submit.prevent="updateLogistics" class="logistics-form">
             <!-- 物流基本信息 -->
@@ -227,40 +231,29 @@
               <h4 class="section-title">{{ $t('order.logistics.basicInfo', 'Basic Information') }}</h4>
               <div class="form-grid">
                 <div class="form-group">
-                  <label for="logistics-company" class="form-label">{{ $t('order.logistics.company', 'Logistics Company') }}</label>
-                  <select 
-                    id="logistics-company"
-                    v-model="logisticsForm.logistics_company_id" 
-                    required
+                  <label for="logistics-company" class="form-label">{{ $t('order.logistics.company', 'LogisticsCompany')
+                    }}</label>
+                  <select id="logistics-company" v-model="logisticsForm.logistics_company_id" required
                     class="form-control">
                     <option value="">{{ $t('order.logistics.selectCompany', 'Select a logistics company') }}</option>
-                    <option 
-                      v-for="company in logisticsCompanies" 
-                      :key="company.id" 
-                      :value="company.id">
+                    <option v-for="company in logisticsCompanies" :key="company.id" :value="company.id">
                       {{ company.name }}
                     </option>
                   </select>
                 </div>
 
                 <div class="form-group">
-                  <label for="tracking-number" class="form-label">{{ $t('order.logistics.trackingNumber', 'Tracking Number') }}</label>
-                  <input 
-                    id="tracking-number"
-                    type="text" 
-                    v-model="logisticsForm.shipping_no" 
-                    class="form-control"
-                    :placeholder="$t('order.logistics.trackingPlaceholder', 'Enter tracking number')"
-                  >
+                  <label for="tracking-number" class="form-label">{{ $t('order.logistics.trackingNumber',
+                    'TrackingNumber')
+                    }}</label>
+                  <input id="tracking-number" type="text" v-model="logisticsForm.shipping_no" class="form-control"
+                    :placeholder="$t('order.logistics.trackingPlaceholder', 'Enter tracking number')">
                 </div>
 
                 <div class="form-group">
-                  <label for="logistics-status" class="form-label">{{ $t('order.logistics.status', 'Logistics Status') }}</label>
-                  <select 
-                    id="logistics-status"
-                    v-model="logisticsForm.shipping_status" 
-                    required
-                    class="form-control">
+                  <label for="logistics-status" class="form-label">{{ $t('order.logistics.status', 'Logistics Status')
+                    }}</label>
+                  <select id="logistics-status" v-model="logisticsForm.shipping_status" required class="form-control">
                     <option value="">{{ $t('order.logistics.selectStatus', 'Select status') }}</option>
                     <option value="pending">{{ $t('order.logistics.statusPending', 'Pending') }}</option>
                     <option value="shipped">{{ $t('order.logistics.statusShipped', 'Shipped') }}</option>
@@ -277,63 +270,79 @@
               <h4 class="section-title">{{ $t('order.logistics.recipientInfo', 'Recipient Information') }}</h4>
               <div class="form-grid">
                 <div class="form-group">
-                  <label for="recipient-name" class="form-label">{{ $t('order.logistics.recipientName', 'Recipient Name') }}</label>
-                  <input 
-                    id="recipient-name"
-                    type="text" 
-                    v-model="logisticsForm.shipping_name" 
-                    class="form-control"
-                    required
-                    :placeholder="$t('order.logistics.recipientNamePlaceholder', 'Enter recipient name')"
-                  >
+                  <label for="recipient-name" class="form-label">{{ $t('order.logistics.recipientName', 'RecipientName')
+                    }}</label>
+                  <input id="recipient-name" type="text" v-model="logisticsForm.shipping_name" class="form-control"
+                    required :placeholder="$t('order.logistics.recipientNamePlaceholder', 'Enter recipient name')">
+                </div>
+
+
+                <div class="form-group">
+                  <label for="shipping-country" class="form-label">{{ $t('checkout.country', 'Country') }}</label>
+                  <select id="shipping-country" v-model="logisticsForm.shipping_country"
+                    @change="handleCountryChange(logisticsForm.shipping_country)" class="form-control" required>
+                    <option value="">{{ $t('checkout.countryPlaceholder', 'Select Country') }}</option>
+                    <option v-for="country in countries" :key="country.iso3" :value="country.name">
+                      {{ country.name }}
+                    </option>
+                  </select>
                 </div>
 
                 <div class="form-group">
-                  <label for="recipient-phone" class="form-label">{{ $t('order.logistics.recipientPhone', 'Recipient Phone') }}</label>
-                  <input 
-                    id="recipient-phone"
-                    type="text" 
-                    v-model="logisticsForm.shipping_phone" 
-                    class="form-control"
-                    required
-                    :placeholder="$t('order.logistics.recipientPhonePlaceholder', 'Enter recipient phone')"
-                  >
+                  <label for="shipping-state" class="form-label">{{ $t('checkout.state', 'State/Province') }}</label>
+                  <select id="shipping-state" v-model="logisticsForm.shipping_state" @change="handleStateChange()"
+                    class="form-control" required>
+                    <option value="">{{ $t('checkout.statePlaceholder', 'Select State/Province') }}</option>
+                    <option v-for="state in currentStates" :key="state.name" :value="state.name">
+                      {{ state.name }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group phone-group">
+                  <label for="recipient-phone" class="form-label">{{ $t('order.logistics.recipientPhone',
+                    'RecipientPhone')
+                    }}</label>
+                  <div class="phone-input-group">
+                    <input id="phone-country-code" type="text" v-model="logisticsForm.shipping_phone_country_code"
+                      class="form-control country-code-input"
+                      :placeholder="$t('order.logistics.phoneCountryCodePlaceholder', '+1')">
+                    <input id="recipient-phone" type="text" v-model="logisticsForm.shipping_phone"
+                      class="form-control phone-input" required
+                      :placeholder="$t('order.logistics.recipientPhonePlaceholder', 'Enter recipient phone')">
+                  </div>
                 </div>
 
                 <div class="form-group">
-                  <label for="recipient-email" class="form-label">{{ $t('order.logistics.recipientEmail', 'Recipient Email') }}</label>
-                  <input 
-                    id="recipient-email"
-                    type="email" 
-                    v-model="logisticsForm.shipping_email" 
-                    class="form-control"
-                    :placeholder="$t('order.logistics.recipientEmailPlaceholder', 'Enter recipient email')"
-                  >
+                  <label for="recipient-email" class="form-label">{{ $t('order.logistics.recipientEmail',
+                    'RecipientEmail')
+                    }}</label>
+                  <input id="recipient-email" type="email" v-model="logisticsForm.shipping_email" class="form-control"
+                    :placeholder="$t('order.logistics.recipientEmailPlaceholder', 'Enter recipient email')">
                 </div>
 
                 <div class="form-group">
-                  <label for="postal-code" class="form-label">{{ $t('order.logistics.postalCode', 'Postal Code') }}</label>
-                  <input 
-                    id="postal-code"
-                    type="text" 
-                    v-model="logisticsForm.shipping_zip_code" 
-                    class="form-control"
-                    required
-                    :placeholder="$t('order.logistics.postalCodePlaceholder', 'Enter postal code')"
-                  >
+                  <label for="postal-code" class="form-label">{{ $t('order.logistics.postalCode', 'Postal Code')
+                    }}</label>
+                  <input id="postal-code" type="text" v-model="logisticsForm.shipping_zip_code" class="form-control"
+                    required :placeholder="$t('order.logistics.postalCodePlaceholder', 'Enter postal code')">
+                </div>
+
+
+                <div class="form-group">
+                  <label for="shipping-city" class="form-label">{{ $t('checkout.city', 'City') }}</label>
+                  <input id="shipping-city" type="text" v-model="logisticsForm.shipping_city" class="form-control"
+                    required :placeholder="$t('checkout.cityPlaceholder', 'Enter city')">
                 </div>
               </div>
 
               <div class="form-group full-width">
-                <label for="delivery-address" class="form-label">{{ $t('order.logistics.deliveryAddress', 'Delivery Address') }}</label>
-                <textarea 
-                  id="delivery-address"
-                  v-model="logisticsForm.shipping_address" 
-                  class="form-control"
-                  required
+                <label for="delivery-address" class="form-label">{{ $t('order.logistics.deliveryAddress',
+                  'DeliveryAddress')
+                  }}</label>
+                <textarea id="delivery-address" v-model="logisticsForm.shipping_address" class="form-control" required
                   :placeholder="$t('order.logistics.deliveryAddressPlaceholder', 'Enter delivery address')"
-                  rows="3"
-                ></textarea>
+                  rows="3"></textarea>
               </div>
             </div>
 
@@ -342,7 +351,8 @@
                 {{ $t('common.cancel', 'Cancel') }}
               </button>
               <button type="submit" class="btn btn-primary" :disabled="isUpdating">
-                {{ isUpdating ? $t('order.logistics.updating', 'Updating...') : $t('order.logistics.updateButton', 'Update Logistics') }}
+                {{ isUpdating ? $t('order.logistics.updating', 'Updating...') :
+                $t('order.logistics.updateButton','UpdateLogistics') }}
               </button>
             </div>
           </form>
@@ -402,9 +412,13 @@ export default {
         shipping_status: 'pending',
         shipping_name: '',
         shipping_phone: '',
+        shipping_phone_country_code: '',
         shipping_email: '',
         shipping_address: '',
-        shipping_zip_code: ''
+        shipping_zip_code: '',
+        shipping_country: '',
+        shipping_state: '',
+        shipping_city: ''
       }
     }
   },
@@ -412,6 +426,19 @@ export default {
     ...mapState(['user']),
     isAdmin() {
       return this.user && this.user.role === 'admin'
+    },
+    countries() {
+      return this.$store.getters['countryState/countries'] || [];
+    },
+    currentStates() {
+      if (!this.logisticsForm.shipping_country || !this.countries || this.countries.length === 0) {
+        return [];
+      }
+      const country = this.countries.find(c => c.name === this.logisticsForm.shipping_country);
+      if (!country) {
+        return [];
+      }
+      return this.$store.getters['countryState/getStatesByCountry'](country.iso3) || [];
     }
   },
   watch: {
@@ -431,6 +458,7 @@ export default {
       this.loadLogisticsCompanies()
       this.loadUsers()
     }
+    this.loadCountryStateData()
   },
   methods: {
     async loadOrders() {
@@ -509,9 +537,13 @@ export default {
               shipping_status: latestOrder.shipping_status || 'pending',
               shipping_name: latestOrder.logistics_shipping_name || '',
               shipping_phone: latestOrder.logistics_shipping_phone || '',
+              shipping_phone_country_code: latestOrder.logistics_shipping_phone_country_code || '',
               shipping_email: latestOrder.logistics_shipping_email || '',
               shipping_address: latestOrder.logistics_shipping_address || '',
-              shipping_zip_code: latestOrder.logistics_shipping_zip_code || ''
+              shipping_zip_code: latestOrder.logistics_shipping_zip_code || '',
+              shipping_country: latestOrder.logistics_shipping_country || '',
+              shipping_state: latestOrder.logistics_shipping_state || '',
+              shipping_city: latestOrder.logistics_shipping_city || ''
             }
           } else {
             // 新建logistics信息，使用order表的收货信息填充
@@ -521,9 +553,13 @@ export default {
               shipping_status: 'pending',
               shipping_name: latestOrder.shipping_name || '',
               shipping_phone: latestOrder.shipping_phone || '',
+              shipping_phone_country_code: latestOrder.shipping_phone_country_code || '',
               shipping_email: latestOrder.shipping_email || '',
               shipping_address: latestOrder.shipping_address || '',
-              shipping_zip_code: latestOrder.shipping_zip_code || ''
+              shipping_zip_code: latestOrder.shipping_zip_code || '',
+              shipping_country: latestOrder.shipping_country || '',
+              shipping_state: latestOrder.shipping_state || '',
+              shipping_city: latestOrder.shipping_city || ''
             }
           }
           
@@ -545,9 +581,13 @@ export default {
             shipping_status: order.shipping_status || 'pending',
             shipping_name: order.logistics_shipping_name || '',
             shipping_phone: order.logistics_shipping_phone || '',
+            shipping_phone_country_code: order.logistics_shipping_phone_country_code || '',
             shipping_email: order.logistics_shipping_email || '',
             shipping_address: order.logistics_shipping_address || '',
-            shipping_zip_code: order.logistics_shipping_zip_code || ''
+            shipping_zip_code: order.logistics_shipping_zip_code || '',
+            shipping_country: order.logistics_shipping_country || '',
+            shipping_state: order.logistics_shipping_state || '',
+            shipping_city: order.logistics_shipping_city || ''
           }
         } else {
           // 新建logistics信息，使用order表的收货信息填充
@@ -557,9 +597,13 @@ export default {
             shipping_status: 'pending',
             shipping_name: order.shipping_name || '',
             shipping_phone: order.shipping_phone || '',
+            shipping_phone_country_code: order.shipping_phone_country_code || '',
             shipping_email: order.shipping_email || '',
             shipping_address: order.shipping_address || '',
-            shipping_zip_code: order.shipping_zip_code || ''
+            shipping_zip_code: order.shipping_zip_code || '',
+            shipping_country: order.shipping_country || '',
+            shipping_state: order.shipping_state || '',
+            shipping_city: order.shipping_city || ''
           }
         }
         
@@ -799,6 +843,32 @@ export default {
     handleCurrentChange(newPage) {
       this.currentPage = newPage
       this.loadOrders()
+    },
+
+    // 加载国家省份数据
+    async loadCountryStateData() {
+      try {
+        await this.$store.dispatch('countryState/loadCountryStateData');
+      } catch (error) {
+        console.error('加载国家省份数据失败:', error);
+      }
+    },
+
+    // 处理国家变化
+    handleCountryChange(countryName) {
+      if (countryName && this.countries && this.countries.length > 0) {
+        const country = this.countries.find(c => c.name === countryName);
+        if (country) {
+          this.logisticsForm.shipping_phone_country_code = country.phone_code;
+        }
+      }
+      this.logisticsForm.shipping_state = '';
+      this.logisticsForm.shipping_city = '';
+    },
+
+    // 处理省份变化
+    handleStateChange() {
+      this.logisticsForm.shipping_city = '';
     }
   }
 }
@@ -1435,31 +1505,61 @@ export default {
   color: #6c757d;
 }
 
+/* 电话输入组样式 */
+.phone-group {
+  width: 100%;
+}
+
+.phone-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.country-code-input {
+  flex: 0 0 80px;
+  min-width: 80px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.phone-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.country-code-input:focus,
+.phone-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .order-detail-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-content {
     width: 95%;
     margin: 20px;
   }
-  
+
   .status-display {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .info-row {
     flex-direction: column;
     gap: 4px;
   }
-  
+
   .info-value {
     text-align: left;
   }

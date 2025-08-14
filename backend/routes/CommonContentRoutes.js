@@ -13,8 +13,9 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB限制
   fileFilter: function (req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('只支持图片文件'), false);
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+      // 使用回调返回错误，而不是抛出异常
+      return cb(null, false);
     }
     cb(null, true);
   }
@@ -52,8 +53,39 @@ router.put('/admin/content/:id', jwt.verifyToken, commonContentController.update
 // 删除内容
 router.delete('/admin/content/:id', jwt.verifyToken, commonContentController.deleteContent);
 
+// Multer错误处理中间件
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: '文件大小超过限制（最大5MB）'
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({
+        success: false,
+        message: '文件数量超过限制（最大10个）'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: '文件上传错误: ' + err.message
+    });
+  }
+  
+  if (err.message && err.message.includes('文件类型不支持')) {
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+  
+  next(err);
+};
+
 // 图片上传接口
-router.post('/images/upload', jwt.verifyToken, upload.array('images', 10), commonContentController.uploadImages);
+router.post('/images/upload', jwt.verifyToken, upload.array('images', 10), handleMulterError, commonContentController.uploadImages);
 
 // 获取图片列表（按导航ID）
 router.get('/images/:navId', jwt.verifyToken, commonContentController.getImages);

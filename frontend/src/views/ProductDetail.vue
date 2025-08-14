@@ -102,20 +102,20 @@
             <div class="product-actions">
               <!-- 按钮组 -->
               <div class="action-buttons">
+                <el-button type="success" @click="openBuyNowDialog"
+                  :disabled="product.product_type === 'self_operated' && product.stock <= 0" class="buy-now-btn">
+                  {{ $t('buttons.buyNow') || '立即购买' }}
+                </el-button>
                 <el-button type="primary" @click="addToCart"
                   :disabled="product.product_type === 'self_operated' && product.stock <= 0" :loading="addingToCart"
                   class="add-to-cart-btn">
                   <span v-if="!addingToCart">{{ $t('buttons.addToCart') }}</span>
                   <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
                 </el-button>
-                <el-button type="success" @click="openBuyNowDialog"
-                  :disabled="product.product_type === 'self_operated' && product.stock <= 0" class="buy-now-btn">
-                  {{ $t('buttons.buyNow') || '立即购买' }}
-                </el-button>
                 <el-button class="chat-button" @click="createInquiry">{{
                   $t('buttons.chat') || 'Chat' }}</el-button>
                 <el-button class="email-button" @click="openEmailDialog">{{
-                  $t('buttons.sendToInquiry') || 'Send to Inquiry' }}</el-button>
+                  $t('buttons.sendToInquiry') || 'Inquiry' }}</el-button>
               </div>
             </div>
             <div class="product-share">
@@ -260,8 +260,7 @@
     </div>
 
     <!-- 立即购买对话框 -->
-    <BuyNowDialog v-model="showBuyNowDialog" :product="product" :initial-quantity="1"
-      @checkout="handleBuyNowCheckout" />
+    <BuyNowDialog v-model="showBuyNowDialog" :product="product" :initial-quantity="1" @checkout="handleCheckout" />
   </div>
 </template>
 
@@ -1357,7 +1356,8 @@ export default {
 .product-detail-content {
   flex: 1;
   display: flex;
-  gap: $spacing-xl; /* 减少间距从64px到24px，给商品信息区域更多空间 */
+  gap: $spacing-xl;
+  /* 减少间距从64px到24px，给商品信息区域更多空间 */
   align-items: flex-start;
 }
 
@@ -1701,8 +1701,10 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: $spacing-sm; /* 减少按钮间距从16px到8px */
-  flex-wrap: nowrap; /* 防止按钮换行 */
+  gap: $spacing-sm;
+  /* 减少按钮间距从16px到8px */
+  flex-wrap: nowrap;
+  /* 防止按钮换行 */
   align-items: center;
 }
 
@@ -1712,7 +1714,8 @@ export default {
   background-color: $gray-200 !important;
   color: $gray-700 !important;
   border-color: $gray-200 !important;
-  padding: $spacing-md $spacing-lg !important; /* 减少水平padding */
+  padding: $spacing-md $spacing-lg !important;
+  /* 减少水平padding */
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
 
@@ -1728,7 +1731,8 @@ export default {
   background-color: $gray-200 !important;
   color: $gray-700 !important;
   border-color: $gray-200 !important;
-  padding: $spacing-md $spacing-lg !important; /* 减少水平padding */
+  padding: $spacing-md $spacing-lg !important;
+  /* 减少水平padding */
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
 
@@ -1744,7 +1748,8 @@ export default {
   background-color: #67C23A !important;
   color: white !important;
   border-color: #67C23A !important;
-  padding: $spacing-md $spacing-lg !important; /* 减少水平padding */
+  padding: $spacing-md $spacing-lg !important;
+  /* 减少水平padding */
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
   border-radius: $border-radius-md !important;
@@ -1769,7 +1774,8 @@ export default {
   background-color: #409EFF !important;
   color: white !important;
   border-color: #409EFF !important;
-  padding: $spacing-md $spacing-lg !important; /* 减少水平padding */
+  padding: $spacing-md $spacing-lg !important;
+  /* 减少水平padding */
   font-size: $font-size-lg !important;
   font-weight: $font-weight-semibold !important;
   border-radius: $border-radius-md !important;
@@ -2255,7 +2261,8 @@ export default {
         justify-content: center !important;
         border-radius: $border-radius-md !important;
         font-weight: $font-weight-medium !important;
-        margin: 0 !important; /* 移除所有按钮的边距 */
+        margin: 0 !important;
+        /* 移除所有按钮的边距 */
       }
 
       :deep(.add-to-cart-btn) {
@@ -2934,7 +2941,8 @@ export default {
     font-weight: $font-weight-bold;
     text-align: center;
     margin: $spacing-sm 0;
-    transform: none; /* 移除旋转 */
+    transform: none;
+    /* 移除旋转 */
   }
 
   .buy-together-summary {
@@ -2967,7 +2975,8 @@ export default {
     font-size: $font-size-md;
     font-weight: $font-weight-medium;
     border-radius: $border-radius-md;
-    margin: 0 !important; /* 移除按钮边距 */
+    margin: 0 !important;
+    /* 移除按钮边距 */
   }
 
   .product-image {
@@ -3018,7 +3027,7 @@ export default {
   /* 复选框样式优化 */
   :deep(.el-checkbox) {
     width: 100%;
-    
+
     .el-checkbox__label {
       width: 100%;
       display: flex;

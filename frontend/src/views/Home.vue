@@ -17,10 +17,7 @@
           <h2 class="section-title">
             {{ $t('products.our')}} <span class="highlight">{{ $t('products.products')}}</span>
           </h2>
-          <div class="section-divider"></div>
-          <p class="section-description">
-            {{ $t('products.description') || defaultProductDescription}}
-          </p>
+
         </div>
 
         <!-- Product Categories Tabs -->

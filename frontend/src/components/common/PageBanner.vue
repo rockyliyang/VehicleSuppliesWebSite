@@ -1,9 +1,6 @@
 <template>
   <div class="page-banner">
-    <div class="banner-content">
-      <h1 class="banner-title">{{ title }}</h1>
-      <p v-if="subtitle" class="banner-subtitle">{{ subtitle }}</p>
-    </div>
+
   </div>
 </template>
 
@@ -64,7 +61,7 @@ export default {
   margin: 0 0 $spacing-lg 0;
   font-size: $font-size-4xl;
   font-weight: $font-weight-bold;
-  text-shadow: 
+  text-shadow:
     0 2px 4px rgba(0, 0, 0, 0.5),
     0 4px 8px rgba(0, 0, 0, 0.3),
     0 8px 16px rgba(0, 0, 0, 0.2);
@@ -86,11 +83,13 @@ export default {
 /* 移动端适配 */
 @include mobile {
   .page-banner {
-    height: $banner-height-mobile; /* 使用变量定义的移动端高度 */
+    height: $banner-height-mobile;
+    /* 使用变量定义的移动端高度 */
   }
 
   .banner-title {
-    font-size: $font-size-2xl; /* 减小移动端标题字体 */
+    font-size: $font-size-2xl;
+    /* 减小移动端标题字体 */
     margin: 0 0 $spacing-md 0;
     line-height: 1.2;
   }

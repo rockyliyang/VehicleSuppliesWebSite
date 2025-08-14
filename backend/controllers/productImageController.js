@@ -168,7 +168,7 @@ exports.getProductImages = async (req, res) => {
   try {
     const { product_id, image_type } = req.query;
     const result = await query(
-      'SELECT * FROM product_images WHERE product_id = $1 AND image_type = $2 AND deleted = false ORDER BY sort_order ASC',
+      'SELECT id, guid, product_id, image_url, image_type, sort_order, created_at, updated_at FROM product_images WHERE product_id = $1 AND image_type = $2 AND deleted = false ORDER BY sort_order ASC',
       [product_id, image_type]
     );
     const rows = result.getRows();
