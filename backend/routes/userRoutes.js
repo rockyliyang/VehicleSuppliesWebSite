@@ -173,8 +173,8 @@ router.post('/login', async (req, res) => {
     const { username, password, admin } = req.body; // admin: true/false
     // 查找用户（获取完整信息用于生成token）
     const users = await query(
-      'SELECT id, username, email, phone, password, user_role, is_active, currency FROM users WHERE email = $1 AND deleted = false',
-      [username]
+      'SELECT id, username, email, phone, password, user_role, is_active, currency FROM users WHERE (email = $1 or username = $2) AND deleted = false',
+      [username, username]
     );
     if (users.getRowCount() === 0) {
       return res.status(401).json({ success: false, message: getMessage('USER.NOT_FOUND'), data: null });

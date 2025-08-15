@@ -1,7 +1,15 @@
 <template>
-  <el-dialog v-model="visible" :title="isEdit ? $t('address.dialog.title.edit') : $t('address.dialog.title.add')"
-    :width="isMobile ? '100%' : '600px'" :fullscreen="isMobile" :close-on-click-modal="false" @close="handleClose"
-    class="address-dialog">
+  <el-dialog v-model="visible" :width="isMobile ? '100%' : '600px'" :fullscreen="isMobile" :close-on-click-modal="false"
+    @close="handleClose" class="address-dialog">
+    <template #header>
+      <div class="dialog-header">
+        <el-icon class="dialog-icon">
+          <Location />
+        </el-icon>
+        <span class="dialog-title">{{ isEdit ? $t('address.dialog.title.edit') : $t('address.dialog.title.add')
+          }}</span>
+      </div>
+    </template>
     <el-form ref="formRef" :model="form" :rules="rules" label-width="0" class="address-form-content">
       <el-form-item prop="recipient_name">
         <FormInput v-model="form.recipient_name" :placeholder="$t('address.dialog.recipientNamePlaceholder')"
@@ -694,14 +702,6 @@ export default {
       font-weight: $font-weight-medium;
     }
 
-    :deep(.el-input__inner) {
-      font-size: $font-size-md !important;
-      border-radius: $border-radius-md !important;
-      padding: $spacing-sm $spacing-md !important;
-      height: 44px !important;
-      box-shadow: none !important;
-    }
-
     .address-textarea {
       :deep(.el-textarea__inner) {
         font-size: $font-size-md !important;
@@ -731,13 +731,12 @@ export default {
   }
 
   .dialog-footer {
+    flex-direction: column;
+    gap: $spacing-sm;
     justify-content: center;
 
+    .save-button,
     .cancel-button {
-      display: none; // 隐藏取消按钮
-    }
-
-    .save-button {
       width: 100%;
       min-width: auto;
       height: 48px;
@@ -748,13 +747,44 @@ export default {
   }
 }
 
+// 对话框标题样式
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  .dialog-icon {
+    color: $primary-color;
+    font-size: $font-size-lg;
+  }
+
+  .dialog-title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+  }
+}
+
+// 全局对话框样式优化
+:deep(.el-dialog) {
+  @include mobile {
+    .el-dialog__header {
+      .el-dialog__headerbtn {
+        display: none !important; // 隐藏关闭按钮
+      }
+    }
+  }
+}
+
 /* 超小屏幕适配 */
 @media (max-width: 480px) {
   .address-dialog {
     :deep(.el-dialog__header) {
       padding: $spacing-sm $spacing-md;
+    }
 
-      .el-dialog__title {
+    .dialog-header {
+      .dialog-title {
         font-size: $font-size-md;
       }
     }
@@ -774,18 +804,18 @@ export default {
     }
 
     :deep(.el-form-item__label) {
-      font-size: $font-size-sm;
+      font-size: $font-size-lg;
     }
 
     :deep(.el-input__inner) {
-      font-size: $font-size-sm !important;
+      font-size: $font-size-lg !important;
       height: 40px !important;
       box-shadow: none !important;
     }
 
     .address-textarea {
       :deep(.el-textarea__inner) {
-        font-size: $font-size-sm !important;
+        font-size: $font-size-lg !important;
         padding: $spacing-sm !important;
         min-height: 80px !important;
         box-shadow: none !important;

@@ -410,25 +410,27 @@ export default {
   justify-content: flex-start;
 
   /* 默认桌面端样式 */
-  min-width: $spacing-6xl - $spacing-lg; // 约120px
-  max-width: $auth-logo-width + $spacing-lg; // 约200px  
-  height: $spacing-5xl - $spacing-4xl; // 约40px
+  min-width: 150px; // 增大最小宽度
+  max-width: 250px; // 增大最大宽度
+  height: 60px; // 增大高度
 
   /* 平板端样式 */
   @include tablet {
-    min-width: $auth-logo-width; // 160px
+    min-width: 180px; // 增大平板端宽度
+    height: 55px;
   }
 
   /* 平板到桌面端之间的样式 */
   @media (min-width: $breakpoint-tablet) and (max-width: $breakpoint-desktop) {
-    min-width: $spacing-8xl - $spacing-2xl; // 218px
+    min-width: 200px; // 增大中等屏幕宽度
+    height: 58px;
   }
 
   /* 手机端样式 */
   @include mobile {
-    min-width: $spacing-4xl + $spacing-md; // 约80px
-    max-width: $spacing-6xl - $spacing-3xl; // 约110px
-    height: $mobile-logo-height - $spacing-xs; // 约28px
+    min-width: 100px; // 增大手机端最小宽度
+    max-width: 140px; // 增大手机端最大宽度
+    height: 45px; // 增大手机端高度
   }
 
   /* Logo图片样式 */
@@ -440,7 +442,7 @@ export default {
 
     /* 手机端图片高度 */
     @include mobile {
-      height: $mobile-logo-height;
+      height: 45px; // 对应手机端容器高度
     }
   }
 }
@@ -516,7 +518,7 @@ export default {
   color: $text-secondary;
   text-decoration: none;
   border-radius: 0;
-  font-size: $font-size-sm;
+  font-size: $font-size-lg;
   font-weight: $font-weight-medium;
   transition: $transition-base;
   white-space: nowrap;
@@ -539,7 +541,7 @@ export default {
   @include mobile {
     flex: 1;
     min-width: auto;
-    font-size: $font-size-sm;
+    font-size: $font-size-lg;
     padding: $spacing-sm $spacing-xs;
     min-height: $spacing-4xl - $spacing-md; // 约51px (64px - 13px)
   }
@@ -742,6 +744,9 @@ export default {
   color: $text-primary;
   cursor: pointer;
   transition: $transition-base;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
 
   &:hover {
     color: $primary-color;

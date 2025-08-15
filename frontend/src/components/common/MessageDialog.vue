@@ -1,8 +1,17 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="$t('productDetail.emailDialog.title')" width="800px" center @close="handleClose">
+  <el-dialog v-model="dialogVisible" :width="isMobile ? '100%' : '600px'" :fullscreen="isMobile"
+    :close-on-click-modal="false" center @close="handleClose">
+    <template #header>
+      <div class="dialog-header">
+        <el-icon style="margin-right: 8px;">
+          <Message />
+        </el-icon>
+        <span>{{ $t('productDetail.emailDialog.title') }}</span>
+      </div>
+    </template>
     <div class="email-dialog-content">
       <!-- 邮件表单 -->
-      <el-form ref="emailFormRef" :model="emailForm" :rules="emailRules" label-width="0px">
+      <el-form ref="emailFormRef" :model="emailForm" :rules="emailRules" label-width="0px" class="email-form">
         <div class="form-row">
           <div class="form-col">
             <el-form-item prop="name">
@@ -43,8 +52,8 @@
             </el-form-item>
           </div>
         </div>
-        <el-form-item prop="message">
-          <FormInput v-model="emailForm.message" type="textarea" :rows="6"
+        <el-form-item prop="message" class="message-form-item">
+          <el-input v-model="emailForm.message" type="textarea" :rows="6"
             :placeholder="getPlaceholderWithRequired('contact.message')" maxlength="2000" show-word-limit />
         </el-form-item>
       </el-form>
@@ -52,10 +61,14 @@
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="handleClose">{{ $t('common.cancel') }}</el-button>
+
         <el-button type="primary" @click="submitEmailForm" :loading="isSubmittingEmail">
+          <el-icon style="margin-right: 8px;">
+            <Message />
+          </el-icon>
           {{ isSubmittingEmail ? $t('productDetail.emailDialog.sending') : $t('productDetail.emailDialog.send') }}
         </el-button>
+        <el-button @click="handleClose">{{ $t('common.cancel') }}</el-button>
       </span>
     </template>
   </el-dialog>
@@ -63,11 +76,13 @@
 
 <script>
 import FormInput from '@/components/common/FormInput.vue'
+import { Message } from '@element-plus/icons-vue'
 
 export default {
   name: 'MessageDialog',
   components: {
-    FormInput
+    FormInput,
+    Message
   },
   props: {
     visible: {
@@ -129,6 +144,9 @@ export default {
       set(value) {
         this.$emit('update:visible', value)
       }
+    },
+    isMobile() {
+      return window.innerWidth <= 768
     },
     isLoggedIn() {
       return this.$store.getters.isLoggedIn || this.$store.state.isAdminLoggedIn
@@ -250,10 +268,58 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// 导入项目的SCSS变量和mixins
+@import '../../assets/styles/_variables.scss';
+@import '../../assets/styles/_mixins.scss';
+
 .email-dialog-content {
+  @include mobile {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .email-form {
+    @include mobile {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  .message-form-item {
+    @include mobile {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: $spacing-sm !important;
+
+      :deep(.el-form-item__content) {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      :deep(.el-textarea) {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+
+        .el-textarea__inner {
+          flex: 1;
+          min-height: 150px !important;
+          max-height: calc(100vh - 300px) !important;
+          resize: none;
+        }
+      }
+    }
+  }
+
   .form-row {
     display: flex;
-    gap: 16px;
+    gap: $spacing-lg;
 
     .form-col {
       flex: 1;
@@ -263,61 +329,294 @@ export default {
     .form-col-full {
       width: 100%;
     }
+
+    @include mobile {
+      @include flex-column;
+      gap: $spacing-sm;
+      margin-bottom: $spacing-sm;
+    }
+
+    @include tablet {
+      gap: $spacing-md;
+    }
   }
 
   .captcha-container {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+    @include flex-center;
+    gap: $spacing-md;
     width: 100%;
+
+    @include mobile {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: $spacing-sm;
+    }
   }
 
   .captcha-input {
     flex: 1;
+
+    @include mobile {
+      width: 100%;
+    }
   }
 
   .captcha-img {
-    height: 40px;
-    width: 120px;
+    height: $contact-captcha-height;
+    width: $contact-captcha-width;
     cursor: pointer;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
-    transition: all 0.3s ease;
-    background-color: #ffffff;
+    border-radius: $border-radius-md;
+    border: 1px solid $border-color;
+    transition: $transition-base;
+    background-color: $white;
     object-fit: cover;
     flex-shrink: 0;
     display: block;
-    
+
     &:hover {
-      border-color: #409eff;
+      border-color: $primary-color;
       transform: scale(1.02);
+    }
+
+    @include mobile {
+      width: 120px;
+      height: 48px; // 与输入框高度保持一致
+      flex-shrink: 0;
     }
   }
 }
 
 .dialog-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: $spacing-md;
+
+  @include mobile {
+    flex-direction: column;
+    gap: $spacing-md;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding-top: $spacing-sm;
+    margin-top: auto;
+
+    .el-button {
+      width: 100%;
+      margin: 0;
+    }
+  }
 }
 
-// 响应式设计
-@media (max-width: 768px) {
-  .email-dialog-content {
-    .form-row {
-      flex-direction: column;
-      gap: 8px;
+// 对话框头部样式
+.dialog-header {
+  display: flex;
+  align-items: center;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+}
+
+// 全局对话框样式优化
+:deep(.el-dialog) {
+  z-index: 10001 !important;
+
+  @include mobile {
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    position: fixed !important;
+    border-radius: 0 !important;
+
+    .el-dialog__header {
+      padding: $spacing-md $spacing-md $spacing-sm;
+
+      .el-dialog__title {
+        font-size: $font-size-base;
+        font-weight: $font-weight-semibold;
+      }
+
+      .el-dialog__headerbtn {
+        display: none !important; // 隐藏关闭按钮
+      }
     }
 
-    .captcha-container {
+    .el-dialog__body {
+      padding: 0 $spacing-md;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
       flex-direction: column;
-      align-items: stretch;
-      gap: 8px;
+    }
 
-      .captcha-img {
-        width: 100%;
-        height: 60px;
+    .el-dialog__footer {
+      padding: $spacing-sm $spacing-md $spacing-md;
+      margin-top: auto;
+      flex-shrink: 0;
+      position: sticky;
+      bottom: 0;
+      background: white;
+      border-top: 1px solid $border-color;
+    }
+  }
+
+  @include tablet {
+    width: 85% !important;
+    max-width: 600px;
+  }
+}
+
+// 移动端对话框遮罩层优化
+:deep(.el-overlay) {
+  @include mobile {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 10000;
+  }
+}
+
+// 表单元素样式优化
+:deep(.el-form-item) {
+  margin-bottom: $spacing-lg;
+
+  @include mobile {
+    margin-bottom: $spacing-md;
+  }
+
+  .el-form-item__label {
+    font-weight: $font-weight-medium;
+    color: $text-primary;
+    line-height: $line-height-normal;
+
+    @include mobile {
+      font-size: $font-size-sm;
+      line-height: $line-height-tight;
+      margin-bottom: $spacing-xs;
+    }
+  }
+
+  .el-form-item__content {
+    line-height: $line-height-normal;
+  }
+}
+
+:deep(.el-input) {
+  .el-input__wrapper {
+    border-radius: $border-radius-md;
+    border: 1px solid $border-color;
+    transition: $transition-base;
+
+    @include mobile {
+      min-height: 32px;
+    }
+
+    &:hover {
+      border-color: $primary-light;
+    }
+
+    &.is-focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+    }
+  }
+
+  .el-input__inner {
+    font-size: $font-size-base;
+    color: $text-primary;
+
+    @include mobile {
+      font-size: $font-size-sm;
+      height: 32px;
+      line-height: 32px;
+    }
+
+    &::placeholder {
+      color: $text-muted;
+    }
+  }
+}
+
+:deep(.el-textarea) {
+  .el-textarea__inner {
+    border-radius: $border-radius-md;
+    border: 1px solid $border-color;
+    font-size: $font-size-base;
+    color: $text-primary;
+    transition: $transition-base;
+    resize: vertical;
+    min-height: 120px;
+
+    @include mobile {
+      font-size: $font-size-sm;
+      min-height: 80px;
+      line-height: $line-height-normal;
+    }
+
+    &:hover {
+      border-color: $primary-light;
+    }
+
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+    }
+
+    &::placeholder {
+      color: $text-muted;
+    }
+  }
+}
+
+// 按钮样式优化
+:deep(.el-button) {
+  border-radius: $border-radius-md;
+  font-weight: $font-weight-medium;
+  transition: $transition-base;
+
+  @include mobile {
+    height: 42px;
+    font-size: $font-size-sm;
+    padding: 0 $spacing-lg;
+    min-width: 80px;
+
+    &.el-button--primary {
+      font-weight: $font-weight-semibold;
+    }
+
+    &.el-button--default {
+      border-color: $border-color;
+      color: $text-secondary;
+
+      &:hover {
+        border-color: $primary-color;
+        color: $primary-color;
       }
+    }
+  }
+
+  @include tablet {
+    height: 40px;
+  }
+}
+
+// 对话框底部按钮区域优化
+:deep(.el-dialog__footer) {
+  @include mobile {
+    display: flex;
+    gap: $spacing-sm;
+    justify-content: flex-end;
+
+    .el-button {
+      flex: 0 0 auto;
     }
   }
 }

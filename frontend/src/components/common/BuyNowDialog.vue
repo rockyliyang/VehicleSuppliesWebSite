@@ -9,7 +9,7 @@
           </el-icon>
         </button>
       </div>
-      
+
       <div class="buy-now-content">
         <!-- 商品信息 -->
         <div class="product-summary">
@@ -25,12 +25,7 @@
         <!-- 数量选择 -->
         <div class="quantity-section">
           <label class="quantity-label">{{ $t('productDetail.quantity') || '数量' }}:</label>
-          <el-input-number 
-            v-model="quantity" 
-            :min="1" 
-            :max="maxQuantity" 
-            size="default"
-            controls-position="right"
+          <el-input-number v-model="quantity" :min="1" :max="maxQuantity" size="default" controls-position="right"
             @change="calculatePrice">
           </el-input-number>
         </div>
@@ -56,7 +51,8 @@
             <div v-for="(range, index) in product.price_ranges" :key="index" class="tier-price-item">
               <span class="tier-quantity">
                 <span v-if="range.max_quantity !== null && range.max_quantity !== undefined">
-                  {{ range.min_quantity }} - {{ range.max_quantity }} {{ $t('productDetail.buyNow.pieces') || 'pieces' }}
+                  {{ range.min_quantity }} - {{ range.max_quantity }} {{ $t('productDetail.buyNow.pieces') || 'pieces'
+                  }}
                 </span>
                 <span v-else>
                   >= {{ range.min_quantity }} {{ $t('productDetail.buyNow.pieces') || 'pieces' }}
@@ -69,10 +65,11 @@
       </div>
 
       <div class="buy-now-footer">
-        <el-button @click="handleClose">{{ $t('common.cancel') || '取消' }}</el-button>
         <el-button type="primary" @click="proceedToCheckout" :loading="processingCheckout">
-          {{ processingCheckout ? ($t('productDetail.buyNow.processing') || '处理中...') : ($t('productDetail.buyNow.checkout') || '结算') }}
+          {{ processingCheckout ? ($t('productDetail.buyNow.processing') || '处理中...') :
+          ($t('productDetail.buyNow.checkout') || '结算') }}
         </el-button>
+        <el-button @click="handleClose">{{ $t('common.cancel') || '取消' }}</el-button>
       </div>
     </div>
   </div>
@@ -230,21 +227,21 @@ export default {
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  
+
   .buy-now-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: $spacing-lg;
     border-bottom: 1px solid $border-color;
-    
+
     .buy-now-title {
       margin: 0;
       font-size: $font-size-xl;
       font-weight: $font-weight-semibold;
       color: $text-primary;
     }
-    
+
     .buy-now-close {
       background: none;
       border: none;
@@ -253,17 +250,17 @@ export default {
       border-radius: $border-radius-sm;
       color: $text-secondary;
       transition: $transition-base;
-      
+
       &:hover {
         background-color: $gray-100;
         color: $text-primary;
       }
     }
   }
-  
+
   .buy-now-content {
     padding: $spacing-lg;
-    
+
     .product-summary {
       display: flex;
       gap: $spacing-md;
@@ -271,12 +268,12 @@ export default {
       padding: $spacing-md;
       background-color: $gray-50;
       border-radius: $border-radius-md;
-      
+
       .product-image-small {
         width: 80px;
         height: 80px;
         flex-shrink: 0;
-        
+
         img {
           width: 100%;
           height: 100%;
@@ -284,10 +281,10 @@ export default {
           border-radius: $border-radius-sm;
         }
       }
-      
+
       .product-info-small {
         flex: 1;
-        
+
         .product-name-small {
           font-size: $font-size-lg;
           font-weight: $font-weight-semibold;
@@ -295,63 +292,63 @@ export default {
           margin-bottom: $spacing-xs;
           @include text-ellipsis-multiline(2);
         }
-        
+
         .product-code-small {
           font-size: $font-size-sm;
           color: $text-secondary;
         }
       }
     }
-    
+
     .quantity-section {
       display: flex;
       align-items: center;
       gap: $spacing-md;
       margin-bottom: $spacing-lg;
-      
+
       .quantity-label {
         font-weight: $font-weight-medium;
         color: $text-primary;
         min-width: 60px;
       }
     }
-    
+
     .price-section {
       margin-bottom: $spacing-lg;
-      
+
       .price-breakdown {
         background-color: $gray-50;
         padding: $spacing-md;
         border-radius: $border-radius-md;
-        
+
         .unit-price,
         .total-price {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: $spacing-sm;
-          
+
           &:last-child {
             margin-bottom: 0;
           }
-          
+
           .price-label {
             font-weight: $font-weight-medium;
             color: $text-primary;
           }
-          
+
           .price-value {
             font-size: $font-size-lg;
             font-weight: $font-weight-semibold;
             color: $primary-color;
-            
+
             &.total {
               font-size: $font-size-xl;
               color: $success-color;
             }
           }
         }
-        
+
         .total-price {
           border-top: 1px solid $border-color;
           padding-top: $spacing-sm;
@@ -360,34 +357,34 @@ export default {
         }
       }
     }
-    
+
     .tier-price-hint {
       .tier-price-title {
         font-weight: $font-weight-semibold;
         color: $text-primary;
         margin-bottom: $spacing-sm;
       }
-      
+
       .tier-price-list {
         background-color: $gray-50;
         padding: $spacing-md;
         border-radius: $border-radius-md;
-        
+
         .tier-price-item {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: $spacing-xs;
-          
+
           &:last-child {
             margin-bottom: 0;
           }
-          
+
           .tier-quantity {
             font-size: $font-size-sm;
             color: $text-secondary;
           }
-          
+
           .tier-price {
             font-weight: $font-weight-medium;
             color: $primary-color;
@@ -396,7 +393,7 @@ export default {
       }
     }
   }
-  
+
   .buy-now-footer {
     display: flex;
     justify-content: flex-end;
@@ -411,48 +408,50 @@ export default {
   .buy-now-dialog {
     width: 95%;
     margin: $spacing-md;
-    
+
     .buy-now-header {
       padding: $spacing-md;
-      
+
       .buy-now-title {
         font-size: $font-size-lg;
       }
     }
-    
+
     .buy-now-content {
       padding: $spacing-md;
-      
+
       .product-summary {
         .product-image-small {
           width: 60px;
           height: 60px;
         }
-        
+
         .product-info-small {
           .product-name-small {
             font-size: $font-size-base;
           }
         }
       }
-      
+
       .quantity-section {
         flex-direction: column;
         align-items: flex-start;
         gap: $spacing-sm;
-        
+
         .quantity-label {
           min-width: auto;
         }
       }
     }
-    
+
     .buy-now-footer {
       padding: $spacing-md;
       flex-direction: column;
-      
+      gap: $spacing-sm;
+
       .el-button {
         width: 100%;
+        margin: 0;
       }
     }
   }

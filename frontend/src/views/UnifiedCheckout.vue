@@ -145,7 +145,7 @@
             <el-tab-pane :label="$t('checkout.alipay') || '支付宝'" name="alipay">
               <div class="qrcode-container">
                 <div class="qrcode-content">
-                  <div v-if="qrcodeUrl" class="qrcode-display">
+                  <div v-if="qrcodeUrl && activePaymentTab === 'alipay'" class="qrcode-display">
                     <div class="qrcode-image">
                       <img :src="qrcodeUrl" :alt="$t('checkout.alipayQrcode') || '支付宝支付二维码'">
                     </div>
@@ -165,9 +165,6 @@
                     </div>
                   </div>
                   <div v-else class="qrcode-placeholder">
-                    <el-icon class="qrcode-placeholder-icon">
-                      <PictureIcon />
-                    </el-icon>
                     <p class="qrcode-placeholder-text">{{ $t('checkout.clickToGenerate') || '点击下方按钮生成支付二维码' }}</p>
                     <el-button @click="generateQrcode('alipay')" type="primary" class="generate-qr-btn"
                       :loading="generating">
@@ -177,6 +174,7 @@
                 </div>
               </div>
             </el-tab-pane>
+
           </el-tabs>
         </section>
 
@@ -340,7 +338,6 @@ import {
   LocationInformation,
   CreditCard, 
   Refresh, 
-  Picture as PictureIcon, 
   SuccessFilled,
   House,
   Document,
@@ -357,7 +354,6 @@ export default {
     LocationInformation,
     CreditCard,
     Refresh,
-    PictureIcon,
     SuccessFilled,
     House,
     Document,
@@ -1132,7 +1128,7 @@ export default {
   padding: $spacing-xl;
   border-radius: $border-radius-lg;
   box-shadow: $shadow-sm;
-  border: 1px solid $gray-200;
+  border: $border-width-sm solid $gray-200;
   transition: $transition-slow;
 }
 
@@ -1163,12 +1159,12 @@ export default {
 }
 
 .title-content .el-icon {
-  color: #dc2626;
+  color: $error-color;
   font-size: $font-size-xl;
 }
 
 .title-content i {
-  color: #dc2626;
+  color: $error-color;
   font-size: $font-size-xl;
 }
 
@@ -1179,7 +1175,7 @@ export default {
 
 /* 直接覆盖按钮内的所有span */
 .section-title .shipping-header .address-select-btn :deep(span) {
-  color: #ffffff !important;
+  color: $white !important;
 }
 
 
@@ -1212,7 +1208,7 @@ export default {
   height: $product-image-size-sm;
   border-radius: $border-radius-md;
   overflow: hidden;
-  border: 1px solid $gray-200;
+  border: $border-width-sm solid $gray-200;
 }
 
 .product-image img {
@@ -1349,6 +1345,24 @@ export default {
   outline: none;
 }
 
+/* 统一下拉框样式 */
+.shipping-form :deep(.el-select__wrapper) {
+  border-radius: $border-radius-sm;
+  border: $form-border-width solid $gray-200;
+  transition: $transition-slow;
+  box-shadow: none;
+  padding: $spacing-sm $spacing-md;
+}
+
+.shipping-form :deep(.el-select__wrapper:hover) {
+  border-color: $gray-300;
+}
+
+.shipping-form :deep(.el-select__wrapper.is-focused) {
+  border-color: $primary-color;
+  box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+}
+
 /* 修复表单项布局对齐问题 */
 .shipping-form :deep(.el-form-item) {
   display: flex;
@@ -1368,12 +1382,12 @@ export default {
   width: 100%;
 
   .country-code-select {
-    flex: 0 0 140px;
+    flex: 0 0 $spacing-8xl;
 
     :deep(.el-select__wrapper) {
-      height: 44px;
+      height: $form-input-height;
       border-radius: $border-radius-md;
-      border: 1px solid $border-light;
+      border: $border-width-sm solid $border-light;
       transition: all 0.3s ease;
 
       &:hover {
@@ -1391,9 +1405,9 @@ export default {
     flex: 1;
 
     :deep(.el-input__wrapper) {
-      height: 44px;
+      height: $form-input-height;
       border-radius: $border-radius-md;
-      border: 1px solid $border-light;
+      border: $border-width-sm solid $border-light;
       transition: all 0.3s ease;
 
       &:hover {
@@ -1450,7 +1464,7 @@ export default {
   padding: $spacing-lg;
   background: $gray-50;
   border-radius: $border-radius-md;
-  border: 2px dashed $gray-200;
+  border: $border-width-md dashed $gray-200;
 }
 
 /* 二维码容器 */
@@ -1458,7 +1472,7 @@ export default {
   padding: $spacing-xl;
   background: $gray-50;
   border-radius: $border-radius-lg;
-  border: 1px solid $gray-200;
+  border: $border-width-sm solid $gray-200;
 }
 
 .qrcode-content {
@@ -1476,7 +1490,7 @@ export default {
   background: $white;
   border-radius: $border-radius-lg;
   box-shadow: $shadow-md;
-  border: 2px solid $gray-200;
+  border: $border-width-md solid $gray-200;
 }
 
 .qrcode-image img {
@@ -1533,18 +1547,20 @@ export default {
 }
 
 .refresh-qr-btn {
-  background: $gray-50;
-  border: 2px solid $gray-200;
-  color: $text-secondary;
-  padding: $spacing-sm $spacing-md;
-  border-radius: $border-radius-sm;
+  background: $gradient-primary;
+  border: none;
+  padding: $spacing-md $spacing-xl;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  border-radius: $border-radius-md;
   transition: $transition-slow;
-  font-size: $font-size-sm;
+  min-width: $product-qrcode-min-width;
+  color: $white;
 }
 
 .refresh-qr-btn:hover {
-  border-color: $gray-300;
-  background: $gray-100;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba($primary-color, 0.3);
 }
 
 .refresh-qr-btn i {
@@ -1557,7 +1573,7 @@ export default {
   background: $gray-100;
   padding: $spacing-sm $spacing-md;
   border-radius: $border-radius-full;
-  border: 1px solid $gray-200;
+  border: $border-width-sm solid $gray-200;
 }
 
 .polling-status {
@@ -1645,7 +1661,7 @@ export default {
 
 .order-info {
   background: $gray-50;
-  border: 2px solid $gray-200;
+  border: $border-width-md solid $gray-200;
   border-radius: $border-radius-lg;
   padding: $spacing-md $spacing-lg;
   margin: 0 auto;
@@ -1737,7 +1753,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: $spacing-md 0;
-  border-bottom: 1px solid $gray-200;
+  border-bottom: $border-width-sm solid $gray-200;
 }
 
 .status-item:last-child {
@@ -1814,6 +1830,8 @@ export default {
   .form-row {
     grid-template-columns: 1fr;
     gap: $spacing-sm;
+    margin: 0;
+    /* 移除margin以解决高度不一致问题 */
   }
 
   .order-total {
@@ -1836,8 +1854,8 @@ export default {
   }
 
   .product-image {
-    width: 60px;
-    height: 60px;
+    width: $spacing-4xl;
+  height: $spacing-4xl;
     margin: 0;
     flex-shrink: 0;
   }
@@ -1899,7 +1917,7 @@ export default {
 
   .order-table :deep(.el-table th:first-child),
   .order-table :deep(.el-table td:first-child) {
-    min-width: 180px;
+    min-width: $spacing-10xl;
   }
 
   .subtotal-price {
@@ -1909,46 +1927,159 @@ export default {
   /* 移动端表单优化 */
   .shipping-form :deep(.el-form-item) {
     display: block;
-    margin-bottom: $spacing-md;
+    margin-bottom: $spacing-lg;
+    /* 统一间距 */
   }
 
   .shipping-form :deep(.el-form-item__label) {
     width: 100% !important;
     text-align: left;
-    margin-bottom: $spacing-xs;
+    margin-bottom: $spacing-sm;
+    /* 统一标签间距 */
     padding-right: 0;
-    line-height: 1.3;
-    font-size: $font-size-sm;
+    line-height: 1.4;
+    font-size: $font-size-md;
+    /* 统一字体大小 */
     font-weight: $font-weight-semibold;
     color: $text-primary;
   }
 
   .shipping-form :deep(.el-form-item__content) {
     margin-left: 0 !important;
-    line-height: 1.3;
-  }
-
-  .shipping-form :deep(.el-input__wrapper) {
-    padding: $spacing-sm $spacing-md;
-    font-size: $font-size-sm;
-    min-height: 40px;
-    /* 减小高度但保持触摸友好 */
-  }
-
-  .shipping-form :deep(.el-textarea__inner) {
-    padding: $spacing-sm $spacing-md;
-    font-size: $font-size-sm;
-    min-height: 80px;
-    /* 减小文本域高度 */
     line-height: 1.4;
+  }
+
+  /* 统一所有输入框样式 */
+  .shipping-form :deep(.el-input__wrapper) {
+    padding: $spacing-md $spacing-lg;
+    /* 统一内边距 */
+    font-size: $font-size-md;
+    /* 统一字体大小 */
+    min-height: $form-input-height;
+    /* 统一高度 */
+    border-radius: $border-radius-md;
+    /* 统一圆角 */
+    border: $border-width-sm solid $border-color;
+    transition: all $transition-duration ease;
+  }
+
+  .shipping-form :deep(.el-input__wrapper:hover) {
+    border-color: $border-dark;
+  }
+
+  .shipping-form :deep(.el-input__wrapper.is-focus) {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 $spacing-xs rgba($primary-color, 0.1);
+  }
+
+  .shipping-form :deep(.el-input__inner) {
+    font-size: $font-size-md;
+    /* 统一字体大小 */
+    line-height: $line-height-normal;
+    color: $text-secondary;
+  }
+
+  /* 统一下拉框样式 */
+  .shipping-form :deep(.el-select__wrapper) {
+    padding: $spacing-md $spacing-lg;
+    /* 统一内边距 */
+    font-size: $font-size-md;
+    /* 统一字体大小 */
+    min-height: $form-input-height;
+    /* 统一高度 */
+    border-radius: $border-radius-md;
+    /* 统一圆角 */
+    border: $border-width-sm solid $border-color;
+    transition: all $transition-duration ease;
+  }
+
+  .shipping-form :deep(.el-select__wrapper:hover) {
+    border-color: $border-dark;
+  }
+
+  .shipping-form :deep(.el-select__wrapper.is-focused) {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 $spacing-xs rgba($primary-color, 0.1);
+  }
+
+  .shipping-form :deep(.el-select__selected-item) {
+    font-size: $font-size-md;
+    /* 统一字体大小 */
+    line-height: $line-height-normal;
+    color: $text-secondary;
+  }
+
+  .shipping-form :deep(.el-select__placeholder) {
+    font-size: $font-size-md;
+    /* 统一字体大小 */
+    color: $border-dark;
+  }
+
+  /* 统一文本域样式 */
+  .shipping-form :deep(.el-textarea__inner) {
+    padding: $spacing-md $spacing-lg;
+    /* 统一内边距 */
+    font-size: $font-size-md;
+    /* 统一字体大小 */
+    min-height: $spacing-6xl;
+    /* 统一高度 */
+    border-radius: $border-radius-md;
+    /* 统一圆角 */
+    border: $border-width-sm solid $border-color;
+    line-height: $line-height-normal;
+    resize: vertical;
+    transition: all $transition-duration ease;
+  }
+
+  .shipping-form :deep(.el-textarea__inner:hover) {
+    border-color: $border-dark;
+  }
+
+  .shipping-form :deep(.el-textarea__inner:focus) {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 $spacing-xs rgba($primary-color, 0.1);
+    outline: none;
+  }
+
+  /* 电话输入框组特殊处理 */
+  .phone-input-group {
+    display: flex;
+    gap: $spacing-sm;
+    width: 100%;
+
+    .country-code-select {
+      flex: 0 0 $spacing-7xl;
+
+      :deep(.el-select__wrapper) {
+        height: $form-input-height;
+        /* 统一高度 */
+        font-size: $font-size-md;
+        /* 统一字体大小 */
+        padding: $spacing-md $spacing-lg;
+        /* 统一内边距 */
+      }
+    }
+
+    .phone-number-input {
+      flex: 1;
+
+      :deep(.el-input__wrapper) {
+        height: $form-input-height;
+        /* 统一高度 */
+        font-size: $font-size-md;
+        /* 统一字体大小 */
+        padding: $spacing-md $spacing-lg;
+        /* 统一内边距 */
+      }
+    }
   }
 
   /* 移动端支付方式优化 */
   .payment-tabs :deep(.el-tabs__item) {
     font-size: $font-size-sm;
     padding: 0 $spacing-sm;
-    height: 40px;
-    line-height: 40px;
+    height: $spacing-3xl;
+    line-height: $spacing-3xl;
   }
 
   .qrcode-container {
@@ -1960,7 +2091,7 @@ export default {
   }
 
   .qrcode-image img {
-    max-width: 180px;
+    max-width: $spacing-10xl;
   }
 
   .generate-qr-btn,
@@ -1968,7 +2099,7 @@ export default {
     width: 100%;
     padding: $spacing-sm $spacing-md;
     font-size: $font-size-sm;
-    min-height: 40px;
+    min-height: $spacing-3xl;
   }
 
   /* 移动端订单状态优化 */
@@ -1992,7 +2123,7 @@ export default {
   /* 移动端对话框优化 */
   .success-dialog :deep(.el-dialog) {
     width: 95% !important;
-    max-width: 400px !important;
+    max-width: $spacing-12xl !important;
     margin: 0 auto;
     border-radius: $border-radius-lg;
   }
@@ -2010,8 +2141,8 @@ export default {
   }
 
   .success-icon-wrapper {
-    width: 80px;
-    height: 80px;
+    width: $spacing-5xl;
+    height: $spacing-5xl;
     margin: 0 auto $spacing-md;
   }
 
@@ -2089,6 +2220,13 @@ export default {
   overflow-y: auto;
 }
 
+/* 移动端取消高度限制 */
+@media (max-width: 768px) {
+  .address-list {
+    max-height: none;
+  }
+}
+
 .address-items {
   display: flex;
   flex-direction: column;
@@ -2163,21 +2301,21 @@ export default {
 }
 
 .field-label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  font-size: $font-size-lg;
+  color: $text-secondary;
+  font-weight: $font-weight-medium;
   text-align: right;
-  width: 100px;
+  width: 120px;
   flex-shrink: 0;
   margin-right: $spacing-md;
-  line-height: 1.5;
+  line-height: $line-height-normal;
   white-space: nowrap;
 }
 
 .field-value {
-  font-size: 14px;
-  color: #333;
-  line-height: 1.5;
+  font-size: $font-size-lg;
+  color: $text-primary;
+  line-height: $line-height-normal;
   word-break: break-word;
   flex: 1;
 }
@@ -2234,70 +2372,70 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: $spacing-lg;
 }
 
 .custom-dialog {
   background: white;
-  border-radius: 12px;
+  border-radius: $spacing-md;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 1000px;
-  max-height: 85vh;
+  max-width: 900px;
+  max-height: 150vh;
   display: flex;
   flex-direction: column;
 }
 
 .custom-dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 32px;
-  border-bottom: 2px solid #e4e7ed;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-radius: 12px 12px 0 0;
-}
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-lg $spacing-4xl;
+    border-bottom: $border-width-md solid $border-color;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, $gray-50 0%, $white 100%);
+    border-radius: $spacing-md $spacing-md 0 0;
+  }
 
 .custom-dialog-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #2c3e50;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: $spacing-md;
 }
 
 .custom-dialog-title::before {
   content: '📍';
-  font-size: 24px;
+  font-size: $spacing-2xl;
 }
 
 .custom-dialog-close {
-  background: none;
-  border: none;
-  font-size: 16px;
-  color: #909399;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.3s;
-}
+    background: none;
+    border: none;
+    font-size: $font-size-lg;
+    color: $text-muted;
+    cursor: pointer;
+    padding: $spacing-xs;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: $border-radius-xs;
+    transition: all $transition-duration;
+  }
 
-.custom-dialog-close:hover {
-  background-color: #f5f7fa;
-  color: #606266;
-}
+  .custom-dialog-close:hover {
+    background-color: $gray-50;
+    color: $text-secondary;
+  }
 
 .custom-dialog-body {
-  padding: 20px 24px;
-  flex: 1;
-  overflow-y: auto;
-}
+    padding: $spacing-xl $spacing-2xl;
+    flex: 1;
+    overflow-y: auto;
+  }
 
 /* 移动端自定义对话框优化 */
 @media (max-width: 768px) {
@@ -2317,36 +2455,79 @@ export default {
   }
 
   .custom-dialog-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #ebeef5;
+    padding: $spacing-md $spacing-xl;
+    border-bottom: $border-width-sm solid $border-light;
   }
 
   .custom-dialog-title {
-    font-size: 16px;
+    font-size: $font-size-lg;
   }
 
   .custom-dialog-body {
     padding: 0;
     flex: 1;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* 允许flex子元素收缩 */
   }
 
   .address-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-md $spacing-lg;
+    min-height: 0;
+    /* 允许flex子元素收缩 */
     height: 100%;
-    padding: 16px 20px;
+      /* 确保占满可用高度 */
   }
 
   .address-items {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: $spacing-md;
+    min-height: 0;
+    /* 允许flex子元素收缩 */
+    overflow-y: auto;
+    /* 确保可以滚动 */
+    padding-bottom: $spacing-lg;
+    /* 底部留一些空间 */
+    height: calc(100vh - $spacing-6xl);
+    /* 设置具体高度，减去头部和padding的空间 */
+    max-height: calc(100vh - $spacing-6xl);
+    /* 限制最大高度 */
+
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 transparent;
+
+    &::-webkit-scrollbar {
+      width: $spacing-sm;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: $gray-400;
+      border-radius: $border-radius-sm;
+      transition: background-color $transition-duration ease;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: $gray-500;
+    }
   }
 
   .address-item {
-    padding: 12px 16px;
-    border: 1px solid #ebeef5;
-    border-radius: 8px;
-    background: white;
+    padding: $spacing-md $spacing-md;
+    border: 1px solid $border-color;
+    border-radius: $border-radius-md;
+    background: $white;
     cursor: pointer;
     transition: all 0.3s;
     position: relative;
@@ -2354,59 +2535,87 @@ export default {
   }
 
   .address-item:hover {
-    border-color: #409eff;
-    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+    border-color: $primary-color;
+    box-shadow: 0 $spacing-xs $spacing-lg rgba($primary-color, 0.1);
   }
 
   .address-item.selected {
-    border-color: #409eff;
-    background-color: #f0f9ff;
+    border-color: $primary-color;
+    background-color: rgba($primary-color, 0.05);
   }
 
   .address-content {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: $spacing-sm;
+    width: 100%;
   }
 
   .address-row {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: $spacing-sm;
+    width: 100%;
   }
 
-  .address-row:nth-child(2) {
-    flex-direction: row;
-    gap: 16px;
-
-    .field-inline:first-child {
-      flex: 1;
-    }
-
-    .field-inline:last-child {
-      flex: 0 0 auto;
-      min-width: 80px;
-    }
+  /* 移除所有行的特殊布局，确保全部单列排列 */
+  .address-row:nth-child(1),
+  .address-row:nth-child(2),
+  .address-row:nth-child(3),
+  .address-row:nth-child(4) {
+    flex-direction: column;
+    gap: $spacing-sm;
   }
 
   .field-inline {
-    font-size: 14px;
-    line-height: 1.4;
-    color: #606266;
+    font-size: $font-size-lg;
+    line-height: $line-height-normal;
+    color: $text-secondary;
+    width: 100%;
+    display: block;
+    margin-bottom: $spacing-xs;
   }
 
   .field-inline strong {
-    color: #303133;
-    font-weight: 500;
-    margin-right: 4px;
+    color: $text-primary;
+    font-weight: $font-weight-medium;
+    margin-right: $spacing-sm;
     display: inline-block;
-    min-width: 50px;
+    min-width: 80px;
+    font-size: $font-size-md;
+  }
+
+  /* 确保字段名称和字段值在同一行显示 */
+  .field-group {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: $spacing-2xs;
+    gap: $spacing-2xs;
+  }
+
+  .field-label {
+    font-size: $font-size-md;
+    color: $text-muted;
+    font-weight: $font-weight-medium;
+    display: inline-block;
+    min-width: 80px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .field-value {
+    font-size: $font-size-md;
+    color: $text-primary;
+    line-height: $line-height-normal;
+    word-break: break-word;
+    flex: 1;
   }
 
   .default-tag {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: $spacing-sm;
+    right: $spacing-sm;
     z-index: 1;
   }
 }

@@ -413,7 +413,16 @@ export default {
     },
     
     increaseQuantity(item) {
-      if (item.quantity < item.stock) {
+      // 只对自营商品判断库存，代销商品不限制库存
+      if (item.product_type === 'self_operated') {
+        if (item.quantity < item.stock) {
+          item.quantity++;
+          // 立即更新价格显示
+          this.updateItemPrice(item);
+          this.updateQuantity(item.id, item.quantity);
+        }
+      } else {
+        // 代销商品直接增加数量
         item.quantity++;
         // 立即更新价格显示
         this.updateItemPrice(item);
@@ -992,6 +1001,8 @@ export default {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    text-align: center;
+    justify-content: center;
   }
 
   .product-info {

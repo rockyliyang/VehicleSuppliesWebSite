@@ -21,7 +21,7 @@
       <div v-if="showActionButtons" class="action-buttons">
         <el-button type="primary" size="small" @click.stop="handleChatNow" class="chat-btn">
           <i class="fas fa-comments"></i>
-          <span class="button-text">{{ $t('product.chatNow') || 'Chat Now' }}</span>
+          <span class="button-text">{{ $t('product.inquiry') || 'Chat Now' }}</span>
         </el-button>
         <el-button type="success" size="small" @click.stop="handleAddToCart" :loading="addingToCart" class="cart-btn">
           <i class="fas fa-shopping-cart"></i>

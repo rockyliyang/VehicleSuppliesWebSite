@@ -44,6 +44,7 @@ $border-light: $gray-200;
 
 // 边框颜色
 $border-color: $gray-300;
+$border-dark: $gray-400;
 
 // 文本颜色
 $text-primary: $gray-900;
@@ -53,6 +54,7 @@ $text-disabled: $gray-400;
 
 // 尺寸变量 (紧凑模式 - 80%缩放)
 // 间距
+$spacing-2xs: 2px; // 2.5px * 0.8
 $spacing-xs: 3px; // 4px * 0.8
 $spacing-sm: 6px; // 8px * 0.8
 $spacing-md: 13px; // 16px * 0.8
@@ -65,6 +67,10 @@ $spacing-5xl: 96px; // 120px * 0.8
 $spacing-6xl: 160px; // 200px * 0.8
 $spacing-7xl: 224px; // 280px * 0.8
 $spacing-8xl: 256px; // 320px * 0.8
+$spacing-9xl: 320px; // 400px * 0.8
+$spacing-10xl: 384px; // 480px * 0.8
+$spacing-11xl: 448px; // 560px * 0.8
+$spacing-12xl: 512px; // 640px * 0.8
 
 // 字体大小 (紧凑模式 - 80%缩放)
 $font-size-xs: 10px; // 12px * 0.8
@@ -201,7 +207,7 @@ $header-shadow: $shadow-md;
 $container-max-width: 1024px; // 1280px * 0.8
 $container-padding: $spacing-lg;
 
-// 断点变量
+// 响应式断点
 $breakpoint-mobile: 767px;
 $breakpoint-tablet: 768px;
 $breakpoint-desktop: 1024px;
@@ -247,6 +253,7 @@ $mobile-banner-height-sm: 176px; // 220px * 0.8
 $mobile-banner-height-md: 224px; // 280px * 0.8
 
 // 过渡动画时间
+$transition-duration: 0.3s;
 $transition-carousel: all 0.3s ease;
 
 // z-index层级

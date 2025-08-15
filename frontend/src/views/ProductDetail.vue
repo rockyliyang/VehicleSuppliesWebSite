@@ -10,8 +10,11 @@
         <!-- 主体内容 -->
         <div class="product-detail-content">
           <div class="product-gallery-block">
-            <div class="main-image" ref="mainImage" @mousemove="handleMouseMove" @mouseenter="showZoom = true"
-              @mouseleave="showZoom = false">
+            <div class="main-image" ref="mainImage" 
+              :class="{ 'mobile-view': isMobile }"
+              @mousemove="!isMobile && handleMouseMove" 
+              @mouseenter="!isMobile && (showZoom = true)"
+              @mouseleave="!isMobile && (showZoom = false)">
               <!-- 显示视频或图片 -->
               <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted ref="mainVideoEl"
                 class="main-video" @loadedmetadata="updateMainImgSize">
@@ -19,9 +22,9 @@
               </video>
               <img v-else :src="activeImage || product.thumbnail_url" :alt="product.name" @error="handleImageError"
                 ref="mainImgEl" @load="updateMainImgSize">
-              <div v-if="showZoom && !isActiveMediaVideo" class="zoom-lens" :style="zoomLensStyle"></div>
+              <div v-if="showZoom && !isActiveMediaVideo && !isMobile" class="zoom-lens" :style="zoomLensStyle"></div>
             </div>
-            <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0 && !isActiveMediaVideo" class="zoom-window"
+            <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0 && !isActiveMediaVideo && !isMobile" class="zoom-window"
               :style="zoomWindowStyle">
               <img :src="activeImage || product.thumbnail_url" :style="zoomImgStyle" />
             </div>
@@ -113,9 +116,9 @@
                   <span v-else>{{ $t('buttons.adding') || '添加中...' }}</span>
                 </el-button>
                 <el-button class="chat-button" @click="createInquiry">{{
-                  $t('buttons.chat') || 'Chat' }}</el-button>
+                  $t('buttons.sendToInquiry') || 'Chat' }}</el-button>
                 <el-button class="email-button" @click="openEmailDialog">{{
-                  $t('buttons.sendToInquiry') || 'Inquiry' }}</el-button>
+                  $t('buttons.email') || 'Email' }}</el-button>
               </div>
             </div>
             <div class="product-share">
@@ -830,6 +833,9 @@ export default {
       });
     },
     handleMouseMove(e) {
+      // 在移动端禁用放大镜功能
+      if (this.isMobile) return;
+      
       // 确保组件仍然挂载且refs存在
       if (this.$el && this.$refs && this.$refs.mainImage) {
         try {
@@ -2167,8 +2173,20 @@ export default {
   }
 
   .main-image {
-    height: 250px;
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%; /* 创建正方形 */
+    position: relative;
     margin-bottom: $spacing-md;
+    
+    img, video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
   }
 
   .thumbnail-container {

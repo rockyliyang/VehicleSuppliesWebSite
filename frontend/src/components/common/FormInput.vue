@@ -1,8 +1,9 @@
 <template>
   <el-input :model-value="modelValue" :type="type" :placeholder="placeholder" :disabled="disabled" :readonly="readonly"
-    :clearable="clearable" :show-password="computedShowPassword" :maxlength="maxlength" :minlength="minlength" :size="size"
-    :autocomplete="autocomplete" :name="randomName" :class="['form-input', inputClass]" @input="handleInput" @change="handleChange" @focus="handleFocus"
-    @blur="handleBlur" @clear="handleClear" @keyup.enter="handleEnter">
+    :clearable="clearable" :show-password="computedShowPassword" :maxlength="maxlength" :minlength="minlength"
+    :size="size" :autocomplete="autocomplete" :name="randomName" :class="['form-input', inputClass]"
+    @input="handleInput" @change="handleChange" @focus="handleFocus" @blur="handleBlur" @clear="handleClear"
+    @keyup.enter="handleEnter">
     <template #prefix v-if="computedPrefixIcon">
       <el-icon>
         <component :is="computedPrefixIcon" />
@@ -157,44 +158,54 @@ export default {
 
   :deep(.el-input__wrapper) {
     width: 100% !important;
-    height: 48px; /* 使用固定高度，保持与原设计一致 */
+    height: 48px;
+    /* 使用固定高度，保持与原设计一致 */
     border-radius: $border-radius-md;
-    border: 1px solid $border-light !important; /* 强制覆盖Element Plus默认边框 */
+    border: 1px solid $border-light !important;
+    /* 强制覆盖Element Plus默认边框 */
     background-color: $white;
     transition: $transition-base;
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    padding: 0 $spacing-md;
-    box-shadow: none !important; /* 移除Element Plus默认阴影 */
+    padding: 0 11px;
+    box-shadow: none !important;
+    /* 移除Element Plus默认阴影 */
 
     &:hover {
       border-color: $primary-color !important;
-      box-shadow: none !important; /* 悬停时也不显示阴影 */
+      box-shadow: none !important;
+      /* 悬停时也不显示阴影 */
     }
 
     &.is-focus {
       border-color: $primary-color !important;
-      box-shadow: 0 0 0 3px rgba($primary-color, 0.1) !important; /* 只在聚焦时显示自定义阴影 */
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.1) !important;
+      /* 只在聚焦时显示自定义阴影 */
     }
   }
 
   :deep(.el-input__inner) {
     width: 100% !important;
     height: 100%;
-    border: none !important; /* 强制移除内部边框 */
+    border: none !important;
+    /* 强制移除内部边框 */
     border-radius: 0;
     font-family: $font-family-base;
-    font-size: $font-size-lg; /* 使用项目标准字体大小 */
+    font-size: $font-size-lg;
+    /* 使用项目标准字体大小 */
     color: $text-primary;
     padding: 0;
     background-color: transparent;
     transition: none;
-    line-height: 48px; /* 与wrapper高度保持一致 */
+    line-height: 48px;
+    /* 与wrapper高度保持一致 */
     box-sizing: border-box;
-    outline: none !important; /* 强制移除outline */
+    outline: none !important;
+    /* 强制移除outline */
     text-align: left;
-    box-shadow: none !important; /* 强制移除阴影 */
+    box-shadow: none !important;
+    /* 强制移除阴影 */
 
     &::placeholder {
       color: $text-muted;
@@ -215,7 +226,8 @@ export default {
       -webkit-box-shadow: 0 0 0 1000px $white inset !important;
       -webkit-text-fill-color: $text-primary !important;
       background-color: $white !important;
-      font-size: $font-size-lg !important; /* 强制保持字体大小 */
+      font-size: $font-size-lg !important;
+      /* 强制保持字体大小 */
       transition: background-color 5000s ease-in-out 0s;
     }
 
@@ -223,14 +235,16 @@ export default {
     &:-moz-autofill {
       background-color: $white !important;
       color: $text-primary !important;
-      font-size: $font-size-lg !important; /* 强制保持字体大小 */
+      font-size: $font-size-lg !important;
+      /* 强制保持字体大小 */
     }
 
     /* 处理其他浏览器自动填充样式 */
     &:autofill {
       background-color: $white !important;
       color: $text-primary !important;
-      font-size: $font-size-lg !important; /* 强制保持字体大小 */
+      font-size: $font-size-lg !important;
+      /* 强制保持字体大小 */
     }
   }
 
@@ -318,18 +332,20 @@ export default {
 @media (max-width: 767px) {
   .form-input {
     :deep(.el-input__wrapper) {
-      height: 52px; /* 增加触摸区域 */
-      padding: 0 16px;
+      height: 52px;
+      /* 增加触摸区域 */
+      padding: 0 11px;
     }
 
     :deep(.el-input__inner) {
-      font-size: 16px; /* 防止iOS缩放 */
+      font-size: 16px;
+      /* 防止iOS缩放 */
       line-height: 52px;
     }
 
     :deep(.el-input__prefix) {
       margin-right: 10px;
-      
+
       .el-icon {
         font-size: 20px;
       }
@@ -337,7 +353,7 @@ export default {
 
     :deep(.el-input__suffix) {
       margin-left: 10px;
-      
+
       .el-icon {
         font-size: 20px;
       }
@@ -350,7 +366,7 @@ export default {
   .form-input {
     :deep(.el-input__wrapper) {
       height: 48px;
-      padding: 0 14px;
+      padding: 0 11px;
     }
 
     :deep(.el-input__inner) {
@@ -360,7 +376,7 @@ export default {
 
     :deep(.el-input__prefix) {
       margin-right: 8px;
-      
+
       .el-icon {
         font-size: 18px;
       }
@@ -368,7 +384,7 @@ export default {
 
     :deep(.el-input__suffix) {
       margin-left: 8px;
-      
+
       .el-icon {
         font-size: 18px;
       }

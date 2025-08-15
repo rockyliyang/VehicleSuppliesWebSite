@@ -309,7 +309,7 @@ export default {
           try {
             this.loading = true
             const response = await this.$api.postWithErrorHandler('users/login', {
-              username: this.loginForm.username,
+              username: this.loginForm.username.trim(),
               password: this.loginForm.password
             })
             // 登录成功，保存用户信息（token已通过cookie设置）
@@ -676,7 +676,7 @@ export default {
 
 /* Element UI Overrides */
 .login-form :deep(.el-form-item) {
-  margin-bottom: $spacing-md;
+  margin-bottom: $spacing-lg;
 }
 
 .login-form :deep(.el-form-item__content) {
