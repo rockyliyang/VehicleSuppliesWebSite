@@ -108,7 +108,7 @@ export default {
   data() {
     return {
       activeCategory: '',
-      banners: [
+      defaultBanners: [
         { image_url: require('../assets/images/banner1.jpg') },
         { image_url: require('../assets/images/banner2.jpg') },
         { image_url: require('../assets/images/banner3.jpg') }
@@ -122,6 +122,11 @@ export default {
     }
   },
   computed: {
+    banners() {
+      // 如果 store 中有 banners 数据且不为空，使用 store 中的数据，否则使用默认数据
+      const storeBanners = this.$store.state.banners
+      return storeBanners && storeBanners.length > 0 ? storeBanners : this.defaultBanners
+    },
     displayProducts() {
       return this.products.filter(product => product.category_id && product.category_id.toString() === this.activeCategory)
     },

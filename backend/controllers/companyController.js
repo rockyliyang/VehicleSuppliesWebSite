@@ -47,24 +47,48 @@ exports.updateCompanyInfo = async (req, res) => {
   }
 };
 
-// 上传公司logo
-exports.uploadLogo = async (req, res) => {
+// 通用图片上传函数
+exports.uploadImage = async (req, res) => {
   if (!req.file) {
     return res.json({ success: false, message: getMessage('COMPANY.NO_FILE_UPLOADED'), data: null });
   }
+  
+  const { imageName } = req.body;
+  if (!imageName) {
+    return res.json({ success: false, message: 'Image name is required', data: null });
+  }
+  
   const ext = path.extname(req.file.originalname).toLowerCase();
   if (ext !== '.jpg' && ext !== '.jpeg' && ext !== '.png') {
     fs.unlinkSync(req.file.path);
     return res.json({ success: false, message: getMessage('COMPANY.INVALID_FILE_FORMAT'), data: null });
   }
-  const destName = 'logo' + ext;
-  // uploads目录上一层的public/static/images
+  
+  const destName = imageName + ext;
   const destPath = path.join(process.cwd(), 'public', 'static', 'images', destName);
+  
   try {
     fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    
+    // 如果目标文件已存在，先删除
+    if (fs.existsSync(destPath)) {
+      fs.unlinkSync(destPath);
+    }
+    
     fs.renameSync(req.file.path, destPath);
     const url = '/static/images/' + destName;
-    res.json({ success: true, message: getMessage('COMPANY.LOGO_UPLOAD_SUCCESS'), data: { url } });
+    
+    // 根据图片名称返回不同的成功消息
+    let successMessage;
+    if (imageName.includes('logo')) {
+      successMessage = getMessage('COMPANY.LOGO_UPLOAD_SUCCESS');
+    } else if (imageName.includes('wechat')) {
+      successMessage = getMessage('COMPANY.WECHAT_UPLOAD_SUCCESS');
+    } else {
+      successMessage = 'Image uploaded successfully';
+    }
+    
+    res.json({ success: true, message: successMessage, data: { url } });
   } catch (err) {
     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     console.error('文件保存失败:', err);
@@ -72,26 +96,14 @@ exports.uploadLogo = async (req, res) => {
   }
 };
 
-// 上传微信二维码
+// 上传公司logo (保持向后兼容)
+exports.uploadLogo = async (req, res) => {
+  req.body.imageName = 'logo';
+  return exports.uploadImage(req, res);
+};
+
+// 上传微信二维码 (保持向后兼容)
 exports.uploadWechat = async (req, res) => {
-  if (!req.file) {
-    return res.json({ success: false, message: getMessage('COMPANY.NO_FILE_UPLOADED'), data: null });
-  }
-  const ext = path.extname(req.file.originalname).toLowerCase();
-  if (ext !== '.jpg' && ext !== '.jpeg' && ext !== '.png') {
-    fs.unlinkSync(req.file.path);
-    return res.json({ success: false, message: getMessage('COMPANY.INVALID_FILE_FORMAT'), data: null });
-  }
-  const destName = 'wechat' + ext;
-  const destPath = path.join(process.cwd(), 'public', 'static', 'images', destName);
-  try {
-    fs.mkdirSync(path.dirname(destPath), { recursive: true });
-    fs.renameSync(req.file.path, destPath);
-    const url = '/static/images/' + destName;
-    res.json({ success: true, message: getMessage('COMPANY.WECHAT_UPLOAD_SUCCESS'), data: { url } });
-  } catch (err) {
-    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-    console.error('文件保存失败:', err);
-    res.status(500).json({ success: false, message: getMessage('COMPANY.FILE_SAVE_FAILED'), data: null });
-  }
+  req.body.imageName = 'wechat';
+  return exports.uploadImage(req, res);
 };

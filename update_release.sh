@@ -94,7 +94,7 @@ deploy_backend() {
 
     # Unpack backend files
     echo_color "green" "[BACKEND] Unpacking backend files..."
-    tar -xzvf backend.tar.gz -C ${BACKEND_DIR}
+    tar -xzvf release/backend.tar.gz -C ${BACKEND_DIR}
 
     # Restore environment configuration files if they were backed up
     if [ -n "${ENV_BACKUP_DIR}" ] && [ -d "${ENV_BACKUP_DIR}" ]; then
@@ -147,7 +147,7 @@ deploy_frontend() {
     # Unpack frontend files
     echo_color "green" "[FRONTEND] Unpacking frontend files..."
     rm -rf ${FRONTEND_DIR}/*
-    cp -r frontend_dist/* ${FRONTEND_DIR}/
+    cp -r release/frontend_dist/* ${FRONTEND_DIR}/
 
     # Set permissions
     echo_color "green" "[FRONTEND] Setting permissions..."
@@ -173,10 +173,15 @@ deploy_frontend() {
 
 # --- Main Script ---
 
-# Create a temporary directory for unpacking
-TEMP_DIR=$(mktemp -d)
-cp ${RELEASE_ARCHIVE} ${TEMP_DIR}/
-cd ${TEMP_DIR}
+# Check and remove existing release directory
+echo_color "green" "[DEPLOY] Checking for existing release directory..."
+if [ -d "release" ]; then
+    echo_color "yellow" "[DEPLOY] Removing existing release directory..."
+    rm -rf release
+fi
+
+# Extract release archive in current directory
+echo_color "green" "[DEPLOY] Extracting release archive..."
 tar -xzvf ${RELEASE_ARCHIVE}
 
 RESTART_FRONTEND=false
@@ -203,11 +208,7 @@ if [ "${RESTART_FRONTEND}" = true ]; then
     deploy_frontend
 fi
 
-# Clean up
-cd -
-rm -rf ${TEMP_DIR}
-
-
 echo_color "yellow" "=================================================="
 echo_color "green" "Deployment completed successfully!"
+echo_color "yellow" "Note: Release directory preserved for database script execution."
 echo_color "yellow" "=================================================="

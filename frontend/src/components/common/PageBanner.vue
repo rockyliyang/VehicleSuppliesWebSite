@@ -20,6 +20,16 @@ export default {
       type: String,
       default: require('@/assets/images/banner1.jpg')
     }
+  },
+  computed: {
+    bannerImage() {
+      // 如果 store 中有 banners 数据且不为空，使用第一个 banner 的图片，否则使用 props 中的 backgroundImage
+      const storeBanners = this.$store.state.banners
+      if (storeBanners && storeBanners.length > 0 && storeBanners[0].image_url) {
+        return storeBanners[0].image_url
+      }
+      return this.backgroundImage
+    }
   }
 }
 </script>
@@ -31,7 +41,7 @@ export default {
 /* Modern Banner */
 .page-banner {
   height: $banner-height;
-  background: v-bind('`url(${backgroundImage}) center/cover`');
+  background: v-bind('`url(${bannerImage}) center/cover`');
   @include flex-center;
   color: $white;
   text-align: center;

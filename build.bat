@@ -44,9 +44,55 @@ echo [BUILD] Copying database scripts...
 mkdir "%RELEASE_DIR%\db"
 xcopy /s /e "db\main" "%RELEASE_DIR%\db\main\"
 
+:: 6. Handle patch files if they exist
+echo [BUILD] Checking for patch files...
+if exist "db\patch\*" (
+    echo [BUILD] Found patch files, copying to release...
+    mkdir "%RELEASE_DIR%\db\patch"
+    xcopy /s /e "db\patch" "%RELEASE_DIR%\db\patch\"
+    
+    :: Create timestamped directory in patched folder
+    for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do (
+        set "dt=%%a"
+        if defined dt (
+            set "YY=!dt:~2,2!" & set "YYYY=!dt:~0,4!" & set "MM=!dt:~4,2!" & set "DD=!dt:~6,2!"
+            set "HH=!dt:~8,2!" & set "Min=!dt:~10,2!" & set "Sec=!dt:~12,2!"
+            set "timestamp=!YYYY!!MM!!DD!_!HH!!Min!!Sec!"
+        )
+    )
+    
+    echo [BUILD] Creating patched directory with timestamp: !timestamp!
+    if not exist "db\patched" mkdir "db\patched"
+    mkdir "db\patched\!timestamp!"
+    
+    :: Move patch files to timestamped directory
+    echo [BUILD] Moving patch files to db\patched\!timestamp!...
+    move "db\patch\*" "db\patched\!timestamp!\"
+    
+     echo [BUILD] Patch files processed successfully
+) else (
+    echo [BUILD] No patch files found, skipping patch processing
+)
+
 echo ==================================================
 echo [BUILD] Creating final release archive...
 tar -czvf release.tar.gz -C %RELEASE_DIR% .
+
+:: Create released directory with timestamp and save release archive
+echo [BUILD] Saving release archive to released directory...
+for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do (
+    set "dt=%%a"
+    if defined dt (
+        set "YY=!dt:~2,2!" & set "YYYY=!dt:~0,4!" & set "MM=!dt:~4,2!" & set "DD=!dt:~6,2!"
+        set "HH=!dt:~8,2!" & set "Min=!dt:~10,2!" & set "Sec=!dt:~12,2!"
+        set "timestamp=!YYYY!!MM!!DD!_!HH!!Min!!Sec!"
+    )
+)
+
+if not exist "released" mkdir "released"
+mkdir "released\!timestamp!"
+copy "release.tar.gz" "released\!timestamp!\release_!timestamp!.tar.gz"
+echo [BUILD] Release archive saved to released\!timestamp!\release_!timestamp!.tar.gz
 
 echo ==================================================
 echo [DEPLOY] Uploading release to server...

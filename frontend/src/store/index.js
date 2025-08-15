@@ -88,6 +88,7 @@ export default createStore({
     isLoggedIn: false,
     isAdminLoggedIn: false,
     categories: [],
+    banners: [], // Banner 数据
     // 购物车状态
     cartItems: [],
     // 登录对话框状态
@@ -117,6 +118,9 @@ export default createStore({
     },
     setCategories(state, categories) {
       state.categories = categories
+    },
+    setBanners(state, banners) {
+      state.banners = banners
     },
     addToCart(state, product) {
       const existingItem = state.cartItems.find(item => item.id === product.id)
@@ -160,6 +164,9 @@ export default createStore({
         
         // 获取分类数据
         await dispatch('fetchCategories')
+        
+        // 获取 Banner 数据
+        await dispatch('fetchBanners')
       } catch (error) {
         console.error('初始化应用失败:', error)
       }
@@ -214,6 +221,17 @@ export default createStore({
         }
       } catch (error) {
         console.error('获取分类失败:', error)
+      }
+    },
+    // 获取 Banner 数据
+    async fetchBanners({ commit }) {
+      try {
+        const response = await api.get('banners')
+        if (response.success) {
+          commit('setBanners', response.data)
+        }
+      } catch (error) {
+        console.error('获取 Banner 失败:', error)
       }
     },
 

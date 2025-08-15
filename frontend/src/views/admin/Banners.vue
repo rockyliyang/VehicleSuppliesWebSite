@@ -10,17 +10,17 @@
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column label="Banner图片" width="200">
         <template #default="{row}">
-          <img :src="row.image" alt="Banner图片" class="banner-image" v-if="row.image">
+          <img :src="row.image_url" alt="Banner图片" class="banner-image" v-if="row.image_url">
           <span v-else>无图片</span>
         </template>
       </el-table-column>
       <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="url" label="链接" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="link" label="链接" min-width="150" show-overflow-tooltip />
       <el-table-column prop="sort_order" label="排序" width="100" />
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column prop="is_active" label="状态" width="100">
         <template #default="{row}">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '启用' : '禁用' }}
+          <el-tag :type="row.is_active === 1 ? 'success' : 'info'">
+            {{ row.is_active === 1 ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -33,29 +33,29 @@
     </el-table>
 
     <!-- Banner表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加Banner' : '编辑Banner'" v-model="dialogVisible" width="600px">
+    <el-dialog :title="dialogStatus === 'create' ? '添加Banner' : '编辑Banner'" v-model="dialogVisible" width="600px" :close-on-click-modal="false">
       <el-form :model="bannerForm" :rules="rules" ref="bannerForm" label-width="100px">
         <el-form-item label="标题" prop="title">
-          <el-input v-model="bannerForm.title" placeholder="请输入标题" />
+          <el-input v-model="bannerForm.title" placeholder="请输入标题" @input="updateUploadData" />
         </el-form-item>
-        <el-form-item label="Banner图片" prop="image">
-          <el-upload class="banner-uploader" action="upload" :show-file-list="false" :on-success="handleImageSuccess"
-            :before-upload="beforeImageUpload">
-            <img v-if="bannerForm.image" :src="bannerForm.image" class="banner-preview">
+        <el-form-item label="Banner图片" prop="image_url">
+          <el-upload class="banner-uploader" action="/api/company/upload/image" :show-file-list="false" :on-success="handleImageSuccess"
+            :before-upload="beforeImageUpload" :data="uploadData">
+            <img v-if="bannerForm.image_url" :src="bannerForm.image_url" class="banner-preview">
             <el-icon v-else class="banner-uploader-icon">
               <Plus />
             </el-icon>
           </el-upload>
           <div class="image-tip">建议尺寸: 1920px × 500px</div>
         </el-form-item>
-        <el-form-item label="链接" prop="url">
-          <el-input v-model="bannerForm.url" placeholder="请输入链接地址" />
+        <el-form-item label="链接" prop="link">
+          <el-input v-model="bannerForm.link" placeholder="请输入链接地址" />
         </el-form-item>
         <el-form-item label="排序" prop="sort_order">
           <el-input-number v-model="bannerForm.sort_order" :min="0" :max="999" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="bannerForm.status">
+        <el-form-item label="状态" prop="is_active">
+          <el-radio-group v-model="bannerForm.is_active">
             <el-radio :label="1">启用</el-radio>
             <el-radio :label="0">禁用</el-radio>
           </el-radio-group>
@@ -92,15 +92,19 @@ export default {
       bannerForm: {
         id: undefined,
         title: '',
-        image: '',
-        url: '',
+        image_url: '',
+        link: '',
         sort_order: 0,
         description: '',
-        status: 1
+        is_active: 1
       },
+      uploadData: {},
       rules: {
-        title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-        image: [{ required: true, message: '请上传Banner图片', trigger: 'change' }],
+        title: [
+          { required: true, message: '请输入标题', trigger: 'blur' },
+          { validator: this.validateTitle, trigger: 'blur' }
+        ],
+        image_url: [{ required: true, message: '请上传Banner图片', trigger: 'change' }],
         sort_order: [{ required: true, message: '请输入排序值', trigger: 'blur' }]
       }
     }
@@ -133,12 +137,13 @@ export default {
       this.bannerForm = {
         id: undefined,
         title: '',
-        image: '',
-        url: '',
+        image_url: '',
+        link: '',
         sort_order: 0,
         description: '',
-        status: 1
+        is_active: 1
       }
+      this.updateUploadData()
       this.dialogVisible = true
       this.$nextTick(() => {
         this.$refs.bannerForm.clearValidate()
@@ -149,6 +154,7 @@ export default {
     handleEdit(row) {
       this.dialogStatus = 'update'
       this.bannerForm = Object.assign({}, row)
+      this.updateUploadData()
       this.dialogVisible = true
       this.$nextTick(() => {
         this.$refs.bannerForm.clearValidate()
@@ -207,10 +213,40 @@ export default {
       })
     },
     
+    // 验证标题是否重复
+    validateTitle(rule, value, callback) {
+      if (!value) {
+        callback()
+        return
+      }
+      
+      // 检查是否与现有Banner标题重复（编辑时排除自己）
+      const existingBanner = this.bannerList.find(banner => 
+        banner.title === value && banner.id !== this.bannerForm.id
+      )
+      
+      if (existingBanner) {
+        callback(new Error('标题已存在，请使用其他标题'))
+      } else {
+        callback()
+      }
+    },
+    
+    // 更新上传数据
+    updateUploadData() {
+      if (this.bannerForm.title) {
+        this.uploadData = {
+          imageName: 'banner_' + this.bannerForm.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')
+        }
+      } else {
+        this.uploadData = {}
+      }
+    },
+    
     // 图片上传成功回调
     handleImageSuccess(res) {
       if (res.success) {
-        this.bannerForm.image = res.data.url
+        this.bannerForm.image_url = res.data.url
       } else {
         this.$messageHandler.showError(res.message, 'admin.banners.error.uploadFailed')
       }
@@ -218,6 +254,12 @@ export default {
     
     // 图片上传前验证
     beforeImageUpload(file) { // eslint-disable-line no-unused-vars
+      // 检查是否已输入标题
+      if (!this.bannerForm.title) {
+        this.$messageHandler.showError('请先输入标题', 'admin.banners.error.titleRequired')
+        return false
+      }
+      
       const isJPG = file.type === 'image/jpeg'
       const isPNG = file.type === 'image/png'
       const isLt2M = file.size / 1024 / 1024 < 2

@@ -707,7 +707,36 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'BANNER.UPDATE_SUCCESS', 'en', 'Banner updated successfully'),
 (gen_random_uuid(), 'BANNER.UPDATE_SUCCESS', 'zh-CN', '横幅更新成功'),
 (gen_random_uuid(), 'BANNER.DELETE_SUCCESS', 'en', 'Banner deleted successfully'),
-(gen_random_uuid(), 'BANNER.DELETE_SUCCESS', 'zh-CN', '横幅删除成功');
+(gen_random_uuid(), 'BANNER.DELETE_SUCCESS', 'zh-CN', '横幅删除成功'),
+(gen_random_uuid(), 'BANNER.REQUIRED_FIELDS', 'en', 'Required fields are missing'),
+(gen_random_uuid(), 'BANNER.REQUIRED_FIELDS', 'zh-CN', '缺少必填字段'),
+(gen_random_uuid(), 'BANNER.LIST_SUCCESS', 'en', 'Banner list retrieved successfully'),
+(gen_random_uuid(), 'BANNER.LIST_SUCCESS', 'zh-CN', 'Banner列表获取成功');
+
+-- 前端 admin.banners 相关消息键
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+(gen_random_uuid(), 'admin.banners.error.fetchFailed', 'en', 'Failed to fetch banner list'),
+(gen_random_uuid(), 'admin.banners.error.fetchFailed', 'zh-CN', '获取Banner列表失败'),
+(gen_random_uuid(), 'admin.banners.error.createFailed', 'en', 'Failed to create banner'),
+(gen_random_uuid(), 'admin.banners.error.createFailed', 'zh-CN', '创建Banner失败'),
+(gen_random_uuid(), 'admin.banners.error.updateFailed', 'en', 'Failed to update banner'),
+(gen_random_uuid(), 'admin.banners.error.updateFailed', 'zh-CN', '更新Banner失败'),
+(gen_random_uuid(), 'admin.banners.error.deleteFailed', 'en', 'Failed to delete banner'),
+(gen_random_uuid(), 'admin.banners.error.deleteFailed', 'zh-CN', '删除Banner失败'),
+(gen_random_uuid(), 'admin.banners.error.uploadFailed', 'en', 'Failed to upload image'),
+(gen_random_uuid(), 'admin.banners.error.uploadFailed', 'zh-CN', '图片上传失败'),
+(gen_random_uuid(), 'admin.banners.error.titleRequired', 'en', 'Please enter title first'),
+(gen_random_uuid(), 'admin.banners.error.titleRequired', 'zh-CN', '请先输入标题'),
+(gen_random_uuid(), 'admin.banners.error.invalidFormat', 'en', 'Invalid image format'),
+(gen_random_uuid(), 'admin.banners.error.invalidFormat', 'zh-CN', '图片格式无效'),
+(gen_random_uuid(), 'admin.banners.error.fileTooLarge', 'en', 'File size too large'),
+(gen_random_uuid(), 'admin.banners.error.fileTooLarge', 'zh-CN', '文件大小超限'),
+(gen_random_uuid(), 'banner.success.createSuccess', 'en', 'Banner created successfully'),
+(gen_random_uuid(), 'banner.success.createSuccess', 'zh-CN', 'Banner创建成功'),
+(gen_random_uuid(), 'banner.success.updateSuccess', 'en', 'Banner updated successfully'),
+(gen_random_uuid(), 'banner.success.updateSuccess', 'zh-CN', 'Banner更新成功'),
+(gen_random_uuid(), 'banner.success.deleteSuccess', 'en', 'Banner deleted successfully'),
+(gen_random_uuid(), 'banner.success.deleteSuccess', 'zh-CN', 'Banner删除成功');
 
 -- COMPANY相关
 INSERT INTO language_translations (guid, code, lang, value) VALUES
