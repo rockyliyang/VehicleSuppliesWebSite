@@ -2,6 +2,7 @@
 const env = require('./config/env');
 const { getMessage } = require('./config/messages');
 const { pool } = require('./db/db');
+const pgNotificationManager = require('./utils/pgNotification');
 
 // 引入日志工具并重写console
 // 只在开发环境override console
@@ -124,8 +125,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log(`服务器运行在 http://localhost:${PORT}`);
+  
+  // 初始化PostgreSQL通知管理器
+  try {
+    await pgNotificationManager.initialize();
+    await pgNotificationManager.startListening();
+    console.log('PostgreSQL notification manager initialized successfully');
+  } catch (err) {
+    console.error('Failed to initialize PostgreSQL notification manager:', err);
+  }
 });
 
 // 优雅关闭服务器
@@ -135,6 +145,10 @@ process.on('SIGTERM', async () => {
   server.close(async () => {
     console.log('HTTP server closed');
     try {
+      // 关闭PostgreSQL通知管理器
+      await pgNotificationManager.close();
+      console.log('PostgreSQL notification manager closed');
+      
       await pool.end();
       console.log('Database pool closed');
     } catch (err) {
@@ -150,6 +164,10 @@ process.on('SIGINT', async () => {
   server.close(async () => {
     console.log('HTTP server closed');
     try {
+      // 关闭PostgreSQL通知管理器
+      await pgNotificationManager.close();
+      console.log('PostgreSQL notification manager closed');
+      
       await pool.end();
       console.log('Database pool closed');
     } catch (err) {
@@ -164,6 +182,10 @@ process.on('uncaughtException', async (err) => {
   console.error('Uncaught Exception:', err);
   server.close(async () => {
     try {
+      // 关闭PostgreSQL通知管理器
+      await pgNotificationManager.close();
+      console.log('PostgreSQL notification manager closed');
+      
       await pool.end();
       console.log('Database pool closed');
     } catch (poolErr) {
@@ -178,6 +200,10 @@ process.on('unhandledRejection', async (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   server.close(async () => {
     try {
+      // 关闭PostgreSQL通知管理器
+      await pgNotificationManager.close();
+      console.log('PostgreSQL notification manager closed');
+      
       await pool.end();
       console.log('Database pool closed');
     } catch (poolErr) {

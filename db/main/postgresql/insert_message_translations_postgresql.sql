@@ -2274,7 +2274,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- UserSettings 页面翻译键
 (gen_random_uuid(), 'userSettings.title', 'en', 'My Account'),
 (gen_random_uuid(), 'userSettings.title', 'zh-CN', '我的'),
-
+(gen_random_uuid(), 'userSettings.myaccount', 'en', 'My Account'),
+(gen_random_uuid(), 'userSettings.myaccount', 'zh-CN', '我的'),
 -- 账号信息部分
 (gen_random_uuid(), 'userSettings.accountInfo.title', 'en', 'Account Information'),
 (gen_random_uuid(), 'userSettings.accountInfo.title', 'zh-CN', '账号信息'),

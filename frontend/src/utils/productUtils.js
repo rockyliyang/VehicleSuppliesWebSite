@@ -23,10 +23,10 @@ export async function createOrOpenInquiry(product, context) {
       // 找到现有询价单，直接使用
       const existingInquiry = findResponse.data.inquiry;
       
-      context.$messageHandler.showSuccess(
-        context.$t('product.success.inquiryOpened') || 'Existing inquiry opened',
-        'product.success.inquiryOpened'
-      );
+      //context.$messageHandler.showSuccess(
+        //context.$t('product.success.inquiryOpened') || 'Existing inquiry opened',
+        //'product.success.inquiryOpened'
+      //);
       
       return {
         inquiryId: existingInquiry.id,
@@ -53,10 +53,15 @@ export async function createOrOpenInquiry(product, context) {
         fallbackKey: 'product.error.addItemToInquiryFailed'
       });
       
-      context.$messageHandler.showSuccess(
-        context.$t('product.success.inquiryCreated') || 'Inquiry created successfully',
-        'product.success.inquiryCreated'
-      );
+      // 刷新询价单详情
+      await context.$api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
+        fallbackKey: 'product.error.refreshInquiryFailed'
+      });
+      
+      //context.$messageHandler.showSuccess(
+        //context.$t('product.success.inquiryCreated') || 'Inquiry created successfully',
+        //'product.success.inquiryCreated'
+      //);
       
       return {
         inquiryId: inquiryId,

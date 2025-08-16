@@ -10,10 +10,8 @@
         <!-- 主体内容 -->
         <div class="product-detail-content">
           <div class="product-gallery-block">
-            <div class="main-image" ref="mainImage" 
-              :class="{ 'mobile-view': isMobile }"
-              @mousemove="!isMobile && handleMouseMove" 
-              @mouseenter="!isMobile && (showZoom = true)"
+            <div class="main-image" ref="mainImage" :class="{ 'mobile-view': isMobile }"
+              @mousemove="!isMobile && handleMouseMove" @mouseenter="!isMobile && (showZoom = true)"
               @mouseleave="!isMobile && (showZoom = false)">
               <!-- 显示视频或图片 -->
               <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted ref="mainVideoEl"
@@ -24,8 +22,8 @@
                 ref="mainImgEl" @load="updateMainImgSize">
               <div v-if="showZoom && !isActiveMediaVideo && !isMobile" class="zoom-lens" :style="zoomLensStyle"></div>
             </div>
-            <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0 && !isActiveMediaVideo && !isMobile" class="zoom-window"
-              :style="zoomWindowStyle">
+            <div v-if="showZoom && mainImgWidth > 0 && mainImgHeight > 0 && !isActiveMediaVideo && !isMobile"
+              class="zoom-window" :style="zoomWindowStyle">
               <img :src="activeImage || product.thumbnail_url" :style="zoomImgStyle" />
             </div>
             <div class="thumbnail-container">
@@ -794,15 +792,6 @@ export default {
         });
       }
     },
-    submitInquiry() {
-      this.$refs.inquiryForm.validate(valid => {
-        if (valid) {
-          // 实际项目中会发送到后端API
-          this.$messageHandler.showSuccess(this.$t('messages.inquirySubmitted'), 'product.success.inquirySubmitted')
-          this.$refs.inquiryForm.resetFields()
-        }
-      })
-    },
     updateMainImgSize() {
       this.$nextTick(() => {
         // 确保组件仍然挂载
@@ -971,9 +960,9 @@ export default {
               this.inquiryMessages.push(newMessage);
               
               // 显示新消息提示（如果不是当前用户发送的）
-              if (messageData.sender_id !== this.$store.state.user?.id) {
+              /*if (messageData.sender_id !== this.$store.state.user?.id) {
                 this.$messageHandler.showSuccess(`收到来自 ${messageData.sender_name} 的新消息`, 'inquiry.success.newMessage');
-              }
+              }*/
             }
           });
           
@@ -1027,10 +1016,10 @@ export default {
     },
     handleEmailSent() {
       this.showEmailDialog = false;
-      this.$messageHandler.showSuccess(
-        this.$t('productDetail.emailDialog.success'), 
-        'productDetail.emailDialog.success'
-      );
+      //this.$messageHandler.showSuccess(
+      //  this.$t('productDetail.emailDialog.success'), 
+      //  'productDetail.emailDialog.success'
+      //);
     },
     // 处理登录成功
      async handleLoginSuccess() {
@@ -1114,7 +1103,7 @@ export default {
            if (checkResponse.data.exists && checkResponse.data.id) {
              await this.$api.delete(`user-products/${checkResponse.data.id}`);
              this.isFavorited = false;
-             this.$messageHandler.showSuccess('已取消收藏', 'product.success.unfavorited');
+             //this.$messageHandler.showSuccess('已取消收藏', 'product.success.unfavorited');
            }
          } else {
            // 添加收藏
@@ -1123,7 +1112,7 @@ export default {
              type: 'favorite'
            });
            this.isFavorited = true;
-           this.$messageHandler.showSuccess('已添加到收藏', 'product.success.favorited');
+           //this.$messageHandler.showSuccess('已添加到收藏', 'product.success.favorited');
          }
        } catch (error) {
          console.error('切换收藏状态失败:', error);
@@ -2175,11 +2164,13 @@ export default {
   .main-image {
     width: 100%;
     height: 0;
-    padding-bottom: 100%; /* 创建正方形 */
+    padding-bottom: 100%;
+    /* 创建正方形 */
     position: relative;
     margin-bottom: $spacing-md;
-    
-    img, video {
+
+    img,
+    video {
       position: absolute;
       top: 0;
       left: 0;

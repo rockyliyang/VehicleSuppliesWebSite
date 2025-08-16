@@ -494,11 +494,10 @@ export default {
 
       const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.companyInfo.address)}`;
 
-      
-      this.$messageHandler.showSuccess(
-        this.$t('contact.openingGoogleMaps'),
-        'contact.openingGoogleMaps'
-      );
+      //this.$messageHandler.showSuccess(
+      //  this.$t('contact.openingGoogleMaps'),
+      //  'contact.openingGoogleMaps'
+      //);
       
       try {
         const newWindow = window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');

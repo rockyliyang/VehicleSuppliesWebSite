@@ -387,7 +387,6 @@ export default {
   padding: $spacing-md;
   background: $gray-50;
   min-height: 0;
-  /* 移除max-height限制，让聊天历史区域能够充分利用可用空间 */
 }
 
 .chat-message {
@@ -444,8 +443,10 @@ export default {
 
 .chat-input-section {
   background: $white;
-
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
 }
 
 .chat-input {
@@ -454,7 +455,8 @@ export default {
   border: $border-width-sm solid $gray-300;
   border-radius: $border-radius-sm;
   resize: none;
-  height: 60px;
+  flex: 1;
+  min-height: 40px;
   font-family: inherit;
   font-size: $font-size-sm;
 }
@@ -553,10 +555,13 @@ export default {
 
   .chat-input-section {
     margin-bottom: $spacing-sm;
+    flex: 0 0 auto;
+    min-height: 100px;
   }
 
   .chat-input {
-    height: 50px;
+    flex: 1;
+    min-height: 40px;
     font-size: $font-size-sm;
   }
 

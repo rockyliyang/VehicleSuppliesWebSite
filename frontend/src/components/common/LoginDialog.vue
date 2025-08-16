@@ -315,7 +315,7 @@ export default {
             // 登录成功，保存用户信息（token已通过cookie设置）
             const { user } = response.data
             this.$store.commit('setUser', user)
-            this.$messageHandler.showSuccess(response.message || this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
+            //this.$messageHandler.showSuccess(response.message || this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
             // Header组件已经启动了全局token检查，这里不需要重复启动
             this.$emit('login-success', { user })
             
@@ -345,7 +345,7 @@ export default {
           this.loading = true
           setTimeout(() => {
             this.loading = false
-            this.$messageHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
+            //this.$messageHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess')
             this.$emit('login-success', { user: null }) // 手机登录暂时传递空用户数据
             
             // 根据autoRedirect属性决定是否进行页面跳转
@@ -370,7 +370,7 @@ export default {
           this.codeSending = true
           setTimeout(() => {
             this.codeSending = false
-            this.$messageHandler.showSuccess(this.$t('login.success.codeSent'), 'login.success.codeSent')
+            //this.$messageHandler.showSuccess(this.$t('login.success.codeSent'), 'login.success.codeSent')
             this.startCooldown()
           }, 1000)
         } else {
@@ -543,7 +543,7 @@ export default {
     handleLoginSuccess(data) {
       // 保存用户信息
       this.$store.commit('setUser', data.user);
-      this.$messageHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess');
+      //this.$messageHandler.showSuccess(this.$t('login.success.loginSuccess'), 'login.success.loginSuccess');
       this.$emit('login-success', data);
       
       // 根据autoRedirect属性决定是否进行页面跳转

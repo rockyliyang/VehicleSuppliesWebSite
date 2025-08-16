@@ -3,6 +3,15 @@
  * 为所有console输出添加时间戳
  */
 
+// 保存原始的console方法，避免循环引用
+const originalConsole = {
+  log: console.log.bind(console),
+  info: console.info.bind(console),
+  warn: console.warn.bind(console),
+  error: console.error.bind(console),
+  debug: console.debug.bind(console)
+};
+
 /**
  * 格式化时间戳
  * @returns {string} 格式化的时间字符串
@@ -25,24 +34,24 @@ function getTimestamp() {
  */
 const logger = {
   log: (...args) => {
-    console.log(`[${getTimestamp()}]`, ...args);
+    originalConsole.log(`[${getTimestamp()}]`, ...args);
   },
   
   info: (...args) => {
-    console.info(`[${getTimestamp()}]`, ...args);
+    originalConsole.info(`[${getTimestamp()}]`, ...args);
   },
   
   warn: (...args) => {
-    console.warn(`[${getTimestamp()}]`, ...args);
+    originalConsole.warn(`[${getTimestamp()}]`, ...args);
   },
   
   error: (...args) => {
-    console.error(`[${getTimestamp()}]`, ...args);
+    originalConsole.error(`[${getTimestamp()}]`, ...args);
   },
   
   debug: (...args) => {
     if (process.env.NODE_ENV === 'development') {
-      console.debug(`[${getTimestamp()}]`, ...args);
+      originalConsole.debug(`[${getTimestamp()}]`, ...args);
     }
   }
 };
@@ -52,8 +61,6 @@ const logger = {
  * 如果需要全局替换console，可以调用此函数
  */
 function overrideConsole() {
-  const originalConsole = { ...console };
-  
   console.log = logger.log;
   console.info = logger.info;
   console.warn = logger.warn;

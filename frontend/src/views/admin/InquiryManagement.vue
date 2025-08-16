@@ -158,6 +158,7 @@ export default {
       detailDialogVisible: false,
       selectedInquiryId: null,
       userIdTimer: null,
+      refreshTimer: null,
       userOptions: [],
       userSearchLoading: false
     }
@@ -189,6 +190,7 @@ export default {
     
     this.loadInquiries()
     this.loadUsers()
+    this.startAutoRefresh()
     
     // 检查是否有查看询价详情的查询参数
     const viewInquiryId = this.$route.query.view;
@@ -206,6 +208,7 @@ export default {
     if (this.userIdTimer) {
       clearTimeout(this.userIdTimer)
     }
+    this.stopAutoRefresh()
   },
   methods: {
     async loadInquiries() {
@@ -403,6 +406,21 @@ export default {
         this.loadUsers(query)
       } else {
         this.loadUsers()
+      }
+    },
+
+    // 启动自动刷新
+    startAutoRefresh() {
+      this.refreshTimer = setInterval(() => {
+        this.loadInquiries()
+      }, 10000) // 每10秒刷新一次
+    },
+
+    // 停止自动刷新
+    stopAutoRefresh() {
+      if (this.refreshTimer) {
+        clearInterval(this.refreshTimer)
+        this.refreshTimer = null
       }
     }
   }

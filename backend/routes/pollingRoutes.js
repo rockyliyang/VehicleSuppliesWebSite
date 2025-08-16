@@ -8,6 +8,7 @@ const router = express.Router();
 const { verifyToken } = require('../middleware/jwt');
 const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
+const pgNotificationManager = require('../utils/pgNotification');
 
 /**
  * 生成带时间戳的日志
@@ -193,7 +194,7 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
     const maxTimeout = parseInt(timeout);
     
     const pollForMessages = async () => {
-      return new Promise((resolve) => {
+      return new Promise(async (resolve) => {
         let resolved = false;
         
         log('INFO', `Setting up long poll listeners`, {
@@ -217,24 +218,32 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
           }
         }, maxTimeout);
         
-        // 监听新消息事件
-        const EventEmitter = require('events');
-        if (!global.inquiryEventEmitter) {
-          global.inquiryEventEmitter = new EventEmitter();
-          log('INFO', `Created new inquiry event emitter`, {
-            requestId
-          });
+        // 监听新消息事件 - 使用PostgreSQL通知机制
+        // 确保PostgreSQL通知管理器已初始化
+        if (!pgNotificationManager.getStatus().isListening) {
+          try {
+            await pgNotificationManager.initialize();
+            log('INFO', `PostgreSQL notification manager initialized`, {
+              requestId
+            });
+          } catch (error) {
+            log('ERROR', `Failed to initialize PostgreSQL notification manager`, {
+              requestId,
+              error: error.message
+            });
+          }
         }
         
         const messageHandler = async (eventData) => {
-          if (resolved) return;
           
           log('INFO', `Received message event`, {
+            resolved,
             requestId,
             inquiryId,
             eventInquiryId: eventData.inquiryId,
             isMatch: eventData.inquiryId == inquiryId
           });
+          if (resolved) return;
           
           // 检查是否是当前询价的消息
           if (eventData.inquiryId == inquiryId) {
@@ -275,15 +284,18 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         
         const cleanup = () => {
           clearTimeout(timeoutId);
-          global.inquiryEventEmitter.removeListener('newMessage', messageHandler);
+          pgNotificationManager.removeListener('newMessage', messageHandler);
           log('INFO', `Long poll cleanup completed`, {
             requestId,
             inquiryId
           });
         };
-        
-        global.inquiryEventEmitter.on('newMessage', messageHandler);
-        
+
+        pgNotificationManager.on('newMessage', messageHandler);
+        log('INFO', `Long poll setup newMessage completed`, {
+          requestId,
+          inquiryId
+        });
         // 处理请求中断
         req.on('close', () => {
           if (!resolved) {

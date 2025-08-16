@@ -2,9 +2,10 @@
 require('./config/env');
 
 // 引入日志工具并重写console
-const { overrideConsole } = require('./utils/logger');
-overrideConsole();
-
+if (process.env.NODE_ENV === 'development') {
+  const { overrideConsole } = require('./utils/logger');
+  overrideConsole();
+}
 const { BackgroundTaskManager } = require('./utils/backgroundTasks');
 const { query } = require('./db/db');
 const { sendMail } = require('./utils/email');

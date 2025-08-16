@@ -78,7 +78,7 @@
 
 <script>
 import api from '@/utils/api';
-import MessageHandler from '@/utils/messageHandler';
+//import MessageHandler from '@/utils/messageHandler';
 import InquiryDetailPanel from './InquiryDetailPanel.vue';
 
 export default {
@@ -155,9 +155,9 @@ export default {
     
     async refreshInquiries() {
       try {
-        MessageHandler.showInfo(this.$t('cart.refreshingInquiries') || '正在刷新询价单...', 'INQUIRY.REFRESHING');
+        //MessageHandler.showInfo(this.$t('cart.refreshingInquiries') || '正在刷新询价单...', 'INQUIRY.REFRESHING');
         await this.fetchInquiries();
-        MessageHandler.showSuccess(this.$t('cart.inquiriesRefreshed') || '询价单已刷新', 'INQUIRY.REFRESHED');
+        //MessageHandler.showSuccess(this.$t('cart.inquiriesRefreshed') || '询价单已刷新', 'INQUIRY.REFRESHED');
       } catch (error) {
         console.error('刷新询价单失败:', error);
         this.$messageHandler.showError(this.$t('cart.refreshInquiriesFailed') || '刷新询价单失败', 'INQUIRY.REFRESH.FAILED');
@@ -297,7 +297,7 @@ export default {
           this.inquiries.push(newInquiry);
           this.activeInquiryId = newInquiry.id;
           
-          MessageHandler.showSuccess(this.$t('inquiry.createSuccess') || '询价单创建成功');
+          //MessageHandler.showSuccess(this.$t('inquiry.createSuccess') || '询价单创建成功');
           this.$emit('inquiry-created', newInquiry.id);
           return newInquiry.id;
         }
@@ -344,7 +344,7 @@ export default {
               this.activeInquiryId = this.inquiries[0]?.id || null;
             }
             
-            MessageHandler.showSuccess(this.$t('inquiry.deleteSuccess') || '询价单删除成功');
+            //MessageHandler.showSuccess(this.$t('inquiry.deleteSuccess') || '询价单删除成功');
           }
         }
       } catch (error) {
@@ -405,7 +405,7 @@ export default {
             updatedInquiredProductIds.add(cartItem.product_id);
             this.$emit('update-inquired-products', updatedInquiredProductIds);
             
-            MessageHandler.showSuccess(this.$t('cart.productAddedToInquiry') || `商品 "${cartItem.name}" 已添加到询价单`);
+            //MessageHandler.showSuccess(this.$t('cart.productAddedToInquiry') || `商品 "${cartItem.name}" 已添加到询价单`);
           }
         }
       } catch (error) {
@@ -451,7 +451,7 @@ export default {
         );
       }
       
-      let successCount = 0;
+      //let successCount = 0;
       let failedItems = [];
       
       for (const cartItem of itemsToAdd) {
@@ -483,7 +483,7 @@ export default {
               updatedInquiredProductIds.add(cartItem.product_id);
               this.$emit('update-inquired-products', updatedInquiredProductIds);
               
-              successCount++;
+              //successCount++;
             }
           }
         } catch (error) {
@@ -493,11 +493,11 @@ export default {
       }
       
       // 显示结果消息
-      if (successCount > 0) {
-        MessageHandler.showSuccess(
-          this.$t('cart.multipleItemsAddedToInquiry', { count: successCount }) || `成功添加 ${successCount} 个商品到询价单`
-        );
-      }
+      //if (successCount > 0) {
+        //MessageHandler.showSuccess(
+          //this.$t('cart.multipleItemsAddedToInquiry', { count: successCount }) || `成功添加 ${successCount} 个商品到询价单`
+        //);
+      //}
       
       if (failedItems.length > 0) {
         this.$messageHandler.showWarning(
@@ -540,7 +540,7 @@ export default {
           }
         }
         
-        this.$messageHandler.showSuccess(this.$t('cart.itemRemovedFromInquiry') || '商品已从询价单中移除', 'INQUIRY.ITEM.DELETE.SUCCESS');
+        //this.$messageHandler.showSuccess(this.$t('cart.itemRemovedFromInquiry') || '商品已从询价单中移除', 'INQUIRY.ITEM.DELETE.SUCCESS');
       } catch (error) {
         console.error('删除询价商品失败:', error);
         this.$messageHandler.showError(this.$t('cart.removeFromInquiryFailed') || '删除询价商品失败', 'INQUIRY.ITEM.DELETE.FAILED');

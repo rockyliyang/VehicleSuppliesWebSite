@@ -1,6 +1,7 @@
 const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
 const sseHandler = require('../utils/sseHandler');
+const pgNotificationManager = require('../utils/pgNotification');
 
 // 获取用户询价列表
 exports.getUserInquiries = async (req, res) => {
@@ -476,24 +477,9 @@ exports.sendMessage = async (req, res) => {
       messageType: 'text',
       timestamp: new Date().toISOString()
     };
-    // 通过SSE推送新消息给管理员
-    const adminUsers = await query(
-      'SELECT id FROM users WHERE user_role = \'admin\' AND deleted = false'
-    );
-    /*
-    const adminUserIds = adminUsers.map(admin => admin.id.toString());
-    
-    // 推送给管理员
-    if (adminUserIds.length > 0) {
-      sseHandler.broadcastToInquiry(inquiryId, messageData, 'new_message', adminUserIds);
-    }*/
-    
-    // 触发长轮询事件
-    const EventEmitter = require('events');
-    if (!global.inquiryEventEmitter) {
-      global.inquiryEventEmitter = new EventEmitter();
-    }
-    global.inquiryEventEmitter.emit('newMessage', { inquiryId, messageData });
+    // 通过PostgreSQL通知机制推送新消息
+     await pgNotificationManager.notifyNewMessage(inquiryId, messageData);
+     console.info('trigger newMessage via PostgreSQL notification', { inquiryId, messageData });
     
     return res.json({
       success: true,

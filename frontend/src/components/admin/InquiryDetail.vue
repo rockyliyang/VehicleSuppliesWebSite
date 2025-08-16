@@ -74,7 +74,8 @@
                       <img v-if="row.image_url" :src="row.image_url" :alt="row.product_name" class="product-image" />
                       <div class="product-details">
                         <div class="product-name">{{ row.product_name }}</div>
-                        <div class="product-code">{{ $t('inquiry.detail.product_code') || '产品编号' }}: {{ row.product_code }}</div>
+                        <div class="product-code">{{ $t('inquiry.detail.product_code') || '产品编号' }}: {{ row.product_code
+                          }}</div>
                       </div>
                     </div>
                   </template>
@@ -87,13 +88,15 @@
                 <el-table-column :label="$t('inquiry.detail.quantity') || '数量'" width="100">
                   <template #default="{ row }">
                     <el-input-number v-model="row.quantity" :min="1" :precision="0" :step="1" size="small"
-                      @change="updateItemQuote(row)" :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'" />
+                      @change="updateItemQuote(row)"
+                      :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'" />
                   </template>
                 </el-table-column>
                 <el-table-column :label="$t('inquiry.detail.unit_price') || '单价'" width="100">
                   <template #default="{ row }">
                     <el-input-number v-model="row.unit_price" :min="0" :precision="2" :step="0.01" size="small"
-                      @change="updateItemQuote(row)" :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'" />
+                      @change="updateItemQuote(row)"
+                      :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'" />
                   </template>
                 </el-table-column>
                 <el-table-column :label="$t('inquiry.detail.total_price') || '总价'" width="80">
@@ -117,7 +120,8 @@
               </div>
               <div class="total-item" v-if="totalQuotedPrice > 0">
                 <label>{{ $t('admin.inquiry.detail.discount') || '折扣' }}:</label>
-                <span :class="{ 'discount-positive': discountPercentage > 0, 'discount-negative': discountPercentage < 0 }">
+                <span
+                  :class="{ 'discount-positive': discountPercentage > 0, 'discount-negative': discountPercentage < 0 }">
                   {{ discountPercentage.toFixed(1) }}%
                 </span>
               </div>
@@ -140,7 +144,8 @@
                   :class="{ 'admin-message': message.sender_type === 'admin', 'user-message': message.sender_type === 'user' }">
                   <div class="message-header">
                     <span class="sender-name">
-                      {{ message.sender_type === 'admin' ? ($t('common.admin') || '管理员') : (message.sender_name || $t('common.customer') || '客户') }}
+                      {{ message.sender_type === 'admin' ? ($t('common.admin') || '管理员') : (message.sender_name ||
+                      $t('common.customer') || '客户') }}
                     </span>
                     <span class="message-time">{{ formatDate(message.created_at) }}</span>
                   </div>
@@ -159,7 +164,8 @@
                 :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'" />
               <div class="send-actions">
                 <el-button type="primary" size="small" @click="sendMessage"
-                  :disabled="!newMessage.trim() || inquiry.status === 'approved' || inquiry.status === 'rejected'" :loading="sendingMessage">
+                  :disabled="!newMessage.trim() || inquiry.status === 'approved' || inquiry.status === 'rejected'"
+                  :loading="sendingMessage">
                   {{ $t('inquiry.detail.send_message') || '发送消息' }}
                 </el-button>
               </div>
@@ -279,10 +285,10 @@ export default {
         })
         
         this.inquiry.status = newStatus
-        this.$messageHandler.showSuccess(
+        /*this.$messageHandler.showSuccess(
           this.$t('admin.inquiry.success.statusUpdated') || '状态更新成功',
           'admin.inquiry.success.statusUpdated'
-        )
+        )*/
         this.$emit('status-updated')
       } catch (error) {
         // 错误已经被统一处理
@@ -297,10 +303,10 @@ export default {
           fallbackKey: 'admin.inquiry.error.quoteUpdateFailed'
         })
         
-        this.$messageHandler.showSuccess(
+        /*this.$messageHandler.showSuccess(
           this.$t('admin.inquiry.success.quoteUpdated') || '报价更新成功',
           'admin.inquiry.success.quoteUpdated'
-        )
+        )*/
         this.$emit('quote-updated')
       } catch (error) {
         // 错误已经被统一处理
@@ -321,10 +327,10 @@ export default {
         this.newMessage = ''
         // 重新加载消息列表
         await this.loadInquiryDetail()
-        this.$messageHandler.showSuccess(
+        /*this.$messageHandler.showSuccess(
           this.$t('admin.inquiry.success.messageSent') || '消息发送成功',
           'admin.inquiry.success.messageSent'
-        )
+        )*/
       } catch (error) {
         // 错误已经被统一处理
       } finally {
@@ -555,50 +561,50 @@ export default {
       min-height: 0;
 
       .inquiry-items-card {
-          height: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+
+        .el-card__body {
+          flex: 1;
           display: flex;
           flex-direction: column;
+          padding: 15px;
+          max-height: 400px;
+          overflow-y: auto;
+        }
 
-          .el-card__body {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 15px;
-            max-height: 400px;
-            overflow-y: auto;
+        .items-table-container {
+          flex: 1;
+          min-height: 0;
+        }
+
+        .product-info {
+          display: flex;
+          align-items: center;
+
+          .product-image {
+            width: 24px;
+            height: 24px;
+            object-fit: cover;
+            border-radius: 3px;
+            margin-right: 6px;
           }
 
-          .items-table-container {
-            flex: 1;
-            min-height: 0;
-          }
-
-          .product-info {
-            display: flex;
-            align-items: center;
-
-            .product-image {
-              width: 24px;
-              height: 24px;
-              object-fit: cover;
-              border-radius: 3px;
-              margin-right: 6px;
+          .product-details {
+            .product-name {
+              font-weight: 600;
+              color: #303133;
+              margin-bottom: 2px;
+              font-size: 12px;
             }
 
-            .product-details {
-              .product-name {
-                font-weight: 600;
-                color: #303133;
-                margin-bottom: 2px;
-                font-size: 12px;
-              }
-
-              .product-code {
-                font-size: 11px;
-                color: #909399;
-              }
+            .product-code {
+              font-size: 11px;
+              color: #909399;
             }
           }
+        }
 
         .text-muted {
           color: #c0c4cc;
@@ -760,149 +766,149 @@ export default {
             margin-top: 8px;
             text-align: right;
           }
-       }
-     }
-   }
+        }
+      }
+    }
 
-   // 移动端响应式
-   @media (max-width: 768px) {
-     .inquiry-content {
-       gap: 10px;
-     }
+    // 移动端响应式
+    @media (max-width: 768px) {
+      .inquiry-content {
+        gap: 10px;
+      }
 
-     .top-section {
-       .inquiry-info-card {
-         .card-header {
-           flex-direction: column;
-           align-items: flex-start;
-           gap: 10px;
+      .top-section {
+        .inquiry-info-card {
+          .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
 
-           .header-actions {
-             width: 100%;
-             justify-content: flex-end;
-           }
-         }
+            .header-actions {
+              width: 100%;
+              justify-content: flex-end;
+            }
+          }
 
-         .info-item {
-           label {
-             width: 60px;
-             font-size: 11px;
-           }
+          .info-item {
+            label {
+              width: 60px;
+              font-size: 11px;
+            }
 
-           span {
-             font-size: 11px;
-           }
-         }
-       }
-     }
+            span {
+              font-size: 11px;
+            }
+          }
+        }
+      }
 
-     .main-section {
-       flex-direction: column;
-       gap: 10px;
+      .main-section {
+        flex-direction: column;
+        gap: 10px;
 
-       .left-panel,
-       .right-panel {
-         flex: none;
-         height: 300px;
-       }
+        .left-panel,
+        .right-panel {
+          flex: none;
+          height: 300px;
+        }
 
-       .left-panel {
-         .inquiry-items-card {
-           .el-card__body {
-             padding: 10px;
-           }
+        .left-panel {
+          .inquiry-items-card {
+            .el-card__body {
+              padding: 10px;
+            }
 
-           .product-info {
-             .product-image {
-               width: 30px;
-               height: 30px;
-               margin-right: 6px;
-             }
+            .product-info {
+              .product-image {
+                width: 30px;
+                height: 30px;
+                margin-right: 6px;
+              }
 
-             .product-details {
-               .product-name {
-                 font-size: 11px;
-               }
+              .product-details {
+                .product-name {
+                  font-size: 11px;
+                }
 
-               .product-code {
-                 font-size: 10px;
-               }
-             }
-           }
+                .product-code {
+                  font-size: 10px;
+                }
+              }
+            }
 
-           .total-section {
-             margin-top: 10px;
-             padding-top: 10px;
+            .total-section {
+              margin-top: 10px;
+              padding-top: 10px;
 
-             .total-item {
-               margin-bottom: 4px;
+              .total-item {
+                margin-bottom: 4px;
 
-               label,
-               span {
-                 font-size: 11px;
-               }
+                label,
+                span {
+                  font-size: 11px;
+                }
 
-               .total-quoted {
-                 font-size: 12px;
-               }
-             }
-           }
-         }
-       }
+                .total-quoted {
+                  font-size: 12px;
+                }
+              }
+            }
+          }
+        }
 
-       .right-panel {
-         .messages-card {
-           .el-card__body {
-             padding: 10px;
-           }
+        .right-panel {
+          .messages-card {
+            .el-card__body {
+              padding: 10px;
+            }
 
-           .messages-list {
-             margin-bottom: 10px;
+            .messages-list {
+              margin-bottom: 10px;
 
-             .message-wrapper {
-               .message-item {
-                 padding: 8px;
-                 max-width: 85%;
+              .message-wrapper {
+                .message-item {
+                  padding: 8px;
+                  max-width: 85%;
 
-                 .message-header {
-                   margin-bottom: 4px;
+                  .message-header {
+                    margin-bottom: 4px;
 
-                   .sender-name {
-                     font-size: 11px;
-                   }
+                    .sender-name {
+                      font-size: 11px;
+                    }
 
-                   .message-time {
-                     font-size: 10px;
-                   }
-                 }
+                    .message-time {
+                      font-size: 10px;
+                    }
+                  }
 
-                 .message-content {
-                   font-size: 11px;
-                   line-height: 1.3;
-                 }
-               }
+                  .message-content {
+                    font-size: 11px;
+                    line-height: 1.3;
+                  }
+                }
 
-               &.admin-message-wrapper {
-                 margin-left: 10px;
-               }
-             }
+                &.admin-message-wrapper {
+                  margin-left: 10px;
+                }
+              }
 
-             .no-messages {
-               padding: 20px 0;
-               font-size: 11px;
-             }
-           }
+              .no-messages {
+                padding: 20px 0;
+                font-size: 11px;
+              }
+            }
 
-           .send-message-section {
-             .send-actions {
-               margin-top: 6px;
-             }
-           }
-         }
-       }
-     }
-   }
- }
+            .send-message-section {
+              .send-actions {
+                margin-top: 6px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 @include mobile {

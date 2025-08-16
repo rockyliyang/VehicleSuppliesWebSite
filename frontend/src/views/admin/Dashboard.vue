@@ -460,7 +460,8 @@ export default {
             if (addButton) {
               addButton.click()
             }
-          }, 100)
+          }, 1000)
+
         })
       })
     },

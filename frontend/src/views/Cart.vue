@@ -279,7 +279,7 @@ export default {
           // 重新计算该商品的价格
           this.updateItemPrice(cartItem);
           
-          this.$messageHandler.showSuccess('数量已更新', 'cart.success.quantityUpdated');
+          //this.$messageHandler.showSuccess('数量已更新', 'cart.success.quantityUpdated');
           this.$bus.emit('cart-updated')
           this.calculateTotal();
         }
@@ -293,7 +293,8 @@ export default {
       try {
         const response = await this.$api.delete(`/cart/item/${cartItemId}`);
         if (response.success) {
-          this.$messageHandler.showSuccess('商品已从购物车中移除', 'cart.success.itemRemoved');
+          //this.$messageHandler.showSuccess('商品已从购物车中移除', 'cart.success.itemRemoved');
+
           this.$bus.emit('cart-updated')
           this.cartItems = this.cartItems.filter(item => item.id !== cartItemId);
           this.calculateTotal();
@@ -312,7 +313,8 @@ export default {
         try {
           const response = await this.$api.delete('/cart/clear');
           if (response.success) {
-            this.$messageHandler.showSuccess(this.$t('cart.clearSuccess') || '购物车已清空', 'cart.success.clearSuccess');
+            //this.$messageHandler.showSuccess(this.$t('cart.clearSuccess') || '购物车已清空', 'cart.success.clearSuccess');
+
             this.cartItems = [];
             this.totalPrice = 0;
             this.$bus.emit('cart-updated')
@@ -345,11 +347,11 @@ export default {
           );
           
           await Promise.all(deletePromises);
-          
+          /*
           this.$messageHandler.showSuccess(
             this.$t('cart.removeSelectedSuccess') || `已成功删除 ${this.selectedItems.length} 个商品`, 
             'cart.success.removeSelectedSuccess'
-          );
+          );*/
           
           // 从本地数组中移除已删除的商品
           const selectedIds = this.selectedItems.map(item => item.id);
@@ -508,10 +510,10 @@ export default {
             
             await Promise.all(addPromises);
             
-            this.$messageHandler.showSuccess(
+            /*this.$messageHandler.showSuccess(
               this.$t('cart.inquiryCreatedSuccess') || '询价单创建成功，正在跳转...',
               'CART.INQUIRY.CREATED_SUCCESS'
-            );
+            );*/
             
             // 跳转到询价管理页面
             this.$router.push('/inquiry-management');

@@ -818,7 +818,7 @@ export default {
             
             if (response.success) {
               this.paySuccess = true;
-              this.$messageHandler.showSuccess('支付成功！', 'payment.success.paymentSuccess');
+              //this.$messageHandler.showSuccess('支付成功！', 'payment.success.paymentSuccess');
               // 触发购物车更新事件
               if (this.$bus) {
                 this.$bus.emit('cart-updated');
@@ -915,7 +915,7 @@ export default {
           this.startQrcodeTimer();
           this.startAutoRefresh(paymentMethod);
           
-          this.$messageHandler.showSuccess('二维码生成成功，请扫码支付', 'checkout.success.qrcodeGenerated');
+          //this.$messageHandler.showSuccess('二维码生成成功，请扫码支付', 'checkout.success.qrcodeGenerated');
         } else {
           this.$messageHandler.showError('生成二维码失败: ' + qrRes.message, 'checkout.error.qrcodeGenerateFailed');
         }
@@ -999,7 +999,7 @@ export default {
           this.startQrcodeTimer();
           this.startAutoRefresh(paymentMethod);
           
-          this.$messageHandler.showSuccess('二维码已刷新', 'checkout.success.qrcodeRefreshed');
+          //this.$messageHandler.showSuccess('二维码已刷新', 'checkout.success.qrcodeRefreshed');
         } else {
           this.$messageHandler.showError('刷新二维码失败: ' + qrRes.message, 'checkout.error.qrcodeRefreshFailed');
         }

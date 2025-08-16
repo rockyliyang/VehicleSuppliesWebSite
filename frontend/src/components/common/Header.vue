@@ -243,7 +243,7 @@ export default {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
           // 实际项目中这里会调用登录API
-          this.$messageHandler.showSuccess('登录成功', 'login.success.loginSuccess')
+          //this.$messageHandler.showSuccess('登录成功', 'login.success.loginSuccess')
           this.loginDialogVisible = false
         }
       })
@@ -318,7 +318,7 @@ export default {
         await this.$api.post('/users/logout');
         // 清除前端状态
         this.$store.commit('setUser', null);
-        this.$messageHandler.showSuccess('已退出登录', 'login.success.logoutSuccess');
+        //this.$messageHandler.showSuccess('已退出登录', 'login.success.logoutSuccess');
         this.cartCount = 0;
         this.$router.push('/login');
       } catch (error) {

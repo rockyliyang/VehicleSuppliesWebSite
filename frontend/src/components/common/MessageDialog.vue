@@ -225,10 +225,10 @@ export default {
             
             await this.$api.postWithErrorHandler('contact/messages', submitData)
             
-            this.$messageHandler.showSuccess(
-              this.$t('productDetail.emailDialog.success'), 
-              'productDetail.emailDialog.success'
-            )
+            //this.$messageHandler.showSuccess(
+              //this.$t('productDetail.emailDialog.success'), 
+              //'productDetail.emailDialog.success'
+            //)
             
             // 重置表单，但保留用户信息（如果已登录）
             this.emailForm.subject = ''
