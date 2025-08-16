@@ -57,6 +57,7 @@ $text-disabled: $gray-400;
 $spacing-2xs: 2px; // 2.5px * 0.8
 $spacing-xs: 3px; // 4px * 0.8
 $spacing-sm: 6px; // 8px * 0.8
+$spacing-2md: 11px; // 8px * 0.8
 $spacing-md: 13px; // 16px * 0.8
 $spacing-lg: 19px; // 24px * 0.8
 $spacing-xl: 26px; // 32px * 0.8
@@ -323,7 +324,7 @@ $letter-spacing-md: 0.5px;
 $dialog-min-width: 240px; // 300px * 0.8
 $dialog-width-md: 400px; // 500px * 0.8
 $form-label-width: 80px; // 100px * 0.8
-$form-input-height: 32px; // 40px * 0.8
+$form-input-height: 48px; // 40px * 0.8
 $success-icon-size: 64px; // 80px * 0.8
 
 // 动画时长变量

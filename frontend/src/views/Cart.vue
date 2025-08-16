@@ -328,7 +328,7 @@ export default {
     
     async removeSelectedItems() {
       if (!this.selectedItems.length) {
-        this.$messageHandler.showWarning(this.$t('cart.selectItemsFirst') || '请先选择要删除的商品', 'cart.warning.selectItemsFirst');
+        this.$messageHandler.showWarning(this.$t('cart.selectItemsFirst') || '请先选择要删除的商品');
         return;
       }
       
@@ -377,7 +377,7 @@ export default {
     },
     checkout4() {
       if (!this.selectedItems.length) {
-        this.$messageHandler.showWarning(this.$t('cart.selectItemsFirst') || '请先选择要结算的商品', 'cart.warning.selectItemsFirst');
+        this.$messageHandler.showWarning(this.$t('cart.selectItemsFirst') || '请先选择要结算的商品');
         return;
       }
       sessionStorage.setItem('selectedCartItems', JSON.stringify(this.selectedItems));
@@ -475,9 +475,7 @@ export default {
     async addSelectedToInquiry() {
       if (!this.selectedItems.length) {
         this.$messageHandler.showWarning(
-          this.$t('cart.selectItemsFirst') || '请先选择要询价的商品',
-          'CART.SELECT_ITEMS_FIRST'
-        );
+          this.$t('cart.selectItemsFirst') || '请先选择要询价的商品');
         return;
       }
       

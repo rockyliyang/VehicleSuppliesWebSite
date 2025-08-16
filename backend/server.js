@@ -3,6 +3,13 @@ const env = require('./config/env');
 const { getMessage } = require('./config/messages');
 const { pool } = require('./db/db');
 
+// 引入日志工具并重写console
+// 只在开发环境override console
+if (process.env.NODE_ENV === 'development') {
+  const { overrideConsole } = require('./utils/logger');
+  overrideConsole();
+}
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -124,6 +131,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 // 优雅关闭服务器
 process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
+  
   server.close(async () => {
     console.log('HTTP server closed');
     try {
@@ -138,6 +146,7 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server');
+  
   server.close(async () => {
     console.log('HTTP server closed');
     try {

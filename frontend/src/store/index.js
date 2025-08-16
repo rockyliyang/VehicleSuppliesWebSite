@@ -226,7 +226,8 @@ export default createStore({
     // 获取 Banner 数据
     async fetchBanners({ commit }) {
       try {
-        const response = await api.get('banners')
+        const response = await api.get('banners/active')
+
         if (response.success) {
           commit('setBanners', response.data)
         }

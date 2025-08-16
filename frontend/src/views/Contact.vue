@@ -66,7 +66,7 @@
                 <div class="qrcode-container">
                   <div class="qrcode-item">
                     <div class="qrcode-image">
-                      <img :src="getQrCodeUrl()" :alt="$t('contact.wechatQrCode')" @error="handleQrCodeError">
+                      <img :src="getQrCodeUrl()" :alt="$t('contact.wechatQrCode')">
                     </div>
                     <p>{{ $t('contact.scanQrCode') }}</p>
                   </div>
@@ -367,7 +367,7 @@ export default {
     },
     fillUserInfo() {
       if (this.userInfo) {
-        this.contactForm.name = this.userInfo.name || '';
+        this.contactForm.name = this.userInfo.username || '';
         this.contactForm.email = this.userInfo.email || '';
         this.contactForm.phone = this.userInfo.phone || '';
       }
@@ -942,7 +942,7 @@ export default {
 
 :deep(.el-form) {
   .el-form-item {
-    margin-bottom: $spacing-md;
+    margin-bottom: $spacing-lg;
 
     .el-form-item__label {
       color: $text-primary;
@@ -957,8 +957,8 @@ export default {
       @include input-base;
       border: 1px solid $border-light;
       border-radius: $border-radius-sm;
-      padding: $spacing-xs $spacing-sm;
-      font-size: $font-size-sm;
+      padding: $spacing-2md $spacing-2md;
+      font-size: $font-size-lg;
       transition: all $transition-base;
 
       &:focus {

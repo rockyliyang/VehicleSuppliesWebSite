@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS inquiry_messages (
     message_type VARCHAR(8) DEFAULT 'text',
     content TEXT NOT NULL,
     is_read SMALLINT DEFAULT 0,
+    is_emailed SMALLINT DEFAULT 0,
     
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -137,6 +138,8 @@ CREATE INDEX idx_inquiry_messages_deleted ON inquiry_messages(deleted);
 CREATE INDEX idx_inquiry_messages_created_at ON inquiry_messages(created_at);
 CREATE INDEX idx_inquiry_messages_inquiry_deleted ON inquiry_messages(inquiry_id, deleted);
 CREATE INDEX idx_inquiry_messages_is_read ON inquiry_messages(is_read);
+CREATE INDEX idx_inquiry_messages_is_emailed ON inquiry_messages(is_emailed);
+CREATE INDEX idx_inquiry_messages_read_emailed ON inquiry_messages(is_read, is_emailed, deleted);
 CREATE INDEX idx_inquiry_messages_created_by ON inquiry_messages(created_by);
 CREATE INDEX idx_inquiry_messages_updated_by ON inquiry_messages(updated_by);
 
@@ -194,6 +197,7 @@ COMMENT ON COLUMN inquiry_messages.sender_type IS '发送者类型: user-用户,
 COMMENT ON COLUMN inquiry_messages.message_type IS '消息类型: text-文本, quote-报价, system-系统';
 COMMENT ON COLUMN inquiry_messages.content IS '消息内容';
 COMMENT ON COLUMN inquiry_messages.is_read IS '是否已读: 0-未读, 1-已读';
+COMMENT ON COLUMN inquiry_messages.is_emailed IS '是否已发邮件: 0-未发送, 1-已发送';
 COMMENT ON COLUMN inquiry_messages.deleted IS '软删除标记: 0-正常, 1-已删除';
 COMMENT ON COLUMN inquiry_messages.created_at IS '创建时间';
 COMMENT ON COLUMN inquiry_messages.updated_at IS '更新时间';

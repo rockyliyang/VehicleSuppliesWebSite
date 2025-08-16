@@ -12,6 +12,10 @@ const mutations = {
     // 保存到本地存储，以便刷新页面后保持语言设置
     localStorage.setItem('app_language', lang);
   },
+  // 只修改state，不影响localStorage
+  SET_CURRENT_LANGUAGE_STATE_ONLY(state, lang) {
+    state.currentLang = lang;
+  },
   SET_SUPPORTED_LANGUAGES(state, languages) {
     state.supportedLanguages = languages;
   },
@@ -70,7 +74,10 @@ const actions = {
       await dispatch('loadTranslations', state.currentLang);
     }
   },
-  
+    async changeLanguageTemp({ commit, dispatch }, lang) {
+    commit('SET_CURRENT_LANGUAGE_STATE_ONLY', lang);
+    await dispatch('loadTranslations', lang);
+  },
   // 切换语言
   async changeLanguage({ commit, dispatch }, lang) {
     commit('SET_CURRENT_LANGUAGE', lang);

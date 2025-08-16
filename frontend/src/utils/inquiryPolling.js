@@ -165,8 +165,8 @@ class InquiryPolling {
       // 重置重试计数
       this.retryCounts.set(inquiryId, 0)
       
-      // 立即开始下一次长轮询
-      setTimeout(() => this.longPollLoop(inquiryId), 100)
+      // 等待5秒后开始下一次长轮询
+      setTimeout(() => this.longPollLoop(inquiryId), 5000)
       
     } catch (error) {
       const currentRetries = this.retryCounts.get(inquiryId) || 0

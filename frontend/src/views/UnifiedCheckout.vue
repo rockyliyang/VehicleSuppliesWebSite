@@ -655,31 +655,80 @@ export default {
       });
     },
     loadPayPalSDK() {
-      if (!this.paypalConfig || !this.paypalConfig.clientId || this.paypalConfig.clientId === 'test') {
-        console.warn('PayPal配置无效，请检查环境变量');
+      // 增强配置验证
+      if (!this.paypalConfig) {
+        console.error('PayPal配置对象不存在');
+        this.$messageHandler.showError('PayPal配置未加载，请刷新页面重试', 'checkout.error.paypalConfigMissing');
+        return;
+      }
+      
+      if (!this.paypalConfig.clientId || this.paypalConfig.clientId === 'test') {
+        console.warn('PayPal Client ID无效:', this.paypalConfig.clientId);
         this.$messageHandler.showWarning('PayPal配置无效，请联系管理员', 'checkout.warning.paypalConfigInvalid');
         return;
       }
       
+      if (!this.paypalConfig.scriptUrl) {
+        console.error('PayPal Script URL未配置');
+        this.$messageHandler.showError('PayPal脚本地址未配置', 'checkout.error.paypalScriptUrlMissing');
+        return;
+      }
+      
       if (window.paypal) {
+        console.log('PayPal SDK已存在，直接渲染按钮');
         this.renderPayPalButtons();
         return;
       }
       
       if (document.getElementById('paypal-sdk')) {
+        console.log('PayPal SDK脚本已存在，等待加载完成');
         return;
       }
       
+      console.log('开始加载PayPal SDK...');
       const script = document.createElement('script');
       script.id = 'paypal-sdk';
-      script.src = `${this.paypalConfig.scriptUrl}?client-id=${this.paypalConfig.clientId}&currency=${this.paypalConfig.currency}&intent=${this.paypalConfig.intent}&components=${this.paypalConfig.components}`;
+      
+      // 构建PayPal SDK URL，添加locale参数指定英文语言
+      const params = new URLSearchParams({
+        'client-id': this.paypalConfig.clientId,
+        'currency': this.paypalConfig.currency || 'USD',
+        'intent': this.paypalConfig.intent || 'capture',
+        'components': this.paypalConfig.components || 'buttons,funding-eligibility',
+        'locale': 'en_US' // 指定英文语言
+      });
+      
+      // 添加启用的资金来源
+      if (this.paypalConfig.enableFunding) {
+        params.append('enable-funding', this.paypalConfig.enableFunding);
+      }
+      
+      // 添加禁用的资金来源
+      if (this.paypalConfig.disableFunding) {
+        params.append('disable-funding', this.paypalConfig.disableFunding);
+      }
+      
+      script.src = `${this.paypalConfig.scriptUrl}?${params.toString()}`;
+      console.log('PayPal SDK URL:', script.src);
+      
       script.onload = () => {
+        console.log('PayPal SDK加载成功');
         this.renderPayPalButtons();
       };
-      script.onerror = () => {
-        console.error('PayPal SDK加载失败');
-        this.$messageHandler.showError('PayPal SDK加载失败', 'checkout.error.paypalSDKLoadFailed');
+      
+      script.onerror = (error) => {
+        console.error('PayPal SDK加载失败:', error);
+        console.error('PayPal SDK URL:', script.src);
+        console.error('PayPal配置:', this.paypalConfig);
+        this.$messageHandler.showError('PayPal SDK加载失败，请检查网络连接或联系管理员', 'checkout.error.paypalSDKLoadFailed');
+        
+        // 移除失败的脚本标签
+        const failedScript = document.getElementById('paypal-sdk');
+        if (failedScript) {
+          failedScript.remove();
+        }
       };
+      
       document.head.appendChild(script);
     },
     renderPayPalButtons() {
@@ -1085,7 +1134,7 @@ export default {
      },
      goToAddressManagement() {
        this.showAddressDialog = false;
-       this.$router.push('/user/address');
+       this.$router.push('/address');
      },
     async validateShippingInfo() {
       try {
@@ -1269,7 +1318,7 @@ export default {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: $spacing-xl;
-  margin-bottom: $spacing-lg;
+  margin-bottom: $spacing-md;
 }
 
 .shipping-form :deep(.el-form-item) {
@@ -1304,6 +1353,7 @@ export default {
   transition: $transition-slow;
   box-shadow: none;
   padding: $spacing-sm $spacing-md;
+  min-height: $form-input-height;
 }
 
 .shipping-form :deep(.el-input__wrapper:hover) {
@@ -1352,6 +1402,7 @@ export default {
   transition: $transition-slow;
   box-shadow: none;
   padding: $spacing-sm $spacing-md;
+  min-height: $form-input-height;
 }
 
 .shipping-form :deep(.el-select__wrapper:hover) {
@@ -1386,6 +1437,7 @@ export default {
 
     :deep(.el-select__wrapper) {
       height: $form-input-height;
+      min-height: $form-input-height;
       border-radius: $border-radius-md;
       border: $border-width-sm solid $border-light;
       transition: all 0.3s ease;
@@ -1406,6 +1458,7 @@ export default {
 
     :deep(.el-input__wrapper) {
       height: $form-input-height;
+      min-height: $form-input-height;
       border-radius: $border-radius-md;
       border: $border-width-sm solid $border-light;
       transition: all 0.3s ease;
@@ -1855,7 +1908,7 @@ export default {
 
   .product-image {
     width: $spacing-4xl;
-  height: $spacing-4xl;
+    height: $spacing-4xl;
     margin: 0;
     flex-shrink: 0;
   }
@@ -1955,6 +2008,7 @@ export default {
     /* 统一内边距 */
     font-size: $font-size-md;
     /* 统一字体大小 */
+    height: $form-input-height;
     min-height: $form-input-height;
     /* 统一高度 */
     border-radius: $border-radius-md;
@@ -1985,6 +2039,7 @@ export default {
     /* 统一内边距 */
     font-size: $font-size-md;
     /* 统一字体大小 */
+    height: $form-input-height;
     min-height: $form-input-height;
     /* 统一高度 */
     border-radius: $border-radius-md;
@@ -2052,6 +2107,7 @@ export default {
 
       :deep(.el-select__wrapper) {
         height: $form-input-height;
+        min-height: $form-input-height;
         /* 统一高度 */
         font-size: $font-size-md;
         /* 统一字体大小 */
@@ -2065,6 +2121,7 @@ export default {
 
       :deep(.el-input__wrapper) {
         height: $form-input-height;
+        min-height: $form-input-height;
         /* 统一高度 */
         font-size: $font-size-md;
         /* 统一字体大小 */
@@ -2387,15 +2444,15 @@ export default {
 }
 
 .custom-dialog-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: $spacing-lg $spacing-4xl;
-    border-bottom: $border-width-md solid $border-color;
-    flex-shrink: 0;
-    background: linear-gradient(135deg, $gray-50 0%, $white 100%);
-    border-radius: $spacing-md $spacing-md 0 0;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-4xl;
+  border-bottom: $border-width-md solid $border-color;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, $gray-50 0%, $white 100%);
+  border-radius: $spacing-md $spacing-md 0 0;
+}
 
 .custom-dialog-title {
   font-size: $font-size-xl;
@@ -2413,29 +2470,29 @@ export default {
 }
 
 .custom-dialog-close {
-    background: none;
-    border: none;
-    font-size: $font-size-lg;
-    color: $text-muted;
-    cursor: pointer;
-    padding: $spacing-xs;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: $border-radius-xs;
-    transition: all $transition-duration;
-  }
+  background: none;
+  border: none;
+  font-size: $font-size-lg;
+  color: $text-muted;
+  cursor: pointer;
+  padding: $spacing-xs;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $border-radius-xs;
+  transition: all $transition-duration;
+}
 
-  .custom-dialog-close:hover {
-    background-color: $gray-50;
-    color: $text-secondary;
-  }
+.custom-dialog-close:hover {
+  background-color: $gray-50;
+  color: $text-secondary;
+}
 
 .custom-dialog-body {
-    padding: $spacing-xl $spacing-2xl;
-    flex: 1;
-    overflow-y: auto;
-  }
+  padding: $spacing-xl $spacing-2xl;
+  flex: 1;
+  overflow-y: auto;
+}
 
 /* 移动端自定义对话框优化 */
 @media (max-width: 768px) {
@@ -2481,7 +2538,7 @@ export default {
     min-height: 0;
     /* 允许flex子元素收缩 */
     height: 100%;
-      /* 确保占满可用高度 */
+    /* 确保占满可用高度 */
   }
 
   .address-items {

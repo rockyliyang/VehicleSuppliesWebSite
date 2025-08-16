@@ -36,7 +36,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item v-if="isLoggedIn" command="settings">{{ $t('userSettings.title') || '我的'
+              <el-dropdown-item v-if="isLoggedIn" command="settings">{{ $t('userSettings.myaccount') || '我的'
                 }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="orders">{{ $t('orders') }}</el-dropdown-item>
               <el-dropdown-item v-if="isLoggedIn" command="inquiries">{{ $t('inquiry.management.title') || '询价单管理'

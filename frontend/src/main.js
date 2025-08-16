@@ -27,7 +27,8 @@ app.config.globalProperties.$axios = api
 app.config.globalProperties.$t = function(key, defaultValue = key) {
   // 使用公共翻译函数，确保一致性
   const translate = createTranslateFunction(this.$store)
-  return translate(key, defaultValue)
+  const tv = translate(key, defaultValue)
+  return tv
 }
 
 // 全局注册消息处理器

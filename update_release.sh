@@ -53,7 +53,8 @@ deploy_backend() {
     
     # Stop backend service
     echo_color "green" "[BACKEND] Stopping backend service (pm2)..."
-    sudo -u ${DEPLOY_USER} pm2 stop all || echo "PM2 not running, proceeding..."
+    sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-backend || echo "Backend not running, proceeding..."
+    sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-scheduler || echo "Scheduler not running, proceeding..."
 
     # Backup environment configuration files if they exist
     echo_color "green" "[BACKEND] Backing up environment configuration files..."
@@ -137,7 +138,7 @@ deploy_backend() {
 
     # Restart backend service
     echo_color "green" "[BACKEND] Restarting backend service (pm2)..."
-    sudo -u ${DEPLOY_USER} pm2 restart all || sudo -u ${DEPLOY_USER} bash -c "cd ${BACKEND_DIR} && pm2 start ecosystem.config.js --env production"
+    sudo -u ${DEPLOY_USER} bash -c "cd ${BACKEND_DIR} && pm2 start ecosystem.config.js --env production"
     sudo -u ${DEPLOY_USER} pm2 save
 }
 
@@ -180,9 +181,10 @@ if [ -d "release" ]; then
     rm -rf release
 fi
 
-# Extract release archive in current directory
-echo_color "green" "[DEPLOY] Extracting release archive..."
-tar -xzvf ${RELEASE_ARCHIVE}
+# Create release directory and extract archive
+echo_color "green" "[DEPLOY] Creating release directory and extracting archive..."
+mkdir -p release
+tar -xzvf ${RELEASE_ARCHIVE} -C release
 
 RESTART_FRONTEND=false
 RESTART_BACKEND=false
@@ -206,6 +208,23 @@ fi
 
 if [ "${RESTART_FRONTEND}" = true ]; then
     deploy_frontend
+fi
+
+# Execute database update script if it exists
+echo_color "yellow" "--- Updating Database ---"
+if [ -f "release/update_database.sh" ]; then
+    echo_color "green" "[DATABASE] Found database update script, executing..."
+    chmod +x release/update_database.sh
+    cd release
+    ./update_database.sh
+    cd ..
+    if [ $? -eq 0 ]; then
+        echo_color "green" "[DATABASE] Database update completed successfully"
+    else
+        echo_color "red" "[DATABASE] Database update failed with error code $?"
+    fi
+else
+    echo_color "yellow" "[DATABASE] No database update script found, skipping database update"
 fi
 
 echo_color "yellow" "=================================================="

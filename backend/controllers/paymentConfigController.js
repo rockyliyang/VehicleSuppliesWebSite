@@ -28,7 +28,9 @@ exports.getPaymentConfig = async (req, res) => {
           // 组件列表
           components: process.env.PAYPAL_COMPONENTS || 'buttons,funding-eligibility',
           // 是否在沙盒环境中
-          isSandbox: process.env.NODE_ENV !== 'production'
+          isSandbox: process.env.NODE_ENV !== 'production',
+          // 语言设置
+          locale: 'en_US'
         }
       }
     };

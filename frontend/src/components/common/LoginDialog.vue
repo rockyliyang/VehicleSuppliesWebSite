@@ -231,7 +231,7 @@ export default {
       this.initGoogleAPI();
       
       // 初始化Facebook SDK
-      this.initFacebookSDK();
+      //this.initFacebookSDK();
     },
     
     initGoogleAPI() {
