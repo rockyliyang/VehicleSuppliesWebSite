@@ -72,6 +72,12 @@
             </el-icon>
             <span>物流公司</span>
           </el-menu-item>
+          <el-menu-item index="/admin/countries">
+            <el-icon>
+              <Location />
+            </el-icon>
+            <span>国家管理</span>
+          </el-menu-item>
           <el-sub-menu index="user-management">
             <template #title>
               <el-icon>
@@ -136,7 +142,7 @@
 </template>
 
 <script>
-import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown, Document, Message, ShoppingCart, Van } from '@element-plus/icons-vue'
+import { HomeFilled, Goods, Picture as PictureIcon, OfficeBuilding, User, Setting, Fold, ArrowDown, Document, Message, ShoppingCart, Van, Location } from '@element-plus/icons-vue'
 import { ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 
@@ -155,7 +161,8 @@ export default {
     Document,
     Message,
     ShoppingCart,
-    Van
+    Van,
+    Location
   },
   data() {
     return {
@@ -213,6 +220,9 @@ export default {
       } else if (route.path.includes('/admin/logistics-companies')) {
         this.activeMenu = '/admin/logistics-companies'
         this.currentPage = '物流公司管理'
+      } else if (route.path.includes('/admin/countries')) {
+        this.activeMenu = '/admin/countries'
+        this.currentPage = '国家管理'
       } else if (route.path.includes('/admin/regular-users')) {
         this.activeMenu = '/admin/regular-users'
         this.currentPage = '普通用户列表'

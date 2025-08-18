@@ -144,6 +144,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'countries',
+        name: 'AdminCountries',
+        component: () => import('../views/admin/CountryManagement.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: '',
         redirect: '/admin/dashboard',
         meta: { requiresAuth: true }

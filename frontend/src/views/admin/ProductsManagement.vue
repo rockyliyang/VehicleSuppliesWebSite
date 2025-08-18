@@ -178,6 +178,33 @@
           </el-col>
         </el-row>
 
+        <!-- 物流信息 -->
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="长度(cm)" prop="product_length">
+              <el-input-number v-model="productForm.product_length" :min="0" :precision="2" placeholder="长度" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="宽度(cm)" prop="product_width">
+              <el-input-number v-model="productForm.product_width" :precision="2" :min="0" placeholder="宽度" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="高度(cm)" prop="product_height">
+              <el-input-number v-model="productForm.product_height" :precision="2" :min="0" placeholder="高度" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="重量(kg)" prop="product_weight">
+              <el-input-number v-model="productForm.product_weight" :min="0" :precision="3" placeholder="请输入产品重量" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+        </el-row>
+
         <el-form-item label="阶梯价格" prop="price_ranges">
           <div class="price-ranges-container">
             <div v-for="(range, index) in productForm.price_ranges" :key="index" class="price-range-item">
@@ -196,6 +223,28 @@
             </div>
             <el-button type="primary" size="small" @click="addPriceRange" style="margin-top: 10px;">
               添加价格区间
+            </el-button>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="阶梯运费" prop="shipping_fee_ranges">
+          <div class="shipping-fee-ranges-container">
+            <div v-for="(range, index) in productForm.shipping_fee_ranges" :key="index" class="shipping-fee-range-item">
+              <el-input-number v-model="range.min_quantity" :min="1" placeholder="最小数量" style="width: 120px"
+                :disabled="index > 0" />
+              <span class="range-separator">-</span>
+              <el-input-number v-model="range.max_quantity" :min="range.min_quantity || 1" placeholder="最大数量"
+                style="width: 120px" @change="handleShippingFeeMaxQuantityChange(index)" />
+              <span class="range-separator">件</span>
+              <el-input-number v-model="range.fee" :min="0" :precision="2" placeholder="运费" style="width: 120px" />
+              <span class="range-separator">元</span>
+              <el-button type="danger" size="small" @click="removeShippingFeeRange(index)"
+                :disabled="productForm.shipping_fee_ranges.length <= 1">
+                删除
+              </el-button>
+            </div>
+            <el-button type="primary" size="small" @click="addShippingFeeRange" style="margin-top: 10px;">
+              添加运费区间
             </el-button>
           </div>
         </el-form-item>
@@ -454,6 +503,11 @@ export default {
           { min_quantity: 1, max_quantity: null, price: 0 }
         ],
         stock: 0,
+        product_length: null,
+        product_width: null,
+        product_height: null,
+        product_weight: null,
+
         sort_order: 0,
         short_description: '',
         full_description: '',
@@ -852,6 +906,11 @@ export default {
         price: '',
         price_ranges: [{ min_quantity: 1, max_quantity: null, price: 0 }],
         stock: 0,
+        product_length: null,
+        product_width: null,
+        product_height: null,
+        product_weight: null,
+
         sort_order: 0,
         short_description: '',
         full_description: '',

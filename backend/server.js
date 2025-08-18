@@ -41,8 +41,10 @@ const thirdPartyAuthRoutes = require('./routes/thirdPartyAuthRoutes');
 const addressRoutes = require('./routes/addressRoutes');
 const userProductRoutes = require('./routes/userProductRoutes');
 const orderManagementRoutes = require('./routes/orderManagementRoutes');
+const logisticsRoutes = require('./routes/logisticsRoutes');
 const productReviewRoutes = require('./routes/productReviewRoutes');
 const productReviewImageRoutes = require('./routes/productReviewImageRoutes');
+const tagRoutes = require('./routes/tagRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -101,8 +103,10 @@ app.use('/api/auth', thirdPartyAuthRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api', userProductRoutes);
 app.use('/api/order-management', orderManagementRoutes);
+app.use('/api/admin/logistics', logisticsRoutes);
 app.use('/api/product-reviews', productReviewRoutes);
 app.use('/api/product-review-images', productReviewImageRoutes);
+app.use('/api/tags', tagRoutes);
 
 // 国家省份数据路由
 app.use('/api', userRoutes);
@@ -125,6 +129,9 @@ app.use((err, req, res, next) => {
   });
 });
 
+// 添加优雅关闭标志
+let isShuttingDown = false;
+
 const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log(`服务器运行在 http://localhost:${PORT}`);
   
@@ -138,9 +145,15 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   }
 });
 
-// 优雅关闭服务器
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+// 优雅关闭函数
+async function gracefulShutdown(signal, exitCode = 0) {
+  if (isShuttingDown) {
+    console.log(`${signal} signal received, but shutdown already in progress`);
+    return;
+  }
+  
+  isShuttingDown = true;
+  console.log(`${signal} signal received: closing HTTP server`);
   
   server.close(async () => {
     console.log('HTTP server closed');
@@ -149,66 +162,33 @@ process.on('SIGTERM', async () => {
       await pgNotificationManager.close();
       console.log('PostgreSQL notification manager closed');
       
-      await pool.end();
-      console.log('Database pool closed');
+      // 检查连接池是否已经关闭
+      if (!pool.ended) {
+        await pool.end();
+        console.log('Database pool closed');
+      } else {
+        console.log('Database pool already closed');
+      }
     } catch (err) {
-      console.error('Error closing database pool:', err);
+      console.error('Error during graceful shutdown:', err);
     }
-    process.exit(0);
+    process.exit(exitCode);
   });
-});
+}
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server');
-  
-  server.close(async () => {
-    console.log('HTTP server closed');
-    try {
-      // 关闭PostgreSQL通知管理器
-      await pgNotificationManager.close();
-      console.log('PostgreSQL notification manager closed');
-      
-      await pool.end();
-      console.log('Database pool closed');
-    } catch (err) {
-      console.error('Error closing database pool:', err);
-    }
-    process.exit(0);
-  });
-});
+// 优雅关闭服务器
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // 处理未捕获的异常
-process.on('uncaughtException', async (err) => {
+process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
-  server.close(async () => {
-    try {
-      // 关闭PostgreSQL通知管理器
-      await pgNotificationManager.close();
-      console.log('PostgreSQL notification manager closed');
-      
-      await pool.end();
-      console.log('Database pool closed');
-    } catch (poolErr) {
-      console.error('Error closing database pool:', poolErr);
-    }
-    process.exit(1);
-  });
+  gracefulShutdown('uncaughtException', 1);
 });
 
 // 处理未处理的 Promise 拒绝
-process.on('unhandledRejection', async (reason, promise) => {
+process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  server.close(async () => {
-    try {
-      // 关闭PostgreSQL通知管理器
-      await pgNotificationManager.close();
-      console.log('PostgreSQL notification manager closed');
-      
-      await pool.end();
-      console.log('Database pool closed');
-    } catch (poolErr) {
-      console.error('Error closing database pool:', poolErr);
-    }
-    process.exit(1);
-  });
+  gracefulShutdown('unhandledRejection', 1);
 });

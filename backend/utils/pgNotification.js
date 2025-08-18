@@ -15,6 +15,8 @@ class PgNotificationManager extends EventEmitter {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000; // 1秒
+    this.isShuttingDown = false; // 添加关闭标志
+    this.reconnectTimer = null; // 保存重连定时器引用
   }
 
   /**
@@ -86,6 +88,12 @@ class PgNotificationManager extends EventEmitter {
    * 处理连接错误和重连
    */
   async handleConnectionError() {
+    // 如果正在关闭，不进行重连
+    if (this.isShuttingDown) {
+      console.log('Service is shutting down, skipping reconnection.');
+      return;
+    }
+
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('Max reconnection attempts reached. Stopping reconnection.');
       return;
@@ -96,7 +104,14 @@ class PgNotificationManager extends EventEmitter {
     
     console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
     
-    setTimeout(async () => {
+    // 保存定时器引用，以便在关闭时清除
+    this.reconnectTimer = setTimeout(async () => {
+      // 再次检查是否正在关闭
+      if (this.isShuttingDown) {
+        console.log('Service is shutting down, cancelling reconnection.');
+        return;
+      }
+      
       try {
         await this.startListening();
       } catch (error) {
@@ -142,15 +157,26 @@ class PgNotificationManager extends EventEmitter {
    */
   async close() {
     try {
+      // 设置关闭标志，停止重连尝试
+      this.isShuttingDown = true;
       this.isListening = false;
       
+      // 清除重连定时器
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+      
       if (this.listenerClient) {
+        // 移除事件监听器，避免触发重连
+        this.listenerClient.removeAllListeners();
         await this.listenerClient.end();
       }
       
-      if (this.pool) {
-        await this.pool.end();
-      }
+      // 注意：不要关闭共享的连接池，它由db.js管理
+      // if (this.pool) {
+      //   await this.pool.end();
+      // }
       
       console.log('PostgreSQL notification manager closed');
     } catch (error) {

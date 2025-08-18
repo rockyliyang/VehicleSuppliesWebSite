@@ -548,48 +548,88 @@ let lastModified = {
   states: null
 };
 
-// 加载国家和省份数据
-function loadCountryStateData() {
+// 从数据库加载国家和省份数据
+async function loadCountryStateData() {
   try {
-    const countriesPath = path.join(__dirname, '../public/country_state/countries.json');
-    const statesPath = path.join(__dirname, '../public/country_state/states.json');
+    // 获取countries表的最大更新时间
+    const countriesMaxTimeResult = await query(
+      'SELECT EXTRACT(EPOCH FROM MAX(updated_at)) * 1000 as max_time FROM countries WHERE deleted = false'
+    );
+    const countriesMaxTime = countriesMaxTimeResult.getFirstRow()?.max_time || 0;
     
-    // 检查文件修改时间
-    const countriesStats = fs.statSync(countriesPath);
-    const statesStats = fs.statSync(statesPath);
+    // 获取states表的最大更新时间
+    const statesMaxTimeResult = await query(
+      'SELECT EXTRACT(EPOCH FROM MAX(updated_at)) * 1000 as max_time FROM states WHERE deleted = false'
+    );
+    const statesMaxTime = statesMaxTimeResult.getFirstRow()?.max_time || 0;
     
-    const countriesModified = countriesStats.mtime.getTime();
-    const statesModified = statesStats.mtime.getTime();
-    
-    // 如果文件有更新或缓存为空，重新加载数据
-    if (!countriesCache || lastModified.countries !== countriesModified) {
-      const countriesData = JSON.parse(fs.readFileSync(countriesPath, 'utf8'));
-      countriesCache = countriesData.map(country => ({
+    // 如果数据有更新或缓存为空，重新加载数据
+    if (!countriesCache || lastModified.countries !== countriesMaxTime) {
+      const countriesResult = await query(
+        `SELECT c.id, c.name, c.iso3, c.iso2, c.phone_code, c.tax_rate, c.shipping_rate, c.shipping_rate_type,
+                COALESCE(
+                  JSON_AGG(
+                    JSON_BUILD_OBJECT(
+                      'id', t.id,
+                      'value', t.value,
+                      'type', t.type,
+                      'description', t.description
+                    ) ORDER BY t.value
+                  ) FILTER (WHERE t.id IS NOT NULL), 
+                  '[]'::json
+                ) as tags
+         FROM countries c
+         LEFT JOIN country_tags ct ON c.id = ct.country_id AND ct.deleted = false
+         LEFT JOIN tags t ON ct.tag_id = t.id AND t.deleted = false
+         WHERE c.deleted = false AND c.status = 'active' 
+         GROUP BY c.id, c.name, c.iso3, c.iso2, c.phone_code, c.tax_rate, c.shipping_rate, c.shipping_rate_type
+         ORDER BY c.name`
+      );
+      
+      countriesCache = countriesResult.getRows().map(country => ({
         id: country.id,
         name: country.name,
         iso3: country.iso3,
-        phone_code: country.phone_code
+        iso2: country.iso2,
+        phone_code: country.phone_code,
+        tax_rate: country.tax_rate,
+        shipping_rate: country.shipping_rate,
+        shipping_rate_type: country.shipping_rate_type,
+        tags: country.tags
       }));
-      lastModified.countries = countriesModified;
+      lastModified.countries = countriesMaxTime;
     }
     
-    if (!statesCache || lastModified.states !== statesModified) {
-      const statesData = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
-      statesCache = statesData.map(state => ({
+    if (!statesCache || lastModified.states !== statesMaxTime) {
+      const statesResult = await query(
+        `SELECT id, name, country_id, state_code, tax_rate, shipping_rate, shipping_rate_type 
+         FROM states 
+         WHERE deleted = false AND status = 'active' 
+         ORDER BY country_id, name`
+      );
+      
+      statesCache = statesResult.getRows().map(state => ({
         id: state.id,
         name: state.name,
         country_id: state.country_id,
-        state_code: state.state_code
+        state_code: state.state_code,
+        tax_rate: state.tax_rate,
+        shipping_rate: state.shipping_rate,
+        shipping_rate_type: state.shipping_rate_type
       }));
-      lastModified.states = statesModified;
+      lastModified.states = statesMaxTime;
     }
+    
+    // 计算整体最后修改时间
+    const overallLastModified = Math.max(countriesMaxTime, statesMaxTime);
     
     return {
       countries: countriesCache,
       states: statesCache,
       lastModified: {
         countries: lastModified.countries,
-        states: lastModified.states
+        states: lastModified.states,
+        overall: overallLastModified
       }
     };
   } catch (error) {
@@ -599,14 +639,15 @@ function loadCountryStateData() {
 }
 
 // 获取国家和省份数据
-router.get('/country-state-data', (req, res) => {
+router.get('/country-state-data', async (req, res) => {
   try {
     const clientLastModified = {
       countries: parseInt(req.query.countries_last_modified) || 0,
-      states: parseInt(req.query.states_last_modified) || 0
+      states: parseInt(req.query.states_last_modified) || 0,
+      overall: parseInt(req.query.overall_last_modified) || 0
     };
     
-    const data = loadCountryStateData();
+    const data = await loadCountryStateData();
     if (!data) {
       return res.status(500).json({
         success: false,
@@ -615,10 +656,8 @@ router.get('/country-state-data', (req, res) => {
       });
     }
     
-    // 检查是否需要更新
-    const needUpdate = 
-      clientLastModified.countries !== data.lastModified.countries ||
-      clientLastModified.states !== data.lastModified.states;
+    // 检查是否需要更新（使用整体最后修改时间进行比较）
+    const needUpdate = clientLastModified.overall !== data.lastModified.overall;
     
     if (!needUpdate) {
       return res.json({
@@ -631,7 +670,7 @@ router.get('/country-state-data', (req, res) => {
       });
     }
     
-    // 返回数据
+    // 返回数据，包含税率和运费信息
     const responseData = {
       countries: data.countries,
       states: data.states,
@@ -651,6 +690,591 @@ router.get('/country-state-data', (req, res) => {
     res.status(500).json({
       success: false,
       message: getMessage('SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 国家管理接口
+
+// 获取所有国家（管理员）
+router.get('/admin/countries', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '', status = '' } = req.query;
+    
+    let whereClause = 'WHERE c.deleted = false';
+    const params = [];
+    let paramIndex = 1;
+    
+    if (search) {
+      whereClause += ` AND (c.name ILIKE $${paramIndex} OR c.iso3 ILIKE $${paramIndex} OR c.iso2 ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+    
+    if (status) {
+      whereClause += ` AND c.status = $${paramIndex}`;
+      params.push(status);
+      paramIndex++;
+    }
+    
+    // 获取总数
+    const countResult = await query(`SELECT COUNT(*) as total FROM countries c ${whereClause}`, params);
+    const total = parseInt(countResult.getFirstRow().total);
+    
+    // 获取分页数据
+    const offset = (page - 1) * limit;
+    const countriesResult = await query(
+      `SELECT c.id, c.name, c.iso3, c.iso2, c.phone_code, c.tax_rate, c.shipping_rate, c.shipping_rate_type, c.status, c.created_at, c.updated_at,
+              COALESCE(
+                JSON_AGG(
+                  JSON_BUILD_OBJECT(
+                    'id', t.id,
+                    'value', t.value,
+                    'type', t.type,
+                    'description', t.description
+                  ) ORDER BY t.value
+                ) FILTER (WHERE t.id IS NOT NULL), 
+                '[]'::json
+              ) as tags
+       FROM countries c
+       LEFT JOIN country_tags ct ON c.id = ct.country_id AND ct.deleted = false
+       LEFT JOIN tags t ON ct.tag_id = t.id AND t.deleted = false
+       ${whereClause} 
+       GROUP BY c.id, c.name, c.iso3, c.iso2, c.phone_code, c.tax_rate, c.shipping_rate, c.shipping_rate_type, c.status, c.created_at, c.updated_at
+       ORDER BY c.name 
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...params, limit, offset]
+    );
+    
+    res.json({
+      success: true,
+      message: getMessage('COMMON.SUCCESS'),
+      data: {
+        countries: countriesResult.getRows(),
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取国家列表失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 创建国家（管理员）
+router.post('/admin/countries', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { name, iso3, iso2, phone_code, tax_rate, shipping_rate, shipping_rate_type, status } = req.body;
+    
+    if (!name || !iso3 || !iso2) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COMMON.REQUIRED_FIELDS_MISSING'),
+        data: null
+      });
+    }
+    
+    // 检查ISO代码是否已存在
+    const existingCountry = await query(
+      'SELECT id FROM countries WHERE (iso3 = $1 OR iso2 = $2) AND deleted = false',
+      [iso3, iso2]
+    );
+    
+    if (existingCountry.getRowCount() > 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COUNTRY.ISO_CODE_EXISTS'),
+        data: null
+      });
+    }
+    
+    const result = await query(
+      `INSERT INTO countries (name, iso3, iso2, phone_code, tax_rate, shipping_rate, shipping_rate_type, status, created_by, updated_by) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+       RETURNING id`,
+      [name, iso3, iso2, phone_code || null, tax_rate || 0, shipping_rate || 0, shipping_rate_type || 'fixed', status || 'active', req.userId, req.userId]
+    );
+    
+    res.status(201).json({
+      success: true,
+      message: getMessage('COUNTRY.CREATE_SUCCESS'),
+      data: { id: result.getFirstRow().id }
+    });
+  } catch (error) {
+    console.error('创建国家失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 更新国家（管理员）
+router.put('/admin/countries/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, iso3, iso2, phone_code, tax_rate, shipping_rate, shipping_rate_type, status, tags } = req.body;
+    
+    if (!name || !iso3 || !iso2) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COMMON.REQUIRED_FIELDS_MISSING'),
+        data: null
+      });
+    }
+    
+    // 检查国家是否存在
+    const existingCountry = await query(
+      'SELECT id FROM countries WHERE id = $1 AND deleted = false',
+      [id]
+    );
+    
+    if (existingCountry.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('COUNTRY.NOT_FOUND'),
+        data: null
+      });
+    }
+    
+    // 检查ISO代码是否被其他国家使用
+    const duplicateCountry = await query(
+      'SELECT id FROM countries WHERE (iso3 = $1 OR iso2 = $2) AND id != $3 AND deleted = false',
+      [iso3, iso2, id]
+    );
+    
+    if (duplicateCountry.getRowCount() > 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COUNTRY.ISO_CODE_EXISTS'),
+        data: null
+      });
+    }
+    
+    await query(
+      `UPDATE countries 
+       SET name = $1, iso3 = $2, iso2 = $3, phone_code = $4, tax_rate = $5, shipping_rate = $6, shipping_rate_type = $7, status = $8, updated_by = $9, updated_at = NOW() 
+       WHERE id = $10`,
+      [name, iso3, iso2, phone_code || null, tax_rate || 0, shipping_rate || 0, shipping_rate_type || 'fixed', status || 'active', req.userId, id]
+    );
+
+    // 更新country的tags - 使用PostgreSQL MERGE语法优化
+    if (tags && Array.isArray(tags)) {
+      // 使用事务处理tags更新
+      await query('BEGIN');
+      
+      try {
+        // 使用MERGE语法进行高效的标签更新
+        if (tags.length > 0) {
+          // 构建VALUES子句
+          const tagValues = tags.map((tagId, index) => {
+            const baseIndex = index * 2;
+            return `($${baseIndex + 1}, $${baseIndex + 2})`;
+          }).join(', ');
+          
+          const tagParams = [];
+          tags.forEach(tagId => {
+            tagParams.push(parseInt(id), parseInt(tagId)); // country_id, tag_id - 确保都是整数类型
+          });
+          
+          // 使用WITH子句和MERGE逻辑进行高效更新
+          await query(`
+            WITH new_tags AS (
+              SELECT country_id::BIGINT, tag_id::BIGINT FROM (VALUES ${tagValues}) AS t(country_id, tag_id)
+            ),
+            existing_tags AS (
+              SELECT country_id, tag_id FROM country_tags 
+              WHERE country_id = $${tags.length * 2 + 1} AND deleted = false
+            ),
+            to_delete AS (
+              SELECT et.country_id, et.tag_id FROM existing_tags et
+              LEFT JOIN new_tags nt ON et.country_id = nt.country_id AND et.tag_id = nt.tag_id
+              WHERE nt.tag_id IS NULL
+            ),
+            to_insert AS (
+              SELECT nt.country_id, nt.tag_id FROM new_tags nt
+              LEFT JOIN existing_tags et ON nt.country_id = et.country_id AND nt.tag_id = et.tag_id
+              WHERE et.tag_id IS NULL
+            ),
+            delete_old AS (
+              UPDATE country_tags SET deleted = true, updated_by = $${tags.length * 2 + 1}, updated_at = NOW()
+              WHERE (country_id, tag_id) IN (SELECT country_id, tag_id FROM to_delete)
+              RETURNING 1
+            )
+            INSERT INTO country_tags (guid, country_id, tag_id, created_by, updated_by, created_at, updated_at, deleted)
+            SELECT gen_random_uuid(), country_id, tag_id, $${tags.length * 2 + 1}, $${tags.length * 2 + 2}, NOW(), NOW(), false
+            FROM to_insert
+          `, [...tagParams, req.userId, req.userId]);
+        } else {
+          // 如果tags为空数组，删除所有现有关联
+          await query(
+            'UPDATE country_tags SET deleted = true, updated_by = $1, updated_at = NOW() WHERE country_id = $2 AND deleted = false',
+            [req.userId, parseInt(id)]
+          );
+        }
+        
+        await query('COMMIT');
+      } catch (tagError) {
+        await query('ROLLBACK');
+        throw tagError;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: getMessage('COUNTRY.UPDATE_SUCCESS'),
+      data: null
+    });
+  } catch (error) {
+    console.error('更新国家失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 删除国家（管理员）
+router.delete('/admin/countries/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 检查国家是否存在
+    const existingCountry = await query(
+      'SELECT id FROM countries WHERE id = $1 AND deleted = false',
+      [id]
+    );
+    
+    if (existingCountry.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('COUNTRY.NOT_FOUND'),
+        data: null
+      });
+    }
+    
+    // 检查是否有关联的省份
+    const relatedStates = await query(
+      'SELECT id FROM states WHERE country_id = $1 AND deleted = false',
+      [id]
+    );
+    
+    if (relatedStates.getRowCount() > 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COUNTRY.HAS_RELATED_STATES'),
+        data: null
+      });
+    }
+    
+    // 软删除
+    await query(
+      'UPDATE countries SET deleted = true, updated_by = $1, updated_at = NOW() WHERE id = $2',
+      [req.userId, id]
+    );
+    
+    res.json({
+      success: true,
+      message: getMessage('COUNTRY.DELETE_SUCCESS'),
+      data: null
+    });
+  } catch (error) {
+    console.error('删除国家失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 省份管理接口
+
+// 获取所有省份（管理员）
+router.get('/admin/states', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '', country_id = '', status = '' } = req.query;
+    
+    let whereClause = 'WHERE s.deleted = false';
+    const params = [];
+    let paramIndex = 1;
+    
+    if (search) {
+      whereClause += ` AND (s.name ILIKE $${paramIndex} OR s.state_code ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+    
+    if (country_id) {
+      whereClause += ` AND s.country_id = $${paramIndex}`;
+      params.push(country_id);
+      paramIndex++;
+    }
+    
+    if (status) {
+      whereClause += ` AND s.status = $${paramIndex}`;
+      params.push(status);
+      paramIndex++;
+    }
+    
+    // 获取总数
+    const countResult = await query(
+      `SELECT COUNT(*) as total FROM states s ${whereClause}`,
+      params
+    );
+    const total = parseInt(countResult.getFirstRow().total);
+    
+    // 获取分页数据
+    const offset = (page - 1) * limit;
+    const statesResult = await query(
+      `SELECT s.id, s.name, s.country_id, s.state_code, s.tax_rate, s.shipping_rate, s.shipping_rate_type, s.status, s.created_at, s.updated_at, c.name as country_name 
+       FROM states s 
+       LEFT JOIN countries c ON s.country_id = c.id 
+       ${whereClause} 
+       ORDER BY c.name, s.name 
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...params, limit, offset]
+    );
+    
+    res.json({
+      success: true,
+      message: getMessage('COMMON.SUCCESS'),
+      data: {
+        states: statesResult.getRows(),
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取省份列表失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 创建省份（管理员）
+router.post('/admin/states', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { name, country_id, state_code, tax_rate, shipping_rate, shipping_rate_type, status } = req.body;
+    
+    if (!name || !country_id) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COMMON.REQUIRED_FIELDS_MISSING'),
+        data: null
+      });
+    }
+    
+    // 检查国家是否存在
+    const country = await query(
+      'SELECT id FROM countries WHERE id = $1 AND deleted = false',
+      [country_id]
+    );
+    
+    if (country.getRowCount() === 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COUNTRY.NOT_FOUND'),
+        data: null
+      });
+    }
+    
+    // 检查省份代码是否在同一国家内已存在
+    if (state_code) {
+      const existingState = await query(
+        'SELECT id FROM states WHERE country_id = $1 AND state_code = $2 AND deleted = false',
+        [country_id, state_code]
+      );
+      
+      if (existingState.getRowCount() > 0) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('STATE.CODE_EXISTS'),
+          data: null
+        });
+      }
+    }
+    
+    const result = await query(
+      `INSERT INTO states (name, country_id, state_code, tax_rate, shipping_rate, shipping_rate_type, status, created_by, updated_by) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+       RETURNING id`,
+      [name, country_id, state_code || null, tax_rate || 0, shipping_rate || 0, shipping_rate_type || 'fixed', status || 'active', req.userId, req.userId]
+    );
+    
+    res.status(201).json({
+      success: true,
+      message: getMessage('STATE.CREATE_SUCCESS'),
+      data: { id: result.getFirstRow().id }
+    });
+  } catch (error) {
+    console.error('创建省份失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 更新省份（管理员）
+router.put('/admin/states/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, country_id, state_code, tax_rate, shipping_rate, shipping_rate_type, status } = req.body;
+    
+    if (!name || !country_id) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COMMON.REQUIRED_FIELDS_MISSING'),
+        data: null
+      });
+    }
+    
+    // 检查省份是否存在
+    const existingState = await query(
+      'SELECT id FROM states WHERE id = $1 AND deleted = false',
+      [id]
+    );
+    
+    if (existingState.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('STATE.NOT_FOUND'),
+        data: null
+      });
+    }
+    
+    // 检查国家是否存在
+    const country = await query(
+      'SELECT id FROM countries WHERE id = $1 AND deleted = false',
+      [country_id]
+    );
+    
+    if (country.getRowCount() === 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('COUNTRY.NOT_FOUND'),
+        data: null
+      });
+    }
+    
+    // 检查省份代码是否被同一国家的其他省份使用
+    if (state_code) {
+      const duplicateState = await query(
+        'SELECT id FROM states WHERE country_id = $1 AND state_code = $2 AND id != $3 AND deleted = false',
+        [country_id, state_code, id]
+      );
+      
+      if (duplicateState.getRowCount() > 0) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('STATE.CODE_EXISTS'),
+          data: null
+        });
+      }
+    }
+    
+    await query(
+      `UPDATE states 
+       SET name = $1, country_id = $2, state_code = $3, tax_rate = $4, shipping_rate = $5, shipping_rate_type = $6, status = $7, updated_by = $8, updated_at = NOW() 
+       WHERE id = $9`,
+      [name, country_id, state_code || null, tax_rate || 0, shipping_rate || 0, shipping_rate_type || 'fixed', status || 'active', req.userId, id]
+    );
+    
+    res.json({
+      success: true,
+      message: getMessage('STATE.UPDATE_SUCCESS'),
+      data: null
+    });
+  } catch (error) {
+    console.error('更新省份失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 删除省份（管理员）
+router.delete('/admin/states/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 检查省份是否存在
+    const existingState = await query(
+      'SELECT id FROM states WHERE id = $1 AND deleted = false',
+      [id]
+    );
+    
+    if (existingState.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('STATE.NOT_FOUND'),
+        data: null
+      });
+    }
+    
+    // 软删除
+    await query(
+      'UPDATE states SET deleted = true, updated_by = $1, updated_at = NOW() WHERE id = $2',
+      [req.userId, id]
+    );
+    
+    res.json({
+      success: true,
+      message: getMessage('STATE.DELETE_SUCCESS'),
+      data: null
+    });
+  } catch (error) {
+    console.error('删除省份失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
+      data: null
+    });
+  }
+});
+
+// 获取country类型标签（管理员）
+router.get('/admin/country-tags', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT id, guid, value, description FROM tags WHERE type = $1 AND status = $2 AND deleted = false ORDER BY value ASC',
+      ['country', 'active']
+    );
+
+    res.json({
+      success: true,
+      message: getMessage('TAG.LIST_SUCCESS'),
+      data: {
+        tags: result.getRows()
+      }
+    });
+  } catch (error) {
+    console.error('获取country标签失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('COMMON.SERVER_ERROR'),
       data: null
     });
   }

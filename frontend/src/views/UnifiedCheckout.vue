@@ -8,47 +8,6 @@
 
     <div class="container mx-auto px-4">
       <div class="checkout-content">
-        <!-- 订单信息 -->
-        <section class="order-summary">
-          <h2 class="section-title">
-            <div class="title-content">
-              <el-icon>
-                <ShoppingCart />
-              </el-icon>
-              {{ $t('checkout.orderInfo') || '订单信息' }}
-            </div>
-          </h2>
-          <el-table :data="orderItems" class="order-table">
-            <el-table-column :label="$t('checkout.product') || '商品'" min-width="200">
-              <template #default="{row}">
-                <div class="product-info">
-                  <div class="product-image">
-                    <img :src="row.image_url || require('@/assets/images/default-image.svg')" :alt="row.name">
-                  </div>
-                  <div class="product-details">
-                    <div class="product-name">{{ row.name }}</div>
-                    <div class="product-code">{{ $t('checkout.productCode') || '产品编号' }}: {{ row.product_code }}</div>
-                  </div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column :label="$t('checkout.quantity') || '数量'" prop="quantity" width="100" align="center" />
-            <el-table-column :label="$t('checkout.unitPrice') || '单价'" width="120" align="right">
-              <template #default="{row}">{{ $store.getters.formatPrice(row.calculatedPrice || row.price) }}</template>
-            </el-table-column>
-            <el-table-column :label="$t('checkout.subtotal') || '小计'" width="120" align="right">
-              <template #default="{row}">
-                <span class="subtotal-price">{{ $store.getters.formatPrice((row.calculatedPrice || row.price) *
-                  row.quantity) }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-          <div class="order-total">
-            <span>{{ $t('checkout.total') || '总计' }}:</span>
-            <span class="total-price">{{ $store.getters.formatPrice(orderTotal) }}</span>
-          </div>
-        </section>
-
         <!-- 收货信息 -->
         <section class="shipping-info">
           <h2 class="section-title">
@@ -125,6 +84,48 @@
             </el-form-item>
           </el-form>
         </section>
+
+        <!-- 订单信息 -->
+        <section class="order-summary">
+          <h2 class="section-title">
+            <div class="title-content">
+              <el-icon>
+                <ShoppingCart />
+              </el-icon>
+              {{ $t('checkout.orderInfo') || '订单信息' }}
+            </div>
+          </h2>
+          <el-table :data="orderItems" class="order-table">
+            <el-table-column :label="$t('checkout.product') || '商品'" min-width="200">
+              <template #default="{row}">
+                <div class="product-info">
+                  <div class="product-image">
+                    <img :src="row.image_url || require('@/assets/images/default-image.svg')" :alt="row.name">
+                  </div>
+                  <div class="product-details">
+                    <div class="product-name">{{ row.name }}</div>
+                    <div class="product-code">{{ $t('checkout.productCode') || '产品编号' }}: {{ row.product_code }}</div>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column :label="$t('checkout.quantity') || '数量'" prop="quantity" width="100" align="center" />
+            <el-table-column :label="$t('checkout.unitPrice') || '单价'" width="120" align="right">
+              <template #default="{row}">{{ $store.getters.formatPrice(row.calculatedPrice || row.price) }}</template>
+            </el-table-column>
+            <el-table-column :label="$t('checkout.subtotal') || '小计'" width="120" align="right">
+              <template #default="{row}">
+                <span class="subtotal-price">{{ $store.getters.formatPrice((row.calculatedPrice || row.price) *
+                  row.quantity) }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="order-total">
+            <span>{{ $t('checkout.total') || '总计' }}:</span>
+            <span class="total-price">{{ $store.getters.formatPrice(orderTotal) }}</span>
+          </div>
+        </section>
+
 
         <!-- 支付方式 -->
         <section class="payment-methods" v-if="!isOrderDetail || !isOrderPaid">

@@ -71,6 +71,14 @@
               <span class="product-id">{{ $t('productDetail.productCode') }}: {{ product.product_code }}</span>
               <span class="product-category">{{ $t('productDetail.category') }}: {{ categoryName }}</span>
             </div>
+            <div class="product-dimensions"
+              v-if="product.product_length || product.product_width || product.product_height">
+              <span class="dimensions-label">Size: </span>
+              <span class="dimensions-value">
+                {{ product.product_length || '-' }} * {{ product.product_width || '-' }} * {{ product.product_height ||
+                '-' }}
+              </span>
+            </div>
             <div class="product-price">
               <!-- 如果有阶梯价格，显示阶梯价格 -->
               <div v-if="product.price_ranges && product.price_ranges.length > 0" class="price-ranges">
@@ -1599,6 +1607,24 @@ export default {
   .product-id,
   .product-category {
     display: block;
+  }
+}
+
+.product-dimensions {
+  color: $text-secondary;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-normal;
+  margin-bottom: $spacing-lg;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  .dimensions-label {
+    font-weight: $font-weight-medium;
+  }
+
+  .dimensions-value {
+    color: $text-primary;
   }
 }
 

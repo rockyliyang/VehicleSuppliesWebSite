@@ -13,7 +13,8 @@ async function runMigration() {
     // 读取并执行迁移文件
     const migrationFiles = [
       '001_update_tables.sql',
-      '002_update_guid_length.sql'
+      '002_update_guid_length.sql',
+      '003_add_tags_tables.sql'
     ];
 
     for (const file of migrationFiles) {

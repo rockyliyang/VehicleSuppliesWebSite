@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const orderManagementController = require('../controllers/orderManagementController');
-const logisticsCompanyController = require('../controllers/logisticsCompanyController');
 const { verifyToken, isAdmin, requireRole } = require('../middleware/jwt');
 
 /**
@@ -18,11 +17,6 @@ router.put('/orders/:orderId/logistics', verifyToken, orderManagementController.
 // 物流公司查询 - 需要登录验证
 router.get('/logistics-companies', verifyToken, orderManagementController.getLogisticsCompanies);
 
-// 物流公司管理 - 需要管理员权限
-router.get('/admin/logistics-companies', verifyToken, isAdmin, logisticsCompanyController.getCompanies);
-router.post('/admin/logistics-companies', verifyToken, isAdmin, logisticsCompanyController.createCompany);
-router.get('/admin/logistics-companies/:id', verifyToken, isAdmin, logisticsCompanyController.getCompanyDetail);
-router.put('/admin/logistics-companies/:id', verifyToken, isAdmin, logisticsCompanyController.updateCompany);
-router.delete('/admin/logistics-companies/:id', verifyToken, isAdmin, logisticsCompanyController.deleteCompany);
+
 
 module.exports = router;

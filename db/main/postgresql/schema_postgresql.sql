@@ -135,6 +135,13 @@ CREATE TABLE IF NOT EXISTS products (
   product_type VARCHAR(16) NOT NULL DEFAULT 'self_operated' CHECK (product_type IN ('self_operated', 'consignment')),
   status VARCHAR(16) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
   sort_order INT NOT NULL DEFAULT 0,
+  
+  -- 产品物流信息 (product_shipping_info)
+  product_length DECIMAL(8, 2) DEFAULT NULL,
+  product_width DECIMAL(8, 2) DEFAULT NULL,
+  product_height DECIMAL(8, 2) DEFAULT NULL,
+  product_weight DECIMAL(8, 3) DEFAULT NULL,
+  
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -145,6 +152,10 @@ CREATE TABLE IF NOT EXISTS products (
 -- 添加注释
 COMMENT ON COLUMN products.product_type IS '产品类型：self_operated-自营，consignment-代销';
 COMMENT ON COLUMN products.sort_order IS '排序字段，数值越大排序越靠前';
+COMMENT ON COLUMN products.product_length IS '产品单件长度(cm)';
+COMMENT ON COLUMN products.product_width IS '产品单件宽度(cm)';
+COMMENT ON COLUMN products.product_height IS '产品单件高度(cm)';
+COMMENT ON COLUMN products.product_weight IS '产品单件重量(kg)';
 COMMENT ON COLUMN products.created_by IS '创建者用户ID';
 COMMENT ON COLUMN products.updated_by IS '最后更新者用户ID';
 
@@ -252,6 +263,108 @@ CREATE TRIGGER update_product_price_ranges_modtime
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 
+
+-- 物流公司表
+CREATE TABLE IF NOT EXISTS logistics_companies (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  description TEXT,
+  contact_phone VARCHAR(32),
+  contact_email VARCHAR(128),
+  website VARCHAR(256),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  is_default BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON TABLE logistics_companies IS '物流公司信息表';
+COMMENT ON COLUMN logistics_companies.name IS '物流公司名称';
+COMMENT ON COLUMN logistics_companies.description IS '物流公司描述';
+COMMENT ON COLUMN logistics_companies.contact_phone IS '联系电话';
+COMMENT ON COLUMN logistics_companies.contact_email IS '联系邮箱';
+COMMENT ON COLUMN logistics_companies.website IS '官方网站';
+COMMENT ON COLUMN logistics_companies.is_active IS '是否启用';
+COMMENT ON COLUMN logistics_companies.is_default IS '是否为默认物流公司';
+COMMENT ON COLUMN logistics_companies.created_by IS '创建者用户ID';
+COMMENT ON COLUMN logistics_companies.updated_by IS '最后更新者用户ID';
+
+-- 创建普通索引
+CREATE INDEX idx_logistics_companies_name ON logistics_companies (name);
+CREATE INDEX idx_logistics_companies_is_active ON logistics_companies (is_active);
+CREATE INDEX idx_logistics_companies_is_default ON logistics_companies (is_default);
+CREATE INDEX idx_logistics_companies_created_by ON logistics_companies (created_by);
+CREATE INDEX idx_logistics_companies_updated_by ON logistics_companies (updated_by);
+
+-- 添加外键约束
+ALTER TABLE logistics_companies ADD CONSTRAINT fk_logistics_companies_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE logistics_companies ADD CONSTRAINT fk_logistics_companies_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_logistics_companies_modtime
+    BEFORE UPDATE ON logistics_companies
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+    
+-- 产品运费范围表
+CREATE TABLE IF NOT EXISTS shippingfee_ranges (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  country_id BIGINT DEFAULT NULL,
+  tags_id BIGINT DEFAULT NULL,
+  logistics_companies_id BIGINT NOT NULL,
+  min_weight DECIMAL(10, 3) NOT NULL,
+  max_weight DECIMAL(10, 3) DEFAULT NULL, -- NULL表示无上限
+  fee DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON COLUMN shippingfee_ranges.country_id IS '关联的国家ID，可为空表示适用于所有国家';
+COMMENT ON COLUMN shippingfee_ranges.tags_id IS '关联的标签ID，可为空，用于按标签分组运费范围';
+COMMENT ON COLUMN shippingfee_ranges.logistics_companies_id IS '关联的物流公司ID';
+COMMENT ON COLUMN shippingfee_ranges.min_weight IS '重量范围下限（包含）';
+COMMENT ON COLUMN shippingfee_ranges.max_weight IS '重量范围上限（包含），NULL表示无上限';
+COMMENT ON COLUMN shippingfee_ranges.fee IS '该重量范围对应的运费';
+COMMENT ON COLUMN shippingfee_ranges.created_by IS '创建者用户ID';
+COMMENT ON COLUMN shippingfee_ranges.updated_by IS '最后更新者用户ID';
+
+-- 创建普通索引
+CREATE INDEX idx_shippingfee_ranges_country_id ON shippingfee_ranges (country_id);
+CREATE INDEX idx_shippingfee_ranges_tags_id ON shippingfee_ranges (tags_id);
+CREATE INDEX idx_shippingfee_ranges_logistics_companies_id ON shippingfee_ranges (logistics_companies_id);
+CREATE INDEX idx_shippingfee_ranges_weight_range ON shippingfee_ranges (logistics_companies_id, min_weight, max_weight);
+CREATE INDEX idx_shippingfee_ranges_created_by ON shippingfee_ranges (created_by);
+CREATE INDEX idx_shippingfee_ranges_updated_by ON shippingfee_ranges (updated_by);
+
+-- 添加外键约束
+ALTER TABLE shippingfee_ranges ADD CONSTRAINT fk_shippingfee_ranges_country_id FOREIGN KEY (country_id) REFERENCES countries(id);
+ALTER TABLE shippingfee_ranges ADD CONSTRAINT fk_shippingfee_ranges_tags_id FOREIGN KEY (tags_id) REFERENCES tags(id);
+ALTER TABLE shippingfee_ranges ADD CONSTRAINT fk_shippingfee_ranges_logistics_companies_id FOREIGN KEY (logistics_companies_id) REFERENCES logistics_companies(id);
+ALTER TABLE shippingfee_ranges ADD CONSTRAINT fk_shippingfee_ranges_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE shippingfee_ranges ADD CONSTRAINT fk_shippingfee_ranges_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 添加约束确保重量范围的逻辑正确性
+ALTER TABLE shippingfee_ranges ADD CONSTRAINT chk_shippingfee_weight_range CHECK (
+  min_weight >= 0 AND 
+  (max_weight IS NULL OR max_weight >= min_weight)
+);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_shippingfee_ranges_modtime
+    BEFORE UPDATE ON shippingfee_ranges
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
 -- 订单表
 CREATE TABLE IF NOT EXISTS orders (
   id BIGSERIAL PRIMARY KEY,
@@ -334,49 +447,6 @@ CREATE TRIGGER update_order_items_modtime
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 
--- 物流公司表
-CREATE TABLE IF NOT EXISTS logistics_companies (
-  id BIGSERIAL PRIMARY KEY,
-  guid UUID DEFAULT gen_random_uuid() NOT NULL,
-  name VARCHAR(128) NOT NULL,
-  description TEXT,
-  contact_phone VARCHAR(32),
-  contact_email VARCHAR(128),
-  website VARCHAR(256),
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deleted BOOLEAN NOT NULL DEFAULT FALSE,
-  created_by BIGINT DEFAULT NULL,
-  updated_by BIGINT DEFAULT NULL
-);
-
--- 添加注释
-COMMENT ON TABLE logistics_companies IS '物流公司信息表';
-COMMENT ON COLUMN logistics_companies.name IS '物流公司名称';
-COMMENT ON COLUMN logistics_companies.description IS '物流公司描述';
-COMMENT ON COLUMN logistics_companies.contact_phone IS '联系电话';
-COMMENT ON COLUMN logistics_companies.contact_email IS '联系邮箱';
-COMMENT ON COLUMN logistics_companies.website IS '官方网站';
-COMMENT ON COLUMN logistics_companies.is_active IS '是否启用';
-COMMENT ON COLUMN logistics_companies.created_by IS '创建者用户ID';
-COMMENT ON COLUMN logistics_companies.updated_by IS '最后更新者用户ID';
-
--- 创建普通索引
-CREATE INDEX idx_logistics_companies_name ON logistics_companies (name);
-CREATE INDEX idx_logistics_companies_is_active ON logistics_companies (is_active);
-CREATE INDEX idx_logistics_companies_created_by ON logistics_companies (created_by);
-CREATE INDEX idx_logistics_companies_updated_by ON logistics_companies (updated_by);
-
--- 添加外键约束
-ALTER TABLE logistics_companies ADD CONSTRAINT fk_logistics_companies_created_by FOREIGN KEY (created_by) REFERENCES users(id);
-ALTER TABLE logistics_companies ADD CONSTRAINT fk_logistics_companies_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
-
--- 创建更新时间戳触发器
-CREATE TRIGGER update_logistics_companies_modtime
-    BEFORE UPDATE ON logistics_companies
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
 
 -- 物流信息表
 CREATE TABLE IF NOT EXISTS logistics (
@@ -541,6 +611,91 @@ ALTER TABLE banners ADD CONSTRAINT fk_banners_updated_by FOREIGN KEY (updated_by
 -- 创建更新时间戳触发器
 CREATE TRIGGER update_banners_modtime
     BEFORE UPDATE ON banners
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+-- 标签表
+CREATE TABLE IF NOT EXISTS tags (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  value VARCHAR(64) NOT NULL,
+  type VARCHAR(32) NOT NULL DEFAULT 'country',
+  description VARCHAR(256) DEFAULT '',
+  status VARCHAR(16) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON TABLE tags IS '标签表，用于为各种实体添加标签功能';
+COMMENT ON COLUMN tags.value IS '标签值';
+COMMENT ON COLUMN tags.type IS '标签类型，目前支持：country';
+COMMENT ON COLUMN tags.description IS '标签描述';
+COMMENT ON COLUMN tags.status IS '状态：active-启用，inactive-禁用';
+COMMENT ON COLUMN tags.created_by IS '创建者用户ID';
+COMMENT ON COLUMN tags.updated_by IS '最后更新者用户ID';
+
+-- 创建唯一索引（value + type 组合不能重复）
+CREATE UNIQUE INDEX unique_active_tag_value_type ON tags (value, type) WHERE deleted = FALSE;
+
+-- 创建普通索引
+CREATE INDEX idx_tags_value ON tags (value);
+CREATE INDEX idx_tags_type ON tags (type);
+CREATE INDEX idx_tags_status ON tags (status);
+CREATE INDEX idx_tags_created_by ON tags (created_by);
+CREATE INDEX idx_tags_updated_by ON tags (updated_by);
+
+-- 添加外键约束
+ALTER TABLE tags ADD CONSTRAINT fk_tags_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE tags ADD CONSTRAINT fk_tags_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_tags_modtime
+    BEFORE UPDATE ON tags
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+-- 国家标签关联表
+CREATE TABLE IF NOT EXISTS country_tags (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  country_id BIGINT NOT NULL,
+  tag_id BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON TABLE country_tags IS '国家标签关联表';
+COMMENT ON COLUMN country_tags.country_id IS '关联的国家ID';
+COMMENT ON COLUMN country_tags.tag_id IS '关联的标签ID';
+COMMENT ON COLUMN country_tags.created_by IS '创建者用户ID';
+COMMENT ON COLUMN country_tags.updated_by IS '最后更新者用户ID';
+
+-- 创建唯一索引（同一国家同一标签只能关联一次）
+CREATE UNIQUE INDEX unique_active_country_tag ON country_tags (country_id, tag_id) WHERE deleted = FALSE;
+
+-- 创建普通索引
+CREATE INDEX idx_country_tags_country_id ON country_tags (country_id);
+CREATE INDEX idx_country_tags_tag_id ON country_tags (tag_id);
+CREATE INDEX idx_country_tags_created_by ON country_tags (created_by);
+CREATE INDEX idx_country_tags_updated_by ON country_tags (updated_by);
+
+-- 添加外键约束
+ALTER TABLE country_tags ADD CONSTRAINT fk_country_tags_country_id FOREIGN KEY (country_id) REFERENCES countries(id);
+ALTER TABLE country_tags ADD CONSTRAINT fk_country_tags_tag_id FOREIGN KEY (tag_id) REFERENCES tags(id);
+ALTER TABLE country_tags ADD CONSTRAINT fk_country_tags_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE country_tags ADD CONSTRAINT fk_country_tags_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_country_tags_modtime
+    BEFORE UPDATE ON country_tags
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 

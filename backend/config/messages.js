@@ -162,7 +162,12 @@ const MESSAGES = {
     COMPANY_DELETE_SUCCESS: 'Logistics company deleted successfully',
     COMPANY_DELETE_FAILED: 'Failed to delete logistics company',
     COMPANY_DETAIL_SUCCESS: 'Logistics company detail retrieved successfully',
-    COMPANY_DETAIL_FAILED: 'Failed to retrieve logistics company detail'
+    COMPANY_DETAIL_FAILED: 'Failed to retrieve logistics company detail',
+    SET_DEFAULT_SUCCESS: 'Logistics company set as default successfully',
+    SET_DEFAULT_FAILED: 'Failed to set logistics company as default',
+    GET_DEFAULT_SUCCESS: 'Default logistics company retrieved successfully',
+    GET_DEFAULT_FAILED: 'Failed to retrieve default logistics company',
+    COMPANY_NOT_ACTIVE: 'Cannot set inactive company as default'
   },
   
   // 支付相关
@@ -531,6 +536,27 @@ const MESSAGES = {
     GET_FAILED: 'Failed to retrieve country and state data',
     DATA_NOT_MODIFIED: 'Country and state data not modified',
     FILE_READ_ERROR: 'Failed to read country or state data file'
+  },
+
+  // 标签相关
+  TAG: {
+    GET_SUCCESS: 'Tag retrieved successfully',
+    GET_FAILED: 'Failed to retrieve tag',
+    LIST_SUCCESS: 'Tag list retrieved successfully',
+    LIST_FAILED: 'Failed to retrieve tag list',
+    CREATE_SUCCESS: 'Tag created successfully',
+    CREATE_FAILED: 'Failed to create tag',
+    UPDATE_SUCCESS: 'Tag updated successfully',
+    UPDATE_FAILED: 'Failed to update tag',
+    DELETE_SUCCESS: 'Tag deleted successfully',
+    DELETE_FAILED: 'Failed to delete tag',
+    NOT_FOUND: 'Tag not found',
+    REQUIRED_FIELDS: 'Value and type are required',
+    INVALID_TYPE: 'Invalid tag type, only "country" is supported',
+    INVALID_STATUS: 'Invalid status, must be "active" or "inactive"',
+    VALUE_TYPE_EXISTS: 'Tag with this value and type combination already exists',
+    NO_FIELDS_TO_UPDATE: 'No fields to update',
+    HAS_RELATED_RECORDS: 'Cannot delete tag with existing related records'
   }
 };
 
