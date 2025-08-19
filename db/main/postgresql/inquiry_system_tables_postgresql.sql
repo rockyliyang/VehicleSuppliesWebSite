@@ -44,7 +44,7 @@ ALTER TABLE inquiries
     CHECK (inquiry_type IN ('single', 'custom'));
 
 -- 创建索引
-CREATE INDEX idx_inquiries_guid ON inquiries(guid);
+CREATE INDEX idx_inquiries_guid ON c(guid);
 CREATE INDEX idx_inquiries_user_id ON inquiries(user_id);
 CREATE INDEX idx_inquiries_status ON inquiries(status);
 CREATE INDEX idx_inquiries_inquiry_type ON inquiries(inquiry_type);

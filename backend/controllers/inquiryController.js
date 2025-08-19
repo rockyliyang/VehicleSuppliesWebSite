@@ -74,6 +74,10 @@ exports.getUserInquiries = async (req, res) => {
           ii.unit_price,
           p.name as product_name,
           p.price as original_price,
+          p.product_length,
+          p.product_width,
+          p.product_height,
+          p.product_weight,
           (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
         FROM inquiry_items ii
         JOIN products p ON ii.product_id = p.id
@@ -189,6 +193,10 @@ exports.getInquiryDetail = async (req, res) => {
         p.name as product_name,
         p.product_code,
         p.price as original_price,
+        p.product_length,
+        p.product_width,
+        p.product_height,
+        p.product_weight,
         (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
       FROM inquiry_items ii
       JOIN products p ON ii.product_id = p.id
@@ -774,6 +782,10 @@ exports.findInquiryByProduct = async (req, res) => {
           p.name as product_name,
           p.product_code,
           p.price as original_price,
+          p.product_length,
+          p.product_width,
+          p.product_height,
+          p.product_weight,
           (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
         FROM inquiry_items ii
         JOIN products p ON ii.product_id = p.id

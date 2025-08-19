@@ -58,15 +58,16 @@ function getAlipayClient() {
 }
 
 // 统一订单初始化
-async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client, orderSource = 'cart', inquiryId = null) {
-  let totalAmount = 0;
+async function initOrder(userId, cartItems, shippingInfo, paymentMethod, shippingFee, client, orderSource = 'cart', inquiryId = null) {
+  let totalAmount = shippingFee || 0;
   for (const item of cartItems) totalAmount += item.price * item.quantity;
   const orderResult = await client.query(
     `INSERT INTO orders 
      (user_id, total_amount, status, payment_method, 
       shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
+      shipping_fee,
       created_by, updated_by) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, guid`,
     [
       userId,
       totalAmount,
@@ -77,6 +78,7 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client,
       shippingInfo.email,
       shippingInfo.shipping_address || shippingInfo.detail,
       shippingInfo.shipping_zip_code || shippingInfo.zipCode || '',
+      shippingFee || 0,
       userId,
       userId
     ]
@@ -118,7 +120,7 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, client,
 // PayPal订单创建
 exports.createPayPalOrder = async (req, res) => {
   try {
-    const { shippingInfo, orderItems, orderSource, inquiryId } = req.body;
+    const { shippingInfo, orderItems, shipping_fee, orderSource, inquiryId } = req.body;
     const userId = req.userId;
     const connection = await getConnection();
     await connection.beginTransaction();
@@ -147,7 +149,7 @@ exports.createPayPalOrder = async (req, res) => {
         return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
       
-      const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, 'paypal', connection, source, inquiryId);
+      const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, 'paypal', shipping_fee, connection, source, inquiryId);
       const paypalClient = getPayPalClient();
       const ordersController = new OrdersController(paypalClient);
       const request = {
@@ -293,7 +295,7 @@ exports.repayPayPalOrder = async (req, res) => {
 // 创建普通订单（微信/支付宝）
 exports.createCommonOrder = async (req, res) => {
   try {
-    const { shippingInfo, paymentMethod, orderItems, orderSource, inquiryId } = req.body;
+    const { shippingInfo, paymentMethod, orderItems, shipping_fee, orderSource, inquiryId } = req.body;
     const userId = req.userId;
     if (!['wechat', 'alipay'].includes(paymentMethod)) {
       return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_METHOD'), data: null });
@@ -325,7 +327,7 @@ exports.createCommonOrder = async (req, res) => {
         return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
       
-      const { orderId } = await initOrder(userId, cartItems, shippingInfo, paymentMethod, connection, source, inquiryId);
+      const { orderId } = await initOrder(userId, cartItems, shippingInfo, paymentMethod, shipping_fee, connection, source, inquiryId);
       await connection.commit();
       connection.release();
       

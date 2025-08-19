@@ -45,9 +45,9 @@ export async function handleAddToCart(product, context) {
     
     if (response.success) {
       // 使用messageHandler显示成功消息
-      messageHandler.showSuccess(
-        translate('cart.addSuccess', 'Item added to cart successfully')
-      )
+      //messageHandler.showSuccess(
+        //translate('cart.addSuccess', 'Item added to cart successfully')
+      //)
       
       // 触发购物车更新事件，让Header组件重新获取购物车数量
       if ($bus) {

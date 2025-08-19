@@ -227,27 +227,7 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="阶梯运费" prop="shipping_fee_ranges">
-          <div class="shipping-fee-ranges-container">
-            <div v-for="(range, index) in productForm.shipping_fee_ranges" :key="index" class="shipping-fee-range-item">
-              <el-input-number v-model="range.min_quantity" :min="1" placeholder="最小数量" style="width: 120px"
-                :disabled="index > 0" />
-              <span class="range-separator">-</span>
-              <el-input-number v-model="range.max_quantity" :min="range.min_quantity || 1" placeholder="最大数量"
-                style="width: 120px" @change="handleShippingFeeMaxQuantityChange(index)" />
-              <span class="range-separator">件</span>
-              <el-input-number v-model="range.fee" :min="0" :precision="2" placeholder="运费" style="width: 120px" />
-              <span class="range-separator">元</span>
-              <el-button type="danger" size="small" @click="removeShippingFeeRange(index)"
-                :disabled="productForm.shipping_fee_ranges.length <= 1">
-                删除
-              </el-button>
-            </div>
-            <el-button type="primary" size="small" @click="addShippingFeeRange" style="margin-top: 10px;">
-              添加运费区间
-            </el-button>
-          </div>
-        </el-form-item>
+
 
         <el-form-item label="产品图片" prop="images">
           <el-upload class="product-image-uploader" action="/api/product-images/upload?image_type=0"

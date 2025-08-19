@@ -269,6 +269,7 @@ CREATE TABLE IF NOT EXISTS logistics_companies (
   id BIGSERIAL PRIMARY KEY,
   guid UUID DEFAULT gen_random_uuid() NOT NULL,
   name VARCHAR(128) NOT NULL,
+  code VARCHAR(32) NOT NULL,
   description TEXT,
   contact_phone VARCHAR(32),
   contact_email VARCHAR(128),
@@ -285,6 +286,7 @@ CREATE TABLE IF NOT EXISTS logistics_companies (
 -- 添加注释
 COMMENT ON TABLE logistics_companies IS '物流公司信息表';
 COMMENT ON COLUMN logistics_companies.name IS '物流公司名称';
+COMMENT ON COLUMN logistics_companies.code IS '物流公司代码';
 COMMENT ON COLUMN logistics_companies.description IS '物流公司描述';
 COMMENT ON COLUMN logistics_companies.contact_phone IS '联系电话';
 COMMENT ON COLUMN logistics_companies.contact_email IS '联系邮箱';
@@ -293,6 +295,9 @@ COMMENT ON COLUMN logistics_companies.is_active IS '是否启用';
 COMMENT ON COLUMN logistics_companies.is_default IS '是否为默认物流公司';
 COMMENT ON COLUMN logistics_companies.created_by IS '创建者用户ID';
 COMMENT ON COLUMN logistics_companies.updated_by IS '最后更新者用户ID';
+
+-- 创建唯一索引
+CREATE UNIQUE INDEX unique_active_logistics_companies_code ON logistics_companies (code) WHERE deleted = FALSE;
 
 -- 创建普通索引
 CREATE INDEX idx_logistics_companies_name ON logistics_companies (name);
@@ -318,8 +323,9 @@ CREATE TABLE IF NOT EXISTS shippingfee_ranges (
   country_id BIGINT DEFAULT NULL,
   tags_id BIGINT DEFAULT NULL,
   logistics_companies_id BIGINT NOT NULL,
-  min_weight DECIMAL(10, 3) NOT NULL,
-  max_weight DECIMAL(10, 3) DEFAULT NULL, -- NULL表示无上限
+  unit VARCHAR(8) NOT NULL DEFAULT 'kg' CHECK (unit IN ('kg', 'g', 'cm', 'm')),
+  min_value DECIMAL(10, 3) NOT NULL,
+  max_value DECIMAL(10, 3) DEFAULT NULL, -- NULL表示无上限
   fee DECIMAL(10, 2) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -332,9 +338,10 @@ CREATE TABLE IF NOT EXISTS shippingfee_ranges (
 COMMENT ON COLUMN shippingfee_ranges.country_id IS '关联的国家ID，可为空表示适用于所有国家';
 COMMENT ON COLUMN shippingfee_ranges.tags_id IS '关联的标签ID，可为空，用于按标签分组运费范围';
 COMMENT ON COLUMN shippingfee_ranges.logistics_companies_id IS '关联的物流公司ID';
-COMMENT ON COLUMN shippingfee_ranges.min_weight IS '重量范围下限（包含）';
-COMMENT ON COLUMN shippingfee_ranges.max_weight IS '重量范围上限（包含），NULL表示无上限';
-COMMENT ON COLUMN shippingfee_ranges.fee IS '该重量范围对应的运费';
+COMMENT ON COLUMN shippingfee_ranges.unit IS '计量单位：kg-千克，g-克，cm-厘米，m-米';
+COMMENT ON COLUMN shippingfee_ranges.min_value IS '范围下限（包含）';
+COMMENT ON COLUMN shippingfee_ranges.max_value IS '范围上限（包含），NULL表示无上限';
+COMMENT ON COLUMN shippingfee_ranges.fee IS '该范围对应的运费';
 COMMENT ON COLUMN shippingfee_ranges.created_by IS '创建者用户ID';
 COMMENT ON COLUMN shippingfee_ranges.updated_by IS '最后更新者用户ID';
 
@@ -342,7 +349,7 @@ COMMENT ON COLUMN shippingfee_ranges.updated_by IS '最后更新者用户ID';
 CREATE INDEX idx_shippingfee_ranges_country_id ON shippingfee_ranges (country_id);
 CREATE INDEX idx_shippingfee_ranges_tags_id ON shippingfee_ranges (tags_id);
 CREATE INDEX idx_shippingfee_ranges_logistics_companies_id ON shippingfee_ranges (logistics_companies_id);
-CREATE INDEX idx_shippingfee_ranges_weight_range ON shippingfee_ranges (logistics_companies_id, min_weight, max_weight);
+CREATE INDEX idx_shippingfee_ranges_value_range ON shippingfee_ranges (logistics_companies_id, unit, min_value, max_value);
 CREATE INDEX idx_shippingfee_ranges_created_by ON shippingfee_ranges (created_by);
 CREATE INDEX idx_shippingfee_ranges_updated_by ON shippingfee_ranges (updated_by);
 
@@ -353,10 +360,10 @@ ALTER TABLE shippingfee_ranges ADD CONSTRAINT fk_shippingfee_ranges_logistics_co
 ALTER TABLE shippingfee_ranges ADD CONSTRAINT fk_shippingfee_ranges_created_by FOREIGN KEY (created_by) REFERENCES users(id);
 ALTER TABLE shippingfee_ranges ADD CONSTRAINT fk_shippingfee_ranges_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
 
--- 添加约束确保重量范围的逻辑正确性
-ALTER TABLE shippingfee_ranges ADD CONSTRAINT chk_shippingfee_weight_range CHECK (
-  min_weight >= 0 AND 
-  (max_weight IS NULL OR max_weight >= min_weight)
+-- 添加约束确保范围的逻辑正确性
+ALTER TABLE shippingfee_ranges ADD CONSTRAINT chk_shippingfee_value_range CHECK (
+  min_value >= 0 AND 
+  (max_value IS NULL OR max_value >= min_value)
 );
 
 -- 创建更新时间戳触发器
@@ -379,6 +386,7 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_email VARCHAR(64) NOT NULL,
   shipping_address VARCHAR(256) NOT NULL,
   shipping_zip_code VARCHAR(16) NOT NULL DEFAULT '',
+  shipping_fee DECIMAL(10, 2) DEFAULT 0.00,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -611,6 +619,79 @@ ALTER TABLE banners ADD CONSTRAINT fk_banners_updated_by FOREIGN KEY (updated_by
 -- 创建更新时间戳触发器
 CREATE TRIGGER update_banners_modtime
     BEFORE UPDATE ON banners
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+-- 运费系数表
+CREATE TABLE IF NOT EXISTS shippingfee_factor (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  logistics_companies_id BIGINT NOT NULL,
+  tags_id BIGINT DEFAULT NULL,
+  country_id BIGINT DEFAULT NULL,
+  initial_weight DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+  initial_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  throw_ratio_coefficient DECIMAL(10, 3) NOT NULL DEFAULT 1.000,
+  surcharge DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  surcharge2 DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  other_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  discount DECIMAL(5, 2) NOT NULL DEFAULT 0.00,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON TABLE shippingfee_factor IS '运费系数表';
+COMMENT ON COLUMN shippingfee_factor.logistics_companies_id IS '关联的物流公司ID，不能为空';
+COMMENT ON COLUMN shippingfee_factor.tags_id IS '关联的标签ID，可为空，用于按标签设置运费系数';
+COMMENT ON COLUMN shippingfee_factor.country_id IS '关联的国家ID，可为空，用于按国家设置运费系数';
+COMMENT ON COLUMN shippingfee_factor.initial_weight IS '首重重量（千克）';
+COMMENT ON COLUMN shippingfee_factor.initial_fee IS '首重费用';
+COMMENT ON COLUMN shippingfee_factor.throw_ratio_coefficient IS '抛比系数';
+COMMENT ON COLUMN shippingfee_factor.surcharge IS '附加费';
+COMMENT ON COLUMN shippingfee_factor.surcharge2 IS '附加费2';
+COMMENT ON COLUMN shippingfee_factor.other_fee IS '其他费用';
+COMMENT ON COLUMN shippingfee_factor.discount IS '折扣（百分比）';
+COMMENT ON COLUMN shippingfee_factor.created_by IS '创建者用户ID';
+COMMENT ON COLUMN shippingfee_factor.updated_by IS '最后更新者用户ID';
+
+-- 创建普通索引
+CREATE INDEX idx_shippingfee_factor_logistics_companies_id ON shippingfee_factor (logistics_companies_id);
+CREATE INDEX idx_shippingfee_factor_tags_id ON shippingfee_factor (tags_id);
+CREATE INDEX idx_shippingfee_factor_country_id ON shippingfee_factor (country_id);
+CREATE INDEX idx_shippingfee_factor_created_by ON shippingfee_factor (created_by);
+CREATE INDEX idx_shippingfee_factor_updated_by ON shippingfee_factor (updated_by);
+
+-- 创建唯一约束确保每个物流公司的每个国家/标签/默认只能有一条记录
+CREATE UNIQUE INDEX uk_shippingfee_factor_logistics_country ON shippingfee_factor (logistics_companies_id, country_id) 
+  WHERE deleted = FALSE AND tags_id IS NULL AND country_id IS NOT NULL;
+CREATE UNIQUE INDEX uk_shippingfee_factor_logistics_tag ON shippingfee_factor (logistics_companies_id, tags_id) 
+  WHERE deleted = FALSE AND country_id IS NULL AND tags_id IS NOT NULL;
+CREATE UNIQUE INDEX uk_shippingfee_factor_logistics_default ON shippingfee_factor (logistics_companies_id) 
+  WHERE deleted = FALSE AND tags_id IS NULL AND country_id IS NULL;
+
+-- 添加外键约束
+ALTER TABLE shippingfee_factor ADD CONSTRAINT fk_shippingfee_factor_logistics_companies_id FOREIGN KEY (logistics_companies_id) REFERENCES logistics_companies(id);
+ALTER TABLE shippingfee_factor ADD CONSTRAINT fk_shippingfee_factor_tags_id FOREIGN KEY (tags_id) REFERENCES tags(id);
+ALTER TABLE shippingfee_factor ADD CONSTRAINT fk_shippingfee_factor_country_id FOREIGN KEY (country_id) REFERENCES countries(id);
+ALTER TABLE shippingfee_factor ADD CONSTRAINT fk_shippingfee_factor_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE shippingfee_factor ADD CONSTRAINT fk_shippingfee_factor_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 添加约束确保数值的合理性
+ALTER TABLE shippingfee_factor ADD CONSTRAINT chk_shippingfee_factor_values CHECK (
+  initial_weight >= 0 AND 
+  initial_fee >= 0 AND 
+  throw_ratio_coefficient > 0 AND 
+  surcharge >= 0 AND 
+  discount >= 0 AND discount <= 100
+);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_shippingfee_factor_modtime
+    BEFORE UPDATE ON shippingfee_factor
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 

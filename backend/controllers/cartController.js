@@ -10,6 +10,7 @@ exports.getUserCart = async (req, res) => {
     // 查询用户购物车中的商品
     const queryStr = `SELECT ci.id, ci.guid, ci.quantity, 
              p.id as product_id, p.name, p.product_code, p.price, p.stock, 
+             p.product_length, p.product_width, p.product_height, p.product_weight,
              (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id

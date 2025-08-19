@@ -894,7 +894,7 @@ router.put('/admin/countries/:id', verifyToken, isAdmin, async (req, res) => {
             ),
             existing_tags AS (
               SELECT country_id, tag_id FROM country_tags 
-              WHERE country_id = $${tags.length * 2 + 1} AND deleted = false
+              WHERE country_id = CAST($1 AS BIGINT) AND deleted = false
             ),
             to_delete AS (
               SELECT et.country_id, et.tag_id FROM existing_tags et

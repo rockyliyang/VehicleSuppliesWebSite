@@ -18,7 +18,8 @@
         </el-form-item>
         <el-form-item :label="$t('admin.inquiry.filter.user') || '用户'">
           <el-select v-model="filters.userId" :placeholder="$t('inquiry.management.search_placeholder') || '选择用户'"
-            clearable filterable remote :remote-method="handleUserSearch" :loading="userSearchLoading" style="width: 200px;">
+            clearable filterable remote :remote-method="handleUserSearch" :loading="userSearchLoading"
+            style="width: 200px;">
             <el-option v-for="user in userOptions" :key="user.id" :label="`${user.username} (${user.email})`"
               :value="user.id">
             </el-option>
@@ -50,7 +51,7 @@
     </el-card>
 
     <!-- 询价列表 -->
-    <el-card class="inquiry-list-card">
+    <el-card class="c">
       <el-table v-loading="loading" :data="inquiries" stripe>
         <el-table-column :label="$t('admin.inquiry.table.unreadCount') || '未读消息'" width="100" fixed="left">
           <template #default="{ row }">

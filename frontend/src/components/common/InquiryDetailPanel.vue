@@ -355,6 +355,10 @@ export default {
           image_url: item.imageUrl || require('@/assets/images/default-image.svg'),
           quantity: item.quantity,
           price: this.getCalculatedPrice(item), // 使用calculatedPrice
+          length: item.product_length,
+          width: item.product_width,
+          height: item.product_height,
+          weight: item.product_weight,
           selected: true
         }));
         

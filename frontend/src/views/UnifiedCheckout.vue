@@ -121,8 +121,18 @@
             </el-table-column>
           </el-table>
           <div class="order-total">
-            <span>{{ $t('checkout.total') || '总计' }}:</span>
-            <span class="total-price">{{ $store.getters.formatPrice(orderTotal) }}</span>
+            <div class="total-row">
+              <span>{{ $t('checkout.subtotal') || '商品小计' }}:</span>
+              <span class="price">{{ $store.getters.formatPrice(orderTotal) }}</span>
+            </div>
+            <div class="total-row">
+              <span>{{ $t('checkout.shippingFee') || '运费' }}:</span>
+              <span class="price">{{ $store.getters.formatPrice(shippingFee) }}</span>
+            </div>
+            <div class="total-row grand-total">
+              <span>{{ $t('checkout.total') || '总计' }}:</span>
+              <span class="total-price">{{ $store.getters.formatPrice(orderTotal + shippingFee) }}</span>
+            </div>
           </div>
         </section>
 
@@ -366,10 +376,32 @@ export default {
       default: () => []
     }
   },
+  watch: {
+    selectedAddress: {
+      handler(newAddress) {
+        if (newAddress) {
+          this.shippingInfo.name = `${newAddress.first_name} ${newAddress.last_name}`;
+          this.shippingInfo.address = newAddress.address_line1;
+          this.shippingInfo.city = newAddress.city;
+          this.shippingInfo.state = newAddress.state;
+          this.shippingInfo.zip = newAddress.postal_code;
+          this.shippingInfo.country = newAddress.country;
+          this.shippingInfo.phone = newAddress.phone_number;
+          this.calculateShippingFee();
+        }
+      },
+      deep: true,
+      immediate: true
+    },
+  },
   data() {
     return {
       orderItems: [],
       orderTotal: 0,
+      shippingFee: 0, // 运费
+      logisticsCompany: null, // 物流公司信息
+      shippingFeeRanges: [], // 运费范围
+      shippingFeeFactors: [], // 运费系数
       shippingInfo: { 
         name: '', 
         phone: '', 
@@ -479,6 +511,7 @@ export default {
     this.fetchPayPalConfig();
     this.loadAddressList();
     this.loadCountryStateData();
+    this.fetchLogisticsData();
   },
   mounted() {
     // 不做任何PayPal相关操作
@@ -592,6 +625,201 @@ export default {
         this.$messageHandler.showError(error, 'checkout.error.fetchCartFailed');
       }
     },
+    async fetchLogisticsData() {
+      try {
+        // 获取默认物流公司
+        const companyRes = await this.$api.get('/admin/logistics/companies/default');
+        if (!companyRes.success) {
+          throw new Error(this.$t('checkout.error.fetchLogisticsFailed') || '获取物流公司信息失败');
+        }
+        this.logisticsCompany = companyRes.data;
+
+        if (!this.logisticsCompany) {
+          return;
+        }
+
+        // 获取运费范围
+        const rangesRes = await this.$api.get(`/admin/logistics/companies/${this.logisticsCompany.id}/shipping-fee-ranges`);
+        if (!rangesRes.success) {
+          throw new Error(this.$t('checkout.error.fetchRangesFailed') || '获取运费范围失败');
+        }
+        this.shippingFeeRanges = rangesRes.data.ranges;
+
+        // 获取运费系数
+        const factorsRes = await this.$api.get(`/admin/logistics/companies/${this.logisticsCompany.id}/shipping-fee-factors`);
+        if (!factorsRes.success) {
+          throw new Error(this.$t('checkout.error.fetchFactorsFailed') || '获取运费系数失败');
+        }
+        this.shippingFeeFactors = factorsRes.data.factors;
+
+        // 如果已经选择了国家，立即计算运费
+        if (this.shippingInfo.country) {
+          await this.calculateShippingFee();
+        }
+      } catch (error) {
+        console.error('获取物流数据失败:', error);
+        this.$messageHandler.showError(error, 'checkout.error.fetchLogisticsFailed');
+      }
+    },
+
+    async calculateShippingFee() {
+      if (!this.logisticsCompany || !this.shippingInfo.country) {
+        return;
+      }
+
+      try {
+        // 1. 根据国家查找运费范围
+        let shippingRange = this.findShippingRange();
+        if (!shippingRange) {
+          console.warn('未找到匹配的运费范围');
+          return;
+        }
+
+        // 2. 根据国家和标签查找运费系数
+        let shippingFactor = this.findShippingFactor();
+        if (!shippingFactor) {
+          console.warn('未找到匹配的运费系数');
+          return;
+        }
+
+        // 3. 计算总体积重量
+        const throwRatioCoefficient = parseFloat(shippingFactor.throw_ratio_coefficient) || 5000;
+        const volumeWeight = this.calculateVolumeWeight(throwRatioCoefficient);
+        
+        // 4. 计算总实际重量
+        const actualWeight = this.calculateActualWeight();
+        
+        // 5. 使用较大的重量作为计算重量
+        const calculationWeight = Math.max(volumeWeight, actualWeight);
+        
+        // 6. 计算运费
+        // 基本公式: 运费=(首重费用 + (计算重量-首重) * 续重单价 + 附加费 + 附加费2) * 折扣 + 总费用
+        let fee = 0;
+        
+        // 转换字符串类型为数字类型
+        const initialWeight = parseFloat(shippingFactor.initial_weight) || 0;
+        const initialFee = parseFloat(shippingFactor.initial_fee) || 0;
+        const rangeFee = parseFloat(shippingRange.fee) || 0;
+        const surcharge = parseFloat(shippingFactor.surcharge) || 0;
+        const surcharge2 = parseFloat(shippingFactor.surcharge2) || 0;
+        const discount = parseFloat(shippingFactor.discount) || 1;
+        const otherFee = parseFloat(shippingFactor.other_fee) || 0;
+        
+        if (calculationWeight <= initialWeight) {
+          // 如果在首重范围内
+          fee = initialFee;
+        } else {
+          // 超过首重
+          fee = initialFee + (calculationWeight * 2 -1) * rangeFee;
+        }
+        
+        // 添加附加费
+        fee += surcharge;
+        fee += surcharge2;
+        
+        // 应用折扣
+        if (discount > 0 && discount <= 1) {
+          fee *= discount;
+        }
+        
+        // 添加其他费用
+        fee += otherFee;
+        
+        // 更新运费和总价
+        this.shippingFee = fee;
+        this.calculateTotal();
+      } catch (error) {
+        console.error('计算运费失败:', error);
+        this.$messageHandler.showError(error, 'checkout.error.calculateShippingFeeFailed');
+      }
+    },
+
+    findShippingRange() {
+      if (!this.shippingFeeRanges || !this.shippingFeeRanges.length) {
+        return null;
+      }
+      const countryId = this.getCountryId();
+      // 1. 按国家查找
+      let range = this.shippingFeeRanges.find(r => r.country_id === countryId);
+      if (range) {
+        return range;
+      }
+      // 2. 按标签查找
+      if (this.logisticsCompany && this.logisticsCompany.code && this.shippingInfo.country) {
+        const country = this.countries.find(c => c.name === this.shippingInfo.country);
+        if (country && country.tags && Array.isArray(country.tags)) {
+          const companyCode = this.logisticsCompany.code;
+          const matchingTags = country.tags.filter(t => t.value && t.value.startsWith(companyCode));
+          for (const tag of matchingTags) {
+            const foundRange = this.shippingFeeRanges.find(r => parseInt(r.tags_id) === parseInt(tag.id));
+            if (foundRange) {
+              return foundRange;
+            }
+          }
+        }
+      }
+      // 3. 查找默认
+      return this.shippingFeeRanges.find(r => r.country_id === null && r.tags_id === null) || null;
+    },
+
+    findShippingFactor() {
+      if (!this.shippingFeeFactors || !this.shippingFeeFactors.length) {
+        return null;
+      }
+      const countryId = this.getCountryId();
+      // 1. 按国家查找
+      let factor = this.shippingFeeFactors.find(f => f.country_id === countryId);
+      if (factor) {
+        return factor;
+      }
+      // 2. 按标签查找
+      if (this.logisticsCompany && this.logisticsCompany.code && this.shippingInfo.country) {
+        const country = this.countries.find(c => c.name === this.shippingInfo.country);
+        if (country && country.tags && Array.isArray(country.tags)) {
+          const companyCode = this.logisticsCompany.code;
+          const matchingTags = country.tags.filter(t => t.value && t.value.startsWith(companyCode));
+          for (const tag of matchingTags) {
+            const foundFactor = this.shippingFeeFactors.find(f => parseInt(f.tags_id) === parseInt(tag.id));
+            if (foundFactor) {
+              return foundFactor;
+            }
+          }
+        }
+      }
+      // 3. 查找默认
+      return this.shippingFeeFactors.find(f => f.country_id === null && f.tags_id === null) || null;
+    },
+
+    calculateVolumeWeight(volumeFactor) {
+      return this.orderItems.reduce((total, item) => {
+        if (!item.product_length || !item.product_width || !item.product_height) {
+          return total;
+        }
+        // 确保尺寸数据为数字类型
+        const length = parseFloat(item.product_length) || 0;
+        const width = parseFloat(item.product_width) || 0;
+        const height = parseFloat(item.product_height) || 0;
+        const quantity = parseInt(item.quantity) || 0;
+        
+        const itemVolumeWeight = (length * width * height);
+        return total + (itemVolumeWeight * quantity);
+      }, 0) / volumeFactor;
+    },
+
+    calculateActualWeight() {
+      return this.orderItems.reduce((total, item) => {
+        // 确保重量和数量数据为数字类型
+        const weight = parseFloat(item.product_weight) || 0;
+        const quantity = parseInt(item.quantity) || 0;
+        return total + (weight * quantity);
+      }, 0);
+    },
+
+    getCountryId() {
+      const country = this.countries.find(c => c.name === this.shippingInfo.country);
+      return country ? country.id : null;
+    },
+
     async fetchPayPalConfig() {
       try {
         const res = await this.$api.get('/payment-config/config');
@@ -786,7 +1014,8 @@ export default {
                   product_name: item.name,
                   quantity: item.quantity,
                   price: item.calculatedPrice || item.price
-                }))
+                })),
+                shipping_fee: this.shippingFee
               };
               
               // 如果是询价单订单，添加orderSource和inquiryId参数
@@ -880,7 +1109,8 @@ export default {
               product_name: item.name,
               quantity: item.quantity,
               price: item.calculatedPrice || item.price
-            }))
+            })),
+            shipping_fee: this.shippingFee
           };
           
           // 如果是询价单订单，添加orderSource和inquiryId参数

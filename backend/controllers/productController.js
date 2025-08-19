@@ -699,7 +699,6 @@ exports.updateProduct = async (req, res) => {
         category_id,
         price,
         price_ranges: validatedPriceRanges,
-        shipping_fee_ranges: validatedShippingFeeRanges,
         stock,
         status,
         product_type,

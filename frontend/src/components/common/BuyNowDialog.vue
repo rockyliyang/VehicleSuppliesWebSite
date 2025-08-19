@@ -181,7 +181,12 @@ export default {
           quantity: this.quantity,
           price: this.unitPrice,
           calculatedPrice: this.unitPrice,
-          selected: true
+          selected: true,
+          // 添加产品尺寸重量信息用于运费计算
+          length: this.product.product_length || 0,
+          width: this.product.product_width || 0,
+          height: this.product.product_height || 0,
+          weight: this.product.product_weight || 0
         }
         
         this.$emit('checkout', checkoutData)
