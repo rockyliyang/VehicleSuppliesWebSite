@@ -32,10 +32,14 @@
               <div class="inquiry-item-content">
                 <div class="inquiry-item-header">
                   <h4 class="inquiry-item-title">{{ inquiry.name }}</h4>
-                  <button class="delete-inquiry-btn" @click.stop="confirmDeleteInquiry(inquiry.id)"
-                    :title="$t('cart.closeInquiry') || 'Close Inquiry'">
-                    <i class="material-icons">close</i>
-                  </button>
+                  <div class="inquiry-item-actions">
+                    <span v-if="inquiry.unread_count > 0 && activeInquiryId !== inquiry.id" class="unread-badge">{{
+                      inquiry.unread_count }}</span>
+                    <button class="delete-inquiry-btn" @click.stop="confirmDeleteInquiry(inquiry.id)"
+                      :title="$t('cart.closeInquiry') || 'Close Inquiry'">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
                 </div>
                 <div class="inquiry-item-preview">
                   <div class="inquiry-products-preview">
@@ -102,7 +106,9 @@ export default {
       canScrollUp: false,
       canScrollDown: false,
       // Tab control data
-      activeTab: 'unpaid' // 'paid' or 'unpaid'
+      activeTab: 'unpaid', // 'paid' or 'unpaid'
+      // 定时刷新
+      refreshTimer: null
     };
   },
   computed: {
@@ -135,6 +141,11 @@ export default {
     this.$nextTick(() => {
       this.checkScrollControls();
     });
+    
+    // 启动定时刷新，每30秒刷新一次
+    this.refreshTimer = setInterval(() => {
+      this.refreshInquiriesData();
+    }, 30000);
   },
   updated() {
     this.$nextTick(() => {
@@ -142,7 +153,11 @@ export default {
     });
   },
   beforeUnmount() {
-    // 清理工作已移至CommunicationSection组件
+    // 清理定时器
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+    }
   },
   methods: {
     formatTime(timestamp) {
@@ -177,6 +192,7 @@ export default {
             title: inquiry.title,
             status: inquiry.status,
             inquiry_type: inquiry.inquiry_type || 'custom', // 默认为custom类型
+            unread_count: inquiry.unread_count || 0, // 添加未读消息数
             items: (inquiry.items || []).map(item => ({
               id: item.id,
               productId: item.product_id,
@@ -241,14 +257,14 @@ export default {
               price: item.price || item.unit_price,
               price_ranges: item.price_ranges || []
             }));
-            
+            /*
             inquiry.messages = response.data.messages.map(msg => ({
               id: msg.id,
               sender: msg.sender_type === 'user' ? this.$t('inquiry.you') || '您' : this.$t('inquiry.salesRep') || '销售代表',
               content: msg.message,
               timestamp: new Date(msg.created_at).getTime(),
               isUser: msg.sender_type === 'user'
-            }));
+            }));*/
             
             // 更新已询价商品ID集合并通知父组件
             const updatedInquiredProductIds = new Set(this.inquiredProductIds);
@@ -354,6 +370,9 @@ export default {
     
     async switchTab(inquiryId) {
       this.activeInquiryId = inquiryId;
+      
+      // 标记该询价单的消息为已读
+      await this.markInquiryMessagesAsRead(inquiryId);
       
       // 如果该询价单的详情还未加载，则加载详情
       const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
@@ -652,6 +671,95 @@ export default {
         return true;
       }
       return false;
+    },
+    
+    // 标记询价单消息为已读
+    async markInquiryMessagesAsRead(inquiryId) {
+      try {
+        const response = await api.putWithErrorHandler(`/inquiries/${inquiryId}/messages/read`, {}, {
+          fallbackKey: 'INQUIRY.MARK_READ.FAILED'
+        });
+        
+        if (response.success) {
+          // 更新本地数据，将该询价单的未读消息数设为0
+          const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
+          if (inquiry) {
+            inquiry.unread_count = 0;
+          }
+        }
+      } catch (error) {
+        console.error('标记消息为已读失败:', error);
+      }
+    },
+    
+    // 定时刷新询价数据（保持当前选中状态）
+    async refreshInquiriesData() {
+      try {
+        console.log('开始定时刷新询价数据...');
+        const currentActiveId = this.activeInquiryId;
+        const response = await api.getWithErrorHandler('/inquiries', {
+          fallbackKey: 'INQUIRY.FETCH.FAILED'
+        });
+        
+        
+        
+        if (response.success) {
+          // 创建新的询价数据映射
+          const newInquiriesData = response.data.inquiries.map(inquiry => ({
+            id: inquiry.id,
+            name: inquiry.title,
+            title: inquiry.title,
+            status: inquiry.status,
+            inquiry_type: inquiry.inquiry_type || 'custom',
+            items: (inquiry.items || []).map(item => ({
+              id: item.id,
+              productId: item.product_id,
+              product_id: item.product_id,
+              name: item.product_name,
+              product_name: item.product_name,
+              imageUrl: item.image_url || require('@/assets/images/default-image.svg'),
+              image_url: item.image_url,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              price: item.price || item.unit_price,
+              price_ranges: item.price_ranges
+            })),
+            messages: [],
+            newMessage: '',
+            unread_count: inquiry.unread_count || 0
+          }));
+          
+                    
+          // 更新现有询价数据或添加新的询价
+          newInquiriesData.forEach(newInquiry => {
+            const existingIndex = this.inquiries.findIndex(inq => inq.id === newInquiry.id);
+            if (existingIndex !== -1) {
+              //console.log(`询价单 ${newInquiry.id} 未读消息数: ${this.inquiries[existingIndex].unread_count} -> ${newInquiry.unread_count}`);
+              
+              // 在Vue 3中直接更新对象属性
+              Object.assign(this.inquiries[existingIndex], newInquiry);
+            } else {
+              // 添加新的询价
+              //console.log(`添加新询价单 ${newInquiry.id}, 未读消息数: ${newInquiry.unread_count}`);
+              this.inquiries.push(newInquiry);
+            }
+          });
+          
+          // 移除不存在的询价
+          const newInquiryIds = new Set(newInquiriesData.map(inq => inq.id));
+          this.inquiries = this.inquiries.filter(inq => newInquiryIds.has(inq.id));
+          
+          // 保持当前选中的inquiry不变
+          if (currentActiveId && this.inquiries.find(inq => inq.id === currentActiveId)) {
+            this.activeInquiryId = currentActiveId;
+          } else if (this.inquiries.length > 0) {
+            // 如果当前选中的inquiry不存在了，选择第一个
+            this.activeInquiryId = this.inquiries[0].id;
+          }
+        }
+      } catch (error) {
+        console.error('定时刷新询价数据失败:', error);
+      }
     }
   }
 };
@@ -838,6 +946,27 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.inquiry-item-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.unread-badge {
+  background: $error-color;
+  color: white;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .delete-inquiry-btn {

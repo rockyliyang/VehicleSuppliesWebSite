@@ -72,37 +72,41 @@
             </button>
             <h3 class="list-title">{{ currentListTitle }}</h3>
           </div>
-          
+
           <div class="inquiry-list-items">
-            <div v-for="inquiry in currentInquiryList" :key="inquiry.id" 
-                 class="inquiry-list-item" @click="selectInquiry(inquiry)">
+            <div v-for="inquiry in currentInquiryList" :key="inquiry.id" class="inquiry-list-item"
+              @click="selectInquiry(inquiry)">
               <div class="inquiry-item-header">
                 <h4 class="inquiry-title">{{ inquiry.title }}</h4>
-                <span class="inquiry-status" :class="inquiry.status">
-                  {{ inquiry.status === 'paid' ? ($t('inquiry.status.paid') || '已支付') : ($t('inquiry.status.unpaid') || '未支付') }}
-                </span>
+                <div class="inquiry-header-right">
+                  <span v-if="inquiry.unread_count > 0" class="mobile-unread-badge">{{ inquiry.unread_count }}</span>
+                  <span class="inquiry-status" :class="inquiry.status">
+                    {{ inquiry.status === 'paid' ? ($t('inquiry.status.paid') || '已支付') : ($t('inquiry.status.unpaid') ||
+                    '未支付') }}
+                  </span>
+                </div>
               </div>
               <div class="inquiry-item-meta">
                 <span class="inquiry-date">{{ formatDate(inquiry.created_at) }}</span>
-                <span class="inquiry-items-count">{{ inquiry.items.length }} {{ $t('inquiry.itemsCount') || '个商品' }}</span>
+                <span class="inquiry-items-count">{{ inquiry.items.length }} {{ $t('inquiry.itemsCount') || '个商品'
+                  }}</span>
               </div>
               <div class="inquiry-item-preview">
                 <div class="preview-products">
-                  <img v-for="(item, index) in inquiry.items.slice(0, 3)" 
-                       :key="index"
-                       :src="item.image_url || require('@/assets/images/default-image.svg')" 
-                       :alt="item.product_name"
-                       class="preview-image">
+                  <img v-for="(item, index) in inquiry.items.slice(0, 3)" :key="index"
+                    :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.product_name"
+                    class="preview-image">
                   <span v-if="inquiry.items.length > 3" class="more-count">
                     +{{ inquiry.items.length - 3 }}
                   </span>
                 </div>
               </div>
             </div>
-            
+
             <div v-if="currentInquiryList.length === 0" class="no-inquiries">
               <i class="material-icons">assignment</i>
-              <p>{{ currentListType === 'paid' ? ($t('inquiry.noPaidInquiries') || '暂无已支付询价单') : ($t('inquiry.noUnpaidInquiries') || '暂无未支付询价单') }}</p>
+              <p>{{ currentListType === 'paid' ? ($t('inquiry.noPaidInquiries') || '暂无已支付询价单') :
+                ($t('inquiry.noUnpaidInquiries') || '暂无未支付询价单') }}</p>
             </div>
           </div>
         </div>
@@ -113,17 +117,13 @@
             <button class="back-button" @click="backToList">
               <i class="material-icons">arrow_back</i>
             </button>
-            <h3 class="detail-title">{{ selectedMobileInquiry ? selectedMobileInquiry.title : ($t('inquiry.mobile.createNew') || '新建询价单') }}</h3>
+            <h3 class="detail-title">{{ selectedMobileInquiry ? selectedMobileInquiry.title :
+              ($t('inquiry.mobile.createNew') || '新建询价单') }}</h3>
           </div>
-          
-          <InquiryDetailPanel 
-            :inquiry="selectedMobileInquiry" 
-            :is-mobile="true"
-            @remove-item="handleRemoveItem"
-            @send-message="handleSendMessage"
-            @update-message="handleUpdateMessage"
-            @checkout-inquiry="handleCheckoutInquiry"
-            @item-added="handleMobileItemAdded"
+
+          <InquiryDetailPanel :inquiry="selectedMobileInquiry" :is-mobile="true" @remove-item="handleRemoveItem"
+            @send-message="handleSendMessage" @update-message="handleUpdateMessage"
+            @checkout-inquiry="handleCheckoutInquiry" @item-added="handleMobileItemAdded"
             @new-messages-received="handleNewMessagesReceived" />
         </div>
       </div>
@@ -157,7 +157,9 @@ export default {
       currentListType: null, // 'paid', 'unpaid'
       inquiries: [],
       selectedMobileInquiry: null,
-      isNewInquiry: false
+      isNewInquiry: false,
+      // 定时刷新
+      refreshTimer: null
     };
   },
   computed: {
@@ -194,6 +196,15 @@ export default {
   mounted() {
     // 检查路由参数，决定是否显示桌面布局
     this.handleRouteParams();
+    // 启动定时刷新
+    this.startRefreshTimer();
+  },
+  
+  beforeUnmount() {
+    // 停止定时刷新
+    this.stopRefreshTimer();
+    // 移除事件监听器
+    window.removeEventListener('resize', this.handleResize);
   },
   
   watch: {
@@ -222,7 +233,10 @@ export default {
         });
         
         if (response.success) {
-          this.inquiries = response.data.inquiries || [];
+          this.inquiries = (response.data.inquiries || []).map(inquiry => ({
+            ...inquiry,
+            unread_count: inquiry.unread_count || 0 // 添加未读消息数
+          }));
           this.paidInquiriesCount = this.inquiries.filter(inquiry => inquiry.status === 'paid').length;
           this.unpaidInquiriesCount = this.inquiries.filter(inquiry => inquiry.status !== 'paid').length;
         }
@@ -264,6 +278,9 @@ export default {
     
     // 选择询价单进入详情
     async selectInquiry(inquiry) {
+      // 标记该询价单的消息为已读
+      await this.markInquiryMessagesAsRead(inquiry.id);
+      
       // 加载询价单详情
       await this.loadInquiryDetail(inquiry.id);
       this.selectedMobileInquiry = this.inquiries.find(inq => inq.id === inquiry.id);
@@ -312,14 +329,14 @@ export default {
               unit_price: item.unit_price,
               price: item.price || item.unit_price
             }));
-            
+            /*
             inquiry.messages = response.data.messages.map(msg => ({
               id: msg.id,
               sender: msg.sender_type === 'user' ? this.$t('inquiry.you') || '您' : this.$t('inquiry.salesRep') || '销售代表',
               content: msg.message,
               timestamp: new Date(msg.created_at).getTime(),
               isUser: msg.sender_type === 'user'
-            }));
+            }));*/
           }
         }
       } catch (error) {
@@ -508,6 +525,63 @@ export default {
       if (this.$refs.inquiryManagementContainer) {
         this.$refs.inquiryManagementContainer.classList.remove('force-desktop-layout');
       }
+    },
+    
+    // 标记询价单消息为已读
+    async markInquiryMessagesAsRead(inquiryId) {
+      try {
+        await this.$api.postWithErrorHandler(`/inquiries/${inquiryId}/mark-read`);
+        // 更新本地数据中的未读消息数
+        const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
+        if (inquiry) {
+          inquiry.unread_count = 0;
+        }
+      } catch (error) {
+        console.error('标记消息已读失败:', error);
+      }
+    },
+
+    // 定时刷新询价数据
+    async refreshInquiriesData() {
+      try {
+        const response = await this.$api.getWithErrorHandler('/inquiries');
+        if (response && response.data && response.data.inquiries) {
+          // 保存当前选中的询价ID
+          const currentSelectedId = this.selectedMobileInquiry?.id;
+          
+          // 更新询价数据，保持未读消息数
+           const newInquiries = response.data.inquiries.map(newInquiry => {
+             return {
+               ...newInquiry,
+               unread_count: newInquiry.unread_count || 0
+             };
+           });
+          
+          this.inquiries = newInquiries;
+          
+          // 如果当前有选中的询价，保持选中状态
+          if (currentSelectedId) {
+            this.selectedMobileInquiry = this.inquiries.find(inq => inq.id === currentSelectedId);
+          }
+        }
+      } catch (error) {
+        console.error('定时刷新询价数据失败:', error);
+      }
+    },
+
+    // 启动定时刷新
+    startRefreshTimer() {
+      this.refreshTimer = setInterval(() => {
+        this.refreshInquiriesData();
+      }, 30000); // 每30秒刷新一次
+    },
+
+    // 停止定时刷新
+    stopRefreshTimer() {
+      if (this.refreshTimer) {
+        clearInterval(this.refreshTimer);
+        this.refreshTimer = null;
+      }
     }
   }
 };
@@ -558,17 +632,17 @@ export default {
   cursor: pointer;
   margin-bottom: 16px;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background: #f9fafb;
     border-color: #d1d5db;
   }
-  
+
   i {
     font-size: 20px;
     color: #6b7280;
   }
-  
+
   span {
     font-size: 14px;
     color: #374151;
@@ -613,7 +687,7 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     i {
       font-size: 24px;
       color: white;
@@ -658,7 +732,7 @@ export default {
   .card-arrow {
     flex-shrink: 0;
     color: #9ca3af;
-    
+
     i {
       font-size: 18px;
     }
@@ -682,11 +756,11 @@ export default {
   .desktop-only {
     display: none !important;
   }
-  
+
   .mobile-only {
     display: block !important;
   }
-  
+
   .mobile-back-button {
     position: fixed;
     top: 20px;
@@ -702,35 +776,35 @@ export default {
     justify-content: center;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     cursor: pointer;
-    
+
     &:hover {
       background: #f5f5f5;
     }
   }
-  
+
   .inquiry-management-container {
     padding: 0;
     gap: 0;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
-    
+
     // 强制显示桌面布局时的样式
     &.force-desktop-layout {
       .desktop-only {
         display: block;
       }
-      
+
       .mobile-only {
         display: none;
       }
-      
+
       .mobile-back-button {
         display: flex;
       }
     }
   }
-  
+
   // 手机端卡片视图
   .mobile-cards {
     padding: 16px;
@@ -741,7 +815,7 @@ export default {
     max-width: 100vw;
     box-sizing: border-box;
   }
-  
+
   // 手机端列表视图
   .mobile-inquiry-list {
     .list-header {
@@ -751,7 +825,7 @@ export default {
       display: flex;
       align-items: center;
       gap: 12px;
-      
+
       .back-button {
         background: none;
         border: none;
@@ -760,14 +834,14 @@ export default {
         cursor: pointer;
         padding: 4px;
       }
-      
+
       .list-title {
         font-size: 18px;
         font-weight: 600;
         color: #333;
       }
     }
-    
+
     .inquiry-list-items {
       .inquiry-list-item {
         background: white;
@@ -775,72 +849,93 @@ export default {
         padding: 16px 20px;
         cursor: pointer;
         transition: background-color 0.2s ease;
-        
+
         &:hover {
           background: #f8f9fa;
         }
-        
+
         .inquiry-item-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
           margin-bottom: 8px;
-          
+
           .inquiry-title {
             font-size: 16px;
             font-weight: 600;
             color: #333;
             flex: 1;
           }
-          
-          .inquiry-status {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            
-            &.inquiried {
-              background: #e3f2fd;
-              color: #1976d2;
+
+          .inquiry-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .mobile-unread-badge {
+              background: #ef4444;
+              color: white;
+              border-radius: 50%;
+              width: 20px;
+              height: 20px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 11px;
+              font-weight: 600;
+              min-width: 20px;
+              flex-shrink: 0;
             }
-            
-            &.checkouted {
-              background: #e8f5e8;
-              color: #2e7d32;
+
+            .inquiry-status {
+              padding: 4px 8px;
+              border-radius: 12px;
+              font-size: 12px;
+              font-weight: 500;
+
+              &.inquiried {
+                background: #e3f2fd;
+                color: #1976d2;
+              }
+
+              &.checkouted {
+                background: #e8f5e8;
+                color: #2e7d32;
+              }
             }
           }
         }
-        
+
         .inquiry-item-meta {
           display: flex;
           gap: 16px;
           margin-bottom: 8px;
-          
+
           .inquiry-date {
             font-size: 14px;
             color: #666;
           }
-          
+
           .inquiry-items-count {
             font-size: 14px;
             color: #007bff;
             font-weight: 500;
           }
         }
-        
+
         .inquiry-item-preview {
           .preview-products {
             display: flex;
             align-items: center;
             gap: 8px;
-            
+
             .preview-image {
               width: 32px;
               height: 32px;
               border-radius: 4px;
               object-fit: cover;
             }
-            
+
             .more-count {
               font-size: 12px;
               color: #666;
@@ -851,18 +946,18 @@ export default {
           }
         }
       }
-      
+
       .no-inquiries {
         text-align: center;
         padding: 40px 20px;
         color: #666;
-        
+
         i {
           font-size: 48px;
           color: #ddd;
           margin-bottom: 16px;
         }
-        
+
         p {
           font-size: 16px;
           margin: 0;
@@ -870,7 +965,7 @@ export default {
       }
     }
   }
-  
+
   // 手机端详情视图
   .mobile-inquiry-detail {
     .detail-header {
@@ -880,7 +975,7 @@ export default {
       display: flex;
       align-items: center;
       gap: 12px;
-      
+
       .back-button {
         background: none;
         border: none;
@@ -889,7 +984,7 @@ export default {
         cursor: pointer;
         padding: 4px;
       }
-      
+
       .detail-title {
         font-size: 18px;
         font-weight: 600;
@@ -918,7 +1013,7 @@ export default {
       width: 40px;
       height: 40px;
       flex-shrink: 0;
-      
+
       i {
         font-size: 20px;
       }
@@ -927,7 +1022,7 @@ export default {
     .card-content {
       flex: 1;
       min-width: 0; // 允许内容收缩
-      
+
       .card-title {
         font-size: 15px;
         margin: 0 0 4px 0;
@@ -953,7 +1048,7 @@ export default {
 
     .card-arrow {
       flex-shrink: 0;
-      
+
       i {
         font-size: 16px;
       }

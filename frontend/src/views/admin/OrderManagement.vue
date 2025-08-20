@@ -50,44 +50,44 @@
 
     <!-- 订单列表 -->
     <el-card class="order-list-card">
-      <el-table v-loading="loading" :data="orders" stripe>
-        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="180" fixed="right">
+      <el-table v-loading="loading" :data="orders" stripe :table-layout="'auto'" class="order-table">
+        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="viewOrderDetail(row)">{{ $t('order.action.view', 'View')
               || '查看' }}</el-button>
-            <el-button v-if="isAdmin" type="success" size="small" @click="manageLogistics(row)">{{
+            <el-button v-if="isAdmin" type="success" size="small" @click="manageLogistics(row)">{{ 
               $t('order.action.logistics', 'Logistics') || '物流' }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="id" :label="$t('order.table.orderId', 'Order ID') || '订单号'" width="120" />
-        <el-table-column :label="$t('order.table.customer', 'Customer') || '客户'" width="150">
+        <el-table-column prop="id" :label="$t('order.table.orderId', 'Order ID') || '订单号'" width="140" show-overflow-tooltip />
+        <el-table-column :label="$t('order.table.customer', 'Customer') || '客户'" min-width="180">
           <template #default="{ row }">
             <div>
-              <div>{{ row.username }}</div>
-              <div class="text-secondary">{{ row.email }}</div>
+              <div class="customer-name">{{ row.username }}</div>
+              <div class="customer-email">{{ row.email }}</div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.table.totalAmount', 'Total Amount') || '总金额'" width="120">
+        <el-table-column :label="$t('order.table.totalAmount', 'Total Amount') || '总金额'" width="140" align="right">
           <template #default="{ row }">
-            ${{ row.total_amount }}
+            <span class="amount-text">${{ row.total_amount }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.table.status', 'Status') || '状态'" width="100">
+        <el-table-column :label="$t('order.table.status', 'Status') || '状态'" width="120" align="center">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">{{ formatStatus(row.status) }}</el-tag>
+            <el-tag :type="getStatusType(row.status)" size="small">{{ formatStatus(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'" width="180">
+        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'" width="200">
           <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
+            <span class="date-text">{{ formatDate(row.created_at) }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'" width="120">
+        <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'" width="140" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.shipping_status" :type="getLogisticsStatusType(row.shipping_status)">{{
+            <el-tag v-if="row.shipping_status" :type="getLogisticsStatusType(row.shipping_status)" size="small">{{ 
               formatLogisticsStatus(row.shipping_status) }}</el-tag>
-            <span v-else class="text-secondary">{{ $t('order.logistics.noLogistics', 'No Logistics') || '无物流' }}</span>
+            <span v-else class="no-logistics">{{ $t('order.logistics.noLogistics', 'No Logistics') || '无物流' }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -121,7 +121,7 @@
                 <h4>{{ $t('order.detail.orderInfo', 'Order Information') }}</h4>
               </div>
               <div class="card-content">
-                <div class="info-grid-two-column">
+                <div class="info-grid-five-column">
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.orderStatus', 'Order Status') }}</span>
                     <span :class="'status-badge status-' + selectedOrder.status">
@@ -138,11 +138,31 @@
                   </div>
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.zipCode', 'Zip Code') }}</span>
-                    <span class="info-value">{{ selectedOrder.shipping_zip_code }}</span>
+                    <span class="info-value">{{ selectedOrder.shipping_zip_code || '-' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">{{ $t('order.detail.paymentMethod', 'Payment Method') }}</span>
+                    <span class="info-value">{{ selectedOrder.payment_method || '-' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">{{ $t('order.detail.paymentId', 'Payment ID') }}</span>
+                    <span class="info-value">{{ selectedOrder.payment_id || '-' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">{{ $t('order.detail.shippingName', 'Shipping Name') }}</span>
+                    <span class="info-value">{{ selectedOrder.shipping_name || '-' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">{{ $t('order.detail.shippingPhone', 'Shipping Phone') }}</span>
+                    <span class="info-value">{{ selectedOrder.shipping_phone || '-' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">{{ $t('order.detail.shippingEmail', 'Shipping Email') }}</span>
+                    <span class="info-value">{{ selectedOrder.shipping_email || '-' }}</span>
                   </div>
                   <div class="info-row full-width">
                     <span class="info-label">{{ $t('order.detail.address', 'Address') }}</span>
-                    <span class="info-value">{{ selectedOrder.shipping_address }}</span>
+                    <span class="info-value">{{ selectedOrder.shipping_address || '-' }}</span>
                   </div>
                 </div>
               </div>
@@ -202,9 +222,56 @@
                 </table>
               </div>
               <div class="order-total">
-                <div class="total-row">
-                  <span class="total-label">{{ $t('order.detail.orderTotal', 'Order Total') }}</span>
-                  <span class="total-amount">${{ selectedOrder.total_amount }}</span>
+                <!-- 统计信息一行显示 -->
+                <div class="total-summary-row">
+                  <div class="total-item">
+                    <span class="total-label">{{ $t('order.detail.subtotal', 'Subtotal') || '商品小计' }}</span>
+                    <span class="total-amount">${{ calculateSubtotal(selectedOrder.items) }}</span>
+                  </div>
+                  <div class="total-item">
+                    <span class="total-label">{{ $t('order.detail.shippingFee', 'Shipping Fee') || '运费' }}</span>
+                    <span v-if="!isAdmin || !editingPrice" class="total-amount">${{ selectedOrder.shipping_fee || '0.00' }}</span>
+                    <div v-else class="price-edit-container">
+                      <input 
+                        type="number" 
+                        v-model.number="editableShippingFee" 
+                        step="0.01" 
+                        min="0" 
+                        class="price-input"
+                        @blur="updateShippingFee"
+                        @keyup.enter="updateShippingFee"
+                      />
+                    </div>
+                  </div>
+                  <div class="total-item final-total">
+                    <span class="total-label">{{ $t('order.detail.orderTotal', 'Order Total') }}</span>
+                    <span v-if="!isAdmin || !editingPrice" class="total-amount">${{ selectedOrder.total_amount }}</span>
+                    <div v-else class="price-edit-container">
+                      <input 
+                        type="number" 
+                        v-model.number="editableTotalAmount" 
+                        step="0.01" 
+                        min="0" 
+                        class="price-input"
+                        @blur="updateTotalAmount"
+                        @keyup.enter="updateTotalAmount"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <!-- 管理员价格编辑按钮 -->
+                <div v-if="isAdmin" class="price-edit-actions">
+                  <el-button v-if="!editingPrice" type="primary" size="large" @click="startEditingPrice">
+                    {{ $t('order.action.editPrice', 'Edit Price') || '修改价格' }}
+                  </el-button>
+                  <div v-else class="edit-buttons">
+                    <el-button type="success" size="small" @click="savePriceChanges">
+                      {{ $t('common.save', 'Save') || '保存' }}
+                    </el-button>
+                    <el-button size="small" @click="cancelPriceEdit">
+                      {{ $t('common.cancel', 'Cancel') || '取消' }}
+                    </el-button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -419,7 +486,13 @@ export default {
         shipping_country: '',
         shipping_state: '',
         shipping_city: ''
-      }
+      },
+      // 价格编辑相关
+      editingPrice: false,
+      editableShippingFee: 0,
+      editableTotalAmount: 0,
+      originalShippingFee: 0,
+      originalTotalAmount: 0
     }
   },
   computed: {
@@ -611,6 +684,56 @@ export default {
       }
     },
 
+    // 价格编辑相关方法
+    startEditingPrice() {
+      this.editingPrice = true
+      this.editableShippingFee = this.selectedOrder.shipping_fee || 0
+      this.editableTotalAmount = this.selectedOrder.total_amount || 0
+      this.originalShippingFee = this.selectedOrder.shipping_fee || 0
+      this.originalTotalAmount = this.selectedOrder.total_amount || 0
+    },
+
+    async savePriceChanges() {
+      if (!this.selectedOrder) return
+
+      try {
+        const priceData = {
+          shipping_fee: parseFloat(this.editableShippingFee) || 0,
+          total_amount: parseFloat(this.editableTotalAmount) || 0
+        }
+
+        const response = await this.$api.putWithErrorHandler(`/order-management/orders/${this.selectedOrder.id}/update`, priceData, {
+          fallbackKey: 'order.error.updatePriceFailed'
+        })
+
+        if (response.success) {
+          this.$message.success(this.$t(response.message || 'order.success.priceUpdated'))
+          
+          // 更新本地数据
+          this.selectedOrder.shipping_fee = priceData.shipping_fee
+          this.selectedOrder.total_amount = priceData.total_amount
+          
+          // 更新订单列表中的数据
+          const orderIndex = this.orders.findIndex(order => order.id === this.selectedOrder.id)
+          if (orderIndex !== -1) {
+            this.orders[orderIndex].shipping_fee = priceData.shipping_fee
+            this.orders[orderIndex].total_amount = priceData.total_amount
+          }
+          
+          this.editingPrice = false
+        }
+      } catch (error) {
+        console.error('Error updating order price:', error)
+        this.$message.error(this.$t('order.error.updatePriceFailed'))
+      }
+    },
+
+    cancelPriceEdit() {
+      this.editingPrice = false
+      this.editableShippingFee = this.originalShippingFee
+      this.editableTotalAmount = this.originalTotalAmount
+    },
+
     async updateLogistics() {
       if (!this.selectedOrder) return
 
@@ -679,6 +802,12 @@ export default {
     closeOrderDetail() {
       this.showOrderDetail = false
       this.selectedOrder = null
+      // 重置编辑状态
+      this.editingPrice = false
+      this.editableShippingFee = 0
+      this.editableTotalAmount = 0
+      this.originalShippingFee = 0
+      this.originalTotalAmount = 0
     },
 
     closeLogisticsModal() {
@@ -794,6 +923,18 @@ export default {
       } else {
         this.loadUsers()
       }
+    },
+
+    // 计算订单商品小计
+    calculateSubtotal(items) {
+      if (!items || !Array.isArray(items)) {
+        return '0.00'
+      }
+      const subtotal = items.reduce((total, item) => {
+        const itemTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)
+        return total + itemTotal
+      }, 0)
+      return subtotal.toFixed(2)
     },
 
     // 日期范围变化处理
@@ -1102,7 +1243,8 @@ export default {
 
 /* 订单详情模态框样式 */
 .order-detail-modal {
-  max-width: 1000px;
+  max-width: 1200px;
+  width: 95%;
 }
 
 .modal-header {
@@ -1162,15 +1304,22 @@ export default {
 
 /* 订单详情网格布局 */
 .order-detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
   margin-bottom: 24px;
 }
 
+.order-info-card {
+  width: 100%;
+}
+
+.logistics-info-card {
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .order-detail-grid {
-    grid-template-columns: 1fr;
     gap: 16px;
   }
 }
@@ -1243,12 +1392,56 @@ export default {
   gap: 12px 16px;
 }
 
+.info-grid-four-column {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px 16px;
+}
+
+.info-grid-five-column {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(160px, 1fr));
+  gap: 12px 16px;
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .info-grid-five-column {
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .info-grid-five-column {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .info-grid-four-column {
+    grid-template-columns: 1fr 1fr;
+  }
+  .info-grid-five-column {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .info-grid-four-column {
+    grid-template-columns: 1fr;
+  }
+  .info-grid-five-column {
+    grid-template-columns: 1fr;
+  }
+}
+
 .info-row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 0;
+  gap: 6px;
+  padding: 12px 8px;
   border-bottom: 1px solid #f0f0f0;
+  min-width: 0;
 }
 
 .info-row.full-width {
@@ -1264,17 +1457,26 @@ export default {
 }
 
 .info-label {
-  font-weight: 500;
+  font-weight: 600;
   color: #495057;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .info-value {
   color: #212529;
   font-weight: 500;
   word-break: break-word;
+  font-size: 13px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .info-value.order-amount {
@@ -1292,66 +1494,254 @@ export default {
   font-size: 13px;
 }
 
+/* 订单表格样式 */
+.order-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.customer-name {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
+.customer-email {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.amount-text {
+  font-weight: 600;
+  color: #28a745;
+  font-size: 14px;
+}
+
+.date-text {
+  color: #495057;
+  font-size: 13px;
+}
+
+.no-logistics {
+  color: #6c757d;
+  font-size: 12px;
+  font-style: italic;
+}
+
 /* 商品表格样式 */
 .items-table-container {
   overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
 }
 
 .items-table {
   width: 100%;
   border-collapse: collapse;
   margin: 0;
+  background: white;
+  table-layout: fixed;
 }
 
 .items-table th,
 .items-table td {
-  padding: 12px;
+  padding: 12px 8px;
   text-align: left;
   border-bottom: 1px solid #dee2e6;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .items-table th {
-  background-color: #f8f9fa;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   font-weight: 600;
   color: #495057;
-  font-size: 14px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 设置各列的具体宽度 */
+.items-table th:nth-child(1),
+.items-table td:nth-child(1) {
+  width: 45%;
+}
+
+.items-table th:nth-child(2),
+.items-table td:nth-child(2) {
+  width: 15%;
+  text-align: center;
+}
+
+.items-table th:nth-child(3),
+.items-table td:nth-child(3) {
+  width: 20%;
+  text-align: right;
+}
+
+.items-table th:nth-child(4),
+.items-table td:nth-child(4) {
+  width: 20%;
+  text-align: right;
 }
 
 .items-table .product-name {
   font-weight: 500;
   color: #495057;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.items-table .quantity,
-.items-table .price,
-.items-table .total {
-  text-align: right;
-  font-family: 'Courier New', monospace;
-}
-
-.order-total {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 2px solid #dee2e6;
-}
-
-.total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.total-label {
-  font-size: 18px;
+.items-table .quantity {
+  font-family: 'Segoe UI', Arial, sans-serif;
   font-weight: 600;
   color: #495057;
 }
 
-.total-amount {
-  font-size: 20px;
-  font-weight: 700;
+.items-table .price,
+.items-table .total {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 600;
   color: #28a745;
-  font-family: 'Courier New', monospace;
+}
+
+.items-table tbody tr:hover {
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
+}
+
+.order-total {
+  margin-top: 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.order-total::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #007bff 0%, #28a745 50%, #17a2b8 100%);
+}
+
+.total-summary-row {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+.total-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  border: 1px solid rgba(222, 226, 230, 0.5);
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.total-item:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.total-item.final-total {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.total-item.final-total:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+.total-item.final-total .total-label {
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.total-item.final-total .total-amount {
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.total-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.total-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #495057;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* 价格编辑相关样式 */
+.price-edit-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.price-input {
+  width: 100px;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  background: white;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.price-edit-actions {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.price-edit-actions .el-button {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.price-edit-actions .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
 }
 
 /* 物流模态框样式 */
@@ -1562,6 +1952,36 @@ export default {
 
   .info-value {
     text-align: left;
+  }
+
+  .total-summary-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .total-item {
+    padding: 12px;
+  }
+
+  .total-label {
+    font-size: 13px;
+  }
+
+  .total-amount {
+    font-size: 16px;
+  }
+
+  .total-item.final-total .total-label {
+    font-size: 14px;
+  }
+
+  .total-item.final-total .total-amount {
+    font-size: 18px;
+  }
+
+  .price-edit-actions .el-button {
+    font-size: 14px;
+    padding: 10px 20px;
   }
 }
 </style>

@@ -5,6 +5,7 @@
 
 const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
+const { getManagedUserIds, generateUserIdsPlaceholders } = require('../utils/adminUserUtils');
 
 /**
  * 获取管理员控制面板统计数据
@@ -12,16 +13,28 @@ const { getMessage } = require('../config/messages');
  */
 exports.getDashboardStats = async (req, res) => {
   try {
-    // 获取统计数据
+    const currentUserId = req.userId; // 从JWT中获取当前登录用户ID
+    
+    // 获取当前管理员管理的用户ID列表
+    const managedUserIds = await getManagedUserIds(currentUserId);
+    const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
+    
+    // 为每个子查询生成独立的占位符
+    const placeholders2 = managedUserIds.map((_, index) => `$${params.length + index + 1}`).join(',');
+    const placeholders3 = managedUserIds.map((_, index) => `$${params.length * 2 + index + 1}`).join(',');
+    
+    // 获取统计数据（只统计管理的用户相关数据）
     const stats = await query(`
       SELECT 
         (SELECT COUNT(*) FROM products WHERE deleted = false AND status = 'on_shelf') as product_count,
-        (SELECT COUNT(*) FROM users WHERE deleted = false) as user_count,
-        (SELECT COUNT(*) FROM inquiries WHERE deleted = false) as order_count,
-        (SELECT COUNT(*) FROM inquiry_messages WHERE deleted = false AND is_read = 0) as message_count
-    `);
+        (SELECT COUNT(*) FROM users WHERE deleted = false AND id IN (${placeholders})) as user_count,
+        (SELECT COUNT(*) FROM inquiries WHERE deleted = false AND user_id IN (${placeholders2})) as order_count,
+        (SELECT COUNT(*) FROM inquiry_messages im 
+         INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
+         WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id IN (${placeholders3})) as message_count
+    `, [...params, ...params, ...params]);
 
-    // 获取用户统计
+    // 获取用户统计（只统计管理的用户）
     const userStats = await query(`
       SELECT 
         COUNT(*) as total_users,
@@ -29,10 +42,10 @@ exports.getDashboardStats = async (req, res) => {
         COUNT(CASE WHEN user_role = 'business' THEN 1 END) as business_users,
         COUNT(CASE WHEN user_role = 'admin' THEN 1 END) as admin_users
       FROM users 
-      WHERE deleted = false
-    `);
+      WHERE deleted = false AND id IN (${placeholders})
+    `, params);
 
-    // 获取询价统计
+    // 获取询价统计（只统计管理的用户）
     const inquiryStats = await query(`
       SELECT 
         COUNT(*) as total_inquiries,
@@ -40,21 +53,27 @@ exports.getDashboardStats = async (req, res) => {
         COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_inquiries,
         COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_inquiries
       FROM inquiries 
-      WHERE deleted = false
-    `);
+      WHERE deleted = false AND user_id IN (${placeholders})
+    `, params);
 
-    // 获取消息统计
+    // 获取消息统计（只统计管理的用户）
     const messageStats = await query(`
       SELECT 
         COUNT(*) as total_messages,
-        COUNT(CASE WHEN sender_type = 'user' AND is_read = 0 THEN 1 END) as unread_messages,
+        COUNT(CASE WHEN sender_type = 'user' AND is_read = 0 THEN 1 END) as user_unread_messages,
         COUNT(CASE WHEN sender_type = 'admin' THEN 1 END) as admin_messages,
         COUNT(CASE WHEN sender_type = 'user' THEN 1 END) as user_messages
-      FROM inquiry_messages 
-      WHERE deleted = false
-    `);
-
-    // 获取最近7天的询价趋势
+      FROM inquiry_messages im inner join inquiries i on im.inquiry_id = i.id and i.deleted=false
+      WHERE im.deleted = false AND i.user_id IN (${placeholders})
+       `, params);
+    const messageUserUnReadStats = await query(`
+      SELECT COUNT(CASE WHEN sender_type = 'admin' AND is_read = 0 THEN 1 END) as admin_unread_messages
+      FROM inquiry_messages im inner join inquiries i on im.inquiry_id = i.id and i.deleted=false
+      WHERE im.deleted = false AND im.sender_id = $1   
+    `, [currentUserId]);
+    let messageStatsResponse = messageStats.rows[0];
+    messageStatsResponse.admin_unread_messages = messageUserUnReadStats.rows[0].admin_unread_messages;
+    // 获取最近7天的询价趋势（只统计管理的用户）
     const inquiryTrend = await query(`
       SELECT 
         DATE(created_at) as date,
@@ -62,11 +81,12 @@ exports.getDashboardStats = async (req, res) => {
       FROM inquiries 
       WHERE created_at >= NOW() - INTERVAL '7 days' 
         AND deleted = false
+        AND user_id IN (${placeholders})
       GROUP BY DATE(created_at)
       ORDER BY date DESC
-    `);
+    `, params);
 
-    // 获取最近7天的用户注册趋势
+    // 获取最近7天的用户注册趋势（只统计管理的用户）
     const userTrend = await query(`
       SELECT 
         DATE(created_at) as date,
@@ -74,9 +94,10 @@ exports.getDashboardStats = async (req, res) => {
       FROM users 
       WHERE created_at >= NOW() - INTERVAL '7 days' 
         AND deleted = false
+        AND id IN (${placeholders})
       GROUP BY DATE(created_at)
       ORDER BY date DESC
-    `);
+    `, params);
 
     return res.json({
       success: true,
@@ -88,7 +109,7 @@ exports.getDashboardStats = async (req, res) => {
         messages: stats.rows[0].message_count,
         userStats: userStats.rows[0],
         inquiryStats: inquiryStats.rows[0],
-        messageStats: messageStats.rows[0],
+        messageStats: messageStatsResponse,
         trends: {
           inquiries: inquiryTrend.rows,
           users: userTrend.rows
@@ -148,6 +169,11 @@ exports.getRecentProducts = async (req, res) => {
 exports.getRecentInquiries = async (req, res) => {
   try {
     const { limit = 5 } = req.query;
+    const currentUserId = req.userId; // 从JWT中获取当前登录用户ID
+    
+    // 获取当前管理员管理的用户ID列表
+    const managedUserIds = await getManagedUserIds(currentUserId);
+    const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
     
     const recentInquiries = await query(`
       SELECT 
@@ -190,10 +216,10 @@ exports.getRecentInquiries = async (req, res) => {
         WHERE im.deleted = false
         GROUP BY im.inquiry_id
       ) message_stats ON i.id = message_stats.inquiry_id
-      WHERE i.deleted = false
+      WHERE i.deleted = false AND i.user_id IN (${placeholders})
       ORDER BY i.created_at DESC
-      LIMIT $1
-    `, [parseInt(limit)]);
+      LIMIT $${params.length + 1}
+    `, [...params, parseInt(limit)]);
 
     return res.json({
       success: true,

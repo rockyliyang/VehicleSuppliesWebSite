@@ -327,8 +327,8 @@ export default {
     },
     
     // 处理新消息事件（简化版本，消息显示由 CommunicationSection 直接处理）
-    handleNewMessages(eventData) {
-      if (!eventData || !eventData.messages || eventData.messages.length === 0) return;
+    handleNewMessages() {
+      /*if (!eventData || !eventData.messages || eventData.messages.length === 0) return;
       
       const { messages } = eventData;
       
@@ -340,8 +340,8 @@ export default {
           }
         });
         
-        console.log(`InquiryDetailPanel: 收到 ${messages.length} 条新消息提示`);
-      }
+        //console.log(`InquiryDetailPanel: 收到 ${messages.length} 条新消息提示`);
+      }*/
     },
     handleCheckout(inquiryId) {
       const inquiry = inquiryId ? this.inquiry : this.inquiry;

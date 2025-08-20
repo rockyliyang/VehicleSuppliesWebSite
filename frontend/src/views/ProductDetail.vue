@@ -249,10 +249,9 @@
         </div>
         <div class="inquiry-window-body">
           <!-- 沟通组件 -->
-          <CommunicationSection :messages="inquiryMessages" :inquiry-id="currentInquiryId" :items-count="1"
-            :status="inquiryStatus" :initial-message="initialInquiryMessage" @send-message="handleSendInquiryMessage"
-            @update-message="handleUpdateInquiryMessage" @checkout="handleInquiryCheckout"
-            @new-messages="handleNewMessages" />
+          <InquiryDetailPanel :inquiry="currentInquiry" :is-mobile="isMobile"
+            @update-message="handleUpdateInquiryMessage" @checkout-inquiry="handleInquiryCheckout"
+            @new-messages-received="handleNewMessages" />
         </div>
       </div>
     </div>
@@ -279,7 +278,7 @@ import { handleImageError } from '../utils/imageUtils';
 import { handleChatNow, handleAddToCart, handleLoginSuccess, loadInquiryMessages, addBrowsingHistory, checkFavoriteStatus } from '../utils/productUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
-import CommunicationSection from '../components/common/CommunicationSection.vue'
+import InquiryDetailPanel from '../components/common/InquiryDetailPanel.vue'
 import LoginDialog from '../components/common/LoginDialog.vue'
 
 import BuyNowDialog from '@/components/common/BuyNowDialog.vue'
@@ -291,7 +290,7 @@ export default {
   components: {
     PageBanner,
     NavigationMenu,
-    CommunicationSection,
+    InquiryDetailPanel,
     LoginDialog,
 
     BuyNowDialog,
@@ -468,7 +467,30 @@ export default {
     },
     // 一起购买相关计算属性
     hasSelectedProducts() {
-      return this.currentProductSelected || this.buyTogetherProducts.some(item => item.selected);
+      return this.currentProductSelected || this.buyTogetherProducts.some(item => item.selected)
+    },
+    // 构建当前询价对象，供InquiryDetailPanel使用
+    currentInquiry() {
+      if (!this.currentInquiryId) return null;
+      
+      return {
+        id: this.currentInquiryId,
+        status: this.inquiryStatus,
+        inquiry_type: 'single', // 产品详情页的询价通常是单个产品
+        messages: this.inquiryMessages,
+        items: [{
+          id: 1,
+          productId: this.product.id,
+          product_id: this.product.id,
+          name: this.product.name,
+          product_name: this.product.name,
+          imageUrl: this.product.thumbnail_url,
+          image_url: this.product.thumbnail_url,
+          quantity: 1,
+          unit_price: this.product.price,
+          product_code: this.product.product_code
+        }]
+      };
     },
     showBuyNowDialog: {
       get() {
@@ -1200,8 +1222,8 @@ export default {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 380px;
-  height: 500px;
+  width: 580px;
+  height: 600px;
   background: $white;
   border-radius: $border-radius-lg;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
@@ -1284,7 +1306,7 @@ export default {
     right: 10px;
     left: 10px;
     width: auto;
-    height: 400px;
+    height: 500px;
 
     &.show {
       transform: translateY(0) scale(1);

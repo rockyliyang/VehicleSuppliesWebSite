@@ -24,19 +24,24 @@ taskManager.registerTask('checkUnreadMessagesAndSendEmail', async () => {
     const sqlQuery = `
       SELECT 
         im.id,
-        im.sender_id as user_id,
+        im.sender_id as sender_id,
         im.content as message,
         im.created_at,
-        u.email,
-        u.username,
+        us.email as sender_email,
+        us.username as sender_username,
+        ur.id as receiver_id,
+        ur.email as receiver_email,
+        ur.username as receiver_username,
         i.title as inquiry_title
       FROM inquiry_messages im
-      JOIN users u ON im.sender_id = u.id
-      JOIN inquiries i ON im.inquiry_id = i.id
+      JOIN users us ON im.sender_id = us.id and us.deleted = false
+      JOIN inquiries i ON im.inquiry_id = i.id and i.deleted = false
+      JOIN users ur on i.created_by = ur.id and ur.deleted = false
       WHERE im.is_read = 0 
         AND im.is_emailed = 0
-        AND u.email IS NOT NULL
-        AND u.email != ''
+        AND ur.email IS NOT NULL and ur.email != ''
+        AND us.email IS NOT NULL and us.email != ''
+        AND im.deleted = false
       ORDER BY im.created_at DESC
     `;
     
@@ -52,14 +57,14 @@ taskManager.registerTask('checkUnreadMessagesAndSendEmail', async () => {
     // 按用户分组消息
     const messagesByUser = {};
     result.rows.forEach(row => {
-      if (!messagesByUser[row.user_id]) {
-        messagesByUser[row.user_id] = {
-          email: row.email,
-          username: row.username,
+      if (!messagesByUser[row.receiver_id]) {
+        messagesByUser[row.receiver_id] = {
+          email: row.receiver_email,
+          username: row.receiver_username,
           messages: []
         };
       }
-      messagesByUser[row.user_id].messages.push(row);
+      messagesByUser[row.receiver_id].messages.push(row);
     });
     
     // 为每个用户发送邮件
@@ -84,10 +89,10 @@ taskManager.registerTask('checkUnreadMessagesAndSendEmail', async () => {
         const updateQuery = `
           UPDATE inquiry_messages 
           SET is_emailed = 1 
-          WHERE id IN (${messageIds.map(() => '?').join(',')})
+          WHERE id = ANY($1)
         `;
         
-        await db.query(updateQuery, messageIds);
+        await query(updateQuery, [messageIds]);
         console.log(`[SCHEDULE] 已更新 ${messageIds.length} 条消息的邮件发送状态`);
         
       } catch (emailError) {

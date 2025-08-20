@@ -67,10 +67,9 @@
         </div>
         <div class="inquiry-window-body">
           <!-- 沟通组件 -->
-          <CommunicationSection :messages="inquiryMessages" :inquiry-id="currentInquiryId" :items-count="1"
-            :status="inquiryStatus" :initial-message="initialInquiryMessage"
-            @update-message="handleUpdateInquiryMessage" @checkout="handleInquiryCheckout"
-            @new-messages="handleNewMessages" />
+          <InquiryDetailPanel :inquiry="currentInquiry" :is-mobile="isMobile"
+            @update-message="handleUpdateInquiryMessage" @checkout-inquiry="handleInquiryCheckout"
+            @new-messages-received="handleNewMessages" />
         </div>
       </div>
     </div>
@@ -91,7 +90,7 @@ import { handleChatNow, handleAddToCart, handleLoginSuccess, loadInquiryMessages
 import ProductCard from '../components/common/ProductCard.vue';
 import PageBanner from '../components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
-import CommunicationSection from '../components/common/CommunicationSection.vue';
+import InquiryDetailPanel from '../components/common/InquiryDetailPanel.vue';
 import LoginDialog from '../components/common/LoginDialog.vue';
 import { FullScreen, Close } from '@element-plus/icons-vue';
 
@@ -101,7 +100,7 @@ export default {
     ProductCard,
     PageBanner,
     NavigationMenu,
-    CommunicationSection,
+    InquiryDetailPanel,
     LoginDialog,
     FullScreen,
     Close
@@ -133,6 +132,32 @@ export default {
       return [
         { text: this.$t('products.title') || '产品中心' }
       ];
+    },
+    isMobile() {
+      return window.innerWidth <= 768;
+    },
+    // 构建当前询价对象，供InquiryDetailPanel使用
+    currentInquiry() {
+      if (!this.currentInquiryId || !this.pendingProduct) return null;
+      
+      return {
+        id: this.currentInquiryId,
+        status: this.inquiryStatus,
+        inquiry_type: 'single', // 产品页面的询价通常是单个产品
+        messages: this.inquiryMessages,
+        items: [{
+          id: 1,
+          productId: this.pendingProduct.id,
+          product_id: this.pendingProduct.id,
+          name: this.pendingProduct.name,
+          product_name: this.pendingProduct.name,
+          imageUrl: this.pendingProduct.thumbnail_url,
+          image_url: this.pendingProduct.thumbnail_url,
+          quantity: this.pendingQuantity,
+          unit_price: this.pendingProduct.price,
+          product_code: this.pendingProduct.product_code
+        }]
+      };
     }
   },
   created() {
@@ -270,6 +295,7 @@ export default {
     // 显示询价对话框
     showInquiryDialogWithData(data) {
       this.currentInquiryId = data.inquiryId;
+      this.pendingProduct = data.product; // 设置产品信息
       this.initialInquiryMessage = '';
       this.showInquiryDialog = true;
       
@@ -695,8 +721,8 @@ export default {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 380px;
-  height: 500px;
+  width: 580px;
+  height: 600px;
   background: $white;
   border-radius: $border-radius-lg;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
@@ -777,7 +803,7 @@ export default {
     right: 10px;
     left: 10px;
     width: auto;
-    height: 400px;
+    height: 500px;
 
     &.show {
       transform: translateY(0) scale(1);

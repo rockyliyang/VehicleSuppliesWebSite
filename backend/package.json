@@ -17,10 +17,13 @@
     "test:single": "jest --testNamePattern",
     "test:file": "jest --testPathPattern",
     "test:env": "node scripts/test-env.js",
-    "test:env:prod": "cross-env NODE_ENV=production node scripts/test-env.js"
+    "test:env:prod": "cross-env NODE_ENV=production node scripts/test-env.js",
+    "schedule": "node schedule.js",
+    "schedule:dev": "nodemon --signal SIGTERM --inspect=9231 schedule.js --delay 2s",
+    "schedule:prod": "cross-env NODE_ENV=production node schedule.js"
   },
   "dependencies": {
-    "@paypal/paypal-server-sdk": "^1.0.0",
+    "@paypal/paypal-server-sdk": "^1.1.0",
     "alipay-sdk": "^4.14.0",
     "apple-signin-auth": "^2.0.0",
     "bcrypt": "^5.1.1",

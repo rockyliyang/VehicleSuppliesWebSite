@@ -13,6 +13,7 @@ const { verifyToken, isAdmin, requireRole } = require('../middleware/jwt');
 router.get('/orders', verifyToken, orderManagementController.getOrders);
 router.get('/orders/:orderId', verifyToken, orderManagementController.getOrderDetail);
 router.put('/orders/:orderId/logistics', verifyToken, orderManagementController.updateOrderLogistics);
+router.put('/orders/:orderId/update', verifyToken, orderManagementController.updateOrderFields);
 
 // 物流公司查询 - 需要登录验证
 router.get('/logistics-companies', verifyToken, orderManagementController.getLogisticsCompanies);

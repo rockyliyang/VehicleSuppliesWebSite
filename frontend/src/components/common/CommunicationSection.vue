@@ -87,7 +87,7 @@ export default {
       
       // 再添加本地新消息，如果 ID 相同则覆盖
       localMessagesArray.forEach(msg => {
-        console.log('Local new message:', msg);
+      //  console.log('Local new message:', msg);
         messageMap.set(msg.id, msg);
       });
       
@@ -98,7 +98,7 @@ export default {
         return new Date(timeA) - new Date(timeB);
       });
       
-      console.log('allMessages final result:', result);
+      //console.log('allMessages final result:', result);
       return result;
     }
   },
@@ -159,7 +159,7 @@ export default {
       }
       
       // 调试信息
-      console.log('formatTime received timestamp:', timestamp, 'type:', typeof timestamp);
+     // console.log('formatTime received timestamp:', timestamp, 'type:', typeof timestamp);
       
       if (!timestamp) {
         return this.$t('common.unknownTime') || 'Unknown Time';
@@ -307,7 +307,7 @@ export default {
               id: msg.id,
               content: msg.content || msg.message, // 处理 content/message 字段差异
               sender: this.getSenderName(msg.sender_type),
-              isUser: msg.sender_type === 'customer',
+              isUser: msg.sender_type === 'user',
               timestamp: msg.timestamp || msg.created_at, // 处理时间戳字段差异
               created_at: msg.created_at,
               sender_type: msg.sender_type,
@@ -315,7 +315,7 @@ export default {
               is_read: msg.is_read
             };
             
-            console.log('Normalized message:', normalizedMsg);
+            //console.log('Normalized message:', normalizedMsg);
             return normalizedMsg;
           });
           
@@ -400,16 +400,17 @@ export default {
 .chat-message.user-message {
   background: $info-light;
   color: $info-dark;
-  margin-left: auto;
-  margin-right: 0;
-  text-align: right;
+
+  margin-left: 0;
+  text-align: left;
 }
 
 .chat-message:not(.user-message) {
   background: $gray-100;
   color: $text-primary;
-  margin-left: 0;
-  margin-right: auto;
+  margin-left: auto;
+  margin-right: 0;
+  text-align: right;
 }
 
 .message-sender {

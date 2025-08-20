@@ -1,6 +1,7 @@
 const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
 const pgNotificationManager = require('../utils/pgNotification');
+const { getManagedUserIds, generateUserIdsPlaceholders } = require('../utils/adminUserUtils');
 
 const sseHandler = require('../utils/sseHandler');
 // 获取所有询价列表（管理员）
@@ -10,15 +11,10 @@ exports.getAllInquiries = async (req, res) => {
     const offset = (page - 1) * limit;
     const currentUserId = req.userId; // 从JWT中获取当前登录用户ID
     
-    // 首先查询当前用户所属的业务组
-    const businessGroupQuery = `
-      SELECT DISTINCT ubg.business_group_id 
-      FROM user_business_groups ubg 
-      WHERE ubg.user_id = $1 AND ubg.deleted = false
-    `;
-    const businessGroups = await query(businessGroupQuery, [currentUserId]);
+    // 获取当前管理员管理的用户ID列表
+    const managedUserIds = await getManagedUserIds(currentUserId);
     
-    if (businessGroups.getRowCount() === 0) {
+    if (managedUserIds.length === 0) {
       return res.json({
         success: true,
         message: getMessage('INQUIRY.FETCH.SUCCESS'),
@@ -34,41 +30,13 @@ exports.getAllInquiries = async (req, res) => {
       });
     }
     
-    // 获取业务组ID列表
-    const businessGroupIds = businessGroups.getRows().map(bg => bg.business_group_id);
-    
-    // 查询属于这些业务组的所有用户
-    const usersInGroupQuery = `
-      SELECT DISTINCT u.id 
-      FROM users u 
-      WHERE u.business_group_id IN (${businessGroupIds.map((_, index) => `$${index + 1}`).join(',')}) 
-      AND u.deleted = false
-    `;
-    const usersInGroup = await query(usersInGroupQuery, businessGroupIds);
-    
-    if (usersInGroup.getRowCount() === 0) {
-      return res.json({
-        success: true,
-        message: getMessage('INQUIRY.FETCH.SUCCESS'),
-        data: {
-          inquiries: [],
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total: 0,
-            totalPages: 0
-          }
-        }
-      });
-    }
-    
-    // 获取用户ID列表
-    const userIds = usersInGroup.getRows().map(u => u.id);
+    // 生成用户ID占位符
+    const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
     
     // 构建查询条件
-    let paramIndex = userIds.length + 1;
-    let whereClause = `WHERE i.deleted = false AND i.user_id IN (${userIds.map((_, index) => `$${index + 1}`).join(',')})`;
-    let queryParams = [...userIds];
+    let paramIndex = params.length + 1;
+    let whereClause = `WHERE i.deleted = false AND i.user_id IN (${placeholders})`;
+    let queryParams = [...params];
     
     if (status) {
       whereClause += ` AND i.status = $${paramIndex}`;

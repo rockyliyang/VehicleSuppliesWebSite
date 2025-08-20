@@ -1,5 +1,6 @@
 const { query, getConnection } = require('../db/db');
 const { getMessage } = require('../config/messages');
+const { getManagedUserIds, generateUserIdsPlaceholders } = require('../utils/adminUserUtils');
 
 /**
  * 订单管理控制器
@@ -24,13 +25,30 @@ class OrderManagementController {
       let paramIndex = 1;
       
       // 根据用户角色过滤订单
-      if (userRole !== 'admin') {
-        // 业务员只能看到自己的用户的订单
-        whereClause += ` AND o.user_id IN (
-          SELECT id FROM users WHERE created_by = $${paramIndex} AND deleted = FALSE
-        )`;
-        params.push(userId);
-        paramIndex++;
+      if (userRole === 'admin' || userRole === 'business' ) {
+        // 业务员只能看到自己管理的用户的订单
+        const managedUserIds = await getManagedUserIds(userId);
+        if (managedUserIds.length === 0) {
+          // 如果没有管理的用户，返回空结果
+          return res.json({
+            success: true,
+            message: getMessage('ORDER.FETCH_SUCCESS'),
+            data: {
+              orders: [],
+              pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total: 0,
+                pages: 0
+              }
+            }
+          });
+        }
+        
+        const { placeholders, params: userIdParams } = generateUserIdsPlaceholders(managedUserIds);
+        whereClause += ` AND o.user_id IN (${placeholders})`;
+        params.push(...userIdParams);
+        paramIndex += userIdParams.length;
       }
       
       // 状态过滤
@@ -489,6 +507,109 @@ class OrderManagementController {
       res.status(500).json({
         success: false,
         message: getMessage('ORDER.DETAIL_FETCH_FAILED')
+      });
+    }
+  }
+
+  /**
+   * 更新订单字段
+   * 支持更新订单的各种字段，如价格、运费等
+   */
+  async updateOrderFields(req, res) {
+    try {
+      const { orderId } = req.params;
+      const userId = req.userId;
+      const userRole = req.userRole;
+      const updateFields = req.body;
+      
+      // 验证订单是否存在
+      const orderCheckQuery = `
+        SELECT id, user_id FROM orders WHERE id = $1 AND deleted = FALSE
+      `;
+      const orderResult = await query(orderCheckQuery, [orderId]);
+      
+      if (orderResult.getRowCount() === 0) {
+        return res.status(404).json({
+          success: false,
+          message: getMessage('ORDER.NOT_FOUND')
+        });
+      }
+      
+      const order = orderResult.getFirstRow();
+      
+      // 权限检查
+      if (userRole !== 'admin') {
+        // 业务员只能修改自己管理的用户的订单
+        const managedUserIds = await getManagedUserIds(userId);
+        if (!managedUserIds.includes(order.user_id)) {
+          return res.status(403).json({
+            success: false,
+            message: getMessage('ORDER.ACCESS_DENIED')
+          });
+        }
+      }
+      
+      // 构建更新字段
+      const allowedFields = [
+        'total_amount', 'shipping_fee', 'status', 'payment_method', 'payment_id',
+        'shipping_name', 'shipping_phone', 'shipping_email', 'shipping_address',
+        'shipping_zip_code', 'shipping_country', 'shipping_state', 'shipping_city',
+        'shipping_phone_country_code'
+      ];
+      
+      const updateData = {};
+      const updateParams = [];
+      let paramIndex = 1;
+      
+      // 过滤并验证更新字段
+      for (const [key, value] of Object.entries(updateFields)) {
+        if (allowedFields.includes(key) && value !== undefined) {
+          updateData[key] = value;
+          updateParams.push(value);
+        }
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('ORDER.NO_VALID_FIELDS')
+        });
+      }
+      
+      // 构建SQL更新语句
+      const setClause = Object.keys(updateData)
+        .map((key, index) => `${key} = $${index + 1}`)
+        .join(', ');
+      
+      const updateQuery = `
+        UPDATE orders 
+        SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $${updateParams.length + 1} AND deleted = FALSE
+        RETURNING *
+      `;
+      
+      updateParams.push(orderId);
+      
+      const result = await query(updateQuery, updateParams);
+      
+      if (result.getRowCount() === 0) {
+        return res.status(404).json({
+          success: false,
+          message: getMessage('ORDER.UPDATE_FAILED')
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: getMessage('ORDER.UPDATE_SUCCESS'),
+        data: result.getFirstRow()
+      });
+      
+    } catch (error) {
+      console.error('更新订单字段失败:', error);
+      res.status(500).json({
+        success: false,
+        message: getMessage('ORDER.UPDATE_FAILED')
       });
     }
   }

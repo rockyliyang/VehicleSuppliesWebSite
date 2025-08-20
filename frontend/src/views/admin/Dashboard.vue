@@ -114,13 +114,14 @@
             <span>消息统计</span>
           </template>
           <div class="stat-item">
-            <span class="stat-label">总消息数：</span>
-            <span class="stat-value">{{ (statistics.messageStats && statistics.messageStats.total_messages) || 0
+            <span class="stat-label">用户未读消息数：</span>
+            <span class="stat-value">{{ (statistics.messageStats && statistics.messageStats.user_unread_messages) || 0
               }}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">未读消息：</span>
-            <span class="stat-value text-danger">{{ (statistics.messageStats && statistics.messageStats.unread_messages)
+            <span class="stat-label">管理员未读消息数：</span>
+            <span class="stat-value text-danger">{{ (statistics.messageStats &&
+              statistics.messageStats.admin_unread_messages)
               || 0
               }}</span>
           </div>
@@ -346,7 +347,9 @@ export default {
               total_messages: (data.messageStats && data.messageStats.total_messages) || 0,
               unread_messages: (data.messageStats && data.messageStats.unread_messages) || 0,
               admin_messages: (data.messageStats && data.messageStats.admin_messages) || 0,
-              user_messages: (data.messageStats && data.messageStats.user_messages) || 0
+              user_messages: (data.messageStats && data.messageStats.user_messages) || 0,
+              admin_unread_messages: (data.messageStats && data.messageStats.admin_unread_messages) || 0,
+              user_unread_messages: (data.messageStats && data.messageStats.user_unread_messages) || 0
             }
           }
         }
@@ -374,7 +377,9 @@ export default {
             total_messages: 0,
             unread_messages: 0,
             admin_messages: 0,
-            user_messages: 0
+            user_messages: 0,
+            admin_unread_messages: 0,
+            user_unread_messages: 0
           }
         }
       }

@@ -467,14 +467,14 @@ export default {
     async handleMapClick() {
       try {
         // 显示加载提示
-        this.$messageHandler.showInfo(
+        /*this.$messageHandler.showInfo(
           this.$t('contact.checkingMapService'),
           'contact.checkingMapService'
-        );
-        console.log('start check google is available');
+        );*/
+        //console.log('start check google is available');
         // 检查Google地图可用性
         const isGoogleMapsAvailable = await this.checkGoogleMapsAvailability();
-        console.log('end check google is available result', isGoogleMapsAvailable);
+        //console.log('end check google is available result', isGoogleMapsAvailable);
         if (isGoogleMapsAvailable) {
           // 使用Google地图
           this.openGoogleMaps();
@@ -519,10 +519,10 @@ export default {
     openBaiduMaps() {
       const baiduMapsUrl = `https://map.baidu.com/search/宝安互联网产业基地/@${this.companyAddress.lat},${this.companyAddress.lng},17z?querytype=s&da_src=shareurl`;
       console.log('Baidu Maps URL:', baiduMapsUrl);
-      this.$messageHandler.showInfo(
+      /*this.$messageHandler.showInfo(
         this.$t('contact.openingBaiduMaps'),
         'contact.openingBaiduMaps'
-      );
+      );*/
       
       // 尝试多种方式打开百度地图
       try {
@@ -545,10 +545,10 @@ export default {
     openBaiduMaps2() {
       const baiduMapsUrl = `https://map.baidu.com/search/宝安互联网产业基地/@${this.companyAddress.lat},${this.companyAddress.lng},17z?querytype=s&da_src=shareurl`;
       console.log('Baidu Maps URL:', baiduMapsUrl);
-      this.$messageHandler.showInfo(
+      /*this.$messageHandler.showInfo(
         this.$t('contact.openingBaiduMaps'),
         'contact.openingBaiduMaps'
-      );
+      );*/
       
       // 尝试多种方式打开百度地图
       try {

@@ -67,7 +67,7 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, shippin
       shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
       shipping_fee,
       created_by, updated_by) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, guid`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
     [
       userId,
       totalAmount,
@@ -84,7 +84,6 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, shippin
     ]
   );
   const orderId = orderResult.rows[0].id;
-  const orderGuid = orderResult.rows[0].guid;
   for (const item of cartItems) {
     await client.query(
       `INSERT INTO order_items 
@@ -114,7 +113,7 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, shippin
       );
     }
   }
-  return { orderId, orderGuid, totalAmount };
+  return { orderId, totalAmount };
 }
 
 // PayPal订单创建
@@ -177,11 +176,13 @@ exports.createPayPalOrder = async (req, res) => {
       
        return res.json({ success: true, message: getMessage('PAYMENT.PAYPAL_ORDER_CREATE_SUCCESS'), data: { orderId, paypalOrderId: paypalOrderData.id } });
     } catch (error) {
+      console.error('PayPal order create error 1:', error);
       await connection.rollback();
       connection.release();
       return res.json({ success: false, message: error.message, data: null });
     }
   } catch (error) {
+    console.error('PayPal order create error 2:', error);
     return res.json({ success: false, message: error.message, data: null });
   }
 };
