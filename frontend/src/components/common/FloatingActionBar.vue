@@ -122,7 +122,7 @@ export default {
 .floating-action-bar {
   position: fixed;
   right: 0;
-  top: 50%;
+  top: 80%;
   transform: translateY(-50%);
   z-index: 1000;
 

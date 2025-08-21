@@ -21,6 +21,9 @@ router.post('/product/:productId', inquiryController.findInquiryByProduct);
 // 添加商品到询价
 router.post('/:inquiryId/items', inquiryController.addItemToInquiry);
 
+// 批量添加商品到询价
+router.post('/:inquiryId/items/batch', inquiryController.addItemsToInquiry);
+
 // 更新询价单中的商品
 router.put('/:inquiryId/items/:itemId', inquiryController.updateItemInInquiry);
 

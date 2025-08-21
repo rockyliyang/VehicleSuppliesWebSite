@@ -36,7 +36,7 @@
                       </div>
                       <div class="product-details">
                         <router-link :to="`/product/${item.product_id}`" class="product-name">
-                          {{ item.name }}
+                          {{ item.product_name }}
                         </router-link>
                         <div class="product-code">
                           {{ $t('cart.productCode') || '产品编号' }}: {{ item.product_code }}

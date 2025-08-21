@@ -5,15 +5,17 @@
       <template v-if="isMobile">
         <!-- Sales Communication -->
         <CommunicationSection :messages="inquiry.messages" :inquiry-id="inquiry.id" :items-count="inquiry.items.length"
-          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile" @update-message="updateMessage"
-          @checkout="handleCheckout" @new-messages="handleNewMessages" />
+          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile"
+          :is-checkout-mode="isCheckoutMode" @update-message="updateMessage" @checkout="handleCheckout"
+          @new-messages="handleNewMessages" />
 
         <!-- Products Section -->
         <div class="inquiry-items-section">
           <div class="section-header">
             <h4 class="section-title">{{ $t('products.products') || 'Products' }}</h4>
-            <!-- 添加产品按钮 - 移到标题旁边，single类型的询价不允许添加商品 -->
-            <button v-if="inquiry.status === 'inquiried' && !showAddProduct && inquiry.inquiry_type !== 'single'"
+            <!-- 添加产品按钮 - 移到标题旁边，single类型的询价不允许添加商品，checkout模式下隐藏 -->
+            <button
+              v-if="!isCheckoutMode && inquiry.status === 'inquiried' && !showAddProduct && inquiry.inquiry_type !== 'single'"
               @click="showAddProduct = true" class="add-product-btn-header">
               <i class="material-icons">add</i>
               {{ $t('inquiry.addProduct') || '添加产品' }}
@@ -39,7 +41,7 @@
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.quantity') || '数量' }}</label>
                     <input type="number" class="control-input" v-model="item.quantity" min="1"
-                      @change="updateItemQuantity(item)" :readonly="inquiry.status !== 'inquiried'">
+                      @change="updateItemQuantity(item)" :readonly="isCheckoutMode || inquiry.status !== 'inquiried'">
                   </div>
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.unitPrice') || '期望价格' }}</label>
@@ -47,8 +49,9 @@
                   </div>
                 </div>
                 <div class="item-actions">
-                  <!-- single类型的询价不允许删除商品 -->
-                  <button v-if="inquiry.inquiry_type !== 'single'" class="remove-item-btn remove-inquiry-item-btn"
+                  <!-- single类型的询价不允许删除商品，checkout模式下隐藏删除按钮 -->
+                  <button v-if="!isCheckoutMode && inquiry.inquiry_type !== 'single'"
+                    class="remove-item-btn remove-inquiry-item-btn"
                     @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)"
                     :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
@@ -129,8 +132,9 @@
         <div class="inquiry-items-section">
           <div class="section-header">
             <h4 class="section-title">{{ $t('products.products') || 'Products' }}</h4>
-            <!-- 添加产品按钮 - 移到标题旁边，single类型的询价不允许添加商品 -->
-            <button v-if="inquiry.status === 'inquiried' && !showAddProduct && inquiry.inquiry_type !== 'single'"
+            <!-- 添加产品按钮 - 移到标题旁边，single类型的询价不允许添加商品，checkout模式下隐藏 -->
+            <button
+              v-if="!isCheckoutMode && inquiry.status === 'inquiried' && !showAddProduct && inquiry.inquiry_type !== 'single'"
               @click="showAddProduct = true" class="add-product-btn-header">
               <i class="material-icons">add</i>
               {{ $t('inquiry.addProduct') || '添加产品' }}
@@ -156,7 +160,7 @@
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.quantity') || '数量' }}</label>
                     <input type="number" class="control-input" v-model="item.quantity" min="1"
-                      @change="updateItemQuantity(item)" :readonly="inquiry.status !== 'inquiried'">
+                      @change="updateItemQuantity(item)" :readonly="isCheckoutMode || inquiry.status !== 'inquiried'">
                   </div>
                   <div class="control-group">
                     <label class="control-label">{{ $t('cart.unitPrice') || '期望价格' }}</label>
@@ -164,8 +168,9 @@
                   </div>
                 </div>
                 <div class="item-actions">
-                  <!-- single类型的询价不允许删除商品 -->
-                  <button v-if="inquiry.inquiry_type !== 'single'" class="remove-item-btn remove-inquiry-item-btn"
+                  <!-- single类型的询价不允许删除商品，checkout模式下隐藏删除按钮 -->
+                  <button v-if="!isCheckoutMode && inquiry.inquiry_type !== 'single'"
+                    class="remove-item-btn remove-inquiry-item-btn"
                     @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)"
                     :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
@@ -241,8 +246,8 @@
 
         <!-- Sales Communication -->
         <CommunicationSection :messages="inquiry.messages" :inquiry-id="inquiry.id" :items-count="inquiry.items.length"
-          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile" @update-message="updateMessage"
-          @checkout="handleCheckout" />
+          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile"
+          :is-checkout-mode="isCheckoutMode" @update-message="updateMessage" @checkout="handleCheckout" />
       </template>
     </div>
 
@@ -272,6 +277,10 @@ export default {
     isMobile: {
       type: Boolean,
       default: false
+    },
+    isCheckoutMode: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['remove-item', 'update-message', 'checkout-inquiry', 'item-added', 'new-messages-received'],
@@ -289,6 +298,7 @@ export default {
   watch: {
     inquiry: {
       handler(newInquiry) {
+        console.log('newInquiry:', newInquiry);
         if (newInquiry && newInquiry.newMessage !== undefined) {
           this.newMessage = newInquiry.newMessage;
         }
@@ -343,16 +353,16 @@ export default {
         //console.log(`InquiryDetailPanel: 收到 ${messages.length} 条新消息提示`);
       }*/
     },
-    handleCheckout(inquiryId) {
-      const inquiry = inquiryId ? this.inquiry : this.inquiry;
-      if (inquiry && inquiry.items.length > 0) {
+    handleCheckout() {
+
+      if (this.inquiry && this.inquiry.items.length > 0) {
         // 将询价单商品转换为购物车格式，确保字段名称与UnifiedCheckout期望的格式一致
         const cartItems = this.inquiry.items.map(item => ({
           id: item.id,
-          product_id: item.productId,
+          product_id: item.product_id,
           product_code: item.product_code || '',
-          name: item.name,
-          image_url: item.imageUrl || require('@/assets/images/default-image.svg'),
+          product_name: item.product_name,
+          image_url: item.imageUrl || item.image_url || require('@/assets/images/default-image.svg'),
           quantity: item.quantity,
           price: this.getCalculatedPrice(item), // 使用calculatedPrice
           length: item.product_length,
@@ -368,6 +378,7 @@ export default {
           inquiry_id: this.inquiry.id
         }));
         
+        console.log('cartItemsWithInquiry:', cartItemsWithInquiry);
         // 将商品数据存储到sessionStorage，供UnifiedCheckout页面使用
         sessionStorage.setItem('selectedCartItems', JSON.stringify(cartItemsWithInquiry));
         

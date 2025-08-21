@@ -143,9 +143,9 @@ export default {
     });
     
     // 启动定时刷新，每30秒刷新一次
-    this.refreshTimer = setInterval(() => {
+    /*this.refreshTimer = setInterval(() => {
       this.refreshInquiriesData();
-    }, 30000);
+    }, 30000);*/
   },
   updated() {
     this.$nextTick(() => {
@@ -447,6 +447,10 @@ export default {
       
       // 获取当前询价单中已有的商品ID
       const activeInquiry = this.inquiries.find(inquiry => inquiry.id === this.activeInquiryId);
+      if (activeInquiry.inquiry_type === 'single') {
+        console.log('This is single inquiry');
+        return;
+      }
       const currentInquiryProductIds = new Set(
         activeInquiry ? activeInquiry.items.map(item => item.productId) : []
       );
@@ -487,8 +491,8 @@ export default {
             if (activeInquiry) {
               const inquiryItem = {
                 id: response.data.id,
-                productId: response.data.product_id,
-                name: response.data.product_name,
+                product_id: response.data.product_id,
+                product_name: response.data.product_name,
                 imageUrl: response.data.image_url || require('@/assets/images/default-image.svg'),
                 quantity: response.data.quantity,
                 unit_price: response.data.unit_price,
@@ -569,25 +573,26 @@ export default {
 
     
     updateInquiryMessage(inquiryId, message) {
-      const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
+      console.log('更新询价消息', inquiryId, message);
+      /*const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
       if (inquiry) {
         inquiry.newMessage = message;
-      }
+      }*/
     },
     
     // 处理新消息接收事件
     handleNewMessagesReceived(newMessages) {
-      if (!newMessages || newMessages.length === 0) return;
+      console.log('处理新消息接收事件', newMessages);
+      /*if (!newMessages || newMessages.length === 0) return;
       
       // 更新当前活跃的询价单
       const activeInquiry = this.inquiries.find(inquiry => inquiry.id === this.activeInquiryId);
       if (activeInquiry) {
         activeInquiry.messages.push(...newMessages);
-      }
+      }*/
     },
     
-    // 长轮询功能已移至CommunicationSection组件
-    
+   
     // 滚动控制方法
     checkScrollControls() {
       const inquiryList = this.$refs.inquiryList;
@@ -615,15 +620,7 @@ export default {
     
     // 处理询价单Checkout事件
     handleCheckoutInquiry(inquiryId) {
-      // 更新询价单状态为Checkouted
-      const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
-      if (inquiry) {
-        inquiry.status = 'Checkouted';
-        // 如果当前显示的是这个询价单，也更新activeInquiry
-        if (this.activeInquiry && this.activeInquiry.id === inquiryId) {
-          this.activeInquiry.status = 'Checkouted';
-        }
-      }
+       console.log('处理询价单Checkout事件', inquiryId);
     },
     
     // 切换支付状态tab

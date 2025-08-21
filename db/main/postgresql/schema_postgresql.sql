@@ -377,6 +377,7 @@ CREATE TABLE IF NOT EXISTS orders (
   id BIGSERIAL PRIMARY KEY,
   order_guid UUID DEFAULT gen_random_uuid() NOT NULL,
   user_id BIGINT NOT NULL,
+  inquiry_id BIGINT DEFAULT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
   status VARCHAR(16) NOT NULL, -- pending, paid, shipped, delivered, cancelled
   payment_method VARCHAR(16) NOT NULL, -- card, alipay, wechat
@@ -395,11 +396,13 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 -- 添加注释
+COMMENT ON COLUMN orders.inquiry_id IS '关联的询价单ID';
 COMMENT ON COLUMN orders.created_by IS '创建者用户ID';
 COMMENT ON COLUMN orders.updated_by IS '最后更新者用户ID';
 
 -- 创建普通索引
 CREATE INDEX idx_orders_user_id ON orders (user_id);
+CREATE INDEX idx_orders_inquiry_id ON orders (inquiry_id);
 CREATE INDEX idx_orders_order_guid ON orders (order_guid);
 CREATE INDEX idx_orders_status ON orders (status);
 CREATE INDEX idx_orders_created_at ON orders (created_at);
@@ -408,6 +411,7 @@ CREATE INDEX idx_orders_updated_by ON orders (updated_by);
 
 -- 添加外键约束
 ALTER TABLE orders ADD CONSTRAINT fk_orders_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE orders ADD CONSTRAINT fk_orders_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries(id);
 ALTER TABLE orders ADD CONSTRAINT fk_orders_created_by FOREIGN KEY (created_by) REFERENCES users(id);
 ALTER TABLE orders ADD CONSTRAINT fk_orders_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
 

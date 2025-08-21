@@ -21,7 +21,7 @@
       <button class="send-btn" @click="handleSendMessage">
         {{ $t('cart.send') || 'Send' }}
       </button>
-      <button class="checkout-btn" @click="handleCheckout" :disabled="itemsCount === 0 || status === 'Checkouted'"
+      <button v-if="!isCheckoutMode" class="checkout-btn" @click="handleCheckout" :disabled="itemsCount === 0 || status === 'Checkouted'"
         :class="{ 'checkouted': status === 'Checkouted' }">
         <i class="material-icons">{{ status === 'Checkouted' ? 'check_circle' : 'payment' }}</i>
         {{ status === 'Checkouted' ? ($t('cart.checkouted') || 'Checkouted') : ($t('cart.checkout') ||
@@ -60,6 +60,10 @@ export default {
     isMobile: {
       type: Boolean,
       default: false
+    },
+    isCheckoutMode: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['update-message', 'checkout', 'new-messages'],
@@ -87,7 +91,7 @@ export default {
       
       // 再添加本地新消息，如果 ID 相同则覆盖
       localMessagesArray.forEach(msg => {
-      //  console.log('Local new message:', msg);
+        console.log('Local new message:', msg);
         messageMap.set(msg.id, msg);
       });
       
@@ -98,7 +102,7 @@ export default {
         return new Date(timeA) - new Date(timeB);
       });
       
-      //console.log('allMessages final result:', result);
+      console.log('allMessages final result:', result);
       return result;
     }
   },
@@ -380,13 +384,15 @@ export default {
 }
 
 .chat-history {
-  flex: 1;
+  height: 400px;
+  /* 固定高度 */
   overflow-y: auto;
   border: $border-width-sm solid $border-light;
   border-radius: $border-radius-md;
   padding: $spacing-md;
   background: $gray-50;
-  min-height: 0;
+  flex-shrink: 0;
+  /* 防止被压缩 */
 }
 
 .chat-message {
@@ -444,10 +450,11 @@ export default {
 
 .chat-input-section {
   background: $white;
-  flex: 0 0 auto;
+  flex: 1;
+  /* 占据剩余空间 */
   display: flex;
   flex-direction: column;
-  min-height: 120px;
+  min-height: 80px;
 }
 
 .chat-input {
@@ -475,6 +482,8 @@ export default {
   align-items: center;
   padding: $spacing-sm 0;
   flex-shrink: 0;
+  height: 60px;
+  /* 固定高度 */
 }
 
 .send-btn {
@@ -548,16 +557,18 @@ export default {
   padding: $spacing-sm;
 
   .chat-history {
-    flex: 1;
-    min-height: 200px;
+    height: 250px;
+    /* 移动端固定高度 */
     margin-bottom: $spacing-sm;
     border-radius: $border-radius-sm;
+    flex-shrink: 0;
   }
 
   .chat-input-section {
     margin-bottom: $spacing-sm;
-    flex: 0 0 auto;
-    min-height: 100px;
+    flex: 1;
+    /* 占据剩余空间 */
+    min-height: 60px;
   }
 
   .chat-input {

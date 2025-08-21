@@ -22,6 +22,7 @@ export async function createOrOpenInquiry(product, context) {
     if (findResponse.success && findResponse.data && findResponse.data.inquiry) {
       // 找到现有询价单，直接使用
       const existingInquiry = findResponse.data.inquiry;
+      const existingItems = findResponse.data.items || [];
       
       //context.$messageHandler.showSuccess(
         //context.$t('product.success.inquiryOpened') || 'Existing inquiry opened',
@@ -31,7 +32,8 @@ export async function createOrOpenInquiry(product, context) {
       return {
         inquiryId: existingInquiry.id,
         isNew: false,
-        inquiry: existingInquiry
+        inquiry: existingInquiry,
+        items: existingItems
       };
     } else {
       // 没有找到现有询价单，创建新的
@@ -54,7 +56,7 @@ export async function createOrOpenInquiry(product, context) {
       });
       
       // 刷新询价单详情
-      await context.$api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
+      const inquiryResponse = await context.$api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
         fallbackKey: 'product.error.refreshInquiryFailed'
       });
       
@@ -66,7 +68,8 @@ export async function createOrOpenInquiry(product, context) {
       return {
         inquiryId: inquiryId,
         isNew: true,
-        inquiry: createInquiryResponse.data
+        inquiry: createInquiryResponse.data,
+        items: inquiryResponse.data.items || []
       };
     }
   } catch (error) {
@@ -87,26 +90,15 @@ export async function loadInquiryMessages(inquiryId, context) {
     const response = await context.$api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
       fallbackKey: 'product.error.loadInquiryMessagesFailed'
     });
-    if (response.data && response.data.data) {
-      const messages = response.data.data.messages || [];
+    if (response && response.data) {
       return {
-        messages: messages.map(msg => ({
-          id: msg.id,
-          content: msg.message,
-          sender: msg.sender_name || (msg.sender_type === 'user' ? 
-            (context.$t('common.user') || 'User') : 
-            (context.$t('common.customerService') || 'Customer Service')
-          ),
-          timestamp: msg.created_at,
-          isUser: msg.sender_type === 'user'
-        })),
-        status: response.data.data.inquiry.status || 'pending'
+        status: response.data.inquiry.status || 'inquiried'
       };
     }
-    return { messages: [], status: 'pending' };
+    return { status: 'inquiried' };
   } catch (error) {
     console.error(context.$t('product.log.loadInquiryMessagesFailed') || '加载询价消息失败:', error);
-    return { messages: [], status: 'pending' };
+    return {  status: 'inquiried' };
   }
 }
 
@@ -128,13 +120,15 @@ export async function handleChatNow(product, context, showLoginDialog, showInqui
   
   try {
     const result = await createOrOpenInquiry(product, context);
-    
+    console.log('createOrOpenInquiry result:', result);
     // 显示询价对话框
     showInquiryDialog({
       inquiryId: result.inquiryId,
       isNew: result.isNew,
       product: product,
-      quantity: 1
+      quantity: 1,
+      inquiry: result.inquiry,
+      items: result.items
     });
     
     return true;

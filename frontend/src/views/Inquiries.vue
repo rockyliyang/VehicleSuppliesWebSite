@@ -121,7 +121,7 @@
               ($t('inquiry.mobile.createNew') || '新建询价单') }}</h3>
           </div>
 
-          <InquiryDetailPanel :inquiry="selectedMobileInquiry" :is-mobile="true" @remove-item="handleRemoveItem"
+          <InquiryDetailPanel :inquiry="selectedMobileInquiry" :is-mobile="true" :is-checkout-mode="isCheckoutMode" @remove-item="handleRemoveItem"
             @send-message="handleSendMessage" @update-message="handleUpdateMessage"
             @checkout-inquiry="handleCheckoutInquiry" @item-added="handleMobileItemAdded"
             @new-messages-received="handleNewMessagesReceived" />
@@ -159,7 +159,8 @@ export default {
       selectedMobileInquiry: null,
       isNewInquiry: false,
       // 定时刷新
-      refreshTimer: null
+      refreshTimer: null,
+      isCheckoutMode: false // 是否为checkout模式
     };
   },
   computed: {
@@ -472,7 +473,10 @@ export default {
     
     // 处理路由参数
     async handleRouteParams() {
-      const { action, filter, inquiryId } = this.$route.query;
+      const { action, filter, inquiryId, mode } = this.$route.query;
+      
+      // 检查是否为checkout模式
+      this.isCheckoutMode = mode === 'checkout';
       
       // 如果有inquiryId参数，自动定位到对应的inquiry
       if (inquiryId) {

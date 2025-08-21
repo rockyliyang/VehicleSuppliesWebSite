@@ -18,7 +18,7 @@ function getPayPalClient() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_SECRET;
   if (!clientId || !clientSecret) throw new Error('PayPal配置不完整');
-  const environment = process.env.NODE_ENV === 'production' ? Environment.Live : Environment.Sandbox;
+  const environment = process.env.NODE_ENV === 'production' ? Environment.Production : Environment.Sandbox;
   return new Client({
     clientCredentialsAuthCredentials: {
       oAuthClientId: clientId,
@@ -63,13 +63,14 @@ async function initOrder(userId, cartItems, shippingInfo, paymentMethod, shippin
   for (const item of cartItems) totalAmount += item.price * item.quantity;
   const orderResult = await client.query(
     `INSERT INTO orders 
-     (user_id, total_amount, status, payment_method, 
+     (user_id, inquiry_id, total_amount, status, payment_method, 
       shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
       shipping_fee,
       created_by, updated_by) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
     [
       userId,
+      inquiryId,
       totalAmount,
       'pending',
       paymentMethod,

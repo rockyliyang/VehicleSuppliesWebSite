@@ -21,6 +21,9 @@
               <el-button @click="showAddressDialog = true" type="primary" class="address-select-btn">
                 {{ $t('address.selectFromBook') || '从地址簿选择' }}
               </el-button>
+              <el-button @click="handleInquiryClick" type="primary" class="inquiry-btn">
+                {{ $t('checkout.inquiry') || 'Inquiry' }}
+              </el-button>
             </div>
           </h2>
           <el-form :model="shippingInfo" :rules="isOrderDetail ? {} : shippingRules" ref="shippingForm" label-width="0"
@@ -103,7 +106,7 @@
                     <img :src="row.image_url || require('@/assets/images/default-image.svg')" :alt="row.name">
                   </div>
                   <div class="product-details">
-                    <div class="product-name">{{ row.name }}</div>
+                    <div class="product-name">{{ row.product_name }}</div>
                     <div class="product-code">{{ $t('checkout.productCode') || '产品编号' }}: {{ row.product_code }}</div>
                   </div>
                 </div>
@@ -336,6 +339,32 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 询价浮动窗口 -->
+    <div v-if="showInquiryDialog" class="inquiry-floating-window" :class="{ 'show': showInquiryDialog }">
+      <div class="inquiry-window-content">
+        <div class="inquiry-window-header">
+          <h4 class="header-title">{{ $t('cart.salesCommunication') || 'Sales Communication' }}</h4>
+          <div class="header-buttons">
+            <button class="expand-btn" @click="expandInquiryDialog" title="放大窗口">
+              <el-icon>
+                <FullScreen />
+              </el-icon>
+            </button>
+            <button class="close-btn" @click="closeInquiryDialog" title="关闭窗口">
+              <el-icon>
+                <Close />
+              </el-icon>
+            </button>
+          </div>
+        </div>
+        <div class="inquiry-window-body">
+          <!-- 沟通组件 -->
+          <InquiryDetailPanel :inquiry="currentInquiryData" :is-mobile="isMobile" :is-checkout-mode="true"
+            @update-message="handleUpdateInquiryMessage" @new-messages-received="handleNewMessages" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -352,14 +381,18 @@ import {
   SuccessFilled,
   House,
   Document,
-  Close
+  Close,
+  
+  FullScreen
 } from '@element-plus/icons-vue';
+import InquiryDetailPanel from '../components/common/InquiryDetailPanel.vue';
 
 export default {
   name: 'UnifiedCheckout',
   components: {
     PageBanner,
     NavigationMenu,
+    InquiryDetailPanel,
     ShoppingCart,
     Location,
     LocationInformation,
@@ -368,7 +401,9 @@ export default {
     SuccessFilled,
     House,
     Document,
-    Close
+    Close,
+    
+    FullScreen
   },
   props: {
     items: {
@@ -421,6 +456,9 @@ export default {
       isOrderPaid: false, // 订单是否已支付
       orderSource: 'cart', // 订单来源：'cart' 或 'inquiry'
       inquiryId: null, // 询价单ID（当orderSource为'inquiry'时使用）
+      // 询价相关状态
+      showInquiryDialog: false,
+      currentInquiryData: null, // 存储完整的询价单数据
       shippingRules: {
         name: [
           { required: true, message: this.$t('checkout.nameRequired') || '请输入收货人姓名', trigger: 'blur' },
@@ -504,6 +542,9 @@ export default {
         return [];
       }
       return this.$store.getters['countryState/getStatesByCountry'](country.iso3) || [];
+    },
+    isMobile() {
+      return window.innerWidth <= 768;
     }
   },
   created() {
@@ -533,6 +574,10 @@ export default {
       if (orderId) {
         this.isOrderDetail = true;
         await this.fetchOrderDetail(orderId);
+        // 从订单详情中获取inquiry_id
+        if (this.orderData?.inquiry_id) {
+          this.inquiryId = this.orderData.inquiry_id;
+        }
         return;
       }
       
@@ -540,6 +585,16 @@ export default {
       if (this.items && this.items.length > 0) {
         this.orderItems = this.items;
         this.calculateTotal();
+        // 检查props中是否有inquiry_id信息
+        const inquiryIdFromUrl = this.$route.query.inquiryId;
+        const isFromInquiry = inquiryIdFromUrl || this.items.some(item => item.inquiry_id);
+        if (isFromInquiry) {
+          this.orderSource = 'inquiry';
+          this.inquiryId = inquiryIdFromUrl || this.items[0]?.inquiry_id;
+        } else {
+          this.orderSource = 'cart';
+          this.inquiryId = null;
+        }
         return;
       }
       
@@ -578,6 +633,15 @@ export default {
         try {
           this.orderItems = JSON.parse(decodeURIComponent(itemsQuery));
           this.calculateTotal();
+          // 检查URL参数中的inquiry_id
+          const inquiryIdFromUrl = this.$route.query.inquiryId;
+          if (inquiryIdFromUrl) {
+            this.orderSource = 'inquiry';
+            this.inquiryId = inquiryIdFromUrl;
+          } else {
+            this.orderSource = 'cart';
+            this.inquiryId = null;
+          }
           return;
         } catch (e) {
           this.$messageHandler.showError('订单数据解析失败', 'checkout.error.parseError');
@@ -1011,19 +1075,19 @@ export default {
                 orderItems: this.orderItems.map(item => ({
                   product_id: item.product_id,
                   product_code: item.product_code,
-                  product_name: item.name,
+                  product_name: item.product_name,
                   quantity: item.quantity,
                   price: item.calculatedPrice || item.price
                 })),
                 shipping_fee: this.shippingFee
               };
-              
+              console.log('requestData:', this.requestData)
               // 如果是询价单订单，添加orderSource和inquiryId参数
               if (this.orderSource === 'inquiry' && this.inquiryId) {
                 requestData.orderSource = this.orderSource;
                 requestData.inquiryId = this.inquiryId;
               }
-              
+             
               response = await this.$api.postWithErrorHandler('/payment/paypal/create', requestData);
             }
             
@@ -1367,15 +1431,112 @@ export default {
        this.showAddressDialog = false;
        this.$router.push('/address');
      },
-    async validateShippingInfo() {
-      try {
-        await this.$refs.shippingForm.validate();
-        return true;
-      } catch (error) {
-        this.$messageHandler.showWarning('请完善收货信息', 'checkout.warning.shippingInfoInvalid');
-        return false;
-      }
-    }
+     async handleInquiryClick() {
+       // 获取当前订单的inquiry_id
+       const inquiryId = this.inquiryId || this.$route.query.inquiryId;
+       
+       if (inquiryId) {
+         // 如果有inquiry_id，直接打开现有的inquiry
+         await this.loadInquiryData(inquiryId);
+         this.showInquiryDialog = true;
+       } else {
+         // 如果没有inquiry_id，创建新的custom类型inquiry
+         await this.createCustomInquiry();
+       }
+     },
+     async createCustomInquiry() {
+       try {
+         // 参考productUtils.js的createOrOpenInquiry方法
+         const titlePrefix = this.$t('cart.inquiryTitlePrefix') || 'Inquiry';
+         const createInquiryResponse = await this.$api.postWithErrorHandler('/inquiries', {
+           titlePrefix: titlePrefix,
+           inquiryType: 'custom'
+         }, {
+           fallbackKey: 'inquiry.error.createFailed'
+         });
+         
+         if (createInquiryResponse.success) {
+           this.inquiryId = createInquiryResponse.data.id;
+           
+           // 从sessionStorage获取购物车商品数据
+           const selectedCartItems = JSON.parse(sessionStorage.getItem('selectedCartItems') || '[]');
+           
+           // 如果有商品，批量添加到询价单
+           if (selectedCartItems.length > 0) {
+             const items = selectedCartItems.map(item => ({
+               productId: item.product_id,
+               quantity: item.quantity
+             }));
+             
+             await this.$api.postWithErrorHandler(`/inquiries/${this.inquiryId}/items/batch`, {
+               items: items
+             }, {
+               fallbackKey: 'inquiry.error.addItemsFailed'
+             });
+           }
+           
+           // 重新获取询价单详情（包含完整的商品信息）
+           await this.loadInquiryData(this.inquiryId);
+           
+           // 显示浮动窗口
+           this.showInquiryDialog = true;
+         }
+       } catch (error) {
+         console.error('创建inquiry失败:', error);
+         this.$messageHandler.showError('创建咨询失败', 'inquiry.error.createFailed');
+       }
+     },
+     async loadInquiryData(inquiryId) {
+       try {
+         const response = await this.$api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
+           fallbackKey: 'inquiry.fetchError'
+         });
+         
+         if (response.success) {
+           this.currentInquiryData = {
+             ...response.data.inquiry,
+             items: response.data.items || [],
+           };
+         }
+       } catch (error) {
+         console.error('加载inquiry数据失败:', error);
+         this.$messageHandler.showError('加载咨询数据失败', 'inquiry.error.loadFailed');
+       }
+     },
+     // 关闭询价对话框
+     closeInquiryDialog() {
+       this.showInquiryDialog = false;
+       this.currentInquiryData = null;
+     },
+     // 展开询价对话框
+     expandInquiryDialog() {
+       if (this.inquiryId) {
+         // 跳转到询价单管理页面，并传递当前询价单ID
+         this.$router.push({
+           path: '/inquiry-management',
+           query: { inquiryId: this.inquiryId, mode: 'checkout' }
+         });
+       }
+     },
+     // 处理更新消息事件
+     handleUpdateInquiryMessage(inquiryId, message) {
+       // 可以在这里处理消息更新逻辑
+       console.log('handleUpdateInquiryMessage:', inquiryId, message);
+     },
+     // 处理新消息接收事件
+     handleNewMessages(newMessages) {
+       // 可以在这里处理新消息接收逻辑
+       console.log('handleNewMessages:', newMessages);
+     },
+     async validateShippingInfo() {
+       try {
+         await this.$refs.shippingForm.validate();
+         return true;
+       } catch (error) {
+         this.$messageHandler.showWarning('请完善收货信息', 'checkout.warning.shippingInfoInvalid');
+         return false;
+       }
+     }
   }
 };
 </script>
@@ -1451,11 +1612,46 @@ export default {
 .shipping-header {
   display: flex;
   align-items: center;
+  gap: $spacing-sm;
 }
 
 /* 直接覆盖按钮内的所有span */
 .section-title .shipping-header .address-select-btn :deep(span) {
   color: $white !important;
+}
+
+.section-title .shipping-header .inquiry-btn :deep(span) {
+  color: $white !important;
+}
+
+.inquiry-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  background-color: #67C23A !important;
+  color: white !important;
+  border-color: #67C23A !important;
+  padding: $spacing-md $spacing-lg !important;
+  font-size: $font-size-lg !important;
+  border-radius: $border-radius-md !important;
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.inquiry-btn:hover:not(:disabled) {
+  background-color: #5daf34 !important;
+  border-color: #5daf34 !important;
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.inquiry-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(103, 194, 58, 0.3) !important;
+}
+
+.inquiry-btn i {
+  font-size: $font-size-md;
 }
 
 
@@ -2905,6 +3101,98 @@ export default {
     top: $spacing-sm;
     right: $spacing-sm;
     z-index: 1;
+  }
+}
+
+/* 询价浮动窗口样式 */
+.inquiry-floating-window {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 580px;
+  height: 620px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: all 0.3s ease-in-out;
+
+  &.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .inquiry-window-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .inquiry-window-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0;
+
+    .header-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+
+      button {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.1);
+        }
+
+        .el-icon {
+          font-size: 16px;
+          color: #666;
+        }
+      }
+    }
+  }
+
+  .inquiry-window-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .inquiry-floating-window {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    height: 70vh;
+    max-height: 620px;
   }
 }
 </style>

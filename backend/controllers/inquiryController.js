@@ -322,7 +322,7 @@ exports.createInquiry = async (req, res) => {
         id: result.getFirstRow().id,
         user_inquiry_id: nextUserInquiryId,
         title: fullTitle,
-        status: 'pending'
+        status: 'inquiried'
       }
     });
   } catch (error) {
@@ -428,6 +428,130 @@ exports.addItemToInquiry = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: getMessage('INQUIRY.ITEM.ADD_FAILED')
+    });
+  }
+};
+
+// 批量添加商品到询价
+exports.addItemsToInquiry = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { inquiryId } = req.params;
+    const { items } = req.body; // items: [{ productId, quantity }]
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.INVALID_ITEMS')
+      });
+    }
+    
+    // 验证询价是否存在且属于当前用户
+    const inquiryResult = await query(
+      'SELECT id, status FROM inquiries WHERE id = $1 AND user_id = $2 AND deleted = false',
+      [inquiryId, userId]
+    );
+    
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
+      });
+    }
+    
+    if (inquiryResult.getFirstRow().status !== 'inquiried') {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED')
+      });
+    }
+    
+    const addedItems = [];
+    const errors = [];
+    
+    for (const item of items) {
+      const { productId, quantity } = item;
+      
+      if (!productId || !quantity || quantity <= 0) {
+        errors.push({ productId, error: 'Invalid product ID or quantity' });
+        continue;
+      }
+      
+      try {
+        // 验证商品是否存在并获取完整信息
+        const productResult = await query(
+          `SELECT 
+            p.id, 
+            p.name as product_name, 
+            p.product_code,
+            p.price as original_price,
+            p.product_length,
+            p.product_width,
+            p.product_height,
+            p.product_weight,
+            (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
+          FROM products p 
+          WHERE p.id = $1 AND p.deleted = false`,
+          [productId]
+        );
+        
+        if (!productResult || productResult.getRowCount() === 0) {
+          errors.push({ productId, error: 'Product not found' });
+          continue;
+        }
+        
+        // 检查商品是否已在询价中
+        const existingItem = await query(
+          'SELECT id FROM inquiry_items WHERE inquiry_id = $1 AND product_id = $2 AND deleted = false',
+          [inquiryId, productId]
+        );
+        
+        if (existingItem && existingItem.getRowCount() > 0) {
+          errors.push({ productId, error: 'Product already exists in inquiry' });
+          continue;
+        }
+        
+        // 添加商品到询价
+        const result = await query(
+          'INSERT INTO inquiry_items (inquiry_id, product_id, quantity, unit_price, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+          [inquiryId, productId, quantity, null, userId, userId]
+        );
+        
+        const productInfo = productResult.getFirstRow();
+        addedItems.push({
+          id: result.getFirstRow().id,
+          product_id: productId,
+          quantity: quantity,
+          unit_price: null,
+          item_status: 'pending',
+          product_name: productInfo.product_name,
+          product_code: productInfo.product_code,
+          original_price: productInfo.original_price,
+          product_length: productInfo.product_length,
+          product_width: productInfo.product_width,
+          product_height: productInfo.product_height,
+          product_weight: productInfo.product_weight,
+          image_url: productInfo.image_url
+        });
+      } catch (itemError) {
+        console.error(`添加商品 ${productId} 到询价失败:`, itemError);
+        errors.push({ productId, error: itemError.message });
+      }
+    }
+    
+    return res.json({
+      success: true,
+      message: getMessage('INQUIRY.ITEM.BATCH_ADD_SUCCESS'),
+      data: {
+        addedItems,
+        errors
+      }
+    });
+  } catch (error) {
+    console.error('批量添加商品到询价失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('INQUIRY.ITEM.BATCH_ADD_FAILED')
     });
   }
 };

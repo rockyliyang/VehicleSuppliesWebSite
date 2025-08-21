@@ -7,20 +7,18 @@
         <div class="average-rating">
           <span class="rating-score">{{ stats.average_rating || 0 }}</span>
           <div class="stars">
-            <span v-for="i in 5" :key="i" 
-                  :class="['star', i <= Math.round(stats.average_rating) ? 'filled' : '']">
+            <span v-for="i in 5" :key="i" :class="['star', i <= Math.round(stats.average_rating) ? 'filled' : '']">
               ★
             </span>
           </div>
           <span class="total-reviews">({{ stats.total_reviews }}条评价)</span>
         </div>
-        
+
         <div class="rating-breakdown">
           <div v-for="i in 5" :key="i" class="rating-row">
             <span>{{ 6-i }}星</span>
             <div class="progress-bar">
-              <div class="progress" 
-                   :style="{ width: getPercentage(6-i) + '%' }"></div>
+              <div class="progress" :style="{ width: getPercentage(6-i) + '%' }"></div>
             </div>
             <span>{{ stats[`rating_${6-i}_count`] || 0 }}</span>
           </div>
@@ -42,32 +40,24 @@
         <div class="rating-input">
           <label>评分：</label>
           <div class="star-rating">
-            <span v-for="i in 5" :key="i" 
-                  @click="newReview.rating = i"
-                  :class="['star', i <= newReview.rating ? 'active' : '']">
+            <span v-for="i in 5" :key="i" @click="newReview.rating = i"
+              :class="['star', i <= newReview.rating ? 'active' : '']">
               ★
             </span>
           </div>
         </div>
-        
+
         <div class="content-input">
           <label>评论内容：</label>
-          <textarea v-model="newReview.content" 
-                    placeholder="分享您的使用体验..."
-                    maxlength="1000"
-                    rows="4"></textarea>
+          <textarea v-model="newReview.content" placeholder="分享您的使用体验..." maxlength="1000" rows="4"></textarea>
           <small>{{ newReview.content.length }}/1000</small>
         </div>
-        
+
         <div class="image-upload">
           <label>上传图片（最多5张）：</label>
-          <input type="file" 
-                 @change="handleImageSelect"
-                 multiple 
-                 accept="image/*"
-                 ref="imageInput"
-                 :disabled="uploadedImages.length + selectedImages.length >= 5">
-          
+          <input type="file" @change="handleImageSelect" multiple accept="image/*" ref="imageInput"
+            :disabled="uploadedImages.length + selectedImages.length >= 5">
+
           <!-- 已上传的图片 -->
           <div v-if="uploadedImages.length > 0" class="uploaded-images">
             <h5>已上传的图片：</h5>
@@ -78,7 +68,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- 待上传的图片预览 -->
           <div v-if="selectedImages.length > 0" class="image-preview">
             <h5>待上传的图片：</h5>
@@ -87,10 +77,10 @@
               <button type="button" @click="removeImage(index)">×</button>
             </div>
           </div>
-          
+
           <small>已上传：{{ uploadedImages.length }}张，待上传：{{ selectedImages.length }}张</small>
         </div>
-        
+
         <div class="form-actions">
           <button type="submit" :disabled="!newReview.rating || submitting" class="btn-primary">
             {{ submitting ? '提交中...' : '提交评价' }}
@@ -108,8 +98,7 @@
       <div class="review-item">
         <div class="review-header">
           <div class="stars">
-            <span v-for="i in 5" :key="i" 
-                  :class="['star', i <= userReview.rating ? 'filled' : '']">
+            <span v-for="i in 5" :key="i" :class="['star', i <= userReview.rating ? 'filled' : '']">
               ★
             </span>
           </div>
@@ -120,11 +109,8 @@
         </div>
         <p class="review-content">{{ userReview.review_content }}</p>
         <div v-if="userReview.images && userReview.images.length > 0" class="review-images">
-          <img v-for="image in userReview.images" 
-               :key="image.id" 
-               :src="image.image_url" 
-               @click="showImageModal(image.image_url)"
-               alt="评论图片">
+          <img v-for="image in userReview.images" :key="image.id" :src="image.image_url"
+            @click="showImageModal(image.image_url)" alt="评论图片">
         </div>
         <div v-if="userReview.admin_reply" class="admin-reply">
           <strong>商家回复：</strong>
@@ -150,8 +136,7 @@
           <div class="review-header">
             <span class="username">{{ review.is_anonymous ? '匿名用户' : review.username }}</span>
             <div class="stars">
-              <span v-for="i in 5" :key="i" 
-                    :class="['star', i <= review.rating ? 'filled' : '']">
+              <span v-for="i in 5" :key="i" :class="['star', i <= review.rating ? 'filled' : '']">
                 ★
               </span>
             </div>
@@ -159,11 +144,8 @@
           </div>
           <p class="review-content">{{ review.review_content }}</p>
           <div v-if="review.images && review.images.length > 0" class="review-images">
-            <img v-for="image in review.images" 
-                 :key="image.id" 
-                 :src="image.image_url" 
-                 @click="showImageModal(image.image_url)"
-                 alt="评论图片">
+            <img v-for="image in review.images" :key="image.id" :src="image.image_url"
+              @click="showImageModal(image.image_url)" alt="评论图片">
           </div>
           <div v-if="review.admin_reply" class="admin-reply">
             <strong>商家回复：</strong>
@@ -171,18 +153,14 @@
             <small>{{ formatDate(review.admin_reply_at) }}</small>
           </div>
         </div>
-        
+
         <!-- 分页 -->
         <div v-if="totalPages > 1" class="pagination">
-          <button @click="loadPage(currentPage - 1)" 
-                  :disabled="currentPage <= 1"
-                  class="btn-secondary">
+          <button @click="loadPage(currentPage - 1)" :disabled="currentPage <= 1" class="btn-secondary">
             上一页
           </button>
           <span>{{ currentPage }} / {{ totalPages }}</span>
-          <button @click="loadPage(currentPage + 1)" 
-                  :disabled="currentPage >= totalPages"
-                  class="btn-secondary">
+          <button @click="loadPage(currentPage + 1)" :disabled="currentPage >= totalPages" class="btn-secondary">
             下一页
           </button>
         </div>
@@ -246,8 +224,8 @@ export default {
     async loadReviewStats() {
       try {
         const response = await this.$http.get(`/product-reviews/stats?product_id=${this.productId}`);
-        if (response.data.success) {
-          this.stats = response.data.data;
+        if (response.success) {
+          this.stats = response.data;
         }
       } catch (error) {
         console.error('加载评论统计失败:', error);
@@ -258,10 +236,10 @@ export default {
       this.loading = true;
       try {
         const response = await this.$http.get(`/product-reviews/product/${this.productId}?page=${page}&limit=10`);
-        if (response.data.success) {
-          this.reviews = response.data.data.reviews;
-          this.currentPage = response.data.data.pagination.page;
-          this.totalPages = response.data.data.pagination.totalPages;
+        if (response.success) {
+          this.reviews = response.data.reviews;
+          this.currentPage = response.data.pagination.page;
+          this.totalPages = response.data.pagination.totalPages;
         }
       } catch (error) {
         console.error('加载评论列表失败:', error);
@@ -273,8 +251,8 @@ export default {
     async loadUserReview() {
       try {
         const response = await this.$http.get(`/product-reviews/product/${this.productId}?user_only=true`);
-        if (response.data.success && response.data.data.reviews.length > 0) {
-          this.userReview = response.data.data.reviews[0];
+        if (response.data.success && response.data.reviews.length > 0) {
+          this.userReview = response.data.reviews[0];
         }
       } catch (error) {
         console.error('加载用户评论失败:', error);
@@ -330,10 +308,10 @@ export default {
           }
         });
 
-        if (response.data.success) {
+        if (response.success) {
           // 保存已上传的图片信息
-          this.uploadedImages = response.data.data.images;
-          this.$message.success(`成功上传 ${response.data.data.total_uploaded} 张图片`);
+          this.uploadedImages = response.data.images;
+          this.$message.success(`成功上传 ${response.data.total_uploaded} 张图片`);
         }
       } catch (error) {
         console.error('图片上传失败:', error);

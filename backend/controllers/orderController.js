@@ -38,7 +38,7 @@ exports.getOrders = async (req, res) => {
 
     // 获取订单列表
     const orders = await query(
-      `SELECT id, order_guid, total_amount, status, payment_method, 
+      `SELECT id, order_guid, inquiry_id, total_amount, status, payment_method, 
               created_at, updated_at, shipping_name, shipping_phone,
               shipping_address, shipping_zip_code, shipping_country,
               shipping_state, shipping_city, shipping_phone_country_code
@@ -87,7 +87,7 @@ exports.getOrderDetail = async (req, res) => {
   try {
     // 获取订单信息
     const orders = await query(
-      `SELECT id, order_guid, total_amount, status, payment_method, payment_id, 
+      `SELECT id, order_guid, inquiry_id, total_amount, status, payment_method, payment_id, 
               created_at, updated_at, shipping_name, shipping_phone, 
               shipping_email, shipping_address, shipping_zip_code,
               shipping_country, shipping_state, shipping_city, shipping_phone_country_code

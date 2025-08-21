@@ -346,6 +346,7 @@ export default {
       // 询价相关数据
       showInquiryDialog: false,
       currentInquiryId: null,
+      currentInquiryData: null, // 存储完整的询价单数据
       inquiryMessages: [],
       inquiryStatus: 'pending',
       initialInquiryMessage: '',
@@ -469,28 +470,9 @@ export default {
     hasSelectedProducts() {
       return this.currentProductSelected || this.buyTogetherProducts.some(item => item.selected)
     },
-    // 构建当前询价对象，供InquiryDetailPanel使用
+    // 返回当前询价对象，供InquiryDetailPanel使用
     currentInquiry() {
-      if (!this.currentInquiryId) return null;
-      
-      return {
-        id: this.currentInquiryId,
-        status: this.inquiryStatus,
-        inquiry_type: 'single', // 产品详情页的询价通常是单个产品
-        messages: this.inquiryMessages,
-        items: [{
-          id: 1,
-          productId: this.product.id,
-          product_id: this.product.id,
-          name: this.product.name,
-          product_name: this.product.name,
-          imageUrl: this.product.thumbnail_url,
-          image_url: this.product.thumbnail_url,
-          quantity: 1,
-          unit_price: this.product.price,
-          product_code: this.product.product_code
-        }]
-      };
+      return this.currentInquiryData;
     },
     showBuyNowDialog: {
       get() {
@@ -958,6 +940,7 @@ export default {
       this.showInquiryDialog = false;
       // 清理数据
       this.currentInquiryId = null;
+      this.currentInquiryData = null;
       this.inquiryMessages = [];
       this.inquiryStatus = 'pending';
       this.initialInquiryMessage = '';
@@ -968,6 +951,7 @@ export default {
       // 实时更新消息内容（可用于草稿保存等功能）
       console.log('Message updated:', inquiryId, message);
     },
+    /*
     // 处理新消息
     handleNewMessages(data) {
       try {
@@ -979,7 +963,7 @@ export default {
             const newMessage = {
               id: messageData.id,
               content: messageData.message,
-              sender: messageData.sender_name || (messageData.sender_type === 'user' ? '用户' : '客服'),
+              sender: messageData.sender_name || (messageData.sender_type === 'user' ? 'User' : 'Admin'),
               timestamp: messageData.created_at,
               isUser: messageData.sender_type === 'user'
             };
@@ -989,10 +973,7 @@ export default {
             if (!existingMessage) {
               this.inquiryMessages.push(newMessage);
               
-              // 显示新消息提示（如果不是当前用户发送的）
-              /*if (messageData.sender_id !== this.$store.state.user?.id) {
-                this.$messageHandler.showSuccess(`收到来自 ${messageData.sender_name} 的新消息`, 'inquiry.success.newMessage');
-              }*/
+
             }
           });
           
@@ -1002,9 +983,9 @@ export default {
       } catch (error) {
         console.error('ProductDetail: 处理新消息失败:', error);
       }
-    },
+    },*/
     // 处理询价结账
-    async handleInquiryCheckout(inquiryId) {
+    /*async handleInquiryCheckout(inquiryId) {
       try {
         await this.$api.post(`inquiries/${inquiryId}/checkout`);
         this.inquiryStatus = 'Checkouted';
@@ -1018,7 +999,7 @@ export default {
         console.error('结账失败:', error);
         this.$messageHandler.showError(error, 'inquiry.error.checkoutFailed');
       }
-    },
+    },*/
     // 加载询价消息
     async loadInquiryMessages() {
       if (!this.currentInquiryId) return;
@@ -1095,6 +1076,18 @@ export default {
        this.currentInquiryId = data.inquiryId;
        this.initialInquiryMessage = '';
        this.showInquiryDialog = true;
+       
+       // 如果传入了完整的询价单数据，直接使用
+       if (data.inquiry && data.items) {
+         this.currentInquiryData = {
+           ...data.inquiry,
+           items: data.items
+         };
+         this.inquiryStatus = data.inquiry.status || 'inquiried';
+         console.log('使用完整询价单数据:', this.currentInquiryData);
+       } else {
+          console.error('The data is wrong', data);
+       }
        
        // 如果不是新询价单，加载消息
        if (!data.isNew) {
@@ -1223,7 +1216,7 @@ export default {
   bottom: 20px;
   right: 20px;
   width: 580px;
-  height: 600px;
+  height: 620px;
   background: $white;
   border-radius: $border-radius-lg;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);

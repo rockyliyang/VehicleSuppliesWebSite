@@ -68,8 +68,7 @@
         <div class="inquiry-window-body">
           <!-- 沟通组件 -->
           <InquiryDetailPanel :inquiry="currentInquiry" :is-mobile="isMobile"
-            @update-message="handleUpdateInquiryMessage" @checkout-inquiry="handleInquiryCheckout"
-            @new-messages-received="handleNewMessages" />
+            @update-message="handleUpdateInquiryMessage" @new-messages-received="handleNewMessages" />
         </div>
       </div>
     </div>
@@ -117,8 +116,9 @@ export default {
       // 询价相关状态
       showInquiryDialog: false,
       currentInquiryId: null,
+      currentInquiryData: null, // 存储完整的询价单数据
       inquiryMessages: [],
-      inquiryStatus: 'active',
+      inquiryStatus: 'inquiried',
       initialInquiryMessage: '',
       // 登录相关状态
       loginDialogVisible: false,
@@ -136,28 +136,9 @@ export default {
     isMobile() {
       return window.innerWidth <= 768;
     },
-    // 构建当前询价对象，供InquiryDetailPanel使用
+    // 返回当前询价对象，供InquiryDetailPanel使用
     currentInquiry() {
-      if (!this.currentInquiryId || !this.pendingProduct) return null;
-      
-      return {
-        id: this.currentInquiryId,
-        status: this.inquiryStatus,
-        inquiry_type: 'single', // 产品页面的询价通常是单个产品
-        messages: this.inquiryMessages,
-        items: [{
-          id: 1,
-          productId: this.pendingProduct.id,
-          product_id: this.pendingProduct.id,
-          name: this.pendingProduct.name,
-          product_name: this.pendingProduct.name,
-          imageUrl: this.pendingProduct.thumbnail_url,
-          image_url: this.pendingProduct.thumbnail_url,
-          quantity: this.pendingQuantity,
-          unit_price: this.pendingProduct.price,
-          product_code: this.pendingProduct.product_code
-        }]
-      };
+      return this.currentInquiryData;
     }
   },
   created() {
@@ -295,11 +276,36 @@ export default {
     // 显示询价对话框
     showInquiryDialogWithData(data) {
       this.currentInquiryId = data.inquiryId;
-      this.pendingProduct = data.product; // 设置产品信息
       this.initialInquiryMessage = '';
       this.showInquiryDialog = true;
       
-      // 如果是新询价单，加载消息
+      // 如果传入了完整的询价单数据，直接使用
+      if (data.inquiry && data.items) {
+        this.currentInquiryData = {
+          ...data.inquiry,
+          items: data.items
+        };
+        this.inquiryStatus = data.inquiry.status || 'inquiried';
+        console.log('使用完整询价单数据:', this.currentInquiryData);
+      } else {
+        // 如果没有完整数据，构造基本的询价单对象
+        this.currentInquiryData = {
+          id: data.inquiryId,
+          status: 'pending',
+          inquiry_type: 'single',
+          items: data.product ? [{
+            id: 1,
+            product_id: data.product.id,
+            product_name: data.product.name,
+            image_url: data.product.thumbnail_url,
+            quantity: data.quantity || 1,
+            unit_price: data.product.price,
+            product_code: data.product.product_code
+          }] : []
+        };
+      }
+      
+      // 如果不是新询价单，加载消息
       if (!data.isNew) {
         this.loadInquiryMessagesData();
       }
@@ -310,7 +316,6 @@ export default {
       if (!this.currentInquiryId) return;
       
       const result = await loadInquiryMessages(this.currentInquiryId, this);
-      this.inquiryMessages = result.messages;
       this.inquiryStatus = result.status;
     },
 
@@ -340,6 +345,7 @@ export default {
     closeInquiryDialog() {
       this.showInquiryDialog = false;
       this.currentInquiryId = null;
+      this.currentInquiryData = null;
       this.inquiryMessages = [];
     },
 
@@ -360,11 +366,6 @@ export default {
     // 处理更新询价消息
     handleUpdateInquiryMessage(message) {
       console.log('更新询价消息:', message);
-    },
-
-    // 处理询价结算
-    handleInquiryCheckout() {
-      console.log('询价结算');
     },
 
     // 处理新消息
@@ -722,7 +723,7 @@ export default {
   bottom: 20px;
   right: 20px;
   width: 580px;
-  height: 600px;
+  height: 620px;
   background: $white;
   border-radius: $border-radius-lg;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);

@@ -4599,4 +4599,17 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'order.success.priceUpdated', 'en', 'Price updated successfully'),
 (gen_random_uuid(), 'order.success.priceUpdated', 'zh-CN', '价格更新成功'),
 (gen_random_uuid(), 'order.error.updatePriceFailed', 'en', 'Failed to update price'),
-(gen_random_uuid(), 'order.error.updatePriceFailed', 'zh-CN', '价格更新失败');}]}}}
+(gen_random_uuid(), 'order.error.updatePriceFailed', 'zh-CN', '价格更新失败'),
+
+-- UnifiedCheckout.vue new translation keys (non-duplicate)
+(gen_random_uuid(), 'checkout.inquiry', 'en', 'Inquiry'),
+(gen_random_uuid(), 'checkout.inquiry', 'zh-CN', 'Inquiry'),
+
+
+-- Error handling fallbackKey translations
+(gen_random_uuid(), 'inquiry.error.addItemsFailed', 'en', 'Failed to add items to inquiry'),
+(gen_random_uuid(), 'inquiry.error.addItemsFailed', 'zh-CN', '添加商品到询价单失败'),
+
+(gen_random_uuid(), 'inquiry.error.createFailed', 'en', 'Failed to create inquiry'),
+(gen_random_uuid(), 'inquiry.error.createFailed', 'zh-CN', '创建询价失败');
+
