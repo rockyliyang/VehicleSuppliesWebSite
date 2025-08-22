@@ -95,6 +95,14 @@ module.exports = defineConfig({
 
   },
   css: {
-    sourceMap: true
+    sourceMap: true,
+    loaderOptions: {
+      scss: {
+        additionalData: `
+          @import "@/assets/styles/_variables.scss";
+          @import "@/assets/styles/_mixins.scss";
+        `
+      }
+    }
   }
 })

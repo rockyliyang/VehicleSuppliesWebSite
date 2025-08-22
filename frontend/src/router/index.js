@@ -246,6 +246,12 @@ const routes = [
     component: () => import('../views/FavoritesManagement.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/order-payment/:orderId',
+    name: 'OrderPayment',
+    component: () => import('../views/OrderPayment.vue'),
+    meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({

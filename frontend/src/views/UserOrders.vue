@@ -46,7 +46,8 @@
               <div v-for="order in orders" :key="order.id" class="order-card" @click="handleRowClick(order)">
                 <div class="order-card-header">
                   <div class="order-number">{{ order.id }}</div>
-                  <el-tag :type="getStatusType(order.status)" class="status-tag">{{ getStatusText(order.status) }}</el-tag>
+                  <el-tag :type="getStatusType(order.status)" class="status-tag">{{ getStatusText(order.status)
+                    }}</el-tag>
                 </div>
                 <div class="order-card-body">
                   <div class="order-info-row">
@@ -205,10 +206,10 @@ export default {
     },
     handleRowClick(row) {
       // 点击行时查看订单详情
-      this.$router.push({
-        path: '/unified-checkout',
-        query: { orderId: row.id }
-      });
+       this.$router.push({
+            name: 'OrderPayment',
+            params: { orderId: row.id }
+          });
     }
   }
 };
@@ -516,6 +517,7 @@ export default {
   }
 
   :deep(.modern-pagination) {
+
     .el-pagination__total,
     .el-pagination__jump {
       font-size: $font-size-sm;

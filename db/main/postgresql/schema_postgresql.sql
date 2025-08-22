@@ -380,13 +380,17 @@ CREATE TABLE IF NOT EXISTS orders (
   inquiry_id BIGINT DEFAULT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
   status VARCHAR(16) NOT NULL, -- pending, paid, shipped, delivered, cancelled
-  payment_method VARCHAR(16) NOT NULL, -- card, alipay, wechat
+  payment_method VARCHAR(16), -- card, alipay, wechat
   payment_id VARCHAR(64),
   shipping_name VARCHAR(32) NOT NULL,
   shipping_phone VARCHAR(16) NOT NULL,
   shipping_email VARCHAR(64) NOT NULL,
   shipping_address VARCHAR(256) NOT NULL,
   shipping_zip_code VARCHAR(16) NOT NULL DEFAULT '',
+  shipping_country VARCHAR(64) DEFAULT NULL,
+  shipping_state VARCHAR(64) DEFAULT NULL,
+  shipping_city VARCHAR(64) DEFAULT NULL,
+  shipping_phone_country_code VARCHAR(8) DEFAULT NULL,
   shipping_fee DECIMAL(10, 2) DEFAULT 0.00,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -397,6 +401,10 @@ CREATE TABLE IF NOT EXISTS orders (
 
 -- 添加注释
 COMMENT ON COLUMN orders.inquiry_id IS '关联的询价单ID';
+COMMENT ON COLUMN orders.shipping_country IS '收货国家';
+COMMENT ON COLUMN orders.shipping_state IS '收货省份/州';
+COMMENT ON COLUMN orders.shipping_city IS '收货城市';
+COMMENT ON COLUMN orders.shipping_phone_country_code IS '收货电话国家区号';
 COMMENT ON COLUMN orders.created_by IS '创建者用户ID';
 COMMENT ON COLUMN orders.updated_by IS '最后更新者用户ID';
 
@@ -472,6 +480,10 @@ CREATE TABLE IF NOT EXISTS logistics (
   shipping_email VARCHAR(128) NOT NULL,
   shipping_address TEXT NOT NULL,
   shipping_zip_code VARCHAR(16) NOT NULL DEFAULT '',
+  shipping_country VARCHAR(64) DEFAULT NULL,
+  shipping_state VARCHAR(64) DEFAULT NULL,
+  shipping_city VARCHAR(64) DEFAULT NULL,
+  shipping_phone_country_code VARCHAR(8) DEFAULT NULL,
   shipping_status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, processing, shipped, in_transit, delivered, exception
   tracking_info TEXT, -- JSON格式存储跟踪信息
   notes TEXT,
@@ -492,6 +504,10 @@ COMMENT ON COLUMN logistics.shipping_phone IS '收货人电话';
 COMMENT ON COLUMN logistics.shipping_email IS '收货人邮箱';
 COMMENT ON COLUMN logistics.shipping_address IS '收货地址';
 COMMENT ON COLUMN logistics.shipping_zip_code IS '邮政编码';
+COMMENT ON COLUMN logistics.shipping_country IS '收货国家';
+COMMENT ON COLUMN logistics.shipping_state IS '收货省份/州';
+COMMENT ON COLUMN logistics.shipping_city IS '收货城市';
+COMMENT ON COLUMN logistics.shipping_phone_country_code IS '收货电话国家区号';
 COMMENT ON COLUMN logistics.shipping_status IS '物流状态：pending-待处理, processing-处理中, shipped-已发货, in_transit-运输中, delivered-已送达, exception-异常';
 COMMENT ON COLUMN logistics.tracking_info IS '跟踪信息，JSON格式';
 COMMENT ON COLUMN logistics.notes IS '备注信息';
@@ -938,6 +954,10 @@ CREATE TABLE IF NOT EXISTS user_addresses (
   phone VARCHAR(20) NOT NULL,
   address TEXT NOT NULL,
   postal_code VARCHAR(20),
+  country VARCHAR(64) DEFAULT NULL,
+  state VARCHAR(64) DEFAULT NULL,
+  city VARCHAR(64) DEFAULT NULL,
+  phone_country_code VARCHAR(8) DEFAULT NULL,
   is_default BOOLEAN DEFAULT FALSE,
   label VARCHAR(20) DEFAULT 'home',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -953,6 +973,10 @@ COMMENT ON COLUMN user_addresses.recipient_name IS '收货人姓名';
 COMMENT ON COLUMN user_addresses.phone IS '收货人手机号';
 COMMENT ON COLUMN user_addresses.address IS '详细地址';
 COMMENT ON COLUMN user_addresses.postal_code IS '邮政编码';
+COMMENT ON COLUMN user_addresses.country IS '国家';
+COMMENT ON COLUMN user_addresses.state IS '省份/州';
+COMMENT ON COLUMN user_addresses.city IS '城市';
+COMMENT ON COLUMN user_addresses.phone_country_code IS '电话国家区号';
 COMMENT ON COLUMN user_addresses.is_default IS '是否为默认地址';
 COMMENT ON COLUMN user_addresses.label IS '地址标签：home-家，company-公司，school-学校，other-其他';
 COMMENT ON COLUMN user_addresses.created_by IS '创建者用户ID';

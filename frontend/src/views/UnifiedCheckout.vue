@@ -97,6 +97,20 @@
               </el-icon>
               {{ $t('checkout.orderInfo') || '订单信息' }}
             </div>
+            <div class="order-header-actions" v-if="!isOrderDetail">
+              <el-button @click="handleBackClick" type="default" class="back-btn">
+                <el-icon>
+                  <ArrowLeft />
+                </el-icon>
+                {{ $t('common.back') || '返回' }}
+              </el-button>
+              <el-button type="primary" size="large" @click="submitOrder" :loading="submitting" class="submit-btn">
+                <el-icon>
+                  <Document />
+                </el-icon>
+                {{ $t('checkout.submitOrder') || '提交订单' }}
+              </el-button>
+            </div>
           </h2>
           <el-table :data="orderItems" class="order-table">
             <el-table-column :label="$t('checkout.product') || '商品'" min-width="200">
@@ -140,57 +154,7 @@
         </section>
 
 
-        <!-- 支付方式 -->
-        <section class="payment-methods" v-if="!isOrderDetail || !isOrderPaid">
-          <h2 class="section-title">
-            <div class="title-content">
-              <el-icon>
-                <CreditCard />
-              </el-icon>
-              {{ $t('checkout.paymentMethod') || '支付方式' }}
-            </div>
-          </h2>
-          <el-tabs v-model="activePaymentTab" @tab-click="onTabChange" class="payment-tabs">
-            <el-tab-pane :label="$t('checkout.paypal') || 'PayPal/信用卡'" name="paypal">
-              <div v-if="activePaymentTab === 'paypal'" class="paypal-container">
-                <div id="paypal-button-container" ref="paypalButtonContainer"></div>
-              </div>
-            </el-tab-pane>
-            <el-tab-pane :label="$t('checkout.alipay') || '支付宝'" name="alipay">
-              <div class="qrcode-container">
-                <div class="qrcode-content">
-                  <div v-if="qrcodeUrl && activePaymentTab === 'alipay'" class="qrcode-display">
-                    <div class="qrcode-image">
-                      <img :src="qrcodeUrl" :alt="$t('checkout.alipayQrcode') || '支付宝支付二维码'">
-                    </div>
-                    <div class="qrcode-actions">
-                      <el-button @click="refreshQrcode('alipay')" type="primary" class="refresh-qr-btn"
-                        :loading="refreshing">
-                        <el-icon>
-                          <Refresh />
-                        </el-icon>
-                        {{ $t('checkout.refreshQrcode') || '刷新二维码' }}
-                      </el-button>
-                      <div class="qrcode-timer" v-if="qrcodeTimer > 0">
-                        {{ $t('checkout.qrcodeExpire') || '二维码将在' }} {{ qrcodeTimer }}{{ $t('checkout.secondsExpire') ||
-                        '秒后过期'
-                        }}
-                      </div>
-                    </div>
-                  </div>
-                  <div v-else class="qrcode-placeholder">
-                    <p class="qrcode-placeholder-text">{{ $t('checkout.clickToGenerate') || '点击下方按钮生成支付二维码' }}</p>
-                    <el-button @click="generateQrcode('alipay')" type="primary" class="generate-qr-btn"
-                      :loading="generating">
-                      {{ $t('checkout.generateQrcode') || '生成支付二维码' }}
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </el-tab-pane>
 
-          </el-tabs>
-        </section>
 
         <!-- 订单状态信息（已支付订单） -->
         <section class="order-status" v-if="isOrderDetail && isOrderPaid">
@@ -376,14 +340,12 @@ import {
   ShoppingCart, 
   Location, 
   LocationInformation,
-  CreditCard, 
-  Refresh, 
   SuccessFilled,
   House,
   Document,
   Close,
-  
-  FullScreen
+  FullScreen,
+  ArrowLeft
 } from '@element-plus/icons-vue';
 import InquiryDetailPanel from '../components/common/InquiryDetailPanel.vue';
 
@@ -396,14 +358,12 @@ export default {
     ShoppingCart,
     Location,
     LocationInformation,
-    CreditCard,
-    Refresh,
     SuccessFilled,
     House,
     Document,
     Close,
-    
-    FullScreen
+    FullScreen,
+    ArrowLeft
   },
   props: {
     items: {
@@ -500,21 +460,9 @@ export default {
           { required: true, message: this.$t('checkout.stateRequired') || '请选择省份', trigger: 'change' }
         ]
       },
-      activePaymentTab: 'paypal',
-      qrcodeUrl: '',
-      polling: false,
-      pollingTimer: null,
+      submitting: false, // 提交订单状态
       paySuccess: false,
       orderId: '',
-      paypalConfig: { clientId: '', currency: 'USD' },
-      paypalScript: null,
-      generating: false,
-      refreshing: false,
-      qrcodeTimer: 0,
-      qrcodeTimerInterval: null,
-      autoRefreshTimer: null,
-      currentPaymentMethod: '',
-      isPollingRequest: false, // 支付状态轮询请求标志
 
     };
   },
@@ -549,20 +497,15 @@ export default {
   },
   created() {
     this.initOrderItems();
-    this.fetchPayPalConfig();
     this.loadAddressList();
     this.loadCountryStateData();
     this.fetchLogisticsData();
   },
   mounted() {
-    // 不做任何PayPal相关操作
+    // 页面挂载完成
   },
   beforeUnmount() {
-    this.clearPollingTimer();
-    this.clearQrcodeTimers();
-    if (this.paypalScript && this.paypalScript.parentNode) {
-      this.paypalScript.parentNode.removeChild(this.paypalScript);
-    }
+    // 清理资源
   },
   methods: {
     closeAddressDialog() {
@@ -619,7 +562,7 @@ export default {
           }
           
           // 使用后清除sessionStorage中的数据
-          sessionStorage.removeItem('selectedCartItems');
+          //sessionStorage.removeItem('selectedCartItems');
           return;
         } catch (e) {
           console.error('解析sessionStorage中的订单数据失败:', e);
@@ -655,14 +598,7 @@ export default {
     calculateTotal() {
       this.orderTotal = this.orderItems.reduce((sum, item) => sum + (item.calculatedPrice || item.price) * item.quantity, 0);
     },
-    getPaymentMethodText(method) {
-      const methodMap = {
-        'paypal': 'PayPal',
-        'alipay': this.$t('checkout.alipay') || '支付宝',
-        'credit_card': this.$t('checkout.creditCard') || '信用卡'
-      };
-      return methodMap[method] || method;
-    },
+ 
     formatDate(dateString) {
       if (!dateString) return '';
       const date = new Date(dateString);
@@ -884,20 +820,41 @@ export default {
       return country ? country.id : null;
     },
 
-    async fetchPayPalConfig() {
+    async submitOrder() {
+      // 验证收货信息
+      const isValid = await this.validateShippingInfo();
+      if (!isValid) {
+        this.$messageHandler.showError(this.$t('checkout.shippingInfoInvalid') || '请完善收货信息', 'checkout.error.shippingInfoInvalid');
+        return;
+      }
+
+      this.submitting = true;
       try {
-        const res = await this.$api.get('/payment-config/config');
-        if (res.success) {
-          this.paypalConfig = res.data.paypalConfig || { clientId: '', currency: 'USD' };
-          if (this.activePaymentTab === 'paypal') {
-            this.$nextTick(() => {
-              this.loadPayPalSDK();
-            });
-          }
+        const requestData = {
+          orderItems: this.orderItems,
+          shipping_info: this.shippingInfo,
+          total_amount: this.orderTotal,
+          shipping_fee: this.shippingFee
+        };
+
+        // 如果是询价单订单，添加inquiry_id
+        if (this.orderSource === 'inquiry' && this.inquiryId) {
+          requestData.inquiry_id = this.inquiryId;
         }
+
+        const response = await this.$api.postWithErrorHandler('/payment/common/create', requestData);
+        console.log('response is:',response);
+        this.orderId = response.data.orderId;
+          // 跳转到支付页面
+          this.$router.push({
+            name: 'OrderPayment',
+            params: { orderId: this.orderId }
+          });
       } catch (error) {
-        console.error('获取PayPal配置失败:', error);
-        this.$messageHandler.showError(error, 'checkout.error.fetchPaymentConfigFailed');
+        console.error('创建订单失败:', error);
+        this.$messageHandler.showError(error, 'checkout.error.createOrderFailed');
+      } finally {
+        this.submitting = false;
       }
     },
     async fetchOrderDetail(orderId) {
@@ -933,407 +890,7 @@ export default {
         this.$router.push('/user/orders');
       }
     },
-    onTabChange() {
-      this.$nextTick(() => {
-        if (this.activePaymentTab === 'paypal') {
-          this.loadPayPalSDK();
-          this.qrcodeUrl = '';
-          this.clearPollingTimer();
-          this.clearQrcodeTimers();
-        } else {
-          this.qrcodeUrl = '';
-          this.clearPollingTimer();
-          this.clearQrcodeTimers();
-        }
-      });
-    },
-    loadPayPalSDK() {
-      // 增强配置验证
-      if (!this.paypalConfig) {
-        console.error('PayPal配置对象不存在');
-        this.$messageHandler.showError('PayPal配置未加载，请刷新页面重试', 'checkout.error.paypalConfigMissing');
-        return;
-      }
-      
-      if (!this.paypalConfig.clientId || this.paypalConfig.clientId === 'test') {
-        console.warn('PayPal Client ID无效:', this.paypalConfig.clientId);
-        this.$messageHandler.showWarning('PayPal配置无效，请联系管理员', 'checkout.warning.paypalConfigInvalid');
-        return;
-      }
-      
-      if (!this.paypalConfig.scriptUrl) {
-        console.error('PayPal Script URL未配置');
-        this.$messageHandler.showError('PayPal脚本地址未配置', 'checkout.error.paypalScriptUrlMissing');
-        return;
-      }
-      
-      if (window.paypal) {
-        console.log('PayPal SDK已存在，直接渲染按钮');
-        this.renderPayPalButtons();
-        return;
-      }
-      
-      if (document.getElementById('paypal-sdk')) {
-        console.log('PayPal SDK脚本已存在，等待加载完成');
-        return;
-      }
-      
-      console.log('开始加载PayPal SDK...');
-      const script = document.createElement('script');
-      script.id = 'paypal-sdk';
-      
-      // 构建PayPal SDK URL，添加locale参数指定英文语言
-      const params = new URLSearchParams({
-        'client-id': this.paypalConfig.clientId,
-        'currency': this.paypalConfig.currency || 'USD',
-        'intent': this.paypalConfig.intent || 'capture',
-        'components': this.paypalConfig.components || 'buttons,funding-eligibility',
-        'locale': 'en_US' // 指定英文语言
-      });
-      
-      // 添加启用的资金来源
-      if (this.paypalConfig.enableFunding) {
-        params.append('enable-funding', this.paypalConfig.enableFunding);
-      }
-      
-      // 添加禁用的资金来源
-      if (this.paypalConfig.disableFunding) {
-        params.append('disable-funding', this.paypalConfig.disableFunding);
-      }
-      
-      script.src = `${this.paypalConfig.scriptUrl}?${params.toString()}`;
-      console.log('PayPal SDK URL:', script.src);
-      
-      script.onload = () => {
-        console.log('PayPal SDK加载成功');
-        this.renderPayPalButtons();
-      };
-      
-      script.onerror = (error) => {
-        console.error('PayPal SDK加载失败:', error);
-        console.error('PayPal SDK URL:', script.src);
-        console.error('PayPal配置:', this.paypalConfig);
-        this.$messageHandler.showError('PayPal SDK加载失败，请检查网络连接或联系管理员', 'checkout.error.paypalSDKLoadFailed');
-        
-        // 移除失败的脚本标签
-        const failedScript = document.getElementById('paypal-sdk');
-        if (failedScript) {
-          failedScript.remove();
-        }
-      };
-      
-      document.head.appendChild(script);
-    },
-    renderPayPalButtons() {
-      if (!window.paypal) {
-        console.error('PayPal SDK未加载');
-        return;
-      }
-      
-      const paypalContainer = document.getElementById('paypal-button-container');
-       if (!paypalContainer) {
-         console.error('PayPal按钮容器未找到');
-         return;
-       }
-       
-       paypalContainer.innerHTML = '';
-      window.paypal.Buttons({
-        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' },
-        enableFunding: window.paypal.FUNDING.PAYLATER,
-        createOrder: async () => {
-          // 如果不是订单详情模式，验证收货信息
-          if (!this.isOrderDetail) {
-            const isValid = await this.validateShippingInfo();
-            if (!isValid) {
-              return Promise.reject(new Error(this.$t('checkout.shippingInfoInvalid') || '请完善收货信息'));
-            }
-          }
-          
-          try {
-            let response;
-            
-            if (this.isOrderDetail && this.orderData) {
-              // 已存在订单，调用重新支付接口
-              console.log('orderData:', this.orderData)
-              response = await this.$api.postWithErrorHandler('/payment/paypal/repay', {
-                orderId: this.orderData.order.id
-              });
-            } else {
-              // 新订单，调用创建订单接口
-              const requestData = {
-                shippingInfo: {
-                  name: this.shippingInfo.name,
-                  phone: this.shippingInfo.phone,
-                  phone_country_code: this.shippingInfo.phone_country_code,
-                  email: this.shippingInfo.email,
-                  shipping_address: this.shippingInfo.address,
-                  shipping_zip_code: this.shippingInfo.zipCode,
-                  shipping_country: this.shippingInfo.country,
-                  shipping_state: this.shippingInfo.state,
-                  shipping_city: this.shippingInfo.city
-                },
-                orderItems: this.orderItems.map(item => ({
-                  product_id: item.product_id,
-                  product_code: item.product_code,
-                  product_name: item.product_name,
-                  quantity: item.quantity,
-                  price: item.calculatedPrice || item.price
-                })),
-                shipping_fee: this.shippingFee
-              };
-              console.log('requestData:', this.requestData)
-              // 如果是询价单订单，添加orderSource和inquiryId参数
-              if (this.orderSource === 'inquiry' && this.inquiryId) {
-                requestData.orderSource = this.orderSource;
-                requestData.inquiryId = this.inquiryId;
-              }
-             
-              response = await this.$api.postWithErrorHandler('/payment/paypal/create', requestData);
-            }
-            
-            if (response.success) {
-              this.orderId = response.data.orderId || this.orderData?.id;
-              return response.data.paypalOrderId || response.data.id || response.data.orderID;
-            } else {
-              throw new Error(response.message || '创建订单失败');
-            }
-          } catch (error) {
-            this.$messageHandler.showError(error.message || '支付过程中出现错误', 'checkout.error.paymentError');
-            throw error;
-          }
-        },
-        onApprove: async (data, actions) => {
-          try {
-            // 捕获PayPal支付
-            const response = await this.$api.postWithErrorHandler('/payment/paypal/capture', {
-              paypalOrderId: data.orderID,
-              orderId: this.orderId
-            });
-            
-            if (response.success) {
-              this.paySuccess = true;
-              //this.$messageHandler.showSuccess('支付成功！', 'payment.success.paymentSuccess');
-              // 触发购物车更新事件
-              if (this.$bus) {
-                this.$bus.emit('cart-updated');
-              }
-            } else {
-              throw new Error(response.message || '支付捕获失败');
-            }
-          } catch (error) {
-            this.$messageHandler.showError('PayPal支付失败: ' + error.message, 'payment.error.paypalFailed');
-            // 处理可恢复的错误
-            if (error.message.includes('INSTRUMENT_DECLINED')) {
-              return actions.restart();
-            }
-          }
-        },
-        onError: (err) => {
-          this.$messageHandler.showError('PayPal支付失败: ' + (err.message || '未知错误'), 'payment.error.paypalFailed');
-        },
-        onCancel: () => {
-          this.$messageHandler.showInfo('支付已取消', 'checkout.info.paymentCancelled');
-        }
-      }).render('#paypal-button-container').catch(err => {
-        console.error('PayPal按钮渲染失败:', err);
-        this.$messageHandler.showError(err, 'checkout.error.paypalButtonLoadFailed');
-      });
-    },
-    async generateQrcode(paymentMethod) {
-      // 对于订单详情页面，不需要验证收货信息
-      if (!this.isOrderDetail) {
-        const isValid = await this.validateShippingInfo();
-        if (!isValid) {
-          return;
-        }
-      }
-      
-      this.generating = true;
-      this.currentPaymentMethod = paymentMethod;
-      this.clearQrcodeTimers();
-      this.qrcodeUrl = '';
-      
-      try {
-        let orderId = this.orderId;
-        
-        // 如果不是订单详情页面，需要先创建订单
-        if (!this.isOrderDetail) {
-          const requestData = {
-            shippingInfo: {
-              name: this.shippingInfo.name,
-              phone: this.shippingInfo.phone,
-              email: this.shippingInfo.email,
-              shipping_address: this.shippingInfo.address,
-              shipping_zip_code: this.shippingInfo.zipCode
-            },
-            paymentMethod,
-            orderItems: this.orderItems.map(item => ({
-              product_id: item.product_id,
-              product_code: item.product_code,
-              product_name: item.name,
-              quantity: item.quantity,
-              price: item.calculatedPrice || item.price
-            })),
-            shipping_fee: this.shippingFee
-          };
-          
-          // 如果是询价单订单，添加orderSource和inquiryId参数
-          if (this.orderSource === 'inquiry' && this.inquiryId) {
-            requestData.orderSource = this.orderSource;
-            requestData.inquiryId = this.inquiryId;
-          }
-          
-          const orderRes = await this.$api.postWithErrorHandler('/payment/common/create', requestData);
-          
-          if (!orderRes.success) {
-            this.$messageHandler.showError('创建订单失败: ' + orderRes.message, 'checkout.error.createOrderFailed');
-            return;
-          }
-          
-          orderId = orderRes.data.orderId;
-          this.orderId = orderId;
-        } else {
-          // 对于订单详情页面，使用现有的订单ID
-          orderId = this.orderData?.order?.id || this.$route.query.orderId;
-          this.orderId = orderId;
-        }
-        
-        // 生成二维码
-        const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
-          orderId: orderId,
-          paymentMethod
-        });
-        
-        if (qrRes.success) {
-          this.qrcodeUrl = qrRes.data.qrcodeUrl;
-          this.startPaymentStatusPolling(orderId, paymentMethod);
-          this.startQrcodeTimer();
-          this.startAutoRefresh(paymentMethod);
-          
-          //this.$messageHandler.showSuccess('二维码生成成功，请扫码支付', 'checkout.success.qrcodeGenerated');
-        } else {
-          this.$messageHandler.showError('生成二维码失败: ' + qrRes.message, 'checkout.error.qrcodeGenerateFailed');
-        }
-      } catch (error) {
-        console.error('Error generating QR code:', error);
-        this.$messageHandler.showError('生成二维码失败', 'checkout.error.qrcodeGenerateFailed');
-      } finally {
-        this.generating = false;
-      }
-    },
-    startPaymentStatusPolling(orderId, paymentMethod) {
-      this.clearPollingTimer();
-      this.polling = true;
-      this.isPollingRequest = false; // 添加请求状态标志
-      
-      const pollPaymentStatus = async () => {
-        // 如果上一个请求还在进行中，跳过本次轮询
-        if (this.isPollingRequest) {
-          return;
-        }
-        
-        this.isPollingRequest = true;
-        
-        try {
-          const statusRes = await this.$api.post('/payment/check-status', {
-            orderId,
-            paymentMethod
-          });
-          
-          if (statusRes.success && statusRes.data.status === 'paid') {
-            this.clearPollingTimer();
-            this.paySuccess = true;
-            // 触发购物车更新事件
-            if (this.$bus) {
-              this.$bus.emit('cart-updated');
-            }
-          }
-        } catch (error) {
-          console.warn('Payment status check failed:', error);
-          // 不显示错误消息，避免干扰用户体验
-        } finally {
-          this.isPollingRequest = false;
-        }
-      };
-      
-      this.pollingTimer = setInterval(pollPaymentStatus, 3000);
-    },
-    clearPollingTimer() {
-      if (this.pollingTimer) {
-        clearInterval(this.pollingTimer);
-        this.pollingTimer = null;
-        this.polling = false;
-        this.isPollingRequest = false;
-      }
-    },
-    async refreshQrcode(paymentMethod) {
-      let orderId = this.orderId;
-      
-      // 对于订单详情页面，确保获取正确的订单ID
-      if (this.isOrderDetail && !orderId) {
-        orderId = this.orderData?.order?.id || this.$route.query.orderId;
-        this.orderId = orderId;
-      }
-      
-      if (!orderId) {
-        this.$messageHandler.showWarning('没有订单可以刷新', 'checkout.warning.noOrderToRefresh');
-        return;
-      }
-      
-      this.refreshing = true;
-      this.clearQrcodeTimers();
-      
-      try {
-        const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
-          orderId: orderId,
-          paymentMethod
-        });
-        
-        if (qrRes.success) {
-          this.qrcodeUrl = qrRes.data.qrcodeUrl;
-          this.startQrcodeTimer();
-          this.startAutoRefresh(paymentMethod);
-          
-          //this.$messageHandler.showSuccess('二维码已刷新', 'checkout.success.qrcodeRefreshed');
-        } else {
-          this.$messageHandler.showError('刷新二维码失败: ' + qrRes.message, 'checkout.error.qrcodeRefreshFailed');
-        }
-      } catch (error) {
-        console.error('Error refreshing QR code:', error);
-        this.$messageHandler.showError('刷新二维码失败', 'checkout.error.qrcodeRefreshFailed');
-      } finally {
-        this.refreshing = false;
-      }
-    },
-    startQrcodeTimer() {
-      this.qrcodeTimer = 300; // 5分钟倒计时
-      this.qrcodeTimerInterval = setInterval(() => {
-        this.qrcodeTimer--;
-        if (this.qrcodeTimer <= 0) {
-          this.clearQrcodeTimers();
-          this.$messageHandler.showWarning('二维码已过期，请重新生成', 'checkout.warning.qrcodeExpired');
-        }
-      }, 1000);
-    },
-    startAutoRefresh(paymentMethod) {
-      // 4分钟后自动刷新二维码
-      this.autoRefreshTimer = setTimeout(() => {
-        if (this.qrcodeUrl && !this.paySuccess) {
-          this.refreshQrcode(paymentMethod);
-        }
-      }, 240000); // 4分钟后自动刷新
-    },
-    clearQrcodeTimers() {
-      if (this.qrcodeTimerInterval) {
-        clearInterval(this.qrcodeTimerInterval);
-        this.qrcodeTimerInterval = null;
-      }
-      if (this.autoRefreshTimer) {
-        clearTimeout(this.autoRefreshTimer);
-        this.autoRefreshTimer = null;
-      }
-      this.qrcodeTimer = 0;
-    },
+
     goHome() {
       this.$router.push('/');
     },
@@ -1528,6 +1085,10 @@ export default {
        // 可以在这里处理新消息接收逻辑
        console.log('handleNewMessages:', newMessages);
      },
+     // 返回按钮点击处理
+     handleBackClick() {
+       this.$router.go(-1);
+     },
      async validateShippingInfo() {
        try {
          await this.$refs.shippingForm.validate();
@@ -1609,10 +1170,62 @@ export default {
   font-size: $font-size-xl;
 }
 
+.order-header-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.order-header-actions .back-btn {
+  min-width: 100px;
+  height: 40px;
+  border: 2px solid $gray-400;
+  background-color: $white;
+  color: $gray-700;
+  font-weight: $font-weight-medium;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: $primary-color;
+    color: $primary-color;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+  }
+}
+
+.order-header-actions .submit-btn {
+  min-width: 120px;
+  height: 40px;
+  background-color: $primary-color;
+  border-color: $primary-color;
+  color: $white !important;
+  font-weight: $font-weight-bold;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: darken($primary-color, 10%);
+    border-color: darken($primary-color, 10%);
+    color: $white !important;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+    transform: translateY(-1px);
+  }
+}
+
+/* 确保按钮内的所有文本都是白色 */
+.order-header-actions .submit-btn :deep(span) {
+  color: $white !important;
+}
+
 .shipping-header {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
+}
+
+/* 地址选择按钮样式 */
+.address-select-btn {
+  height: 40px;
+  min-width: auto;
 }
 
 /* 直接覆盖按钮内的所有span */
@@ -1628,6 +1241,8 @@ export default {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
+  height: 40px;
+  min-width: auto;
   background-color: #67C23A !important;
   color: white !important;
   border-color: #67C23A !important;
@@ -1939,136 +1554,6 @@ export default {
   height: $border-width-thick;
 }
 
-/* PayPal容器 */
-.paypal-container {
-  padding: $spacing-lg;
-  background: $gray-50;
-  border-radius: $border-radius-md;
-  border: $border-width-md dashed $gray-200;
-}
-
-/* 二维码容器 */
-.qrcode-container {
-  padding: $spacing-xl;
-  background: $gray-50;
-  border-radius: $border-radius-lg;
-  border: $border-width-sm solid $gray-200;
-}
-
-.qrcode-content {
-  margin-bottom: $spacing-lg;
-}
-
-.qrcode-display {
-  text-align: center;
-}
-
-.qrcode-image {
-  margin: $spacing-lg 0;
-  display: inline-block;
-  padding: $spacing-lg;
-  background: $white;
-  border-radius: $border-radius-lg;
-  box-shadow: $shadow-md;
-  border: $border-width-md solid $gray-200;
-}
-
-.qrcode-image img {
-  max-width: $product-qrcode-max-width;
-  border-radius: $border-radius-md;
-  display: block;
-}
-
-.qrcode-actions {
-  margin-top: $spacing-md;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: $spacing-md;
-}
-
-.qrcode-placeholder {
-  text-align: center;
-  padding: $spacing-5xl $spacing-lg;
-  color: $gray-400;
-}
-
-.qrcode-placeholder-icon {
-  font-size: $font-size-5xl;
-  margin-bottom: $spacing-md;
-  display: block;
-}
-
-.qrcode-placeholder-text {
-  font-size: $font-size-md;
-  color: $text-secondary;
-  margin: 0;
-}
-
-.qrcode-controls {
-  text-align: center;
-  margin-bottom: $spacing-lg;
-}
-
-.generate-qr-btn {
-  background: $gradient-primary;
-  border: none;
-  padding: $spacing-md $spacing-xl;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
-  border-radius: $border-radius-md;
-  transition: $transition-slow;
-  min-width: $product-qrcode-min-width;
-}
-
-.generate-qr-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba($primary-color, 0.3);
-}
-
-.refresh-qr-btn {
-  background: $gradient-primary;
-  border: none;
-  padding: $spacing-md $spacing-xl;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
-  border-radius: $border-radius-md;
-  transition: $transition-slow;
-  min-width: $product-qrcode-min-width;
-  color: $white;
-}
-
-.refresh-qr-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba($primary-color, 0.3);
-}
-
-.refresh-qr-btn i {
-  margin-right: $spacing-xs;
-}
-
-.qrcode-timer {
-  font-size: $font-size-sm;
-  color: $text-secondary;
-  background: $gray-100;
-  padding: $spacing-sm $spacing-md;
-  border-radius: $border-radius-full;
-  border: $border-width-sm solid $gray-200;
-}
-
-.polling-status {
-  margin-top: $spacing-lg;
-  color: $text-secondary;
-  font-weight: $font-weight-medium;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: $spacing-sm;
-}
-
-.polling-status i {
-  animation: spin 1s linear infinite;
-}
 
 @keyframes spin {
   from {
@@ -2530,7 +2015,7 @@ export default {
     width: 100%;
 
     .country-code-select {
-      flex: 0 0 $spacing-7xl;
+      flex: 0 0 80px; /* 手机端区号选择框宽度调整为80px */
 
       :deep(.el-select__wrapper) {
         height: $form-input-height;
@@ -2538,8 +2023,7 @@ export default {
         /* 统一高度 */
         font-size: $font-size-md;
         /* 统一字体大小 */
-        padding: $spacing-md $spacing-lg;
-        /* 统一内边距 */
+        padding: $spacing-md $spacing-sm; /* 减少内边距 */
       }
     }
 
@@ -3189,10 +2673,119 @@ export default {
   .inquiry-floating-window {
     bottom: 10px;
     right: 10px;
-    left: 10px;
-    width: auto;
-    height: 70vh;
-    max-height: 620px;
+    width: calc(100vw - 20px);
+    height: calc(100vh - 100px);
+  }
+
+  /* 手机端按钮适配 */
+  .shipping-header {
+    .address-select-btn {
+      min-width: auto;
+      width: 40px;
+      height: 40px;
+      padding: 0 !important;
+      background: transparent !important;
+      border: 1px solid $primary-color !important;
+      color: $primary-color !important;
+      
+      :deep(span), :deep(.el-button__text) {
+        display: none !important;
+      }
+      
+      :deep(.el-icon) {
+        display: none !important;
+      }
+      
+      &::before {
+        content: "📍";
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
+      
+      &:hover {
+        background: rgba($primary-color, 0.1) !important;
+        border-color: $primary-color !important;
+      }
+    }
+    
+    .inquiry-btn {
+      min-width: auto;
+      width: 40px;
+      height: 40px;
+      padding: 0 !important;
+      background: transparent !important;
+      border: 1px solid $primary-color !important;
+      color: $primary-color !important;
+      
+      :deep(span), :deep(.el-button__text) {
+        display: none !important;
+      }
+      
+      :deep(.el-icon) {
+        display: none !important;
+      }
+      
+      &::before {
+        content: "?";
+        font-size: 18px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
+      
+      &:hover {
+        background: rgba($primary-color, 0.1) !important;
+        border-color: $primary-color !important;
+      }
+    }
+  }
+  
+  /* 手机端隐藏back按钮 */
+  .order-header-actions {
+    .back-btn {
+      display: none;
+    }
+    
+    .submit-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  /* 手机端表格适配 */
+  .order-table {
+    font-size: 14px;
+  }
+  
+  .product-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .product-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .product-details {
+    width: 100%;
+  }
+  
+  .product-name {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .product-code {
+    font-size: 12px;
   }
 }
 </style>
