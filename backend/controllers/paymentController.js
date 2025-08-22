@@ -100,9 +100,9 @@ async function initOrder(userId, cartItems, shippingInfo, shippingFee, client, o
   for (const item of cartItems) {
     await client.query(
       `INSERT INTO order_items 
-       (order_id, product_id, quantity, price, product_name, product_code, created_by, updated_by) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [orderId, item.product_id, item.quantity, item.price, item.product_name || item.name, item.product_code, userId, userId]
+       (order_id, product_id, quantity, price, created_by, updated_by) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [orderId, item.product_id, item.quantity, item.price, userId, userId]
     );
     
     // 只对自营商品扣减库存

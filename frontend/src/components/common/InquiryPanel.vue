@@ -20,53 +20,61 @@
           <div class="inquiry-tabs">
             <button class="tab-btn" :class="{ 'active': activeTab === 'unpaid' }" @click="switchPaymentTab('unpaid')">
               {{ $t('cart.unpaidInquiries') || '未支付' }}
+              <span v-if="activeTab === 'unpaid' && totalUnreadCount > 0" class="tab-unread-badge">{{ totalUnreadCount
+                }}</span>
             </button>
             <button class="tab-btn" :class="{ 'active': activeTab === 'paid' }" @click="switchPaymentTab('paid')">
               {{ $t('cart.paidInquiries') || '已支付' }}
+              <span v-if="activeTab === 'paid' && totalUnreadCount > 0" class="tab-unread-badge">{{ totalUnreadCount
+                }}</span>
             </button>
           </div>
 
-          <div class="inquiry-list" ref="inquiryList">
-            <div v-for="inquiry in filteredInquiries" :key="inquiry.id" class="inquiry-list-item"
-              :class="{ 'active': activeInquiryId === inquiry.id }" @click="switchTab(inquiry.id)">
-              <div class="inquiry-item-content">
-                <div class="inquiry-item-header">
-                  <h4 class="inquiry-item-title">{{ inquiry.name }}</h4>
-                  <div class="inquiry-item-actions">
-                    <span v-if="inquiry.unread_count > 0 && activeInquiryId !== inquiry.id" class="unread-badge">{{
-                      inquiry.unread_count }}</span>
-                    <button class="delete-inquiry-btn" @click.stop="confirmDeleteInquiry(inquiry.id)"
-                      :title="$t('cart.closeInquiry') || 'Close Inquiry'">
-                      <i class="material-icons">close</i>
-                    </button>
-                  </div>
-                </div>
-                <div class="inquiry-item-preview">
-                  <div class="inquiry-products-preview">
-                    <div v-for="(item) in inquiry.items.slice(0, 5)" :key="item.productId" class="preview-product">
-                      <img :src="item.imageUrl" :alt="item.name" class="preview-image">
+          <div class="inquiry-list-wrapper" ref="inquiryListWrapper">
+            <div class="inquiry-list" ref="inquiryList">
+              <div v-for="inquiry in filteredInquiries" :key="inquiry.id" class="inquiry-list-item"
+                :class="{ 'active': activeInquiryId === inquiry.id }" @click="switchTab(inquiry.id)">
+                <div class="inquiry-item-content">
+                  <div class="inquiry-item-header">
+                    <h4 class="inquiry-item-title">{{ inquiry.title }}</h4>
+                    <div class="inquiry-item-actions">
+                      <span v-if="inquiry.unread_count > 0 && activeInquiryId !== inquiry.id" class="unread-badge">{{
+                        inquiry.unread_count }}</span>
+                      <button class="delete-inquiry-btn" @click.stop="confirmDeleteInquiry(inquiry.id)"
+                        :title="$t('cart.closeInquiry') || 'Close Inquiry'">
+                        <i class="material-icons">close</i>
+                      </button>
                     </div>
-                    <div v-if="inquiry.items.length > 5" class="more-products">
-                      +{{ inquiry.items.length - 5 }}
+                  </div>
+                  <div class="inquiry-item-preview">
+                    <div class="inquiry-products-preview">
+                      <div v-for="(item) in inquiry.items.slice(0, 5)" :key="item.product_id" class="preview-product">
+                        <img :src="item.image_url" :alt="item.product_name" class="preview-image">
+                      </div>
+                      <div v-if="inquiry.items.length > 5" class="more-products">
+                        +{{ inquiry.items.length - 5 }}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div v-if="filteredInquiries.length === 0" class="no-inquiries">
-              <p v-if="activeTab === 'paid'">{{ $t('cart.noPaidInquiries') || '暂无已支付询价单' }}</p>
-              <p v-else>{{ $t('cart.noUnpaidInquiries') || '暂无未支付询价单' }}</p>
+              <div v-if="filteredInquiries.length === 0" class="no-inquiries">
+                <p v-if="activeTab === 'paid'">{{ $t('cart.noPaidInquiries') || '暂无已支付询价单' }}</p>
+                <p v-else>{{ $t('cart.noUnpaidInquiries') || '暂无未支付询价单' }}</p>
+              </div>
             </div>
           </div>
 
-          <!-- Scroll buttons -->
-          <div class="scroll-controls" v-if="showScrollControls">
-            <button class="scroll-btn scroll-up" @click="scrollInquiryList('up')" :disabled="!canScrollUp">
-              <i class="material-icons">keyboard_arrow_up</i>
+          <!-- Scroll arrows -->
+          <div v-if="showScrollArrows" class="scroll-arrows">
+            <button class="scroll-arrow scroll-arrow-up" @mouseenter="startScrolling('up')" @mouseleave="stopScrolling"
+              :disabled="!canScrollUp">
+              ▲
             </button>
-            <button class="scroll-btn scroll-down" @click="scrollInquiryList('down')" :disabled="!canScrollDown">
-              <i class="material-icons">keyboard_arrow_down</i>
+            <button class="scroll-arrow scroll-arrow-down" @mouseenter="startScrolling('down')"
+              @mouseleave="stopScrolling" :disabled="!canScrollDown">
+              ▼
             </button>
           </div>
         </div>
@@ -102,9 +110,10 @@ export default {
       activeInquiryId: null,
       maxCustomInquiries: 10, // custom类型询价单限制
       // Scroll control data
-      showScrollControls: false,
+      showScrollArrows: false,
       canScrollUp: false,
       canScrollDown: false,
+      scrollInterval: null,
       // Tab control data
       activeTab: 'unpaid', // 'paid' or 'unpaid'
       // 定时刷新
@@ -134,13 +143,18 @@ export default {
           return inquiry.status !== 'paid';
         }
       });
+    },
+    
+    // 计算当前标签页的总未读消息数
+    totalUnreadCount() {
+      return this.filteredInquiries.reduce((total, inquiry) => {
+        return total + (parseInt(inquiry.unread_count) || 0);
+      }, 0);
     }
   },
   mounted() {
     this.initializeInquiries();
-    this.$nextTick(() => {
-      this.checkScrollControls();
-    });
+    this.checkScrollNeed();
     
     // 启动定时刷新，每30秒刷新一次
     /*this.refreshTimer = setInterval(() => {
@@ -148,9 +162,7 @@ export default {
     }, 30000);*/
   },
   updated() {
-    this.$nextTick(() => {
-      this.checkScrollControls();
-    });
+    this.checkScrollNeed();
   },
   beforeUnmount() {
     // 清理定时器
@@ -158,6 +170,8 @@ export default {
       clearInterval(this.refreshTimer);
       this.refreshTimer = null;
     }
+    // 清理滚动定时器
+    this.stopScrolling();
   },
   methods: {
     formatTime(timestamp) {
@@ -186,7 +200,10 @@ export default {
         });
         
         if (response.success) {
-          this.inquiries = response.data.inquiries.map(inquiry => ({
+          this.inquiries = response.data.inquiries;
+          this.inquiries.message = [];
+          this.inquiries.newMessage = '';
+          /*this.inquiries = response.data.inquiries.map(inquiry => ({
             id: inquiry.id,
             name: inquiry.title,
             title: inquiry.title,
@@ -208,7 +225,7 @@ export default {
             })),
             messages: [],
             newMessage: ''
-          }));
+          }));*/
           
           // 更新已询价商品ID集合并通知父组件
           const updatedInquiredProductIds = new Set();
@@ -243,8 +260,8 @@ export default {
             inquiry.inquiry_type = response.data.inquiry.inquiry_type;
             inquiry.status = response.data.inquiry.status;
             inquiry.title = response.data.inquiry.title;
-            
-            inquiry.items = response.data.items.map(item => ({
+            inquiry.items = response.data.items;
+            /*inquiry.items = response.data.items.map(item => ({
               id: item.id,
               productId: item.product_id,
               product_id: item.product_id,
@@ -256,7 +273,7 @@ export default {
               unit_price: item.unit_price,
               price: item.price || item.unit_price,
               price_ranges: item.price_ranges || []
-            }));
+            }));*/
             /*
             inquiry.messages = response.data.messages.map(msg => ({
               id: msg.id,
@@ -310,7 +327,7 @@ export default {
             newMessage: ''
           };
           
-          this.inquiries.push(newInquiry);
+          this.inquiries.unshift(newInquiry);
           this.activeInquiryId = newInquiry.id;
           
           //MessageHandler.showSuccess(this.$t('inquiry.createSuccess') || '询价单创建成功');
@@ -407,18 +424,10 @@ export default {
         if (response.success) {
           const activeInquiry = this.inquiries.find(inquiry => inquiry.id === this.activeInquiryId);
           if (activeInquiry) {
-            const inquiryItem = {
-              id: response.data.id,
-              productId: response.data.product_id,
-              name: response.data.product_name,
-              imageUrl: response.data.image_url || require('@/assets/images/default-image.svg'),
-              quantity: response.data.quantity,
-              unit_price: response.data.unit_price,
-              price_ranges: response.data.price_ranges || []
-            };
-            
+            const inquiryItem = response.data;
+
             activeInquiry.items.push(inquiryItem);
-            
+            console.log('activeInquiry is :', activeInquiry);
             // 更新已询价商品ID集合并通知父组件
             const updatedInquiredProductIds = new Set(this.inquiredProductIds);
             updatedInquiredProductIds.add(cartItem.product_id);
@@ -493,7 +502,7 @@ export default {
                 id: response.data.id,
                 product_id: response.data.product_id,
                 product_name: response.data.product_name,
-                imageUrl: response.data.image_url || require('@/assets/images/default-image.svg'),
+                image_url: response.data.image_url || require('@/assets/images/default-image.svg'),
                 quantity: response.data.quantity,
                 unit_price: response.data.unit_price,
                 price_ranges: response.data.price_ranges || []
@@ -594,27 +603,55 @@ export default {
     
    
     // 滚动控制方法
-    checkScrollControls() {
-      const inquiryList = this.$refs.inquiryList;
-      if (inquiryList) {
-        this.showScrollControls = inquiryList.scrollHeight > inquiryList.clientHeight;
-        this.canScrollUp = inquiryList.scrollTop > 0;
-        this.canScrollDown = inquiryList.scrollTop < inquiryList.scrollHeight - inquiryList.clientHeight;
-      }
+    checkScrollNeed() {
+      this.$nextTick(() => {
+        const wrapper = this.$refs.inquiryListWrapper;
+        const list = this.$refs.inquiryList;
+        if (!wrapper || !list) return;
+
+        this.showScrollArrows = list.scrollHeight > wrapper.clientHeight;
+        this.updateScrollButtons();
+
+        // 添加滚动事件监听
+        wrapper.addEventListener('scroll', this.updateScrollButtons);
+      });
     },
     
-    scrollInquiryList(direction) {
-      const inquiryList = this.$refs.inquiryList;
-      if (inquiryList) {
-        const scrollAmount = 100;
+    updateScrollButtons() {
+      const wrapper = this.$refs.inquiryListWrapper;
+      if (!wrapper) return;
+
+      this.canScrollUp = wrapper.scrollTop > 0;
+      this.canScrollDown = wrapper.scrollTop < (wrapper.scrollHeight - wrapper.clientHeight);
+    },
+
+    startScrolling(direction) {
+      this.stopScrolling(); // 清除之前的定时器
+      
+      const wrapper = this.$refs.inquiryListWrapper;
+      if (!wrapper) return;
+
+      this.scrollInterval = setInterval(() => {
+        const scrollAmount = 2; // 每次滚动的像素
         if (direction === 'up') {
-          inquiryList.scrollTop -= scrollAmount;
+          wrapper.scrollTop -= scrollAmount;
+          if (wrapper.scrollTop <= 0) {
+            this.stopScrolling();
+          }
         } else {
-          inquiryList.scrollTop += scrollAmount;
+          wrapper.scrollTop += scrollAmount;
+          if (wrapper.scrollTop >= wrapper.scrollHeight - wrapper.clientHeight) {
+            this.stopScrolling();
+          }
         }
-        this.$nextTick(() => {
-          this.checkScrollControls();
-        });
+        this.updateScrollButtons();
+      }, 16); // 约60fps
+    },
+
+    stopScrolling() {
+      if (this.scrollInterval) {
+        clearInterval(this.scrollInterval);
+        this.scrollInterval = null;
       }
     },
     
@@ -784,7 +821,7 @@ export default {
 .inquiry-layout {
   display: flex;
   gap: $spacing-lg;
-  min-height: 600px;
+  height: 600px;
 }
 
 /* 询价单侧边栏 */
@@ -884,6 +921,11 @@ export default {
   cursor: pointer;
   transition: $transition-base;
   border-bottom: 2px solid transparent;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
 }
 
 .tab-btn:hover {
@@ -897,10 +939,44 @@ export default {
   background: $white;
 }
 
-.inquiry-list {
+.tab-unread-badge {
+  background: $error-color;
+  color: white;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  margin-left: $spacing-xs;
+}
+
+.inquiry-list-wrapper {
   flex: 1;
   overflow-y: auto;
-  padding: $spacing-sm;
+  overflow-x: hidden;
+  height: 100%;
+  /* 填充整个容器高度 */
+  position: relative;
+  /* 隐藏滚动条 */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+.inquiry-list-wrapper::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+.inquiry-list {
+  padding: 0;
+  margin: 0;
 }
 
 .inquiry-list-item {
@@ -1027,21 +1103,24 @@ export default {
   color: $text-secondary;
 }
 
-/* 滚动控制按钮 */
-.scroll-controls {
+/* 滚动箭头样式 */
+.scroll-arrows {
   position: absolute;
-  right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
 }
 
-.scroll-btn {
-  width: 30px;
-  height: 30px;
-  background: rgba($info-color, 0.8);
+.scroll-arrow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba($info-color, 0.9);
   color: $white;
   border: none;
   border-radius: $border-radius-full;
@@ -1050,19 +1129,38 @@ export default {
   align-items: center;
   justify-content: center;
   transition: $transition-base;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.scroll-btn:hover:not(:disabled) {
+.scroll-arrow:hover:not(:disabled) {
   background: rgba($info-color, 1);
+  transform: translateX(-50%) scale(1.1);
 }
 
-.scroll-btn:disabled {
-  background: rgba($black, 0.2);
+.scroll-arrow:disabled {
+  background: rgba($black, 0.3);
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
-.scroll-btn .material-icons {
-  font-size: $font-size-lg;
+.scroll-arrow-up {
+  top: 10px;
+}
+
+.scroll-arrow-up:hover:not(:disabled) {
+  transform: translateX(-50%) scale(1.1);
+}
+
+.scroll-arrow-down {
+  bottom: 10px;
+}
+
+.scroll-arrow-down:hover:not(:disabled) {
+  transform: translateX(-50%) scale(1.1);
 }
 
 

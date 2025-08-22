@@ -31,7 +31,7 @@
                 <img :src="item.image_url || item.imageUrl" :alt="item.product_name || item.name" class="item-image">
                 <div class="item-details">
                   <p class="item-name">{{ item.product_name || item.name }}</p>
-                  <p class="item-code">{{ $t('cart.productCode') || '产品编号' }}: {{ item.product_id || item.productId }}
+                  <p class="item-code">{{ $t('cart.productType') || '产品类型' }}: {{ item.category_name }}
                   </p>
                 </div>
               </div>
@@ -150,7 +150,7 @@
                 <img :src="item.image_url || item.imageUrl" :alt="item.product_name || item.name" class="item-image">
                 <div class="item-details">
                   <p class="item-name">{{ item.product_name || item.name }}</p>
-                  <p class="item-code">{{ $t('cart.productCode') || '产品编号' }}: {{ item.product_id || item.productId }}
+                  <p class="item-code">{{ $t('cart.productType') || '产品类型' }}: {{ item.category_name }}
                   </p>
                 </div>
               </div>
@@ -360,7 +360,7 @@ export default {
         const cartItems = this.inquiry.items.map(item => ({
           id: item.id,
           product_id: item.product_id,
-          product_code: item.product_code || '',
+          category_name: item.category_name || '',
           product_name: item.product_name,
           image_url: item.imageUrl || item.image_url || require('@/assets/images/default-image.svg'),
           quantity: item.quantity,

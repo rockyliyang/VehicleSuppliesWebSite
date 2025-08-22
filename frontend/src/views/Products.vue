@@ -85,7 +85,7 @@
 
 <script>
 import { handleImageError } from '../utils/imageUtils';
-import { handleChatNow, handleAddToCart, handleLoginSuccess, loadInquiryMessages } from '../utils/productUtils';
+import { handleChatNow, handleAddToCart, handleLoginSuccess } from '../utils/productUtils';
 import ProductCard from '../components/common/ProductCard.vue';
 import PageBanner from '../components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
@@ -287,37 +287,17 @@ export default {
         };
         this.inquiryStatus = data.inquiry.status || 'inquiried';
         console.log('使用完整询价单数据:', this.currentInquiryData);
-      } else {
-        // 如果没有完整数据，构造基本的询价单对象
-        this.currentInquiryData = {
-          id: data.inquiryId,
-          status: 'pending',
-          inquiry_type: 'single',
-          items: data.product ? [{
-            id: 1,
-            product_id: data.product.id,
-            product_name: data.product.name,
-            image_url: data.product.thumbnail_url,
-            quantity: data.quantity || 1,
-            unit_price: data.product.price,
-            product_code: data.product.product_code
-          }] : []
-        };
-      }
-      
-      // 如果不是新询价单，加载消息
-      if (!data.isNew) {
-        this.loadInquiryMessagesData();
-      }
+      } 
     },
 
     // 加载询价消息
+    /*
     async loadInquiryMessagesData() {
       if (!this.currentInquiryId) return;
       
       const result = await loadInquiryMessages(this.currentInquiryId, this);
       this.inquiryStatus = result.status;
-    },
+    },*/
 
     // 处理登录成功事件
     async handleLoginSuccessEvent() {
@@ -800,11 +780,13 @@ export default {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .inquiry-floating-window {
-    bottom: 10px;
-    right: 10px;
-    left: 10px;
-    width: auto;
-    height: 500px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
 
     &.show {
       transform: translateY(0) scale(1);

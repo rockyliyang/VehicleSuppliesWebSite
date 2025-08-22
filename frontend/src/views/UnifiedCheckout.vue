@@ -112,31 +112,62 @@
               </el-button>
             </div>
           </h2>
-          <el-table :data="orderItems" class="order-table">
-            <el-table-column :label="$t('checkout.product') || '商品'" min-width="200">
-              <template #default="{row}">
-                <div class="product-info">
-                  <div class="product-image">
-                    <img :src="row.image_url || require('@/assets/images/default-image.svg')" :alt="row.name">
+          <!-- 桌面端表格显示 -->
+          <div class="desktop-only">
+            <el-table :data="orderItems" class="order-table">
+              <el-table-column :label="$t('checkout.product') || '商品'" min-width="200">
+                <template #default="{row}">
+                  <div class="product-info">
+                    <div class="product-image">
+                      <img :src="row.image_url || require('@/assets/images/default-image.svg')" :alt="row.name">
+                    </div>
+                    <div class="product-details">
+                      <div class="product-name">{{ row.product_name }}</div>
+                      <div class="product-code">{{ $t('checkout.productType') || '产品类型' }}: {{ row.category_name }}
+                      </div>
+                    </div>
                   </div>
-                  <div class="product-details">
-                    <div class="product-name">{{ row.product_name }}</div>
-                    <div class="product-code">{{ $t('checkout.productCode') || '产品编号' }}: {{ row.product_code }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('checkout.quantity') || '数量'" prop="quantity" width="100" align="center" />
+              <el-table-column :label="$t('checkout.unitPrice') || '单价'" width="120" align="right">
+                <template #default="{row}">{{ $store.getters.formatPrice(row.calculatedPrice || row.price) }}</template>
+              </el-table-column>
+              <el-table-column :label="$t('checkout.subtotal') || '小计'" width="120" align="right">
+                <template #default="{row}">
+                  <span class="subtotal-price">{{ $store.getters.formatPrice((row.calculatedPrice || row.price) *
+                    row.quantity) }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 手机端卡片显示 -->
+          <div class="mobile-only">
+            <div class="product-cards">
+              <div v-for="item in orderItems" :key="item.id" class="product-card">
+                <div class="product-card-left">
+                  <div class="product-image">
+                    <img :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.name">
                   </div>
                 </div>
-              </template>
-            </el-table-column>
-            <el-table-column :label="$t('checkout.quantity') || '数量'" prop="quantity" width="100" align="center" />
-            <el-table-column :label="$t('checkout.unitPrice') || '单价'" width="120" align="right">
-              <template #default="{row}">{{ $store.getters.formatPrice(row.calculatedPrice || row.price) }}</template>
-            </el-table-column>
-            <el-table-column :label="$t('checkout.subtotal') || '小计'" width="120" align="right">
-              <template #default="{row}">
-                <span class="subtotal-price">{{ $store.getters.formatPrice((row.calculatedPrice || row.price) *
-                  row.quantity) }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
+                <div class="product-card-right">
+                  <div class="product-info-top">
+                    <div class="product-name">{{ item.product_name }}</div>
+                    <div class="product-code">{{ $t('checkout.productType') || '产品类型' }}: {{ item.category_name }}</div>
+                    <div v-if="item.product_type" class="product-type">{{ item.product_type }}</div>
+                  </div>
+                  <div class="product-price-row">
+                    <span class="price-calc">{{ $store.getters.formatPrice(item.calculatedPrice || item.price) }} × {{
+                      item.quantity }}</span>
+                    <span class="subtotal">{{ $store.getters.formatPrice((item.calculatedPrice || item.price) *
+                      item.quantity)
+                      }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="order-total">
             <div class="total-row">
               <span>{{ $t('checkout.subtotal') || '商品小计' }}:</span>
@@ -1271,6 +1302,15 @@ export default {
 
 
 
+/* 桌面端和手机端显示控制 */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
 /* 订单表格 */
 .order-table {
   border-radius: $border-radius-md;
@@ -2015,7 +2055,8 @@ export default {
     width: 100%;
 
     .country-code-select {
-      flex: 0 0 80px; /* 手机端区号选择框宽度调整为80px */
+      flex: 0 0 80px;
+      /* 手机端区号选择框宽度调整为80px */
 
       :deep(.el-select__wrapper) {
         height: $form-input-height;
@@ -2023,7 +2064,8 @@ export default {
         /* 统一高度 */
         font-size: $font-size-md;
         /* 统一字体大小 */
-        padding: $spacing-md $spacing-sm; /* 减少内边距 */
+        padding: $spacing-md $spacing-sm;
+        /* 减少内边距 */
       }
     }
 
@@ -2671,10 +2713,22 @@ export default {
 
 @media (max-width: 768px) {
   .inquiry-floating-window {
-    bottom: 10px;
+    /*bottom: 10px;
     right: 10px;
     width: calc(100vw - 20px);
-    height: calc(100vh - 100px);
+    height: calc(100vh - 100px);*/
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+
+    &.show {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
   }
 
   /* 手机端按钮适配 */
@@ -2687,15 +2741,16 @@ export default {
       background: transparent !important;
       border: 1px solid $primary-color !important;
       color: $primary-color !important;
-      
-      :deep(span), :deep(.el-button__text) {
+
+      :deep(span),
+      :deep(.el-button__text) {
         display: none !important;
       }
-      
+
       :deep(.el-icon) {
         display: none !important;
       }
-      
+
       &::before {
         content: "📍";
         font-size: 18px;
@@ -2705,13 +2760,13 @@ export default {
         width: 100%;
         height: 100%;
       }
-      
+
       &:hover {
         background: rgba($primary-color, 0.1) !important;
         border-color: $primary-color !important;
       }
     }
-    
+
     .inquiry-btn {
       min-width: auto;
       width: 40px;
@@ -2720,15 +2775,16 @@ export default {
       background: transparent !important;
       border: 1px solid $primary-color !important;
       color: $primary-color !important;
-      
-      :deep(span), :deep(.el-button__text) {
+
+      :deep(span),
+      :deep(.el-button__text) {
         display: none !important;
       }
-      
+
       :deep(.el-icon) {
         display: none !important;
       }
-      
+
       &::before {
         content: "?";
         font-size: 18px;
@@ -2739,53 +2795,167 @@ export default {
         width: 100%;
         height: 100%;
       }
-      
+
       &:hover {
         background: rgba($primary-color, 0.1) !important;
         border-color: $primary-color !important;
       }
     }
   }
-  
+
   /* 手机端隐藏back按钮 */
   .order-header-actions {
     .back-btn {
       display: none;
     }
-    
+
     .submit-btn {
       width: 100%;
       justify-content: center;
     }
   }
-  
+
   /* 手机端表格适配 */
   .order-table {
     font-size: 14px;
   }
-  
-  .product-info {
+
+  /* 手机端隐藏桌面端表格，显示卡片 */
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
+  /* 手机端产品卡片样式 */
+  .product-cards {
+    display: flex;
     flex-direction: column;
+    gap: 16px;
+  }
+
+  .product-card {
+    display: flex;
     align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .product-card-left {
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  .product-card-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+    max-width: calc(100% - 92px);
+    /* 减去左侧图片宽度80px + gap 12px */
+    min-width: 0;
+    /* 允许flex项目收缩到内容以下 */
   }
-  
+
   .product-image {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
-  
+
   .product-details {
     width: 100%;
   }
-  
+
+  .product-info-top {
+    margin-bottom: 8px;
+  }
+
   .product-name {
     font-size: 14px;
+    font-weight: 500;
     line-height: 1.4;
+    margin-bottom: 4px;
+    color: #333333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
-  
+
   .product-code {
     font-size: 12px;
+    color: #666666;
+    margin-bottom: 2px;
+  }
+
+  .product-type {
+    font-size: 11px;
+    color: #888888;
+    font-style: italic;
+  }
+
+  .product-price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+
+    .price-calc {
+      color: #666666;
+      font-size: 13px;
+    }
+
+    .subtotal {
+      color: #007bff;
+      font-weight: 600;
+      font-size: 14px;
+    }
+  }
+
+  .product-price-calc {
+    font-size: 14px;
+    color: #333333;
+    font-weight: 500;
+  }
+
+  .product-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 100px;
+
+    .field-label {
+      font-size: 12px;
+      color: #666666;
+      margin-right: 8px;
+    }
+
+    .field-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333333;
+    }
+
+    &.subtotal {
+      .field-value {
+        color: #007bff;
+        font-weight: 600;
+      }
+    }
   }
 }
 </style>

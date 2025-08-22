@@ -1104,15 +1104,14 @@ export default {
   }
 
   .map-container-mobile {
-    width: 100vw;
-    height: 100vw;
+    width: 100%;
+    height: 250px;
     max-width: 100%;
-    max-height: 100vh;
-    margin-left: calc(-50vw + 50%);
-    border-radius: 0;
+    border-radius: $border-radius-md;
     overflow: hidden;
     background: $background-light;
     position: relative;
+    box-shadow: $shadow-sm;
 
     img {
       width: 100%;

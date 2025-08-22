@@ -39,7 +39,7 @@
                           {{ item.product_name }}
                         </router-link>
                         <div class="product-code">
-                          {{ $t('cart.productCode') || '产品编号' }}: {{ item.product_code }}
+                          {{ $t('cart.productType') || '产品类型' }}: {{ item.category_name }}
                         </div>
                       </div>
                     </div>
@@ -71,15 +71,15 @@
                 <input type="checkbox" class="cart-checkbox" v-model="item.selected" @change="updateSelectedItems">
                 <div class="product-info-mobile">
                   <div class="product-image-mobile">
-                    <img :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.name"
+                    <img :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.product_name"
                       @error="handleImageError">
                   </div>
                   <div class="product-details-mobile">
                     <router-link :to="`/product/${item.product_id}`" class="product-name-mobile">
-                      {{ item.name }}
+                      {{ item.product_name }}
                     </router-link>
                     <div class="product-code-mobile">
-                      {{ $t('cart.productCode') || '产品编号' }}: {{ item.product_code }}
+                      {{ $t('cart.productType') || '产品类型' }}: {{ item.category_name }}
                     </div>
                   </div>
                 </div>
@@ -118,7 +118,7 @@
             </div>
 
             <div class="cart-actions">
-              <button class="checkout-btn" @click="checkout4">
+              <button class="checkout-btn" @click="handleCheckout">
                 <i class="material-icons">payment</i>
                 {{ $t('cart.checkout') || '结算' }}
               </button>
@@ -377,7 +377,7 @@ export default {
       // 更新选中的商品列表
       this.updateSelectedItems();
     },
-    checkout4() {
+    handleCheckout() {
       if (!this.selectedItems.length) {
         this.$messageHandler.showWarning(this.$t('cart.selectItemsFirst') || '请先选择要结算的商品');
         return;

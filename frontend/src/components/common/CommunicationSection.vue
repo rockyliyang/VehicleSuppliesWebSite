@@ -21,8 +21,8 @@
       <button class="send-btn" @click="handleSendMessage">
         {{ $t('cart.send') || 'Send' }}
       </button>
-      <button v-if="!isCheckoutMode" class="checkout-btn" @click="handleCheckout" :disabled="itemsCount === 0 || status === 'Checkouted'"
-        :class="{ 'checkouted': status === 'Checkouted' }">
+      <button v-if="!isCheckoutMode" class="checkout-btn" @click="handleCheckout"
+        :disabled="itemsCount === 0 || status === 'Checkouted'" :class="{ 'checkouted': status === 'Checkouted' }">
         <i class="material-icons">{{ status === 'Checkouted' ? 'check_circle' : 'payment' }}</i>
         {{ status === 'Checkouted' ? ($t('cart.checkouted') || 'Checkouted') : ($t('cart.checkout') ||
         'Checkout') }}
@@ -146,6 +146,12 @@ export default {
   mounted() {
     this.scrollToBottom();
     this.initPolling();
+    // 自动聚焦到消息输入框
+    /*this.$nextTick(() => {
+      if (this.$refs.messageInput) {
+        this.$refs.messageInput.focus();
+      }
+    });*/
   },
   beforeUnmount() {
     this.cleanupPolling();

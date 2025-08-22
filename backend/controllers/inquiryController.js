@@ -78,9 +78,11 @@ exports.getUserInquiries = async (req, res) => {
           p.product_width,
           p.product_height,
           p.product_weight,
+          pc.name as category_name,
           (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
         FROM inquiry_items ii
         JOIN products p ON ii.product_id = p.id
+        LEFT JOIN product_categories pc ON p.category_id = pc.id
         WHERE ii.inquiry_id = $1 AND ii.deleted = false
         ORDER BY ii.created_at ASC
         LIMIT 5
@@ -197,9 +199,11 @@ exports.getInquiryDetail = async (req, res) => {
         p.product_width,
         p.product_height,
         p.product_weight,
+        pc.name as category_name,
         (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
       FROM inquiry_items ii
       JOIN products p ON ii.product_id = p.id
+      LEFT JOIN product_categories pc ON p.category_id = pc.id
       WHERE ii.inquiry_id = $1 AND ii.deleted = false
       ORDER BY ii.created_at ASC
     `;

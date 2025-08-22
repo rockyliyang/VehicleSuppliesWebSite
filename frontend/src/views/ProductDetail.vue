@@ -275,7 +275,7 @@
 <script>
 // 使用全局注册的$api替代axios
 import { handleImageError } from '../utils/imageUtils';
-import { handleChatNow, handleAddToCart, handleLoginSuccess, loadInquiryMessages, addBrowsingHistory, checkFavoriteStatus } from '../utils/productUtils';
+import { handleChatNow, handleAddToCart, handleLoginSuccess,  addBrowsingHistory, checkFavoriteStatus } from '../utils/productUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import InquiryDetailPanel from '../components/common/InquiryDetailPanel.vue'
@@ -1001,13 +1001,13 @@ export default {
       }
     },*/
     // 加载询价消息
-    async loadInquiryMessages() {
+    /*async loadInquiryMessages() {
       if (!this.currentInquiryId) return;
       
       const result = await loadInquiryMessages(this.currentInquiryId, this);
       this.inquiryMessages = result.messages;
       this.inquiryStatus = result.status;
-    },
+    },*/
     // 放大询价窗口 - 跳转到My Inquiries页面
     expandInquiryDialog() {
       if (this.currentInquiryId) {
@@ -1084,15 +1084,15 @@ export default {
            items: data.items
          };
          this.inquiryStatus = data.inquiry.status || 'inquiried';
-         console.log('使用完整询价单数据:', this.currentInquiryData);
+         //console.log('使用完整询价单数据:', this.currentInquiryData);
        } else {
           console.error('The data is wrong', data);
        }
        
        // 如果不是新询价单，加载消息
-       if (!data.isNew) {
+       /*if (!data.isNew) {
          this.loadInquiryMessages();
-       }
+       }*/
      },
      
      // 检查收藏状态（本地方法）
@@ -1158,6 +1158,7 @@ export default {
      },
      
      // 处理结账事件
+     /*
      handleCheckout(orderData) {
        this.showBuyNowDialog = false;
        
@@ -1168,7 +1169,7 @@ export default {
        this.$router.push({
          name: 'UnifiedCheckout'
        });
-     }
+     }*/
   }
 }
 </script>
@@ -1226,6 +1227,7 @@ export default {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   border: 1px solid $border-light;
+
 
   &.show {
     transform: translateY(0) scale(1);
@@ -1295,11 +1297,18 @@ export default {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .inquiry-floating-window {
-    bottom: 10px;
+    /*bottom: 10px;
     right: 10px;
     left: 10px;
     width: auto;
-    height: 500px;
+    height: 500px;*/
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
 
     &.show {
       transform: translateY(0) scale(1);

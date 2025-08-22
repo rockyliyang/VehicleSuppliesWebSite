@@ -140,11 +140,12 @@ class OrderManagementController {
           SELECT 
             oi.order_id,
             oi.product_id,
-            oi.product_code,
-            oi.product_name,
+            p.product_code,
+            p.name as product_name,
             oi.quantity,
             oi.price
           FROM order_items oi
+          LEFT JOIN products p ON oi.product_id = p.id
           WHERE oi.order_id = ANY($1) AND oi.deleted = FALSE
           ORDER BY oi.id
         `;

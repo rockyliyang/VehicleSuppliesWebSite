@@ -105,11 +105,14 @@ exports.getOrderDetail = async (req, res) => {
 
     const order = orders.getFirstRow();
 
-    // 获取订单项（包含商品图片）
+    // 获取订单项（包含商品图片和类型名称）
     const orderItems = await query(
-      `SELECT oi.id, oi.product_id, oi.quantity, oi.price, oi.product_name, oi.product_code,
+      `SELECT oi.id, oi.product_id, oi.quantity, oi.price, 
+              p.name as product_name, p.product_code, pc.name as category_name,
               (SELECT image_url FROM product_images WHERE product_id = oi.product_id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
        FROM order_items oi
+       LEFT JOIN products p ON oi.product_id = p.id
+       LEFT JOIN product_categories pc ON p.category_id = pc.id
        WHERE oi.order_id = $1 AND oi.deleted = false`,
       [orderId]
     );

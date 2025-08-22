@@ -9,17 +9,17 @@
     <div class="container mx-auto px-4" v-if="orderData">
       <!-- 订单信息 -->
       <div class="order-info-section">
-        <div class="section-header">
-          <h2 class="section-title">
+        <h2 class="section-title">
+          <div class="title-content">
             <el-icon>
               <Document />
             </el-icon>
             {{ $t('payment.orderInfo') }}
-          </h2>
+          </div>
           <el-button @click="handleInquiryClick" type="primary" class="inquiry-btn">
             {{ $t('checkout.inquiry') || 'Inquiry' }}
           </el-button>
-        </div>
+        </h2>
         <div class="order-summary">
           <div class="order-id">
             <span class="label">{{ $t('payment.orderId') }}:</span>
@@ -40,30 +40,58 @@
           </el-icon>
           {{ $t('payment.productInfo') }}
         </h3>
-        <el-table :data="orderData.items" class="order-table">
-          <el-table-column :label="$t('payment.product') || '商品'" min-width="200">
-            <template #default="{row}">
-              <div class="product-info">
-                <div class="product-image">
-                  <img :src="row.image_url || require('@/assets/images/default-image.svg')" :alt="row.product_name">
+
+        <!-- 桌面端表格显示 -->
+        <div class="desktop-only">
+          <el-table :data="orderData.items" class="order-table">
+            <el-table-column :label="$t('payment.product') || '商品'" min-width="200">
+              <template #default="{row}">
+                <div class="product-info">
+                  <div class="product-image">
+                    <img :src="row.image_url || require('@/assets/images/default-image.svg')" :alt="row.product_name">
+                  </div>
+                  <div class="product-details">
+                    <div class="product-name">{{ row.product_name }}</div>
+                    <div class="product-code">{{ $t('payment.productType') || '产品类型' }}: {{ row.category_name }}</div>
+                  </div>
                 </div>
-                <div class="product-details">
-                  <div class="product-name">{{ row.product_name }}</div>
-                  <div class="product-code">{{ $t('payment.productCode') || '产品编号' }}: {{ row.product_code }}</div>
+              </template>
+            </el-table-column>
+            <el-table-column :label="$t('payment.quantity') || '数量'" prop="quantity" width="100" align="center" />
+            <el-table-column :label="$t('payment.unitPrice') || '单价'" width="120" align="right">
+              <template #default="{row}">${{ row.price }}</template>
+            </el-table-column>
+            <el-table-column :label="$t('payment.subtotal') || '小计'" width="120" align="right">
+              <template #default="{row}">
+                <span class="subtotal-price">${{ (row.price * row.quantity).toFixed(2) }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- 手机端卡片显示 -->
+        <div class="mobile-only">
+          <div class="product-cards">
+            <div v-for="item in orderData.items" :key="item.id" class="product-card">
+              <div class="product-card-left">
+                <div class="product-image">
+                  <img :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.product_name">
                 </div>
               </div>
-            </template>
-          </el-table-column>
-          <el-table-column :label="$t('payment.quantity') || '数量'" prop="quantity" width="100" align="center" />
-          <el-table-column :label="$t('payment.unitPrice') || '单价'" width="120" align="right">
-            <template #default="{row}">${{ row.price }}</template>
-          </el-table-column>
-          <el-table-column :label="$t('payment.subtotal') || '小计'" width="120" align="right">
-            <template #default="{row}">
-              <span class="subtotal-price">${{ (row.price * row.quantity).toFixed(2) }}</span>
-            </template>
-          </el-table-column>
-        </el-table>
+              <div class="product-card-right">
+                <div class="product-info-top">
+                  <div class="product-name">{{ item.product_name }}</div>
+                  <div class="product-code">{{ $t('payment.productType') || '产品类型' }}: {{ item.category_name }}</div>
+                  <div v-if="item.product_type" class="product-type">{{ item.product_type }}</div>
+                </div>
+                <div class="product-price-row">
+                  <span class="price-calc">${{ item.price }} × {{ item.quantity }}</span>
+                  <span class="subtotal">${{ (item.price * item.quantity).toFixed(2) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="order-total">
           <div class="total-container">
             <div class="total-row">
@@ -140,20 +168,20 @@
 
       <!-- 支付方式选择 -->
       <div class="payment-section">
-        <div class="section-header">
-          <h3 class="section-title">
+        <h3 class="section-title">
+          <div class="title-content">
             <el-icon>
               <CreditCard />
             </el-icon>
             {{ $t('payment.selectPaymentMethod') }}
-          </h3>
+          </div>
           <el-button @click="handleBackClick" type="default" class="back-btn">
             <el-icon>
               <ArrowLeft />
             </el-icon>
             {{ $t('common.back') || '返回' }}
           </el-button>
-        </div>
+        </h3>
         <div class="payment-methods">
           <!-- PayPal 支付 -->
           <div class="payment-method paypal-method">
@@ -279,6 +307,8 @@ export default {
       pollingTimer: null,
       paySuccess: false,
       isPollingRequest: false,
+      pollingCount: 0,
+      pollingPhase: 1, // 1: 3s间隔, 2: 5s间隔, 3: 10s间隔
       showInquiryDialog: false,
       currentInquiryData: null,
       inquiryId: null
@@ -616,6 +646,8 @@ export default {
       this.clearPollingTimer();
       this.polling = true;
       this.isPollingRequest = false;
+      this.pollingCount = 0;
+      this.pollingPhase = 1;
       
       const pollPaymentStatus = async () => {
         if (this.isPollingRequest) {
@@ -623,6 +655,7 @@ export default {
         }
         
         this.isPollingRequest = true;
+        this.pollingCount++;
         
         try {
           const statusRes = await this.$api.post('/payment/check-status', {
@@ -637,23 +670,92 @@ export default {
             if (this.$bus) {
               this.$bus.emit('cart-updated');
             }
+            return;
           }
         } catch (error) {
           console.warn('Payment status check failed:', error);
         } finally {
           this.isPollingRequest = false;
         }
+        
+        // 阶梯式延迟逻辑
+        this.scheduleNextPoll(orderId, paymentMethod);
       };
       
-      this.pollingTimer = setInterval(pollPaymentStatus, 3000);
+      // 立即执行第一次检查
+      pollPaymentStatus();
+    },
+    
+    scheduleNextPoll(orderId, paymentMethod) {
+      let delay;
+      
+      if (this.pollingPhase === 1 && this.pollingCount < 5) {
+        // 第一阶段：3秒间隔，发5次
+        delay = 3000;
+      } else if (this.pollingPhase === 1 && this.pollingCount >= 5) {
+        // 进入第二阶段
+        this.pollingPhase = 2;
+        delay = 5000;
+      } else if (this.pollingPhase === 2 && this.pollingCount < 10) {
+        // 第二阶段：5秒间隔，再发5次（总共10次）
+        delay = 5000;
+      } else if (this.pollingPhase === 2 && this.pollingCount >= 10) {
+        // 进入第三阶段
+        this.pollingPhase = 3;
+        delay = 10000;
+      } else {
+        // 第三阶段：10秒间隔，持续发送
+        delay = 10000;
+      }
+      
+      this.pollingTimer = setTimeout(() => {
+        if (this.polling) {
+          this.startSinglePoll(orderId, paymentMethod);
+        }
+      }, delay);
+    },
+    
+    async startSinglePoll(orderId, paymentMethod) {
+      if (this.isPollingRequest) {
+        return;
+      }
+      
+      this.isPollingRequest = true;
+      this.pollingCount++;
+      
+      try {
+        const statusRes = await this.$api.post('/payment/check-status', {
+          orderId,
+          paymentMethod
+        });
+        
+        if (statusRes.success && statusRes.data.status === 'paid') {
+          this.clearPollingTimer();
+          this.paySuccess = true;
+          this.clearQrcodeTimers();
+          if (this.$bus) {
+            this.$bus.emit('cart-updated');
+          }
+          return;
+        }
+      } catch (error) {
+        console.warn('Payment status check failed:', error);
+      } finally {
+        this.isPollingRequest = false;
+      }
+      
+      // 继续下一次轮询
+      this.scheduleNextPoll(orderId, paymentMethod);
     },
     clearPollingTimer() {
       if (this.pollingTimer) {
-        clearInterval(this.pollingTimer);
+        clearTimeout(this.pollingTimer);
         this.pollingTimer = null;
-        this.polling = false;
-        this.isPollingRequest = false;
       }
+      this.polling = false;
+      this.isPollingRequest = false;
+      this.pollingCount = 0;
+      this.pollingPhase = 1;
     },
     startQrcodeTimer() {
       this.qrcodeTimer = 300; // 5分钟倒计时
@@ -963,38 +1065,32 @@ export default {
     color: $text-primary;
     font-size: $font-size-xl;
     font-weight: $font-weight-semibold;
-    border-bottom: 2px solid $primary-color;
     padding-bottom: $spacing-sm;
   }
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: $spacing-lg;
-  padding-bottom: $spacing-md;
 
-  @include mobile {
-    flex-direction: row;
-    gap: $spacing-sm;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-}
 
 .section-title {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
   font-size: $font-size-xl;
   font-weight: $font-weight-bold;
   color: $text-primary;
-  margin: 0;
+  margin: 0 0 $spacing-lg 0;
+  padding-bottom: $spacing-md;
+  border-bottom: 2px solid $primary-color;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
   .el-icon {
     color: $primary-color;
   }
+}
+
+.title-content {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
 }
 
 .inquiry-btn {
@@ -1111,6 +1207,15 @@ export default {
 .order-amount .value {
   color: $primary-color;
   font-size: $font-size-xl;
+}
+
+/* 桌面端和手机端显示控制 */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
 }
 
 /* 产品表格样式 */
@@ -1640,6 +1745,25 @@ export default {
     padding: 0 $spacing-md;
   }
 
+  .inquiry-floating-window {
+    /*bottom: 10px;
+    right: 10px;
+    width: calc(100vw - 20px);
+    height: calc(100vh - 100px);*/
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+
+    &.show {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
   .order-info-section,
   .products-section,
   .shipping-section,
@@ -1648,45 +1772,172 @@ export default {
     margin-bottom: $spacing-md;
   }
 
+  .order-summary {
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  .order-id,
+  .order-amount {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: $spacing-xs;
+    align-items: center;
+  }
+
   /* 手机端隐藏back按钮 */
-  .section-header .back-btn {
+  .section-title .back-btn {
     display: none;
   }
 
   /* 手机端inquiry按钮调整已在主样式中定义 */
 
   .section-title {
-    font-size: $font-size-lg;
-    flex: 1;
+    font-size: 18px;
+    justify-content: flex-start;
+    gap: 12px;
+
+    .title-content {
+      width: 100%;
+    }
   }
 
-  /* 手机端表格适配 */
-  .order-table {
-    font-size: 14px;
+  /* 手机端隐藏桌面端表格，显示卡片 */
+  .desktop-only {
+    display: none;
   }
 
-  .product-info {
+  .mobile-only {
+    display: block;
+  }
+
+  /* 手机端产品卡片样式 */
+  .product-cards {
+    display: flex;
     flex-direction: column;
+    gap: 16px;
+  }
+
+  .product-card {
+    display: flex;
     align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .product-card-left {
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  .product-card-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+    max-width: calc(100% - 92px);
+    /* 减去左侧图片宽度80px + gap 12px */
+    min-width: 0;
+    /* 允许flex项目收缩到内容以下 */
   }
 
   .product-image {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
 
   .product-details {
     width: 100%;
   }
 
+  .product-info-top {
+    margin-bottom: 8px;
+  }
+
   .product-name {
     font-size: 14px;
+    font-weight: 500;
     line-height: 1.4;
+    margin-bottom: 4px;
+    color: #333333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
 
   .product-code {
     font-size: 12px;
+    color: #666666;
+    margin-bottom: 2px;
+  }
+
+  .product-type {
+    font-size: 11px;
+    color: #888888;
+    font-style: italic;
+  }
+
+  .product-price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+
+    .price-calc {
+      color: #666666;
+      font-size: 13px;
+    }
+
+    .subtotal {
+      color: #007bff;
+      font-weight: 600;
+      font-size: 14px;
+    }
+  }
+
+  .product-price-calc {
+    font-size: 14px;
+    color: #333333;
+    font-weight: 500;
+  }
+
+  .product-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 100px;
+
+    .field-label {
+      font-size: 12px;
+      color: #666666;
+      margin-right: 8px;
+    }
+
+    .field-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333333;
+    }
+
+    &.subtotal {
+      .field-value {
+        color: #007bff;
+        font-weight: 600;
+      }
+    }
   }
 
   /* 手机端支付宝按钮样式 */

@@ -11,9 +11,11 @@ exports.getUserCart = async (req, res) => {
     const queryStr = `SELECT ci.id, ci.guid, ci.quantity, 
              p.id as product_id, p.name as product_name, p.product_code, p.price, p.stock, 
              p.product_length, p.product_width, p.product_height, p.product_weight,
+             pc.name as category_name,
              (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
+      LEFT JOIN product_categories pc ON p.category_id = pc.id
       WHERE ci.user_id = $1 AND ci.deleted = false AND p.deleted = false
       ORDER BY ci.created_at DESC`;
     
