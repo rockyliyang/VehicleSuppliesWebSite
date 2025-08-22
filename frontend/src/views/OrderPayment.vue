@@ -722,7 +722,7 @@ export default {
       return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     },
     goToOrders() {
-      this.$router.push('/orders');
+      this.$router.push('/user/orders');
     },
     goHome() {
       this.$router.push('/');
@@ -946,10 +946,6 @@ export default {
   min-height: 100vh;
   background-color: $background-light;
   padding: 0;
-
-  @include desktop {
-    padding: $spacing-lg 0;
-  }
 }
 
 
@@ -1451,7 +1447,7 @@ export default {
   padding: $spacing-4xl;
 
   i {
-    font-size: $font-size-5xl;
+    font-size: 4rem;
     color: $success-color;
     margin-bottom: $spacing-lg;
   }
@@ -1476,10 +1472,16 @@ export default {
 
 .btn-primary {
   @include button-primary;
+  padding: $spacing-md $spacing-xl;
+  font-size: $font-size-lg;
+  min-height: 48px;
 }
 
 .btn-secondary {
   @include button-secondary;
+  padding: $spacing-md $spacing-xl;
+  font-size: $font-size-lg;
+  min-height: 48px;
 }
 
 .loading {
@@ -1690,7 +1692,7 @@ export default {
   /* 手机端支付宝按钮样式 */
   .alipay-mobile-container {
     width: 100%;
-    
+
     .alipay-mobile-btn {
       width: 100%;
       min-height: 48px;
