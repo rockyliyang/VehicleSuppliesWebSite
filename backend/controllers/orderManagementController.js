@@ -1,6 +1,7 @@
 const { query, getConnection } = require('../db/db');
 const { getMessage } = require('../config/messages');
 const { getManagedUserIds, generateUserIdsPlaceholders } = require('../utils/adminUserUtils');
+const { sendMail } = require('../utils/email');
 
 /**
  * 订单管理控制器
@@ -600,10 +601,20 @@ class OrderManagementController {
         });
       }
       
+      const updatedOrder = result.getFirstRow();
+      
+      // 发送订单更新邮件通知
+      try {
+        await this.sendOrderUpdateNotification(order.user_id, updatedOrder, updateData);
+      } catch (emailError) {
+        console.error('Failed to send order update notification:', emailError);
+        // 邮件发送失败不影响订单更新成功的响应
+      }
+      
       res.json({
         success: true,
         message: getMessage('ORDER.UPDATE_SUCCESS'),
-        data: result.getFirstRow()
+        data: updatedOrder
       });
       
     } catch (error) {
@@ -613,6 +624,104 @@ class OrderManagementController {
         message: getMessage('ORDER.UPDATE_FAILED')
       });
     }
+  }
+
+  /**
+   * 发送订单更新邮件通知
+   * @param {number} userId - 用户ID
+   * @param {Object} updatedOrder - 更新后的订单信息
+   * @param {Object} updateData - 更新的字段数据
+   */
+  async sendOrderUpdateNotification(userId, updatedOrder, updateData) {
+    try {
+      // 获取用户信息
+      const userQuery = `
+        SELECT email, username FROM users WHERE id = $1 AND deleted = FALSE
+      `;
+      const userResult = await query(userQuery, [userId]);
+      
+      if (userResult.getRowCount() === 0) {
+        console.log(`User not found for order update notification: ${userId}`);
+        return;
+      }
+      
+      const user = userResult.getFirstRow();
+      
+      // 生成更新字段的描述
+      const updatedFieldsDescription = this.generateUpdatedFieldsDescription(updateData);
+      
+      // 生成邮件内容
+      const emailSubject = 'Order Information Updated';
+      const emailHtml = this.generateOrderUpdateEmailTemplate(user.username, updatedOrder.id, updatedFieldsDescription);
+      
+      // 发送邮件
+      await sendMail(user.email, emailSubject, emailHtml);
+      console.log(`Order update notification sent to: ${user.email}`);
+      
+    } catch (error) {
+      console.error('Error in sendOrderUpdateNotification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 生成更新字段的描述
+   * @param {Object} updateData - 更新的字段数据
+   * @returns {string} - 格式化的字段描述
+   */
+  generateUpdatedFieldsDescription(updateData) {
+    const fieldNames = {
+      'total_amount': 'Total Amount',
+      'shipping_fee': 'Shipping Fee',
+      'status': 'Order Status',
+      'payment_method': 'Payment Method',
+      'payment_id': 'Payment ID',
+      'shipping_name': 'Shipping Name',
+      'shipping_phone': 'Shipping Phone',
+      'shipping_email': 'Shipping Email',
+      'shipping_address': 'Shipping Address',
+      'shipping_zip_code': 'Shipping Zip Code',
+      'shipping_country': 'Shipping Country',
+      'shipping_state': 'Shipping State',
+      'shipping_city': 'Shipping City',
+      'shipping_phone_country_code': 'Shipping Phone Country Code'
+    };
+    
+    return Object.keys(updateData)
+      .map(key => `${fieldNames[key] || key}: ${updateData[key]}`)
+      .join('<br>');
+  }
+
+  /**
+   * 生成订单更新邮件模板
+   * @param {string} username - 用户名
+   * @param {number} orderId - 订单ID
+   * @param {string} updatedFieldsDescription - 更新字段描述
+   * @returns {string} - HTML邮件模板
+   */
+  generateOrderUpdateEmailTemplate(username, orderId, updatedFieldsDescription) {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">Order Update Notification</h2>
+        
+        <p>Dear ${username},</p>
+        
+        <p>We would like to inform you that your order <strong>#${orderId}</strong> has been updated with the following changes:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #495057; margin-top: 0;">Updated Fields:</h3>
+          <p style="margin: 0;">${updatedFieldsDescription}</p>
+        </div>
+        
+        <p>If you have any questions about these changes, please don't hesitate to contact our customer service team.</p>
+        
+        <p>Thank you for your business!</p>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; color: #6c757d; font-size: 12px;">
+          <p>This is an automated notification. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `;
   }
 }
 

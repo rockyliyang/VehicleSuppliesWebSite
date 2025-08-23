@@ -11,7 +11,7 @@ dist/
 .env
 .env.local
 .env.*.local
-.env.*
+.env*
 # 日志文件
 logs
 *.log

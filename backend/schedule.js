@@ -15,6 +15,93 @@ const { sendMail } = require('./utils/email');
 // 创建后台任务管理器实例
 const taskManager = new BackgroundTaskManager();
 
+// 引入node-cron用于定时任务
+const cron = require('node-cron');
+
+// 获取汇率的函数
+async function fetchExchangeRates() {
+  try {
+    console.log('[SCHEDULE] 开始获取汇率数据...');
+    
+    const apiKey = process.env.ExchangeAPIKey;
+    if (!apiKey) {
+      console.error('[SCHEDULE] ExchangeAPIKey 未配置');
+      return;
+    }
+    
+    // 调用ExchangeRate-API获取USD到CNY的汇率
+    const fetch = require('node-fetch');
+    const response = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`);
+    
+    if (!response.ok) {
+      throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.result !== 'success') {
+      throw new Error(`API返回错误: ${data['error-type'] || '未知错误'}`);
+    }
+    
+    const usdToCnyRate = data.conversion_rates.CNY;
+    if (!usdToCnyRate) {
+      throw new Error('未找到USD到CNY的汇率数据');
+    }
+    
+    // 获取今天的日期
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 检查今天是否已有汇率记录
+    const existingRateQuery = `
+      SELECT id FROM exchange_rates 
+      WHERE from_currency = 'USD' 
+        AND to_currency = 'CNY' 
+        AND rate_date = $1 
+        AND deleted = false
+    `;
+    
+    const existingResult = await query(existingRateQuery, [today]);
+    
+    if (existingResult.rows.length > 0) {
+      // 更新现有记录
+      const updateQuery = `
+        UPDATE exchange_rates 
+        SET exchange_rate = $1, updated_at = NOW() 
+        WHERE from_currency = 'USD' 
+          AND to_currency = 'CNY' 
+          AND rate_date = $2 
+          AND deleted = false
+      `;
+      
+      await query(updateQuery, [usdToCnyRate, today]);
+      console.log(`[SCHEDULE] 更新汇率成功: 1 USD = ${usdToCnyRate} CNY (${today})`);
+    } else {
+      // 插入新记录
+      const insertQuery = `
+        INSERT INTO exchange_rates (exchange_rate, from_currency, to_currency, rate_date, source) 
+        VALUES ($1, 'USD', 'CNY', $2, 'ExchangeRate-API')
+      `;
+      
+      await query(insertQuery, [usdToCnyRate, today]);
+      console.log(`[SCHEDULE] 插入汇率成功: 1 USD = ${usdToCnyRate} CNY (${today})`);
+    }
+    
+    console.log('[SCHEDULE] 汇率获取任务完成');
+    
+  } catch (error) {
+    console.error('[SCHEDULE] 获取汇率任务执行失败:', error);
+  }
+}
+
+fetchExchangeRates();
+// 设置每天上午10点执行汇率获取任务
+cron.schedule('0 10 * * *', fetchExchangeRates, {
+  scheduled: true,
+  timezone: "Asia/Shanghai"
+});
+
+console.log('[SCHEDULE] 汇率获取定时任务已设置: 每天上午10点执行');
+
 // 注册检查未读消息并发送邮件的任务
 taskManager.registerTask('checkUnreadMessagesAndSendEmail', async () => {
   try {

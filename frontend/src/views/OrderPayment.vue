@@ -192,13 +192,21 @@
           <!-- 支付宝支付 -->
           <div class="payment-method alipay-method">
             <div class="alipay-header">
-              <h4>{{ $t('payment.alipay') }}</h4>
+              <h4>
+                {{ $t('payment.alipay') }}
+                <span v-if="cnyAmount" class="cny-amount">
+                  (¥{{ cnyAmount }})
+                </span>
+                <span v-if="alipayDisabled" class="disabled-notice">
+                  - {{ $t('payment.temporarilyUnavailable') || 'Temporarily Unavailable' }}
+                </span>
+              </h4>
             </div>
 
             <!-- 手机端支付宝支付按钮 -->
             <div v-if="isMobile" class="alipay-mobile-container">
               <el-button @click="handleMobileAlipayPayment" type="primary" size="large" class="alipay-mobile-btn"
-                :loading="generating" :disabled="generating">
+                :loading="generating" :disabled="generating || alipayDisabled">
                 <el-icon>
                   <CreditCard />
                 </el-icon>
@@ -207,11 +215,16 @@
             </div>
 
             <!-- 桌面端支付宝iframe显示 -->
-            <div v-else-if="alipayFormData" class="alipay-iframe-container">
+            <div v-else-if="alipayFormData && !alipayDisabled" class="alipay-iframe-container">
               <div class="iframe-wrapper">
                 <iframe ref="alipayIframe" :srcdoc="alipayFormData" class="alipay-iframe" frameborder="0"
                   scrolling="auto" sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation"></iframe>
               </div>
+            </div>
+
+            <!-- 支付宝不可用提示 -->
+            <div v-else-if="alipayDisabled" class="alipay-disabled-notice">
+              <p>{{ $t('payment.alipayTemporarilyDisabled') || 'Alipay payment is temporarily disabled due to exchange rate unavailability' }}</p>
             </div>
           </div>
         </div>
@@ -311,12 +324,27 @@ export default {
       pollingPhase: 1, // 1: 3s间隔, 2: 5s间隔, 3: 10s间隔
       showInquiryDialog: false,
       currentInquiryData: null,
-      inquiryId: null
+      inquiryId: null,
+      exchangeRate: null,
+      exchangeRateLoading: false,
+      alipayDisabled: false
     };
   },
   computed: {
     isMobile() {
       return window.innerWidth <= 768;
+    },
+    cnyAmount() {
+      console.log('exchangeRate',this.exchangeRate);
+      if (!this.exchangeRate || !this.orderData || !this.orderData.order) {
+        return null;
+      }
+      const usdAmount = parseFloat(this.orderData.order.total_amount);
+      if (isNaN(usdAmount)) {
+        return null;
+      }
+      const cnyAmount = (usdAmount * this.exchangeRate).toFixed(2);
+      return cnyAmount;
     }
   },
   async created() {
@@ -332,6 +360,8 @@ export default {
     
     await this.fetchOrderDetail();
     await this.fetchPayPalConfig();
+    // 获取汇率
+    await this.fetchExchangeRate();
     // 自动生成支付宝支付表单
     await this.generateAlipayForm('alipay');
   },
@@ -353,24 +383,24 @@ export default {
     setBreadcrumbItems() {
       // 检查来源页面，设置相应的面包屑导航
       const fromRoute = this.$route.query.from || this.$route.meta.from;
-      
       if (fromRoute === 'checkout' || this.$route.name === 'OrderPayment' && this.$router.options.history.state.back?.includes('checkout')) {
         // 从结账页面进入
         this.breadcrumbItems = [
-          { text: this.$t('checkout.title') || 'Checkout', link: '/checkout' },
-          { text: this.$t('payment.orderPayment') || 'Order Payment', link: null }
+          { text: this.$t('cart.title') || '购物车', to: { path: '/cart' } },
+          { text: this.$t('checkout.title') || 'Checkout', to: { path: '/unified-checkout' } },
+          { text: this.$t('payment.orderPayment') || 'Order Payment', to: null }
         ];
       } else if (fromRoute === 'orders' || this.$route.name === 'OrderPayment' && this.$router.options.history.state.back?.includes('orders')) {
         // 从订单列表页面进入
         this.breadcrumbItems = [
-          { text: this.$t('orders.title') || 'My Orders', link: '/user/orders' },
-          { text: this.$t('payment.orderPayment') || 'Order Payment', link: null }
+          { text: this.$t('orders.title') || 'My Orders', to: { path: '/user/orders' } },
+          { text: this.$t('payment.orderPayment') || 'Order Payment', to: null }
         ];
       } else {
         // 默认情况
         this.breadcrumbItems = [
-          { text: this.$t('common.home') || 'Home', link: '/' },
-          { text: this.$t('payment.orderPayment') || 'Order Payment', link: null }
+          { text: this.$t('common.home') || 'Home', to: { path: '/' } },
+          { text: this.$t('payment.orderPayment') || 'Order Payment', to: null }
         ];
       }
     },
@@ -1035,6 +1065,35 @@ export default {
     handleBackClick() {
       // 直接返回上一页
       this.$router.go(-1);
+    },
+    async fetchExchangeRate() {
+      try {
+        this.exchangeRateLoading = true;
+        const response = await this.$api.get('/payment/exchange-rate');
+        
+        if (response.success && response.data) {
+          this.exchangeRate = parseFloat(response.data.rate);
+          this.alipayDisabled = false;
+        } else {
+          console.warn('Failed to fetch exchange rate:', response.message);
+          this.exchangeRate = null;
+          this.alipayDisabled = true;
+          //this.$messageHandler.showWarning(
+           // this.$t('payment.exchangeRateUnavailable') || 'Exchange rate unavailable, Alipay payment temporarily disabled',
+           // 'payment.warning.exchangeRateUnavailable'
+          //);
+        }
+      } catch (error) {
+        console.error('Error fetching exchange rate:', error);
+        this.exchangeRate = null;
+        this.alipayDisabled = true;
+        //this.$messageHandler.showWarning(
+        //  this.$t('payment.exchangeRateUnavailable') || 'Exchange rate unavailable, Alipay payment temporarily disabled',
+        //  'payment.warning.exchangeRateUnavailable'
+       // );
+      } finally {
+        this.exchangeRateLoading = false;
+      }
     }
   }
 };
@@ -1080,10 +1139,16 @@ export default {
   border-bottom: 2px solid $primary-color;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: $spacing-sm;
 
   .el-icon {
     color: $primary-color;
+  }
+
+  /* 当有多个子元素时，使用space-between布局 */
+  &:has(.inquiry-btn),
+  &:has(.back-btn) {
+    justify-content: space-between;
   }
 }
 
@@ -1091,6 +1156,11 @@ export default {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
+}
+
+
+.section-title .inquiry-btn :deep(span) {
+  color: $white !important;
 }
 
 .inquiry-btn {
@@ -1423,6 +1493,12 @@ export default {
     font-size: $font-size-lg;
     font-weight: $font-weight-semibold;
   }
+
+  .cny-amount {
+    color: #e74c3c !important;
+    font-weight: 600;
+    font-size: 0.9em;
+  }
 }
 
 .qrcode-container {
@@ -1573,6 +1649,7 @@ export default {
 .success-actions {
   @include flex-center;
   gap: $spacing-sm;
+  flex-wrap: wrap;
 }
 
 .btn-primary {
@@ -1580,6 +1657,13 @@ export default {
   padding: $spacing-md $spacing-xl;
   font-size: $font-size-lg;
   min-height: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 120px;
 }
 
 .btn-secondary {
@@ -1587,6 +1671,13 @@ export default {
   padding: $spacing-md $spacing-xl;
   font-size: $font-size-lg;
   min-height: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 120px;
 }
 
 .loading {
@@ -1940,6 +2031,40 @@ export default {
     }
   }
 
+  /* 支付宝标题样式 */
+  .alipay-header {
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+
+
+
+      .disabled-notice {
+        color: #999;
+        font-weight: normal;
+        font-size: 0.8em;
+        font-style: italic;
+      }
+    }
+  }
+
+  /* 支付宝不可用提示 */
+  .alipay-disabled-notice {
+    padding: 16px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+
   /* 手机端支付宝按钮样式 */
   .alipay-mobile-container {
     width: 100%;
@@ -1948,6 +2073,12 @@ export default {
       width: 100%;
       min-height: 48px;
       font-size: 16px;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
       font-weight: 600;
     }
   }

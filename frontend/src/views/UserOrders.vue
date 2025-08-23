@@ -51,15 +51,15 @@
                 </div>
                 <div class="order-card-body">
                   <div class="order-info-row">
-                    <span class="label">下单时间:</span>
+                    <span class="label">{{ $t('orders.orderDate') || '下单时间' }}:</span>
                     <span class="value">{{ formatDate(order.created_at) }}</span>
                   </div>
                   <div class="order-info-row">
-                    <span class="label">订单金额:</span>
+                    <span class="label">{{ $t('orders.totalAmount') || '订单金额' }}:</span>
                     <span class="value amount">{{ $store.getters.formatPrice(order.total_amount) }}</span>
                   </div>
                   <div class="order-info-row">
-                    <span class="label">支付方式:</span>
+                    <span class="label">{{ $t('orders.paymentMethod') || '支付方式' }}:</span>
                     <span class="value">{{ getPaymentMethodText(order.payment_method) }}</span>
                   </div>
                 </div>
@@ -208,7 +208,8 @@ export default {
       // 点击行时查看订单详情
        this.$router.push({
             name: 'OrderPayment',
-            params: { orderId: row.id }
+            params: { orderId: row.id },
+            query: { from: 'orders' }
           });
     }
   }

@@ -4690,12 +4690,29 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- UnifiedCheckout.vue new translation keys (non-duplicate)
 (gen_random_uuid(), 'checkout.inquiry', 'en', 'Inquiry'),
 (gen_random_uuid(), 'checkout.inquiry', 'zh-CN', 'Inquiry'),
-
+(gen_random_uuid(), 'cart.productType', 'en', 'Product Type'),
+(gen_random_uuid(), 'cart.productType', 'zh-CN', '商品类型'),
+(gen_random_uuid(), 'checkout.productType', 'en', 'Product Type'),
+(gen_random_uuid(), 'checkout.productType', 'zh-CN', '商品类型'),
+(gen_random_uuid(), 'payment.productType', 'en', 'Product Type'),
+(gen_random_uuid(), 'payment.productType', 'zh-CN', '商品类型'),
 
 -- Error handling fallbackKey translations
 (gen_random_uuid(), 'inquiry.error.addItemsFailed', 'en', 'Failed to add items to inquiry'),
 (gen_random_uuid(), 'inquiry.error.addItemsFailed', 'zh-CN', '添加商品到询价单失败'),
 
 (gen_random_uuid(), 'inquiry.error.createFailed', 'en', 'Failed to create inquiry'),
-(gen_random_uuid(), 'inquiry.error.createFailed', 'zh-CN', '创建询价失败');
+(gen_random_uuid(), 'inquiry.error.createFailed', 'zh-CN', '创建询价失败'),
+
+-- Exchange rate related translations
+(gen_random_uuid(), 'payment.exchangeRateUnavailable', 'en', 'Exchange rate unavailable, Alipay payment temporarily disabled'),
+(gen_random_uuid(), 'payment.exchangeRateUnavailable', 'zh-CN', '汇率不可用，支付宝支付暂时禁用'),
+
+(gen_random_uuid(), 'payment.temporarilyUnavailable', 'en', 'Temporarily Unavailable'),
+(gen_random_uuid(), 'payment.temporarilyUnavailable', 'zh-CN', '暂时不可用'),
+
+(gen_random_uuid(), 'payment.alipayTemporarilyDisabled', 'en', 'Alipay payment is temporarily disabled due to exchange rate unavailability.'),
+(gen_random_uuid(), 'payment.alipayTemporarilyDisabled', 'zh-CN', '由于汇率不可用，支付宝支付暂时禁用。');
+
+
 

@@ -187,7 +187,10 @@ const MESSAGES = {
     ORDER_ALREADY_PAID: 'Order already paid',
     ORDER_NOT_PENDING: 'Order is not in pending status',
     REPAY_SUCCESS: 'Repayment initiated successfully',
-    REPAY_FAILED: 'Failed to initiate repayment'
+    REPAY_FAILED: 'Failed to initiate repayment',
+    EXCHANGE_RATE_GET_SUCCESS: 'Exchange rate retrieved successfully',
+    EXCHANGE_RATE_GET_FAILED: 'Failed to retrieve exchange rate',
+    EXCHANGE_RATE_NOT_FOUND: 'Exchange rate not found'
   },
   
   // 产品相关

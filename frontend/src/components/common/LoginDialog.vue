@@ -20,11 +20,11 @@
     <el-form :model="loginForm" :rules="loginRules" ref="loginForm" class="login-form">
       <el-form-item prop="username">
         <FormInput v-model="loginForm.username" :placeholder="$t('login.usernamePlaceholder') || '请输入用户名/邮箱'"
-          :prefix-icon="markRaw(User)" />
+          :prefix-icon="userIcon" />
       </el-form-item>
       <el-form-item prop="password">
         <FormInput v-model="loginForm.password" type="password"
-          :placeholder="$t('login.passwordPlaceholder') || '请输入密码'" :prefix-icon="markRaw(Lock)" :show-password="true"
+          :placeholder="$t('login.passwordPlaceholder') || '请输入密码'" :prefix-icon="lockIcon" :show-password="true"
           @enter="submitLogin" />
       </el-form-item>
       <div class="remember-forgot">
@@ -193,6 +193,14 @@ export default {
         google: false,
         facebook: false
       }
+    }
+  },
+  computed: {
+    userIcon() {
+      return markRaw(this.User);
+    },
+    lockIcon() {
+      return markRaw(this.Lock);
     }
   },
   created() {
@@ -928,6 +936,11 @@ export default {
     align-items: flex-start;
     gap: $spacing-sm;
     margin-bottom: $spacing-lg;
+  }
+
+  .remember-checkbox {
+    display: flex;
+    align-items: center;
   }
 
   .code-container {

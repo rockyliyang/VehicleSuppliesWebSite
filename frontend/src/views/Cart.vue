@@ -384,7 +384,8 @@ export default {
       }
       sessionStorage.setItem('selectedCartItems', JSON.stringify(this.selectedItems));
       this.$router.push({
-        name: 'UnifiedCheckout'
+        name: 'UnifiedCheckout',
+        query: { from: 'cart' }
       });
     },
     

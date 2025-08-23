@@ -58,11 +58,11 @@
           <div class="product-info-block">
             <div class="product-header">
               <h1 class="product-title">{{ product.name }}</h1>
-              <el-button v-if="isLoggedIn" :type="isFavorited ? 'danger' : 'default'" circle size="large"
+              <el-button :type="isFavorited ? 'danger' : 'default'" circle size="large"
                 @click="toggleFavorite" :loading="favoriteLoading" class="favorite-btn"
                 :title="isFavorited ? $t('productDetail.removeFromFavorites') : $t('productDetail.addToFavorites')">
                 <el-icon :size="24">
-                  <Star :style="{ color: isFavorited ? '#f56c6c' : '#909399' }" />
+                  <Star :style="{ color: (isLoggedIn && isFavorited) ? '#f56c6c' : '#909399' }" />
                 </el-icon>
               </el-button>
             </div>
@@ -126,7 +126,7 @@
                   $t('buttons.email') || 'Email' }}</el-button>
               </div>
             </div>
-            <div class="product-share">
+            <!--div class="product-share">
               <span>{{ $t('productDetail.shareTo') }}:</span>
               <div class="share-icons">
                 <i class="el-icon-s-platform"></i>
@@ -134,7 +134,7 @@
                 <i class="el-icon-picture-outline"></i>
                 <i class="el-icon-s-custom"></i>
               </div>
-            </div>
+            </div-->
           </div>
         </div>
       </div>
@@ -1395,6 +1395,7 @@ export default {
   gap: $spacing-xl;
   /* 减少间距从64px到24px，给商品信息区域更多空间 */
   align-items: flex-start;
+  padding-bottom: $spacing-lg;
 }
 
 .product-gallery-block {

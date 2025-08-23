@@ -637,3 +637,84 @@ exports.alipayNotify = async (req, res) => {
     return res.status(500).send('fail');
   }
 };
+
+// 获取汇率信息
+exports.getExchangeRate = async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 首先尝试获取当天的汇率
+    const todayRateQuery = `
+      SELECT exchange_rate, from_currency, to_currency, rate_date, source
+      FROM exchange_rates 
+      WHERE from_currency = 'USD' 
+        AND to_currency = 'CNY' 
+        AND rate_date = $1
+        AND status = 'active'
+        AND deleted = false
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `;
+    
+    const todayResult = await query(todayRateQuery, [today]);
+    
+    if (todayResult.getRowCount() > 0) {
+      const row = todayResult.getFirstRow();
+      return res.json({
+        success: true,
+        data: {
+          rate: row.exchange_rate,
+          fromCurrency: row.from_currency,
+          toCurrency: row.to_currency,
+          rateDate: row.rate_date,
+          dataSource: row.data_source,
+          isToday: true
+        }
+      });
+    }
+    
+    // 如果当天没有汇率，获取最近的汇率
+    const latestRateQuery = `
+      SELECT exchange_rate, from_currency, to_currency, rate_date, source
+      FROM exchange_rates 
+      WHERE from_currency = 'USD' 
+        AND to_currency = 'CNY' 
+        AND status = 'active'
+        AND deleted = false
+      ORDER BY rate_date DESC, updated_at DESC
+      LIMIT 1
+    `;
+    
+    const latestResult = await query(latestRateQuery);
+    
+    if (latestResult.getRowCount() > 0) {
+      const row = latestResult.getFirstRow();
+      return res.json({
+        success: true,
+        data: {
+          rate: row.exchange_rate,
+          fromCurrency: row.from_currency,
+          toCurrency: row.to_currency,
+          rateDate: row.rate_date,
+          dataSource: row.data_source,
+          isToday: false
+        }
+      });
+    }
+    
+    // 如果没有任何汇率数据
+    return res.json({
+      success: false,
+      message: getMessage('PAYMENT.EXCHANGE_RATE.NOT_FOUND'),
+      data: null
+    });
+    
+  } catch (error) {
+    console.error('获取汇率失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('PAYMENT.EXCHANGE_RATE.FETCH_ERROR'),
+      error: error.message
+    });
+  }
+};

@@ -169,17 +169,19 @@
             </div>
           </div>
           <div class="order-total">
-            <div class="total-row">
-              <span>{{ $t('checkout.subtotal') || '商品小计' }}:</span>
-              <span class="price">{{ $store.getters.formatPrice(orderTotal) }}</span>
-            </div>
-            <div class="total-row">
-              <span>{{ $t('checkout.shippingFee') || '运费' }}:</span>
-              <span class="price">{{ $store.getters.formatPrice(shippingFee) }}</span>
-            </div>
-            <div class="total-row grand-total">
-              <span>{{ $t('checkout.total') || '总计' }}:</span>
-              <span class="total-price">{{ $store.getters.formatPrice(orderTotal + shippingFee) }}</span>
+            <div class="total-container">
+              <div class="total-row">
+                <span>{{ $t('checkout.subtotal') || '商品小计' }}:</span>
+                <span class="price">{{ $store.getters.formatPrice(orderTotal) }}</span>
+              </div>
+              <div class="total-row">
+                <span>{{ $t('checkout.shippingFee') || '运费' }}:</span>
+                <span class="price">{{ $store.getters.formatPrice(shippingFee) }}</span>
+              </div>
+              <div class="total-row grand-total">
+                <span>{{ $t('checkout.total') || '总计' }}:</span>
+                <span class="total-price">{{ $store.getters.formatPrice(orderTotal + shippingFee) }}</span>
+              </div>
             </div>
           </div>
         </section>
@@ -876,11 +878,18 @@ export default {
         const response = await this.$api.postWithErrorHandler('/payment/common/create', requestData);
         console.log('response is:',response);
         this.orderId = response.data.orderId;
-          // 跳转到支付页面
-          this.$router.push({
-            name: 'OrderPayment',
-            params: { orderId: this.orderId }
-          });
+        
+        // 如果是从购物车创建的订单，触发购物车更新事件
+        if (this.orderSource === 'cart' && this.$bus) {
+          this.$bus.emit('cart-updated');
+        }
+        
+        // 跳转到支付页面
+        this.$router.push({
+          name: 'OrderPayment',
+          params: { orderId: this.orderId },
+          query: { from: 'checkout' }
+        });
       } catch (error) {
         console.error('创建订单失败:', error);
         this.$messageHandler.showError(error, 'checkout.error.createOrderFailed');
@@ -1372,23 +1381,54 @@ export default {
 
 /* 订单总计 */
 .order-total {
-  text-align: right;
-  font-size: $font-size-2xl;
-  font-weight: $font-weight-bold;
-  margin-top: $spacing-lg;
-  padding: $spacing-md $spacing-lg;
-  background: $gradient-primary;
-  color: $white;
   border-radius: $border-radius-md;
+  margin-top: $spacing-md;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+}
+
+.total-container {
+  background: $white;
+  padding: $spacing-lg;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-md;
+
+  .total-row {
+    color: $text-primary;
+
+    .price {
+      color: $text-secondary;
+      font-weight: $font-weight-medium;
+    }
+
+    &.grand-total {
+      margin-top: $spacing-md;
+      padding-top: $spacing-md;
+      border-top: 1px solid $border-color;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+
+      .total-price {
+        color: $primary-color;
+      }
+    }
+  }
+}
+
+.total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: $spacing-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .total-price {
-  font-size: $font-size-2xl;
+  font-size: $font-size-xl;
   font-weight: $font-weight-bold;
-  color: $white;
 }
 
 /* 表单样式 */
