@@ -55,7 +55,7 @@
                   </div>
                   <div class="info-content">
                     <h3>{{ $t('contact.businessHours') }}</h3>
-                    <p>{{ companyInfo.business_hours || '周一至周五: 9:00 - 18:00' }}</p>
+                    <p>{{ companyInfo.business_hours || 'Monday to Friday: 9:00 - 18:00' }}</p>
                   </div>
                 </div>
               </div>

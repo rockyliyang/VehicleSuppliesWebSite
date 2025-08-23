@@ -10,9 +10,8 @@
         <!-- 主体内容 -->
         <div class="product-detail-content">
           <div class="product-gallery-block">
-            <div class="main-image" ref="mainImage" :class="{ 'mobile-view': isMobile }"
-              @mousemove="!isMobile && handleMouseMove" @mouseenter="!isMobile && (showZoom = true)"
-              @mouseleave="!isMobile && (showZoom = false)">
+            <div class="main-image" ref="mainImage" :class="{ 'mobile-view': isMobile }" @mousemove="handleMouseMove"
+              @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
               <!-- 显示视频或图片 -->
               <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted ref="mainVideoEl"
                 class="main-video" @loadedmetadata="updateMainImgSize">
@@ -851,6 +850,16 @@ export default {
           console.warn('Handle mouse move failed:', error);
         }
       }
+    },
+    handleMouseEnter() {
+      // 在移动端禁用放大镜功能
+      if (this.isMobile) return;
+      this.showZoom = true;
+    },
+    handleMouseLeave() {
+      // 在移动端禁用放大镜功能
+      if (this.isMobile) return;
+      this.showZoom = false;
     },
     // 判断媒体类型
     getMediaType(url) {

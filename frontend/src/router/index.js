@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import store from '../store'
 import api from '../utils/api'
+import { createRetryableImport } from '../utils/chunkRetry'
 
 const routes = [
   {
@@ -13,42 +14,42 @@ const routes = [
   {
     path: '/products',
     name: 'Products',
-    component: () => import('../views/Products.vue'),
+    component: createRetryableImport(() => import('../views/Products.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/product/:id',
     name: 'ProductDetail',
-    component: () => import('../views/ProductDetail.vue'),
+    component: createRetryableImport(() => import('../views/ProductDetail.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/about',
     name: 'About',
-    component: () => import('../views/About.vue'),
+    component: createRetryableImport(() => import('../views/About.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/news',
     name: 'News',
-    component: () => import('../views/News.vue'),
+    component: createRetryableImport(() => import('../views/News.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/news/:id',
     name: 'NewsDetail',
-    component: () => import('../views/NewsDetail.vue'),
+    component: createRetryableImport(() => import('../views/NewsDetail.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/contact',
     name: 'Contact',
-    component: () => import('../views/Contact.vue'),
+    component: createRetryableImport(() => import('../views/Contact.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/admin',
-    component: () => import('../views/Admin.vue'),
+    component: createRetryableImport(() => import('../views/Admin.vue')),
     meta: { requiresAuth: true },
     // 添加路由守卫，检查用户是否有管理员权限
 
@@ -56,97 +57,97 @@ const routes = [
       {
         path: 'dashboard',
         name: 'AdminDashboard',
-        component: () => import('../views/admin/Dashboard.vue'),
+        component: createRetryableImport(() => import('../views/admin/Dashboard.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'products',
         name: 'AdminProducts',
-        component: () => import('../views/admin/ProductsManagement.vue'),
+        component: createRetryableImport(() => import('../views/admin/ProductsManagement.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'categories',
         name: 'AdminCategories',
-        component: () => import('../views/admin/Categories.vue'),
+        component: createRetryableImport(() => import('../views/admin/Categories.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'banners',
         name: 'AdminBanners',
-        component: () => import('../views/admin/Banners.vue'),
+        component: createRetryableImport(() => import('../views/admin/Banners.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'company',
         name: 'AdminCompany',
-        component: () => import('../views/admin/Company.vue'),
+        component: createRetryableImport(() => import('../views/admin/Company.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'common-content',
         name: 'AdminCommonContent',
-        component: () => import('../views/admin/CommonContent.vue'),
+        component: createRetryableImport(() => import('../views/admin/CommonContent.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'language',
         name: 'AdminLanguage',
-        component: () => import('../views/admin/LanguageManagement.vue'),
+        component: createRetryableImport(() => import('../views/admin/LanguageManagement.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'contact-messages',
         name: 'AdminContactMessages',
-        component: () => import('../views/admin/ContactMessages.vue'),
+        component: createRetryableImport(() => import('../views/admin/ContactMessages.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'inquiries',
         name: 'AdminInquiries',
-        component: () => import('../views/admin/InquiryManagement.vue'),
+        component: createRetryableImport(() => import('../views/admin/InquiryManagement.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'regular-users',
         name: 'AdminRegularUsers',
-        component: () => import('../views/admin/RegularUserList.vue'),
+        component: createRetryableImport(() => import('../views/admin/RegularUserList.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'sales-users',
         name: 'AdminSalesUsers',
-        component: () => import('../views/admin/SalesUserList.vue'),
+        component: createRetryableImport(() => import('../views/admin/SalesUserList.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'admin-users',
         name: 'AdminAdminUsers',
-        component: () => import('../views/admin/AdminUserList.vue'),
+        component: createRetryableImport(() => import('../views/admin/AdminUserList.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'business-groups',
         name: 'AdminBusinessGroups',
-        component: () => import('../views/admin/BusinessGroups.vue'),
+        component: createRetryableImport(() => import('../views/admin/BusinessGroups.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'orders',
         name: 'AdminOrders',
-        component: () => import('../views/admin/OrderManagement.vue'),
+        component: createRetryableImport(() => import('../views/admin/OrderManagement.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'logistics-companies',
         name: 'AdminLogisticsCompanies',
-        component: () => import('../views/admin/LogisticsCompanies.vue'),
+        component: createRetryableImport(() => import('../views/admin/LogisticsCompanies.vue')),
         meta: { requiresAuth: true }
       },
       {
         path: 'countries',
         name: 'AdminCountries',
-        component: () => import('../views/admin/CountryManagement.vue'),
+        component: createRetryableImport(() => import('../views/admin/CountryManagement.vue')),
         meta: { requiresAuth: true }
       },
       {
@@ -159,97 +160,97 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('../views/Login.vue'),
+    component: createRetryableImport(() => import('../views/Login.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/admin-login',
     name: 'AdminLogin',
-    component: () => import('../views/admin/AdminLogin.vue'),
+    component: createRetryableImport(() => import('../views/admin/AdminLogin.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/cart',
     name: 'Cart',
-    component: () => import('../views/Cart.vue'),
+    component: createRetryableImport(() => import('../views/Cart.vue')),
     meta: { requiresAuth: true }
   },
   {
     path: '/register',
     name: 'Register',
-    component: () => import('../views/Register.vue'),
+    component: createRetryableImport(() => import('../views/Register.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/forgot-password',
     name: 'ForgotPassword',
-    component: () => import('../views/ForgotPassword.vue'),
+    component: createRetryableImport(() => import('../views/ForgotPassword.vue')),
     meta: { requiresAuth: false  }
   },
   {
     path: '/reset-password',
     name: 'ResetPassword',
-    component: () => import('../views/ResetPassword.vue'),
+    component: createRetryableImport(() => import('../views/ResetPassword.vue')),
     meta: { requiresAuth: false }
   },
   {
     path: '/activate',
     name: 'Activate',
-    component: () => import('../views/Activate.vue'),
+    component: createRetryableImport(() => import('../views/Activate.vue')),
     meta: { requiresAuth: false }
   },
   // CheckoutComplete路由已删除 - 组件不再使用
   {
     path: '/paypal-test',
     name: 'PayPalTest',
-    component: () => import('../views/PayPalTestView.vue')
+    component: createRetryableImport(() => import('../views/PayPalTestView.vue'))
   },
   {
     path: '/user/orders',
     name: 'UserOrders',
-    component: () => import('../views/UserOrders.vue'),
+    component: createRetryableImport(() => import('../views/UserOrders.vue')),
     meta: { requiresAuth: true }
   },
   {
     path: '/user/settings',
     name: 'UserSettings',
-    component: () => import('../views/UserSettings.vue'),
+    component: createRetryableImport(() => import('../views/UserSettings.vue')),
     meta: { requiresAuth: true }
   },
   {
     path: '/unified-checkout',
     name: 'UnifiedCheckout',
-    component: () => import('../views/UnifiedCheckout.vue'),
+    component: createRetryableImport(() => import('../views/UnifiedCheckout.vue')),
     meta: { requiresAuth: true }
   },
   {
     path: '/inquiry-management',
     name: 'InquiryManagement',
-    component: () => import('../views/Inquiries.vue'),
+    component: createRetryableImport(() => import('../views/Inquiries.vue')),
     meta: { requiresAuth: true }
   },
   {
     path: '/address',
     name: 'AddressList',
-    component: () => import('../views/AddressList.vue'),
+    component: createRetryableImport(() => import('../views/AddressList.vue')),
     meta: { requiresAuth: true }
   },
   {
     path: '/browsing-history',
     name: 'BrowsingHistory',
-    component: () => import('../views/BrowsingHistory.vue'),
+    component: createRetryableImport(() => import('../views/BrowsingHistory.vue')),
     meta: { requiresAuth: true }
   },
   {
     path: '/favorites',
     name: 'FavoritesManagement',
-    component: () => import('../views/FavoritesManagement.vue'),
+    component: createRetryableImport(() => import('../views/FavoritesManagement.vue')),
     meta: { requiresAuth: true }
   },
   {
     path: '/order-payment/:orderId',
     name: 'OrderPayment',
-    component: () => import('../views/OrderPayment.vue'),
+    component: createRetryableImport(() => import('../views/OrderPayment.vue')),
     meta: { requiresAuth: true }
   },
 ]

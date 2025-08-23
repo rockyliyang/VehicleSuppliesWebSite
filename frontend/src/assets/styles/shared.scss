@@ -302,42 +302,6 @@
   transform: translateY(-1px);
 }
 
-/* Element UI 按钮统一样式 - 参考Home.vue Learn More按钮样式 */
-/* 使用更高特异性的选择器确保样式被应用 */
-.el-button.el-button {
-  @include button-base;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: $spacing-lg $spacing-2xl !important; // 1rem 2rem
-  border: none !important;
-  border-radius: $border-radius-lg !important;
-  font-size: $font-size-xl !important; // 18px
-  font-weight: $font-weight-semibold !important;
-  cursor: pointer !important;
-  transition: $transition-base !important;
-  text-decoration: none !important;
-  min-height: auto !important;
-  line-height: 1.2 !important;
-
-  &:disabled {
-    opacity: 0.6 !important;
-    cursor: not-allowed !important;
-  }
-}
-
-.el-button.el-button--primary {
-  @include button-primary;
-  background-color: $primary-color !important;
-  border-color: $primary-color !important;
-  color: $white !important;
-
-  &:hover:not(:disabled) {
-    background-color: $primary-dark !important;
-    border-color: $primary-dark !important;
-  }
-}
-
 /* ===== 库存状态样式 ===== */
 .stock-status {
   display: inline-block;

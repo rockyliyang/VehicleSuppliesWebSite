@@ -54,6 +54,7 @@
 
 <script>
 import { Lock } from '@element-plus/icons-vue'
+import { markRaw } from 'vue'
 import FormInput from '@/components/common/FormInput.vue'
 import PageBanner from '@/components/common/PageBanner.vue'
 
@@ -66,7 +67,7 @@ export default {
   data() {
     return {
       // 图标组件
-      Lock,
+      Lock: markRaw(Lock),
       form: {
         password: '',
         confirmPassword: ''

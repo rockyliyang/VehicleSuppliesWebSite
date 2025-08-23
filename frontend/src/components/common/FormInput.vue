@@ -24,6 +24,8 @@
 </template>
 
 <script>
+import { markRaw } from 'vue'
+
 export default {
   name: 'FormInput',
   props: {
@@ -109,10 +111,12 @@ export default {
     },
     // 兼容camelCase和kebab-case属性名
     computedPrefixIcon() {
-      return this['prefix-icon'] || this.prefixIcon;
+      const icon = this['prefix-icon'] || this.prefixIcon;
+      return icon ? markRaw(icon) : null;
     },
     computedSuffixIcon() {
-      return this['suffix-icon'] || this.suffixIcon;
+      const icon = this['suffix-icon'] || this.suffixIcon;
+      return icon ? markRaw(icon) : null;
     },
     computedShowPassword() {
       return this['show-password'] || this.showPassword;

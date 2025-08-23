@@ -2,6 +2,28 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+
+// 全局错误处理和 chunk 加载失败重试机制
+window.addEventListener('error', (event) => {
+  if (event.message && event.message.includes('Loading chunk')) {
+    console.warn('Chunk loading failed, reloading page...', event.message)
+    // 延迟重新加载，避免无限循环
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  }
+})
+
+// 处理未捕获的 Promise 错误
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason && event.reason.message && event.reason.message.includes('Loading chunk')) {
+    console.warn('Chunk loading failed (Promise), reloading page...', event.reason.message)
+    event.preventDefault()
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  }
+})
 // Element Plus 现在通过按需引入自动处理
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'

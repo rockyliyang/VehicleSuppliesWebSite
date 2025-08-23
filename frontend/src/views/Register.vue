@@ -82,6 +82,7 @@
 
 <script>
 import { Message, Lock, Picture as PictureIcon } from '@element-plus/icons-vue'
+import { markRaw } from 'vue'
 import FormInput from '@/components/common/FormInput.vue'
 import PageBanner from '@/components/common/PageBanner.vue'
 
@@ -142,7 +143,7 @@ export default {
       logoUrl: '/static/images/logo.png',
       // 图标组件
       Message,
-      Lock,
+      Lock: markRaw(Lock),
       PictureIcon
     }
   },

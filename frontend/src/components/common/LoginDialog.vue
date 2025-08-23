@@ -20,11 +20,11 @@
     <el-form :model="loginForm" :rules="loginRules" ref="loginForm" class="login-form">
       <el-form-item prop="username">
         <FormInput v-model="loginForm.username" :placeholder="$t('login.usernamePlaceholder') || '请输入用户名/邮箱'"
-          :prefix-icon="User" />
+          :prefix-icon="markRaw(User)" />
       </el-form-item>
       <el-form-item prop="password">
         <FormInput v-model="loginForm.password" type="password"
-          :placeholder="$t('login.passwordPlaceholder') || '请输入密码'" :prefix-icon="Lock" :show-password="true"
+          :placeholder="$t('login.passwordPlaceholder') || '请输入密码'" :prefix-icon="markRaw(Lock)" :show-password="true"
           @enter="submitLogin" />
       </el-form-item>
       <div class="remember-forgot">
@@ -69,6 +69,7 @@
 // 使用全局注册的$api替代axios
 import { ElMessage } from 'element-plus'
 import { User, Lock, PhoneFilled, Message, Close } from '@element-plus/icons-vue'
+import { markRaw } from 'vue'
 import FormInput from '@/components/common/FormInput.vue'
 import AppleIcon from '@/components/icons/AppleIcon.vue'
 import GoogleIcon from '@/components/icons/GoogleIcon.vue'

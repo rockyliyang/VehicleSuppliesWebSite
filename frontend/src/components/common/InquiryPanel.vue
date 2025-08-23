@@ -157,9 +157,9 @@ export default {
     this.checkScrollNeed();
     
     // 启动定时刷新，每30秒刷新一次
-    /*this.refreshTimer = setInterval(() => {
+    this.refreshTimer = setInterval(() => {
       this.refreshInquiriesData();
-    }, 30000);*/
+    }, 30000);
   },
   updated() {
     this.checkScrollNeed();
@@ -739,29 +739,7 @@ export default {
         
         if (response.success) {
           // 创建新的询价数据映射
-          const newInquiriesData = response.data.inquiries.map(inquiry => ({
-            id: inquiry.id,
-            name: inquiry.title,
-            title: inquiry.title,
-            status: inquiry.status,
-            inquiry_type: inquiry.inquiry_type || 'custom',
-            items: (inquiry.items || []).map(item => ({
-              id: item.id,
-              productId: item.product_id,
-              product_id: item.product_id,
-              name: item.product_name,
-              product_name: item.product_name,
-              imageUrl: item.image_url || require('@/assets/images/default-image.svg'),
-              image_url: item.image_url,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              price: item.price || item.unit_price,
-              price_ranges: item.price_ranges
-            })),
-            messages: [],
-            newMessage: '',
-            unread_count: inquiry.unread_count || 0
-          }));
+          const newInquiriesData = response.data.inquiries;
           
                     
           // 更新现有询价数据或添加新的询价
