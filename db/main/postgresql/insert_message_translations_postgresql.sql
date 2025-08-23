@@ -4696,6 +4696,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'checkout.productType', 'zh-CN', '商品类型'),
 (gen_random_uuid(), 'payment.productType', 'en', 'Product Type'),
 (gen_random_uuid(), 'payment.productType', 'zh-CN', '商品类型'),
+(gen_random_uuid(), 'payment.paidDate', 'en', 'Paid Date'),
+(gen_random_uuid(), 'payment.paidDate', 'zh-CN', '支付日期'),
 
 -- Error handling fallbackKey translations
 (gen_random_uuid(), 'inquiry.error.addItemsFailed', 'en', 'Failed to add items to inquiry'),
@@ -4712,7 +4714,25 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'payment.temporarilyUnavailable', 'zh-CN', '暂时不可用'),
 
 (gen_random_uuid(), 'payment.alipayTemporarilyDisabled', 'en', 'Alipay payment is temporarily disabled due to exchange rate unavailability.'),
-(gen_random_uuid(), 'payment.alipayTemporarilyDisabled', 'zh-CN', '由于汇率不可用，支付宝支付暂时禁用。');
+(gen_random_uuid(), 'payment.alipayTemporarilyDisabled', 'zh-CN', '由于汇率不可用，支付宝支付暂时禁用。'),
+
+-- OrderPayment.vue 新增的物流和支付状态相关翻译键
+(gen_random_uuid(), 'payment.orderStatus', 'en', 'Order Status'),
+(gen_random_uuid(), 'payment.orderStatus', 'zh-CN', '订单状态'),
+(gen_random_uuid(), 'payment.logisticsInfo', 'en', 'Logistics Information'),
+(gen_random_uuid(), 'payment.logisticsInfo', 'zh-CN', '物流信息'),
+(gen_random_uuid(), 'payment.shippingNo', 'en', 'Shipping Number'),
+(gen_random_uuid(), 'payment.shippingNo', 'zh-CN', '物流单号'),
+(gen_random_uuid(), 'payment.shippingStatus', 'en', 'Shipping Status'),
+(gen_random_uuid(), 'payment.shippingStatus', 'zh-CN', '物流状态'),
+(gen_random_uuid(), 'payment.trackingInfo', 'en', 'Tracking Information'),
+(gen_random_uuid(), 'payment.trackingInfo', 'zh-CN', '跟踪信息'),
+(gen_random_uuid(), 'payment.paymentStatus', 'en', 'Payment Status'),
+(gen_random_uuid(), 'payment.paymentStatus', 'zh-CN', '支付状态'),
+(gen_random_uuid(), 'payment.alreadyPaid', 'en', 'Already Paid'),
+(gen_random_uuid(), 'payment.alreadyPaid', 'zh-CN', '已支付'),
+(gen_random_uuid(), 'payment.paidAt', 'en', 'Paid At'),
+(gen_random_uuid(), 'payment.paidAt', 'zh-CN', '支付时间');
 
 
 

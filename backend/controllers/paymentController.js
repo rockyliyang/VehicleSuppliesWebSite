@@ -67,7 +67,7 @@ function getAlipayClient() {
 }
 
 // 统一订单初始化
-async function initOrder(userId, cartItems, shippingInfo, shippingFee, client, orderSource = 'cart', inquiryId = null) {
+async function initOrder(userId, cartItems, shippingInfo, shippingFee, client, orderSource = 'cart', inquiryId = null, createTimeZone = null) {
   let totalAmount = shippingFee || 0;
   for (const item of cartItems) totalAmount += item.price * item.quantity;
   const orderResult = await client.query(
@@ -75,8 +75,8 @@ async function initOrder(userId, cartItems, shippingInfo, shippingFee, client, o
      (user_id, inquiry_id, total_amount, status, 
       shipping_name, shipping_phone, shipping_email, shipping_address, shipping_zip_code,
       shipping_country,shipping_state,shipping_city,shipping_phone_country_code,shipping_fee,
-      created_by, updated_by) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
+      create_time_zone, created_by, updated_by) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id`,
     [
       userId,
       inquiryId,
@@ -92,6 +92,7 @@ async function initOrder(userId, cartItems, shippingInfo, shippingFee, client, o
       shippingInfo.city,
       shippingInfo.phone_country_code,
       shippingFee || 0,
+      createTimeZone,
       userId,
       userId
     ]
@@ -132,7 +133,7 @@ async function initOrder(userId, cartItems, shippingInfo, shippingFee, client, o
 // PayPal订单创建
 exports.createPayPalOrder = async (req, res) => {
   try {
-    const { shippingInfo, orderItems, shipping_fee, orderSource, inquiryId } = req.body;
+    const { shippingInfo, orderItems, shipping_fee, orderSource, inquiryId, create_time_zone } = req.body;
     const userId = req.userId;
     const connection = await getConnection();
     await connection.beginTransaction();
@@ -161,7 +162,7 @@ exports.createPayPalOrder = async (req, res) => {
         return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
       
-      const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, shipping_fee, connection, source, inquiryId);
+      const { orderId, totalAmount } = await initOrder(userId, cartItems, shippingInfo, shipping_fee, connection, source, inquiryId, create_time_zone);
       const paypalClient = getPayPalClient();
       const ordersController = new OrdersController(paypalClient);
       const request = {
@@ -203,7 +204,7 @@ exports.createPayPalOrder = async (req, res) => {
 // PayPal支付捕获
 exports.capturePayPalPayment = async (req, res) => {
   try {
-    const { paypalOrderId, orderId } = req.body;
+    const { paypalOrderId, orderId, paid_time_zone } = req.body;
     const orders = await query(
       `SELECT id, status FROM orders WHERE id = $1 AND payment_id = $2`,
       [orderId, paypalOrderId]
@@ -221,8 +222,8 @@ exports.capturePayPalPayment = async (req, res) => {
     const { body } = await ordersController.captureOrder(request);
     const captureData = JSON.parse(body);
     await query(
-      `UPDATE orders SET status = $1, payment_method = $2, updated_by = $3 WHERE id = $4`,
-      ['paid', 'paypal', req.userId, orderId]
+      `UPDATE orders SET status = $1, payment_method = $2, paid_at = CURRENT_TIMESTAMP, paid_time_zone = $3, updated_by = $4 WHERE id = $5`,
+      ['paid', 'paypal', paid_time_zone, req.userId, orderId]
     );
     return res.json({ success: true, message: getMessage('PAYMENT.PAYPAL_CAPTURE_SUCCESS'), data: { orderId, paymentId: captureData.id } });
   } catch (error) {
@@ -309,7 +310,7 @@ exports.repayPayPalOrder = async (req, res) => {
 // 创建普通订单（微信/支付宝）
 exports.createCommonOrder = async (req, res) => {
   try {
-    const { shipping_info, paymentMethod, orderItems, shipping_fee, orderSource, inquiryId } = req.body;
+    const { shipping_info, paymentMethod, orderItems, shipping_fee, orderSource, inquiryId, create_time_zone } = req.body;
     const userId = req.userId;
     
     // 验证必要的参数
@@ -341,7 +342,7 @@ exports.createCommonOrder = async (req, res) => {
         return res.json({ success: false, message: getMessage('CART.EMPTY'), data: null });
       }
       
-      const { orderId } = await initOrder(userId, orderItems, shipping_info, shipping_fee, connection, source, inquiryId);
+      const { orderId } = await initOrder(userId, orderItems, shipping_info, shipping_fee, connection, source, inquiryId, create_time_zone);
       await connection.commit();
       connection.release();
       
@@ -359,7 +360,7 @@ exports.createCommonOrder = async (req, res) => {
 // 生成支付二维码
 exports.generateQrcode = async (req, res) => {
   try {
-    const { orderId, paymentMethod, deviceType } = req.body;
+    const { orderId, paymentMethod, deviceType, paidTimeZone, exchangeRate } = req.body;
     const orders = await query(
       `SELECT id, total_amount, status FROM orders WHERE id = $1`,
       [orderId]
@@ -378,10 +379,13 @@ exports.generateQrcode = async (req, res) => {
       try {
         const alipaySdk = getAlipayClient();
         const outTradeNo = `ORDER_${orderId}_${Date.now()}`; // 商户订单号
+        
+        // 计算人民币金额：使用汇率 * 美元金额
+        const cnyAmount = exchangeRate ? (parseFloat(order.total_amount) * parseFloat(exchangeRate)).toFixed(2) : order.total_amount.toString();
 
         let requestData = {
             out_trade_no: outTradeNo,
-            total_amount: order.total_amount.toString(),
+            total_amount: cnyAmount,
             subject: `AutoEaseXpert - ${orderId}`,
             body: `AutoEaseXpert Order：${orderId}`,
             timeout_express: '30m',
@@ -417,11 +421,14 @@ exports.generateQrcode = async (req, res) => {
        //console.log('Alipay form data:', formData);
 
         if (formData && typeof formData === 'string') {
-          // 保存商户订单号到数据库
-          await query(
-            `UPDATE orders SET payment_id = $1 WHERE id = $2`,
-            [outTradeNo, orderId]
-          );
+          // 保存商户订单号和支付时区到数据库
+          const updateQuery = paidTimeZone 
+            ? `UPDATE orders SET payment_id = $1, paid_time_zone = $2 WHERE id = $3`
+            : `UPDATE orders SET payment_id = $1 WHERE id = $2`;
+          const updateParams = paidTimeZone 
+            ? [outTradeNo, paidTimeZone, orderId]
+            : [outTradeNo, orderId];
+          await query(updateQuery, updateParams);
           // 对于alipay.trade.page.pay，返回HTML表单而不是二维码
           // 前端需要处理这个HTML表单来显示支付页面
           return res.json({ 
@@ -488,7 +495,7 @@ exports.checkPaymentStatus = async (req, res) => {
           if (result.tradeStatus === 'TRADE_SUCCESS' || result.tradeStatus === 'TRADE_FINISHED') {
             // 更新订单状态为已支付
             await query(
-              `UPDATE orders SET status = 'paid', payment_method = 'alipay' WHERE id = $1`,
+              `UPDATE orders SET status = 'paid', payment_method = 'alipay', paid_at = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') WHERE id = $1`,
               [orderId]
             );
             return res.json({ 
@@ -538,15 +545,19 @@ exports.paymentCallback = async (req, res) => {
     let newStatus;
     if (status === 'success') {
       newStatus = 'paid';
+      await query(
+        `UPDATE orders SET status = $1, payment_method = 'alipay', payment_id = $2, paid_at = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') WHERE id = $3`,
+        [newStatus, paymentId, orderId]
+      );
     } else if (status === 'fail' || status === 'cancel') {
       newStatus = 'cancelled';
+      await query(
+        `UPDATE orders SET status = $1, payment_method = 'alipay', payment_id = $2 WHERE id = $3`,
+        [newStatus, paymentId, orderId]
+      );
     } else {
       return res.json({ success: false, message: getMessage('PAYMENT.UNSUPPORTED_STATUS'), data: null });
     }
-    await query(
-      `UPDATE orders SET status = $1, payment_method = 'alipay', payment_id = $2 WHERE id = $3`,
-      [newStatus, paymentId, orderId]
-    );
     return res.json({ success: true, message: getMessage('PAYMENT.STATUS_UPDATE_SUCCESS'), data: { orderId, status: newStatus } });
   } catch (error) {
     return res.json({ success: false, message: error.message, data: null });
@@ -609,19 +620,23 @@ exports.alipayNotify = async (req, res) => {
     let newStatus;
     if (trade_status === 'TRADE_SUCCESS' || trade_status === 'TRADE_FINISHED') {
       newStatus = 'paid';
+      // 更新订单状态为已支付，设置paid_at
+      await query(
+        `UPDATE orders SET status = $1, payment_id = $2, paid_at = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') WHERE id = $3`,
+        [newStatus, trade_no, orderId]
+      );
     } else if (trade_status === 'TRADE_CLOSED') {
       newStatus = 'cancelled';
+      // 更新订单状态为已取消
+      await query(
+        `UPDATE orders SET status = $1, payment_id = $2 WHERE id = $3`,
+        [newStatus, trade_no, orderId]
+      );
     } else {
       // 其他状态暂不处理
       console.log('Alipay trade status:', trade_status, 'Order ID:', orderId);
       return res.send('success');
     }
-    
-    // 更新订单状态
-    await query(
-      `UPDATE orders SET status = $1, payment_id = $2 WHERE id = $3`,
-      [newStatus, trade_no, orderId]
-    );
     
     console.log('Alipay notification processed successfully:', {
       orderId,

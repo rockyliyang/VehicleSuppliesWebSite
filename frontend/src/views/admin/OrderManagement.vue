@@ -51,11 +51,11 @@
     <!-- 订单列表 -->
     <el-card class="order-list-card">
       <el-table v-loading="loading" :data="orders" stripe :table-layout="'auto'" class="order-table">
-        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="200" fixed="right">
+        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="250" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="viewOrderDetail(row)">{{ $t('order.action.view', 'View')
               || '查看' }}</el-button>
-            <el-button v-if="isAdmin" type="success" size="small" @click="manageLogistics(row)">{{ 
+            <el-button v-if="isAdmin" type="success" size="small" @click="manageLogistics(row)" :disabled="row.status === 'pending'">{{ 
               $t('order.action.logistics', 'Logistics') || '物流' }}</el-button>
           </template>
         </el-table-column>
@@ -78,9 +78,14 @@
             <el-tag :type="getStatusType(row.status)" size="small">{{ formatStatus(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'" width="200">
+        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'" width="250">
           <template #default="{ row }">
-            <span class="date-text">{{ formatDate(row.created_at) }}</span>
+            <span class="date-text">{{ formatDateWithTimezone(row.created_at_local || row.created_at, row.create_time_zone) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('order.paidDate', 'Paid Date') || '支付日期'" width="250">
+          <template #default="{ row }">
+            <span class="date-text">{{ row.paid_at ? formatDateWithTimezone(row.paid_at, row.paid_time_zone) : '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'" width="140" align="center">
@@ -130,7 +135,11 @@
                   </div>
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.orderDate', 'Order Date') }}</span>
-                    <span class="info-value">{{ formatDate(selectedOrder.created_at) }}</span>
+                    <span class="info-value">{{ formatDateWithTimezone(selectedOrder.created_at_local || selectedOrder.created_at, selectedOrder.create_time_zone) }}</span>
+                  </div>
+                  <div class="info-row" v-if="selectedOrder.paid_at">
+                    <span class="info-label">{{ $t('order.detail.paidDate', 'Paid Date') || '支付日期' }}</span>
+                    <span class="info-value">{{ formatDateWithTimezone(selectedOrder.paid_at, selectedOrder.paid_time_zone) }}</span>
                   </div>
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.orderTotal', 'Order Total') }}</span>
@@ -863,7 +872,25 @@ export default {
 
 
     formatDate(dateString) {
+      if (!dateString || dateString === '') {
+        return ''
+      }
       return new Date(dateString).toLocaleDateString()
+    },
+    formatDateWithTimezone(dateString, timezone) {
+      if (!dateString || dateString === '') {
+        return ''
+      }
+      const date = new Date(dateString);
+      const formattedDate = date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      return timezone ? `${formattedDate} (${timezone})` : formattedDate;
     },
 
     // 获取状态对应的Element Plus tag类型

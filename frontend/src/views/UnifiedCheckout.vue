@@ -867,7 +867,8 @@ export default {
           orderItems: this.orderItems,
           shipping_info: this.shippingInfo,
           total_amount: this.orderTotal,
-          shipping_fee: this.shippingFee
+          shipping_fee: this.shippingFee,
+          create_time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         };
 
         // 如果是询价单订单，添加inquiry_id

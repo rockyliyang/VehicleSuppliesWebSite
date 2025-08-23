@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
+    NEW.updated_at = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC');
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS countries (
     shipping_rate_type VARCHAR(20) DEFAULT 'weight_based' CHECK (shipping_rate_type IN ('fixed', 'weight_based')),
     -- 标准字段
     status VARCHAR(16) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT DEFAULT NULL,
     updated_by BIGINT DEFAULT NULL
@@ -112,8 +112,8 @@ CREATE TABLE IF NOT EXISTS country_timezones (
     tz_name VARCHAR(100),
     -- 标准字段
     status VARCHAR(16) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT DEFAULT NULL,
     updated_by BIGINT DEFAULT NULL
@@ -155,8 +155,8 @@ CREATE TABLE IF NOT EXISTS country_translations (
     country_name VARCHAR(255) NOT NULL,
     -- 标准字段
     status VARCHAR(16) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT DEFAULT NULL,
     updated_by BIGINT DEFAULT NULL

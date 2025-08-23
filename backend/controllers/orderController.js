@@ -39,9 +39,10 @@ exports.getOrders = async (req, res) => {
     // 获取订单列表
     const orders = await query(
       `SELECT id, order_guid, inquiry_id, total_amount, status, payment_method, 
-              created_at, updated_at, shipping_name, shipping_phone,
-              shipping_address, shipping_zip_code, shipping_country,
-              shipping_state, shipping_city, shipping_phone_country_code
+              created_at, created_at AT TIME ZONE create_time_zone as create_at_local,updated_at, 
+              paid_at, create_time_zone, paid_time_zone,paid_at AT TIME ZONE paid_time_zone as paid_at_local,
+              shipping_name, shipping_phone, shipping_address, shipping_zip_code, 
+              shipping_country, shipping_state, shipping_city, shipping_phone_country_code
        FROM orders 
        WHERE user_id = $1 AND deleted = false 
        ORDER BY created_at DESC 
@@ -88,9 +89,12 @@ exports.getOrderDetail = async (req, res) => {
     // 获取订单信息
     const orders = await query(
       `SELECT id, order_guid, inquiry_id, total_amount, status, payment_method, payment_id, 
-              created_at, updated_at, shipping_name, shipping_phone, 
-              shipping_email, shipping_address, shipping_zip_code,
-              shipping_country, shipping_state, shipping_city, shipping_phone_country_code
+              created_at, created_at AT TIME ZONE create_time_zone as create_at_local,
+              updated_at, updated_at AT TIME ZONE create_time_zone as update_at_local,
+              paid_at, paid_at AT TIME ZONE paid_time_zone as paid_at_local,create_time_zone, paid_time_zone,
+              shipping_name, shipping_phone, shipping_email, shipping_address, 
+              shipping_zip_code, shipping_country, shipping_state, shipping_city, 
+              shipping_phone_country_code
        FROM orders 
        WHERE id = $1 AND user_id = $2 AND deleted = false`,
       [orderId, userId]
@@ -104,7 +108,7 @@ exports.getOrderDetail = async (req, res) => {
     }
 
     const order = orders.getFirstRow();
-
+    
     // 获取订单项（包含商品图片和类型名称）
     const orderItems = await query(
       `SELECT oi.id, oi.product_id, oi.quantity, oi.price, 

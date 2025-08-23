@@ -29,6 +29,16 @@
             <span class="label">{{ $t('payment.totalAmount') }}:</span>
             <span class="value">${{ orderData.order.total_amount }}</span>
           </div>
+          <div class="order-status">
+            <span class="label">{{ $t('payment.orderStatus') || '订单状态' }}:</span>
+            <span class="value" :class="getOrderStatusClass(orderData.order.status)">{{
+              getOrderStatusText(orderData.order.status) }}</span>
+          </div>
+          <div v-if="orderData.order.paid_at" class="payment-time">
+            <span class="label">{{ $t('payment.paidAt') || '支付时间' }}:</span>
+            <span class="value">{{ formatDateWithTimezone(orderData.order.paid_at, orderData.order.paid_time_zone)
+              }}</span>
+          </div>
         </div>
       </div>
 
@@ -166,8 +176,48 @@
         </div>
       </div>
 
-      <!-- 支付方式选择 -->
-      <div class="payment-section">
+      <!-- 物流信息 -->
+      <div v-if="orderData.order.status === 'shipped' && orderData.logistics && orderData.logistics.length > 0"
+        class="logistics-section">
+        <h3 class="section-title">
+          <div class="title-content">
+            <el-icon>
+              <Van />
+            </el-icon>
+            {{ $t('payment.logisticsInfo') || '物流信息' }}
+          </div>
+          <el-button @click="handleBackClick" type="default" class="back-btn">
+            <el-icon>
+              <ArrowLeft />
+            </el-icon>
+            {{ $t('common.back') || '返回' }}
+          </el-button>
+        </h3>
+        <div class="logistics-info">
+          <!-- 物流基本信息 -->
+          <div class="info-row">
+            <div class="info-item">
+              <span class="info-label">{{ $t('payment.shippingNo') || '物流单号' }}</span>
+              <span class="info-value">{{ orderData.logistics[0].shipping_no || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">{{ $t('payment.shippingStatus') || '物流状态' }}</span>
+              <span class="info-value">{{ orderData.logistics[0].shipping_status || 'N/A' }}</span>
+            </div>
+          </div>
+
+          <!-- 物流跟踪信息 -->
+          <div v-if="orderData.logistics[0].tracking_info" class="info-row full-width">
+            <div class="info-item full-width">
+              <span class="info-label">{{ $t('payment.trackingInfo') || '跟踪信息' }}</span>
+              <span class="info-value">{{ orderData.logistics[0].tracking_info }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 支付方式选择 - 只在pending状态显示 -->
+      <div v-if="orderData.order.status === 'pending'" class="payment-section">
         <h3 class="section-title">
           <div class="title-content">
             <el-icon>
@@ -182,6 +232,8 @@
             {{ $t('common.back') || '返回' }}
           </el-button>
         </h3>
+
+        <!-- 待支付状态显示支付选项 -->
         <div class="payment-methods">
           <!-- PayPal 支付 -->
           <div class="payment-method paypal-method">
@@ -230,7 +282,6 @@
         </div>
       </div>
     </div>
-
     <!-- 支付成功提示 -->
     <div v-if="paySuccess" class="payment-success">
       <div class="success-content">
@@ -284,7 +335,7 @@
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import InquiryDetailPanel from '@/components/common/InquiryDetailPanel.vue';
-import { Document, ShoppingBag, Location, CreditCard, ArrowLeft, FullScreen, Close } from '@element-plus/icons-vue';
+import { Document, ShoppingBag, Location, CreditCard, ArrowLeft, FullScreen, Close, Van } from '@element-plus/icons-vue';
 
 export default {
   name: 'OrderPayment',
@@ -298,7 +349,8 @@ export default {
     CreditCard,
     ArrowLeft,
     FullScreen,
-    Close
+    Close,
+    Van
   },
   data() {
     return {
@@ -359,11 +411,15 @@ export default {
     this.setBreadcrumbItems();
     
     await this.fetchOrderDetail();
-    await this.fetchPayPalConfig();
-    // 获取汇率
-    await this.fetchExchangeRate();
-    // 自动生成支付宝支付表单
-    await this.generateAlipayForm('alipay');
+    
+    // 只有订单状态为pending时才初始化支付功能
+    if (this.orderData && this.orderData.order && this.orderData.order.status === 'pending') {
+      await this.fetchPayPalConfig();
+      // 获取汇率
+      await this.fetchExchangeRate();
+      // 自动生成支付宝支付表单
+      await this.generateAlipayForm('alipay');
+    }
   },
   mounted() {
     // PayPal SDK在fetchPayPalConfig完成后加载
@@ -534,7 +590,8 @@ export default {
           try {
             const response = await this.$api.postWithErrorHandler('/payment/paypal/capture', {
               paypalOrderId: data.orderID,
-              orderId: this.orderId
+              orderId: this.orderId,
+              paid_time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
             });
             
             if (response.success) {
@@ -564,32 +621,7 @@ export default {
         this.$messageHandler.showError(err, 'payment.error.paypalButtonLoadFailed');
       });
     },
-    async generateQrcode(paymentMethod) {
-      this.generating = true;
-      this.clearQrcodeTimers();
-      this.qrcodeUrl = '';
-      
-      try {
-        const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
-          orderId: this.orderId,
-          paymentMethod
-        });
-        
-        if (qrRes.success) {
-          this.qrcodeUrl = qrRes.data.qrcodeUrl;
-          this.startPaymentStatusPolling(this.orderId, paymentMethod);
-          this.startQrcodeTimer();
-          this.startAutoRefresh(paymentMethod);
-        } else {
-          this.$messageHandler.showError('生成二维码失败: ' + qrRes.message, 'payment.error.qrcodeGenerateFailed');
-        }
-      } catch (error) {
-        console.error('Error generating QR code:', error);
-        this.$messageHandler.showError(this.$t('payment.qrcodeGenerateFailed'), 'payment.error.qrcodeGenerateFailed');
-      } finally {
-        this.generating = false;
-      }
-    },
+
     async generateAlipayForm(paymentMethod) {
       this.generating = true;
       this.clearAlipayTimers();
@@ -598,7 +630,9 @@ export default {
       try {
         const formRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
           orderId: this.orderId,
-          paymentMethod
+          paymentMethod,
+          paidTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          exchangeRate: this.exchangeRate
         });
         
         if (formRes.success && formRes.data.paymentForm) {
@@ -627,7 +661,8 @@ export default {
       try {
         const qrRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
           orderId: this.orderId,
-          paymentMethod
+          paymentMethod,
+          exchangeRate: this.exchangeRate
         });
         
         if (qrRes.success) {
@@ -651,7 +686,8 @@ export default {
       try {
         const formRes = await this.$api.postWithErrorHandler('/payment/qrcode', {
           orderId: this.orderId,
-          paymentMethod
+          paymentMethod,
+          exchangeRate: this.exchangeRate
         });
         
         if (formRes.success && formRes.data.paymentForm) {
@@ -1015,7 +1051,8 @@ export default {
         const response = await this.$api.postWithErrorHandler('/payment/qrcode', {
           orderId: this.orderId,
           paymentMethod: 'alipay',
-          deviceType: 'mobile'
+          deviceType: 'mobile',
+          exchangeRate: this.exchangeRate
         });
         
         if (response.success && response.data.paymentForm) {
@@ -1094,6 +1131,43 @@ export default {
       } finally {
         this.exchangeRateLoading = false;
       }
+    },
+    formatDateWithTimezone(dateStr, timezone) {
+      if (!dateStr) return 'N/A';
+      try {
+        const date = new Date(dateStr);
+        const formattedDate = date.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        return timezone ? `${formattedDate} (${timezone})` : formattedDate;
+      } catch (error) {
+        console.error('Error formatting date:', error);
+        return dateStr;
+      }
+    },
+    getOrderStatusText(status) {
+      const statusMap = {
+        'pending': this.$t('order.status.pending') || '待支付',
+        'paid': this.$t('order.status.paid') || '已支付',
+        'shipped': this.$t('order.status.shipped') || '已发货',
+        'delivered': this.$t('order.status.delivered') || '已送达',
+        'cancelled': this.$t('order.status.cancelled') || '已取消'
+      };
+      return statusMap[status] || status;
+    },
+    getOrderStatusClass(status) {
+      return {
+        'status-pending': status === 'pending',
+        'status-paid': status === 'paid',
+        'status-shipped': status === 'shipped',
+        'status-delivered': status === 'delivered',
+        'status-cancelled': status === 'cancelled'
+      };
     }
   }
 };
@@ -1120,11 +1194,11 @@ export default {
 
   h2,
   h3 {
-    margin: 0;
+    margin: 0 0 $spacing-lg 0;
     color: $text-primary;
     font-size: $font-size-xl;
     font-weight: $font-weight-semibold;
-    padding-bottom: $spacing-sm;
+    padding-bottom: $spacing-md;
   }
 }
 
@@ -1418,6 +1492,30 @@ export default {
   padding: $spacing-lg;
   border-radius: $border-radius-md;
   border: 1px solid $border-color;
+}
+
+/* 物流信息样式 */
+.logistics-info {
+  padding: $spacing-lg;
+  border-radius: $border-radius-md;
+  border: 1px solid $border-color;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+
+  .info-item {
+    background: $white;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    .info-label {
+      color: $text-secondary;
+      font-weight: $font-weight-semibold;
+    }
+
+    .info-value {
+      color: $text-primary;
+      font-weight: $font-weight-medium;
+    }
+  }
 }
 
 .info-row {
@@ -2080,6 +2178,131 @@ export default {
       }
 
       font-weight: 600;
+    }
+  }
+
+  /* 已支付状态样式 */
+  .paid-status {
+    text-align: center;
+    padding: $spacing-2xl;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #0ea5e9;
+    border-radius: $border-radius-lg;
+    margin: $spacing-lg 0;
+
+    .paid-icon {
+      font-size: 48px;
+      color: #0ea5e9;
+      margin-bottom: $spacing-md;
+    }
+
+    .paid-title {
+      font-size: $font-size-2xl;
+      font-weight: $font-weight-bold;
+      color: #0ea5e9;
+      margin-bottom: $spacing-sm;
+    }
+
+    .paid-subtitle {
+      font-size: $font-size-md;
+      color: $text-secondary;
+      margin-bottom: $spacing-lg;
+    }
+
+    .payment-details {
+      background: $white;
+      border-radius: $border-radius-md;
+      padding: $spacing-lg;
+      border: 1px solid #e0f2fe;
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: $spacing-sm 0;
+        border-bottom: 1px solid #f1f5f9;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .detail-label {
+          font-weight: $font-weight-medium;
+          color: $text-secondary;
+        }
+
+        .detail-value {
+          font-weight: $font-weight-semibold;
+          color: $text-primary;
+        }
+      }
+    }
+
+    @include mobile {
+      padding: $spacing-lg;
+
+      .paid-icon {
+        font-size: 36px;
+      }
+
+      .paid-title {
+        font-size: $font-size-xl;
+      }
+    }
+  }
+}
+
+/* 订单状态样式 */
+.order-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.status-pending {
+    background-color: #fef3c7;
+    color: #d97706;
+    border: 1px solid #fbbf24;
+  }
+
+  &.status-paid {
+    background-color: #d1fae5;
+    color: #059669;
+    border: 1px solid #34d399;
+  }
+
+  &.status-shipped {
+    background-color: #dbeafe;
+    color: #2563eb;
+    border: 1px solid #60a5fa;
+  }
+
+  &.status-delivered {
+    background-color: #dcfce7;
+    color: #16a34a;
+    border: 1px solid #4ade80;
+  }
+
+  &.status-cancelled {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #f87171;
+  }
+}
+
+/* 物流信息部分样式 */
+.logistics-section {
+  @include card;
+  margin-bottom: $spacing-lg;
+  
+  .section-title {
+    .el-icon {
+      font-size: 20px;
+      color: $primary-color;
     }
   }
 }

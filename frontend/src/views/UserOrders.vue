@@ -12,22 +12,22 @@
           <div class="desktop-only">
             <el-table :data="orders" style="width: 100%" v-loading="loading" @row-click="handleRowClick"
               class="clickable-table">
-              <el-table-column prop="id" :label="$t('orders.orderNumber') || 'Order Number'" width="200">
+              <el-table-column prop="id" :label="$t('orders.orderNumber') || 'Order Number'" width="150">
                 <template #default="scope">
                   <span class="order-number">{{ scope.row.id }}</span>
                 </template>
               </el-table-column>
-              <el-table-column :label="$t('orders.orderDate') || '下单时间'" width="260">
+              <el-table-column :label="$t('orders.orderDate') || '下单时间'" width="280">
                 <template #default="{row}">
-                  <span class="order-date">{{ formatDate(row.created_at) }}</span>
+                  <span class="order-date">{{ formatDateWithTimezone(row.created_at_local || row.created_at, row.create_time_zone) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column :label="$t('orders.totalAmount') || '订单金额'" width="220">
+              <el-table-column :label="$t('orders.totalAmount') || '订单金额'" width="150">
                 <template #default="{row}">
                   <span class="order-amount">{{ $store.getters.formatPrice(row.total_amount) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column :label="$t('orders.status') || '订单状态'" width="200">
+              <el-table-column :label="$t('orders.status') || '订单状态'" width="150">
                 <template #default="{row}">
                   <el-tag :type="getStatusType(row.status)" class="status-tag">{{ getStatusText(row.status) }}</el-tag>
                 </template>
@@ -35,6 +35,11 @@
               <el-table-column :label="$t('orders.paymentMethod') || '支付方式'">
                 <template #default="{row}">
                   <span class="payment-method">{{ getPaymentMethodText(row.payment_method) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('orders.paidDate') || '支付时间'" width="280">
+                <template #default="{row}">
+                  <span class="order-date">{{ row.paid_at ? formatDateWithTimezone(row.paid_at, row.paid_time_zone) : '-' }}</span>
                 </template>
               </el-table-column>
             </el-table>
@@ -52,7 +57,11 @@
                 <div class="order-card-body">
                   <div class="order-info-row">
                     <span class="label">{{ $t('orders.orderDate') || '下单时间' }}:</span>
-                    <span class="value">{{ formatDate(order.created_at) }}</span>
+                    <span class="value">{{ formatDateWithTimezone(order.created_at_local || order.created_at, order.create_time_zone) }}</span>
+                  </div>
+                  <div class="order-info-row" v-if="order.paid_at">
+                    <span class="label">{{ $t('orders.paidDate') || '支付时间' }}:</span>
+                    <span class="value">{{ formatDateWithTimezone(order.paid_at, order.paid_time_zone) }}</span>
                   </div>
                   <div class="order-info-row">
                     <span class="label">{{ $t('orders.totalAmount') || '订单金额' }}:</span>
@@ -128,6 +137,7 @@ export default {
   },
   methods: {
     formatDate(dateString) {
+      if (!dateString) return '';
       const date = new Date(dateString);
       return date.toLocaleString('zh-CN', {
         year: 'numeric',
@@ -137,6 +147,19 @@ export default {
         minute: '2-digit',
         second: '2-digit'
       });
+    },
+    formatDateWithTimezone(dateString, timezone) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      const formattedDate = date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      return timezone ? `${formattedDate} (${timezone})` : formattedDate;
     },
     getStatusText(status) {
       const statusMap = {
