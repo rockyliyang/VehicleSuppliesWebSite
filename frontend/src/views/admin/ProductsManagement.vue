@@ -284,7 +284,24 @@
             </template>
           </el-upload>
         </el-form-item>
-        <el-form-item label="产品简介" prop="short_description">
+        
+        <el-form-item label="网络视频链接" prop="outside_video">
+          <el-input 
+            v-model="productForm.outside_video" 
+            placeholder="请输入外部视频链接（YouTube、Vimeo等平台或直接视频文件）"
+            clearable
+            style="width: 100%"
+          >
+            <template #prepend>
+              <el-icon><VideoPlay /></el-icon>
+            </template>
+          </el-input>
+          <div class="form-item-tip">
+            <span>支持YouTube、Vimeo等视频平台链接或直接视频文件链接</span>
+          </div>
+        </el-form-item>
+        
+        <el-form-item label="产品描述" prop="short_description">
           <el-input type="textarea" v-model="productForm.short_description" :rows="4" placeholder="请输入产品简介" />
         </el-form-item>
         <el-form-item label="产品详情" prop="full_description">
@@ -491,6 +508,7 @@ export default {
         sort_order: 0,
         short_description: '',
         full_description: '',
+        outside_video: '',
         status: 'on_shelf'
       },
       rules: {
@@ -507,6 +525,9 @@ export default {
         price_ranges: [
           { required: true, message: "请设置阶梯价格", trigger: "blur" },
           { validator: this.validatePriceRanges, trigger: "blur" }
+        ],
+        outside_video: [
+          { validator: this.validateVideoUrl, trigger: "blur" }
         ]
       },
       sessionId: localStorage.getItem("session_id") || (Date.now() + "-" + Math.random().toString(36).substr(2, 9)),
@@ -1104,6 +1125,50 @@ export default {
       }
 
       return { valid: true, sortedRanges };
+    },
+
+    // 验证外部视频链接
+    validateVideoUrl(rule, value, callback) {
+      if (!value || value.trim() === '') {
+        callback(); // 视频链接是可选的
+        return;
+      }
+      
+      // 验证URL格式（支持查询参数和锚点）
+      const urlPattern = /^(https?:\/\/)([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*(\/?)([?&][\w=&%-]*)?([#][\w-]*)?$/;
+      if (!urlPattern.test(value)) {
+        callback(new Error('请输入有效的外部视频链接'));
+        return;
+      }
+      
+      // 支持的视频平台和文件格式
+      const videoPlatforms = [
+        'youtube.com',
+        'youtu.be',
+        'vimeo.com',
+        'dailymotion.com',
+        'twitch.tv'
+      ];
+      
+      const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
+      
+      // 检查是否为支持的视频平台
+      const isSupportedPlatform = videoPlatforms.some(platform => 
+        value.toLowerCase().includes(platform)
+      );
+      
+      // 检查是否包含视频文件扩展名
+      const hasValidExtension = videoExtensions.some(ext => 
+        value.toLowerCase().includes(ext)
+      );
+      
+      // 如果既不是支持的平台也没有视频扩展名，则验证失败
+      if (!isSupportedPlatform && !hasValidExtension) {
+        callback(new Error('请输入有效的外部视频链接（支持YouTube、Vimeo等平台或直接视频文件链接）'));
+        return;
+      }
+      
+      callback();
     },
 
     // 提交表单
@@ -2142,15 +2207,17 @@ export default {
   color: #909399;
   font-size: 14px;
   padding: 40px 20px;
-  background: #f8f9fa;
-  border-radius: 6px;
 }
 
-.add-linked-section {
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  padding: 20px;
-  background: #fff;
+.form-item-tip {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.4;
+}
+
+.form-item-tip span {
+  display: block;
 }
 
 .price-ranges {

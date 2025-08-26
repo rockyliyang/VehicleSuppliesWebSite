@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS products (
   full_description TEXT,
   price DECIMAL(10, 2) NOT NULL,
   thumbnail_url VARCHAR(255) DEFAULT NULL,
+  outside_video VARCHAR(512) DEFAULT NULL,
   stock INT NOT NULL,
   category_id BIGINT NOT NULL,
   product_type VARCHAR(16) NOT NULL DEFAULT 'self_operated' CHECK (product_type IN ('self_operated', 'consignment')),
@@ -151,6 +152,7 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- 添加注释
 COMMENT ON COLUMN products.product_type IS '产品类型：self_operated-自营，consignment-代销';
+COMMENT ON COLUMN products.outside_video IS '外部视频链接(YouTube、Vimeo等)';
 COMMENT ON COLUMN products.sort_order IS '排序字段，数值越大排序越靠前';
 COMMENT ON COLUMN products.product_length IS '产品单件长度(cm)';
 COMMENT ON COLUMN products.product_width IS '产品单件宽度(cm)';

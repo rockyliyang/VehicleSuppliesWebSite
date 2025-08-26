@@ -13,7 +13,17 @@
             <div class="main-image" ref="mainImage" :class="{ 'mobile-view': isMobile }" @mousemove="handleMouseMove"
               @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
               <!-- 显示视频或图片 -->
-              <video v-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted ref="mainVideoEl"
+              <iframe v-if="isActiveMediaVideo && isEmbedVideo(activeImage)" 
+                :src="getEmbedVideoUrl(activeImage)" 
+                :title="product.name"
+                class="main-video embed-video"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                ref="mainVideoEl"
+                @load="updateMainImgSize">
+              </iframe>
+              <video v-else-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted ref="mainVideoEl"
                 class="main-video" @loadedmetadata="updateMainImgSize">
                 您的浏览器不支持视频播放。
               </video>
@@ -32,7 +42,10 @@
                     :class="['thumbnail', activeImage === media.url ? 'active' : '']" @click="setActiveMedia(media)">
                     <!-- 视频缩略图显示播放图标 -->
                     <div v-if="media.type === 'video'" class="video-thumbnail">
-                      <video :src="media.url" :alt="product.name" @error="handleImageError" muted>
+                      <div v-if="isEmbedVideo(media.url)" class="embed-video-thumbnail">
+                        <img :src="getVideoThumbnail(media.url)" :alt="product.name" @error="handleImageError">
+                      </div>
+                      <video v-else :src="media.url" :alt="product.name" @error="handleImageError" muted>
                         您的浏览器不支持视频播放。
                       </video>
                       <div class="play-icon">
@@ -397,6 +410,14 @@ export default {
       // 轮播图只包含详情图（image_type=1），支持图片和视频
       const arr = []
       
+      // 如果有外部视频链接，优先添加到第一位
+      if (this.product.outside_video && this.product.outside_video.trim()) {
+        arr.push({
+          url: this.product.outside_video,
+          type: 'video'
+        })
+      }
+      
       // 添加详情图片，detail_images是字符串数组
       if (this.product.detail_images && Array.isArray(this.product.detail_images)) {
         arr.push(...this.product.detail_images
@@ -564,6 +585,15 @@ export default {
           await addBrowsingHistory(this.product.id, this)
           await this.checkFavoriteStatusLocal()
         }
+        
+        // 设置默认活动媒体，优先显示视频
+        this.$nextTick(() => {
+          if (this.galleryImages && this.galleryImages.length > 0) {
+            this.setActiveMedia(this.galleryImages[0])
+          } else {
+            this.activeImage = this.product.thumbnail_url || ''
+          }
+        })
       } catch (error) {
         console.error('获取产品详情失败:', error)
         this.$messageHandler.showError(error, 'product.error.fetchFailed')
@@ -864,10 +894,95 @@ export default {
     // 判断媒体类型
     getMediaType(url) {
       if (!url) return 'image'
+      
+      // 检查是否为支持的视频平台
+      const videoPlatforms = [
+        'youtube.com',
+        'youtu.be',
+        'vimeo.com',
+        'dailymotion.com',
+        'twitch.tv'
+      ];
+      
+      const isSupportedPlatform = videoPlatforms.some(platform => 
+        url.toLowerCase().includes(platform)
+      );
+      
+      if (isSupportedPlatform) {
+        return 'video';
+      }
+      
+      // 检查视频文件扩展名
       const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv']
       const extension = url.toLowerCase().substring(url.lastIndexOf('.'))
       return videoExtensions.includes(extension) ? 'video' : 'image'
     },
+    // 转换视频URL为嵌入格式
+    getEmbedVideoUrl(url) {
+      if (!url) return url;
+      
+      // YouTube链接转换
+      if (url.includes('youtube.com/watch')) {
+        const videoId = url.split('v=')[1]?.split('&')[0];
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
+        }
+      }
+      
+      // YouTube短链接转换
+      if (url.includes('youtu.be/')) {
+        const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
+        }
+      }
+      
+      // Vimeo链接转换
+      if (url.includes('vimeo.com/')) {
+        const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
+        if (videoId) {
+          return `https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=1`;
+        }
+      }
+      
+      // 其他平台或直接视频文件返回原URL
+      return url;
+    },
+    // 检查是否为嵌入视频（需要iframe）
+     isEmbedVideo(url) {
+       if (!url) return false;
+       const embedPlatforms = ['youtube.com', 'youtu.be', 'vimeo.com'];
+       return embedPlatforms.some(platform => url.toLowerCase().includes(platform));
+     },
+     // 获取视频缩略图
+     getVideoThumbnail(url) {
+       if (!url) return '';
+       
+       // YouTube缩略图
+       if (url.includes('youtube.com/watch')) {
+         const videoId = url.split('v=')[1]?.split('&')[0];
+         if (videoId) {
+           return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+         }
+       }
+       
+       // YouTube短链接缩略图
+       if (url.includes('youtu.be/')) {
+         const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+         if (videoId) {
+           return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+         }
+       }
+       
+       // Vimeo缩略图（需要API调用，这里使用默认图标）
+       if (url.includes('vimeo.com/')) {
+         // 可以考虑使用Vimeo API获取缩略图，这里先返回空
+         return '';
+       }
+       
+       // 其他情况返回空，让video元素自己处理
+       return '';
+     },
     // 设置当前活动媒体
     setActiveMedia(media) {
       this.activeImage = media.url
@@ -876,7 +991,8 @@ export default {
         this.showZoom = false
         this.$nextTick(() => {
           const videoEl = this.$refs.mainVideoEl
-          if (videoEl) {
+          // 只对真正的video元素调用play方法，iframe元素没有play方法
+          if (videoEl && videoEl.tagName === 'VIDEO') {
             videoEl.currentTime = 0 // 从头开始播放
             videoEl.loop = true // 循环播放
             videoEl.muted = true // 默认静音
@@ -1429,6 +1545,26 @@ export default {
 
 .main-video {
   background: #000;
+}
+
+.embed-video {
+  width: 100%;
+  height: 100%;
+  border-radius: $border-radius-md;
+  min-height: 400px;
+}
+
+.embed-video-thumbnail {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: $border-radius-sm;
+  }
 }
 
 .video-thumbnail {

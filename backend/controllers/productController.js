@@ -225,6 +225,7 @@ exports.createProduct = async (req, res) => {
       status = 'on_shelf',
       product_type = 'consignment', // 默认为代销
       thumbnail_url = null,
+      outside_video = null,
       short_description = '',
       full_description = '',
       sort_order = 0,
@@ -269,10 +270,10 @@ exports.createProduct = async (req, res) => {
     const result = await connection.query(
       `INSERT INTO products (
         name, product_code, category_id, price, stock, status, product_type,
-        thumbnail_url, short_description, full_description, sort_order, 
+        thumbnail_url, outside_video, short_description, full_description, sort_order, 
         product_length, product_width, product_height, product_weight,
         deleted, created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, false, $16, $17) RETURNING id, guid`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, false, $17, $18) RETURNING id, guid`,
       [
         name,
         product_code,
@@ -282,6 +283,7 @@ exports.createProduct = async (req, res) => {
         status,
         product_type,
         thumbnail_url,
+        outside_video,
         short_description,
         full_description,
         sort_order,
@@ -471,7 +473,7 @@ exports.getProductById = async (req, res) => {
     // 查询产品基本信息，明确列出所有字段
     const rows = await connection.query(
       `SELECT p.id, p.guid, p.name, p.product_code, p.category_id, p.price, p.stock, p.status, 
-       p.product_type, p.short_description, p.product_length, p.product_width, p.product_height, p.full_description, p.created_at, p.updated_at, 
+       p.product_type, p.short_description, p.product_length, p.product_width, p.product_height, p.full_description, p.outside_video, p.created_at, p.updated_at, 
        c.name as category_name 
        FROM products p
        LEFT JOIN product_categories c ON p.category_id = c.id
@@ -566,6 +568,7 @@ exports.updateProduct = async (req, res) => {
       status,
       product_type,
       thumbnail_url,
+      outside_video,
       short_description,
       full_description,
       sort_order = 0,
@@ -631,16 +634,17 @@ exports.updateProduct = async (req, res) => {
         status = $6, 
         product_type = $7,
         thumbnail_url = $8, 
-        short_description = $9, 
-        full_description = $10,
-        sort_order = $11,
-        product_length = $12,
-        product_width = $13,
-        product_height = $14,
-        product_weight = $15,
-        updated_by = $16,
+        outside_video = $9,
+        short_description = $10, 
+        full_description = $11,
+        sort_order = $12,
+        product_length = $13,
+        product_width = $14,
+        product_height = $15,
+        product_weight = $16,
+        updated_by = $17,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $17`,
+      WHERE id = $18`,
       [
         name,
         product_code,
@@ -650,6 +654,7 @@ exports.updateProduct = async (req, res) => {
         status,
         product_type,
         thumbnail_url,
+        outside_video,
         short_description,
         full_description,
         sort_order,
@@ -703,6 +708,7 @@ exports.updateProduct = async (req, res) => {
         status,
         product_type,
         thumbnail_url,
+        outside_video,
         short_description,
         full_description,
         product_length,
