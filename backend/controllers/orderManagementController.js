@@ -700,6 +700,9 @@ class OrderManagementController {
    * @returns {string} - HTML邮件模板
    */
   generateOrderUpdateEmailTemplate(username, orderId, updatedFieldsDescription) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    const orderLink = `${frontendUrl}/order-payment/${orderId}?from=checkout`;
+    
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">Order Update Notification</h2>
@@ -712,6 +715,12 @@ class OrderManagementController {
           <h3 style="color: #495057; margin-top: 0;">Updated Fields:</h3>
           <p style="margin: 0;">${updatedFieldsDescription}</p>
         </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${orderLink}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Order Details</a>
+        </div>
+        
+        <p>You can also view your order details by clicking the link above or visiting: <a href="${orderLink}">${orderLink}</a></p>
         
         <p>If you have any questions about these changes, please don't hesitate to contact our customer service team.</p>
         

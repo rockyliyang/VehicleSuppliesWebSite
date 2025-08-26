@@ -738,19 +738,30 @@ export default {
 /* Remember & Forgot */
 .remember-forgot {
   @include flex-between;
+  align-items: center;
   margin-bottom: $spacing-md;
   font-size: $font-size-xl;
+  flex-wrap: nowrap;
+}
+
+.remember-checkbox {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .remember-checkbox :deep(.el-checkbox__label) {
   color: $text-secondary;
   font-size: $font-size-xl;
+  white-space: nowrap;
 }
 
 .forgot-password {
   @include link-base;
   font-size: $font-size-xl;
   font-weight: $font-weight-medium;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Verification Code */

@@ -306,7 +306,7 @@
     </div>
 
     <!-- 支付成功对话框 -->
-    <el-dialog v-model="paySuccess" :title="$t('checkout.paymentSuccess') || '支付成功'" :width="$dialog-width-md"
+    <el-dialog v-model="paySuccess" :title="$t('checkout.paymentSuccess') || '支付成功'" width="400px"
       class="success-dialog" center>
       <div class="success-content">
         <div class="success-icon-wrapper">

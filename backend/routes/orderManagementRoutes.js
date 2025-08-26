@@ -10,13 +10,13 @@ const { verifyToken, isAdmin, requireRole } = require('../middleware/jwt');
  */
 
 // 订单管理相关路由 - 需要登录验证，管理员和业务员都可以访问
-router.get('/orders', verifyToken, orderManagementController.getOrders);
-router.get('/orders/:orderId', verifyToken, orderManagementController.getOrderDetail);
-router.put('/orders/:orderId/logistics', verifyToken, orderManagementController.updateOrderLogistics);
-router.put('/orders/:orderId/update', verifyToken, orderManagementController.updateOrderFields);
+router.get('/orders', verifyToken, (req, res) => orderManagementController.getOrders(req, res));
+router.get('/orders/:orderId', verifyToken, (req, res) => orderManagementController.getOrderDetail(req, res));
+router.put('/orders/:orderId/logistics', verifyToken, (req, res) => orderManagementController.updateOrderLogistics(req, res));
+router.put('/orders/:orderId/update', verifyToken, (req, res) => orderManagementController.updateOrderFields(req, res));
 
 // 物流公司查询 - 需要登录验证
-router.get('/logistics-companies', verifyToken, orderManagementController.getLogisticsCompanies);
+router.get('/logistics-companies', verifyToken, (req, res) => orderManagementController.getLogisticsCompanies(req, res));
 
 
 

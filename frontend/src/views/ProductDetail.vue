@@ -1283,7 +1283,6 @@ export default {
      },
      
      // 处理结账事件
-     /*
      handleCheckout(orderData) {
        this.showBuyNowDialog = false;
        
@@ -1294,7 +1293,7 @@ export default {
        this.$router.push({
          name: 'UnifiedCheckout'
        });
-     }*/
+     }
   }
 }
 </script>
