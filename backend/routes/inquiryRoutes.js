@@ -15,6 +15,9 @@ router.get('/:inquiryId', inquiryController.getInquiryDetail);
 // 创建新询价
 router.post('/', inquiryController.createInquiry);
 
+// 修改询价单信息
+router.put('/:inquiryId', inquiryController.updateInquiry);
+
 // 查找包含特定商品的询价单
 router.post('/product/:productId', inquiryController.findInquiryByProduct);
 

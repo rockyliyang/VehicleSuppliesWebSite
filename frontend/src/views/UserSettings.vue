@@ -27,7 +27,40 @@
         <div class="info-grid">
           <div class="info-item">
             <label>{{ $t('userSettings.accountInfo.username') }}</label>
-            <span>{{ userInfo.username || '-' }}</span>
+            <div class="username-edit">
+              <span v-if="!editingUsername">{{ userInfo.username || '-' }}</span>
+              <el-input 
+                v-else
+                v-model="editUsernameValue"
+                size="small"
+                :placeholder="$t('userSettings.accountInfo.usernamePlaceholder')"
+                style="width: 200px;"
+              />
+              <el-button 
+                v-if="!editingUsername"
+                type="text" 
+                size="small"
+                @click="startEditUsername"
+              >
+                {{ $t('userSettings.accountInfo.edit') }}
+              </el-button>
+              <div v-else class="username-actions">
+                <el-button 
+                  type="primary" 
+                  size="small"
+                  :loading="savingUsername"
+                  @click="saveUsername"
+                >
+                  {{ $t('userSettings.accountInfo.save') }}
+                </el-button>
+                <el-button 
+                  size="small"
+                  @click="cancelEditUsername"
+                >
+                  {{ $t('userSettings.accountInfo.cancel') }}
+                </el-button>
+              </div>
+            </div>
           </div>
           <div class="info-item">
             <label>{{ $t('userSettings.accountInfo.email') }}</label>
@@ -142,7 +175,10 @@ export default {
       userInfo: {},
       editingPhone: false,
       editPhoneValue: '',
-      savingPhone: false
+      savingPhone: false,
+      editingUsername: false,
+      editUsernameValue: '',
+      savingUsername: false
     }
   },
   computed: {
@@ -180,6 +216,16 @@ export default {
       this.editPhoneValue = '';
     },
     
+    startEditUsername() {
+      this.editingUsername = true;
+      this.editUsernameValue = this.userInfo.username || '';
+    },
+    
+    cancelEditUsername() {
+      this.editingUsername = false;
+      this.editUsernameValue = '';
+    },
+    
     async savePhone() {
       try {
         this.savingPhone = true;
@@ -208,6 +254,34 @@ export default {
         this.$message.error(this.$t('userSettings.messages.phoneUpdateFailed'));
       } finally {
         this.savingPhone = false;
+      }
+    },
+    
+    async saveUsername() {
+      try {
+        this.savingUsername = true;
+        
+        // Validate username format
+        if (!this.editUsernameValue || this.editUsernameValue.trim().length < 2) {
+          this.$message.error(this.$t('userSettings.messages.invalidUsernameFormat'));
+          return;
+        }
+        
+        // Call API to update username
+        await this.$api.putWithErrorHandler('/users/profile', {
+          username: this.editUsernameValue.trim()
+        }, {
+          fallbackKey: 'userSettings.messages.updateUsernameFailed'
+        });
+        
+        // Update local data
+        this.userInfo.username = this.editUsernameValue.trim();
+        this.editingUsername = false;
+      } catch (error) {
+        console.error('Failed to update username:', error);
+        this.$message.error(this.$t('userSettings.messages.usernameUpdateFailed'));
+      } finally {
+        this.savingUsername = false;
       }
     },
     
@@ -338,6 +412,19 @@ export default {
 }
 
 .phone-actions {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.username-edit {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.username-actions {
   display: flex;
   gap: $spacing-xs;
 }

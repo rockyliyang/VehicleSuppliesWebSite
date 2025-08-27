@@ -15,6 +15,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const path = require('path');
 
 // 路由导入
@@ -58,13 +59,18 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Session 配置
+// Session 配置 - 使用PostgreSQL存储
 app.use(session({
+  store: new pgSession({
+    pool: pool, // 使用现有的数据库连接池
+    tableName: 'session', // 使用我们创建的session表
+    createTableIfMissing: true // 让pgSession自动创建表
+  }),
   secret: process.env.SESSION_SECRET || 'your-secret-key-here',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // 在开发环境中设为 false，生产环境中如果使用 HTTPS 则设为 true
+    secure: process.env.COOKIE_SECURE === 'true', // 使用COOKIE_SECURE环境变量控制
     maxAge: 24 * 60 * 60 * 1000 // 24小时
   }
 }));

@@ -1066,6 +1066,9 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'messages.checkoutSuccess', 'zh-CN', '结算成功'),
 (gen_random_uuid(), 'INQUIRY.ADD_ITEM.FAILED', 'en', 'Failed to add item to inquiry'),
 (gen_random_uuid(), 'INQUIRY.ADD_ITEM.FAILED', 'zh-CN', '添加商品到询价失败'),
+(gen_random_uuid(), 'INQUIRY.UPDATE.FAILED', 'en', 'Failed to update inquiry'),
+(gen_random_uuid(), 'INQUIRY.UPDATE.FAILED', 'zh-CN', '修改询价单失败'),
+
 
 -- UserSettings.vue中的第三方账号管理翻译键
 (gen_random_uuid(), 'userSettings.thirdParty.title', 'en', 'Third Party Accounts'),
@@ -1094,6 +1097,11 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'userSettings.thirdParty.unbindSuccess', 'zh-CN', '账号解绑成功'),
 (gen_random_uuid(), 'userSettings.thirdParty.unbindFailed', 'en', 'Account unbinding failed'),
 (gen_random_uuid(), 'userSettings.thirdParty.unbindFailed', 'zh-CN', '账号解绑失败'),
+(gen_random_uuid(), 'userSettings.messages.updateUsernameFailed', 'en', 'Failed to update username'),
+(gen_random_uuid(), 'userSettings.messages.updateUsernameFailed', 'zh-CN', '修改用户名失败'),
+(gen_random_uuid(), 'userSettings.messages.invalidUsernameFormat', 'en', 'Invalid username format'),
+(gen_random_uuid(), 'userSettings.messages.invalidUsernameFormat', 'zh-CN', '无效的用户名格式'),
+
 -- PAYPAL相关
 (gen_random_uuid(), 'PAYPAL.CREATE_ORDER_FAILED', 'en', 'PayPal order creation failed'),
 (gen_random_uuid(), 'PAYPAL.CREATE_ORDER_FAILED', 'zh-CN', 'PayPal订单创建失败'),

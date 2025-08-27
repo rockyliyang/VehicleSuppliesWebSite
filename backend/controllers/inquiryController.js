@@ -338,6 +338,63 @@ exports.createInquiry = async (req, res) => {
   }
 };
 
+// 修改询价单信息
+exports.updateInquiry = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { inquiryId } = req.params;
+    const { title } = req.body;
+    
+    if (!title || title.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.INVALID_TITLE')
+      });
+    }
+    
+    // 验证询价是否存在且属于当前用户
+    const inquiryResult = await query(
+      'SELECT id, status FROM inquiries WHERE id = $1 AND user_id = $2 AND deleted = false',
+      [inquiryId, userId]
+    );
+    
+    if (!inquiryResult || inquiryResult.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('INQUIRY.VALIDATION.NOT_FOUND')
+      });
+    }
+    
+    if (inquiryResult.getFirstRow().status !== 'inquiried') {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('INQUIRY.BUSINESS.CANNOT_MODIFY_SUBMITTED')
+      });
+    }
+    
+    // 更新询价单标题
+    await query(
+      'UPDATE inquiries SET title = $1, updated_by = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+      [title.trim(), userId, inquiryId]
+    );
+    
+    return res.json({
+      success: true,
+      message: getMessage('INQUIRY.UPDATE.SUCCESS'),
+      data: {
+        id: inquiryId,
+        title: title.trim()
+      }
+    });
+  } catch (error) {
+    console.error('修改询价单失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('INQUIRY.UPDATE.FAILED')
+    });
+  }
+};
+
 // 添加商品到询价
 exports.addItemToInquiry = async (req, res) => {
   try {

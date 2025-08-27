@@ -18,6 +18,11 @@ pm2 set pm2-logrotate:max_size 10M    # 日志达 10MB 时分割
 pm2 set pm2-logrotate:retain 30       # 保留最近 30 份日志
 
 ### 0.2 install postgresql
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+//on alibaba cloud linux 3, we need update to 8
+sudo sed -i 's/\$releasever/8/g' /etc/yum.repos.d/pgdg-redhat-all.repo
+
 sudo dnf module enable postgresql:16 -y
 sudo dnf install postgresql-server
 sudo postgresql-setup --initdb

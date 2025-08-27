@@ -36,14 +36,33 @@
                 :class="{ 'active': activeInquiryId === inquiry.id }" @click="switchTab(inquiry.id)">
                 <div class="inquiry-item-content">
                   <div class="inquiry-item-header">
-                    <h4 class="inquiry-item-title">{{ inquiry.title }}</h4>
-                    <div class="inquiry-item-actions">
-                      <span v-if="inquiry.unread_count > 0 && activeInquiryId !== inquiry.id" class="unread-badge">{{
-                        inquiry.unread_count }}</span>
-                      <button class="delete-inquiry-btn" @click.stop="confirmDeleteInquiry(inquiry.id)"
-                        :title="$t('cart.closeInquiry') || 'Close Inquiry'">
-                        <i class="material-icons">close</i>
-                      </button>
+                    <div v-if="editingInquiry === inquiry.id" class="inquiry-edit-form">
+                      <input v-model="editInquiryTitle" class="inquiry-title-input"
+                        @keyup.enter="saveInquiryTitle(inquiry.id)" @keyup.esc="cancelEditInquiry()"
+                        placeholder="请输入询价单名称">
+                      <div class="inquiry-edit-actions">
+                        <button class="save-btn" @click="saveInquiryTitle(inquiry.id)">
+                          <i class="material-icons">check</i>
+                        </button>
+                        <button class="cancel-btn" @click="cancelEditInquiry()">
+                          <i class="material-icons">close</i>
+                        </button>
+                      </div>
+                    </div>
+                    <div v-else class="inquiry-title-display">
+                      <h4 class="inquiry-item-title">{{ inquiry.title }}</h4>
+                      <div class="inquiry-item-actions">
+                        <span v-if="inquiry.unread_count > 0 && activeInquiryId !== inquiry.id" class="unread-badge">{{
+                          inquiry.unread_count }}</span>
+                        <button class="edit-inquiry-btn" @click.stop="startEditInquiry(inquiry)"
+                          :title="$t('cart.editInquiry') || 'Edit Inquiry'">
+                          <i class="material-icons">edit</i>
+                        </button>
+                        <button class="delete-inquiry-btn" @click.stop="confirmDeleteInquiry(inquiry.id)"
+                          :title="$t('cart.deleteInquiry') || 'Delete Inquiry'">
+                          <i class="material-icons">delete</i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div class="inquiry-item-preview">
@@ -117,7 +136,10 @@ export default {
       // Tab control data
       activeTab: 'unpaid', // 'paid' or 'unpaid'
       // 定时刷新
-      refreshTimer: null
+      refreshTimer: null,
+      // 编辑询价单
+      editingInquiry: null,
+      editInquiryTitle: ''
     };
   },
   computed: {
@@ -382,6 +404,42 @@ export default {
         }
       } catch (error) {
         console.error('删除询价单失败:', error);
+      }
+    },
+
+    startEditInquiry(inquiry) {
+      this.editingInquiry = inquiry.id;
+      this.editInquiryTitle = inquiry.title;
+    },
+
+    cancelEditInquiry() {
+      this.editingInquiry = null;
+      this.editInquiryTitle = '';
+    },
+
+    async saveInquiryTitle(inquiryId) {
+      if (!this.editInquiryTitle.trim()) {
+        this.$messageHandler.showWarning('询价单名称不能为空');
+        return;
+      }
+
+      try {
+        const response = await api.putWithErrorHandler(`/inquiries/${inquiryId}`, {
+          title: this.editInquiryTitle.trim()
+        }, {
+          fallbackKey: 'INQUIRY.UPDATE.FAILED'
+        });
+
+        if (response.success) {
+          const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
+          if (inquiry) {
+            inquiry.title = this.editInquiryTitle.trim();
+          }
+          this.editingInquiry = null;
+          this.editInquiryTitle = '';
+        }
+      } catch (error) {
+        console.error('修改询价单名称失败:', error);
       }
     },
     
@@ -1039,6 +1097,95 @@ export default {
 
 .delete-inquiry-btn .material-icons {
   font-size: $font-size-lg;
+}
+
+.edit-inquiry-btn {
+  background: none;
+  border: none;
+  color: $info-color;
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: $border-radius-xs;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: $transition-base;
+}
+
+.edit-inquiry-btn:hover {
+  background: rgba($info-color, 0.1);
+}
+
+.edit-inquiry-btn .material-icons {
+  font-size: $font-size-lg;
+}
+
+.inquiry-edit-form {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  width: 100%;
+}
+
+.inquiry-title-input {
+  flex: 1;
+  padding: $spacing-xs;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius-xs;
+  font-size: $font-size-sm;
+  outline: none;
+  transition: $transition-base;
+}
+
+.inquiry-title-input:focus {
+  border-color: $info-color;
+  box-shadow: 0 0 0 2px rgba($info-color, 0.2);
+}
+
+.inquiry-edit-actions {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.save-btn,
+.cancel-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: $spacing-xs;
+  border-radius: $border-radius-xs;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: $transition-base;
+}
+
+.save-btn {
+  color: $success-color;
+}
+
+.save-btn:hover {
+  background: rgba($success-color, 0.1);
+}
+
+.cancel-btn {
+  color: $error-color;
+}
+
+.cancel-btn:hover {
+  background: rgba($error-color, 0.1);
+}
+
+.save-btn .material-icons,
+.cancel-btn .material-icons {
+  font-size: $font-size-lg;
+}
+
+.inquiry-title-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .inquiry-item-preview {
