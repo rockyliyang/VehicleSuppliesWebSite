@@ -118,7 +118,7 @@ export default {
           { max: 100, message: this.$t('contact.email.tooLong'), trigger: 'blur' }
         ],
         phone: [
-          { required: true, message: this.$t('contact.phone.required'), trigger: 'blur' },
+          { required: false, message: this.$t('contact.phone.required'), trigger: 'blur' },
           { pattern: /^[\d\s\-+()]+$/, message: this.$t('contact.phone.invalid'), trigger: 'blur' },
           { max: 20, message: this.$t('contact.phone.tooLong'), trigger: 'blur' }
         ],
