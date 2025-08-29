@@ -381,7 +381,8 @@ CREATE TABLE IF NOT EXISTS orders (
   user_id BIGINT NOT NULL,
   inquiry_id BIGINT DEFAULT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
-  status VARCHAR(16) NOT NULL, -- pending, paid, shipped, delivered, cancelled
+  original_amount DECIMAL(10, 2) DEFAULT NULL,
+  status VARCHAR(16) NOT NULL CHECK (status IN ('pending', 'paid', 'shipped', 'delivered', 'cancelled', 'pay_timeout')),
   payment_method VARCHAR(16), -- card, alipay, wechat
   payment_id VARCHAR(64),
   shipping_name VARCHAR(32) NOT NULL,
@@ -394,8 +395,9 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_city VARCHAR(64) DEFAULT NULL,
   shipping_phone_country_code VARCHAR(8) DEFAULT NULL,
   shipping_fee DECIMAL(10, 2) DEFAULT 0.00,
+  update_amount_time TIMESTAMPTZ DEFAULT NULL,
   create_time_zone VARCHAR(64) DEFAULT NULL,
-  paid_at TIMESTAMP DEFAULT NULL,
+  paid_at TIMESTAMPTZ DEFAULT NULL,
   paid_time_zone VARCHAR(64) DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -410,6 +412,8 @@ COMMENT ON COLUMN orders.shipping_country IS '收货国家';
 COMMENT ON COLUMN orders.shipping_state IS '收货省份/州';
 COMMENT ON COLUMN orders.shipping_city IS '收货城市';
 COMMENT ON COLUMN orders.shipping_phone_country_code IS '收货电话国家区号';
+COMMENT ON COLUMN orders.original_amount IS '原始订单金额（首次修改价格时保存）';
+COMMENT ON COLUMN orders.update_amount_time IS '金额更新时间（修改total_amount或shipping_fee时更新）';
 COMMENT ON COLUMN orders.create_time_zone IS '订单创建时的时区信息';
 COMMENT ON COLUMN orders.paid_at IS '支付完成时间（UTC时间）';
 COMMENT ON COLUMN orders.paid_time_zone IS '支付完成时的时区信息';
@@ -493,6 +497,8 @@ CREATE TABLE IF NOT EXISTS logistics (
   shipping_status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, processing, shipped, in_transit, delivered, exception
   tracking_info TEXT, -- JSON格式存储跟踪信息
   notes TEXT,
+  shipped_at TIMESTAMPTZ DEFAULT NULL,
+  shipped_time_zone VARCHAR(64) DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -517,6 +523,8 @@ COMMENT ON COLUMN logistics.shipping_phone_country_code IS '收货电话国家�
 COMMENT ON COLUMN logistics.shipping_status IS '物流状态：pending-待处理, processing-处理中, shipped-已发货, in_transit-运输中, delivered-已送达, exception-异常';
 COMMENT ON COLUMN logistics.tracking_info IS '跟踪信息，JSON格式';
 COMMENT ON COLUMN logistics.notes IS '备注信息';
+COMMENT ON COLUMN logistics.shipped_at IS '发货时间（UTC时间）';
+COMMENT ON COLUMN logistics.shipped_time_zone IS '发货时的时区信息';
 COMMENT ON COLUMN logistics.created_by IS '创建者用户ID';
 COMMENT ON COLUMN logistics.updated_by IS '最后更新者用户ID';
 
@@ -525,6 +533,7 @@ CREATE INDEX idx_logistics_order_id ON logistics (order_id);
 CREATE INDEX idx_logistics_company_id ON logistics (logistics_company_id);
 CREATE INDEX idx_logistics_shipping_no ON logistics (shipping_no);
 CREATE INDEX idx_logistics_shipping_status ON logistics (shipping_status);
+CREATE INDEX idx_logistics_shipped_at ON logistics (shipped_at);
 CREATE INDEX idx_logistics_created_at ON logistics (created_at);
 CREATE INDEX idx_logistics_created_by ON logistics (created_by);
 CREATE INDEX idx_logistics_updated_by ON logistics (updated_by);

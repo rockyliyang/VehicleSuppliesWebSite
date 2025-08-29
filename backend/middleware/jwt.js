@@ -146,6 +146,18 @@ const requireRole = (roles) => {
   };
 };
 
+// 检查是否为业务员的中间件
+const requireBusinessStaff = (req, res, next) => {
+  if (req.userRole !== 'business') {
+    return res.status(403).json({ 
+      success: false, 
+      message: getMessage('AUTH.BUSINESS_STAFF_REQUIRED'), 
+      data: null 
+    });
+  }
+  next();
+};
+
 // 验证管理员权限的中间件（组合verifyToken和isAdmin）
 const verifyAdmin = [verifyToken, isAdmin];
 
@@ -154,6 +166,6 @@ module.exports = {
   isAdmin,
   verifyAdmin,
   requireRole,
-  authenticateToken: verifyToken, // 添加别名以保持兼容性
+  requireBusinessStaff,
   isLocalNetwork // 导出局域网检测函数用于测试
 };

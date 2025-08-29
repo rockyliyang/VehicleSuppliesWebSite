@@ -1,7 +1,7 @@
 <template>
   <div class="unified-checkout">
     <!-- 页面横幅 -->
-    <PageBanner :title="isOrderDetail ? ($t('order.detail') || '订单详情') : ($t('checkout.title') || '结算页面')" />
+    <PageBanner :title="($t('checkout.title') || '结算页面')" />
 
     <!-- Navigation Menu -->
     <NavigationMenu :breadcrumb-items="breadcrumbItems" />
@@ -17,7 +17,7 @@
               </el-icon>
               {{ $t('checkout.shippingInfo') || '收货信息' }}
             </div>
-            <div class="shipping-header" v-if="!isOrderDetail">
+            <div class="shipping-header" >
               <el-button @click="showAddressDialog = true" type="primary" class="address-select-btn">
                 {{ $t('address.selectFromBook') || '从地址簿选择' }}
               </el-button>
@@ -26,16 +26,16 @@
               </el-button>
             </div>
           </h2>
-          <el-form :model="shippingInfo" :rules="isOrderDetail ? {} : shippingRules" ref="shippingForm" label-width="0"
+          <el-form :model="shippingInfo" :rules="shippingRules" ref="shippingForm" label-width="0"
             class="shipping-form">
             <div class="form-row">
               <el-form-item prop="name">
                 <el-input v-model="shippingInfo.name" :placeholder="$t('checkout.namePlaceholder') || '收货人姓名'"
-                  :readonly="isOrderDetail" clearable />
+                   clearable />
               </el-form-item>
               <el-form-item prop="country">
                 <el-select v-model="shippingInfo.country" :placeholder="$t('checkout.countryPlaceholder') || '选择国家'"
-                  :disabled="isOrderDetail" clearable @change="handleCountryChange">
+                   clearable @change="handleCountryChange">
                   <el-option v-for="country in countries" :key="country.iso3" :label="country.name"
                     :value="country.name">
                   </el-option>
@@ -46,44 +46,44 @@
               <el-form-item prop="state">
                 <el-select v-if="currentStates.length > 0" v-model="shippingInfo.state"
                   :placeholder="$t('checkout.statePlaceholder') || '选择省份'"
-                  :disabled="isOrderDetail || !shippingInfo.country" clearable @change="handleStateChange">
+                  :disabled=" !shippingInfo.country" clearable @change="handleStateChange">
                   <el-option v-for="state in currentStates" :key="state.id" :label="state.name" :value="state.name">
                   </el-option>
                 </el-select>
                 <el-input v-else v-model="shippingInfo.state" :placeholder="$t('checkout.statePlaceholder') || '选择省份'"
-                  :readonly="isOrderDetail" clearable />
+                   clearable />
               </el-form-item>
               <el-form-item prop="city">
                 <el-input v-model="shippingInfo.city" :placeholder="$t('checkout.cityPlaceholder') || '城市'"
-                  :readonly="isOrderDetail" clearable />
+                   clearable />
               </el-form-item>
             </div>
             <div class="form-row">
               <el-form-item class="phone-input-group">
                 <el-select v-model="shippingInfo.phone_country_code"
-                  :placeholder="$t('checkout.countryCodePlaceholder') || '区号'" :disabled="isOrderDetail" clearable
+                  :placeholder="$t('checkout.countryCodePlaceholder') || '区号'"  clearable
                   class="country-code-select">
                   <el-option v-for="country in countries" :key="country.iso3" :label="country.phone_code"
                     :value="country.phone_code">
                   </el-option>
                 </el-select>
                 <el-input v-model="shippingInfo.phone" :placeholder="$t('checkout.phonePlaceholder') || '手机号码'"
-                  :readonly="isOrderDetail" clearable class="phone-number-input" />
+                   clearable class="phone-number-input" />
               </el-form-item>
               <el-form-item>
                 <el-input v-model="shippingInfo.email" :placeholder="$t('checkout.emailPlaceholder') || '邮箱地址'"
-                  :readonly="isOrderDetail" clearable autocomplete="off" />
+                   clearable autocomplete="off" />
               </el-form-item>
             </div>
             <div class="form-row">
               <el-form-item prop="zipCode">
                 <el-input v-model="shippingInfo.zipCode" :placeholder="$t('checkout.zipCodePlaceholder') || '邮政编码'"
-                  :readonly="isOrderDetail" clearable />
+                   clearable />
               </el-form-item>
             </div>
             <el-form-item prop="address">
               <el-input v-model="shippingInfo.address" type="textarea" :rows="3"
-                :placeholder="$t('checkout.addressPlaceholder') || '详细收货地址'" :readonly="isOrderDetail" />
+                :placeholder="$t('checkout.addressPlaceholder') || '详细收货地址'"  />
             </el-form-item>
           </el-form>
         </section>
@@ -97,7 +97,7 @@
               </el-icon>
               {{ $t('checkout.orderInfo') || '订单信息' }}
             </div>
-            <div class="order-header-actions" v-if="!isOrderDetail">
+            <div class="order-header-actions" >
               <el-button @click="handleBackClick" type="default" class="back-btn">
                 <el-icon>
                   <ArrowLeft />
@@ -131,12 +131,11 @@
               </el-table-column>
               <el-table-column :label="$t('checkout.quantity') || '数量'" prop="quantity" width="100" align="center" />
               <el-table-column :label="$t('checkout.unitPrice') || '单价'" width="120" align="right">
-                <template #default="{row}">{{ $store.getters.formatPrice(row.calculatedPrice || row.price) }}</template>
+                <template #default="{row}">{{ $store.getters.formatPrice(row.price) }}</template>
               </el-table-column>
               <el-table-column :label="$t('checkout.subtotal') || '小计'" width="120" align="right">
                 <template #default="{row}">
-                  <span class="subtotal-price">{{ $store.getters.formatPrice((row.calculatedPrice || row.price) *
-                    row.quantity) }}</span>
+                  <span class="subtotal-price">{{ $store.getters.formatPrice(row.price * row.quantity) }}</span>
                 </template>
               </el-table-column>
             </el-table>
@@ -144,29 +143,13 @@
 
           <!-- 手机端卡片显示 -->
           <div class="mobile-only">
-            <div class="product-cards">
-              <div v-for="item in orderItems" :key="item.id" class="product-card">
-                <div class="product-card-left">
-                  <div class="product-image">
-                    <img :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.name">
-                  </div>
-                </div>
-                <div class="product-card-right">
-                  <div class="product-info-top">
-                    <div class="product-name">{{ item.product_name }}</div>
-                    <div class="product-code">{{ $t('checkout.productType') || '产品类型' }}: {{ item.category_name }}</div>
-                    <div v-if="item.product_type" class="product-type">{{ item.product_type }}</div>
-                  </div>
-                  <div class="product-price-row">
-                    <span class="price-calc">{{ $store.getters.formatPrice(item.calculatedPrice || item.price) }} × {{
-                      item.quantity }}</span>
-                    <span class="subtotal">{{ $store.getters.formatPrice((item.calculatedPrice || item.price) *
-                      item.quantity)
-                      }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <HProductCard 
+              :items="orderItems"
+              :force-card-view="true"
+              product-code-label="产品类型"
+              product-code-field="category_name"
+              price-field="calculatedPrice"
+            />
           </div>
           <div class="order-total">
             <div class="total-container">
@@ -190,7 +173,7 @@
 
 
         <!-- 订单状态信息（已支付订单） -->
-        <section class="order-status" v-if="isOrderDetail && isOrderPaid">
+        <section class="order-status" v-if="isOrderPaid">
           <h2 class="section-title">
             <div class="title-content">
               <el-icon>
@@ -305,37 +288,6 @@
       </div>
     </div>
 
-    <!-- 支付成功对话框 -->
-    <el-dialog v-model="paySuccess" :title="$t('checkout.paymentSuccess') || '支付成功'" width="400px"
-      class="success-dialog" center>
-      <div class="success-content">
-        <div class="success-icon-wrapper">
-          <div class="success-icon">✓</div>
-        </div>
-        <h3 class="success-title">{{ $t('checkout.paymentSuccessTitle') || '支付成功！' }}</h3>
-        <p class="success-message">{{ $t('checkout.paymentSuccessMessage') || '您的订单已成功支付' }}</p>
-        <div class="order-info">
-          <span class="order-label">{{ $t('checkout.orderNumber') || '订单号：' }}</span>
-          <span class="order-id">{{ orderId }}</span>
-        </div>
-      </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="goHome" class="home-btn">
-            <el-icon>
-              <House />
-            </el-icon>
-            {{ $t('checkout.backHome') || '返回首页' }}
-          </el-button>
-          <el-button type="primary" @click="goOrders" class="orders-btn">
-            <el-icon>
-              <Document />
-            </el-icon>
-            {{ $t('checkout.viewOrders') || '查看订单' }}
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
 
     <!-- 询价浮动窗口 -->
     <div v-if="showInquiryDialog" class="inquiry-floating-window" :class="{ 'show': showInquiryDialog }">
@@ -357,7 +309,7 @@
         </div>
         <div class="inquiry-window-body">
           <!-- 沟通组件 -->
-          <InquiryDetailPanel :inquiry="currentInquiryData" :is-mobile="isMobile" :is-checkout-mode="true"
+          <InquiryDetailPanel :inquiry-id="inquiryId" :is-mobile="isMobile" :is-checkout-mode="true"
             @update-message="handleUpdateInquiryMessage" @new-messages-received="handleNewMessages" />
         </div>
       </div>
@@ -368,13 +320,14 @@
 <script>
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
+import HProductCard from '@/components/common/H-ProductCard.vue';
 import { validateInternationalPhone } from '@/utils/validation.js';
 import { 
   ShoppingCart, 
   Location, 
   LocationInformation,
   SuccessFilled,
-  House,
+
   Document,
   Close,
   FullScreen,
@@ -387,12 +340,13 @@ export default {
   components: {
     PageBanner,
     NavigationMenu,
+    HProductCard,
     InquiryDetailPanel,
     ShoppingCart,
     Location,
     LocationInformation,
     SuccessFilled,
-    House,
+
     Document,
     Close,
     FullScreen,
@@ -444,7 +398,7 @@ export default {
       addressList: [], // 地址列表
       selectedAddressId: null, // 选中的地址ID
       showAddressDialog: false, // 显示地址选择对话框
-      isOrderDetail: false, // 是否为订单详情模式
+      //isOrderDetail: false, // 是否为订单详情模式
       orderData: null, // 订单详情数据
       isOrderPaid: false, // 订单是否已支付
       orderSource: 'cart', // 订单来源：'cart' 或 'inquiry'
@@ -502,13 +456,9 @@ export default {
   computed: {
     breadcrumbItems() {
       const items = [];
-      if (this.isOrderDetail) {
-        items.push({ text: this.$t('order.myOrders') || '我的订单', to: '/user/orders' });
-        items.push({ text: this.$t('order.detail') || '订单详情' });
-      } else {
+
         items.push({ text: this.$t('cart.title') || '购物车', to: '/cart' });
         items.push({ text: this.$t('checkout.title') || '结算' });
-      }
       return items;
     },
     countries() {
@@ -548,7 +498,7 @@ export default {
       // 检查是否为订单详情模式
       const orderId = this.$route.query.orderId;
       if (orderId) {
-        this.isOrderDetail = true;
+        //this.isOrderDetail = true;
         await this.fetchOrderDetail(orderId);
         // 从订单详情中获取inquiry_id
         if (this.orderData?.inquiry_id) {
@@ -863,37 +813,69 @@ export default {
 
       this.submitting = true;
       try {
-        const requestData = {
-          orderItems: this.orderItems,
-          shipping_info: this.shippingInfo,
-          total_amount: this.orderTotal,
-          shipping_fee: this.shippingFee,
-          create_time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        };
-
-        // 如果是询价单订单，添加inquiry_id
-        if (this.orderSource === 'inquiry' && this.inquiryId) {
-          requestData.inquiry_id = this.inquiryId;
-        }
-
-        const response = await this.$api.postWithErrorHandler('/payment/common/create', requestData);
-        console.log('response is:',response);
-        this.orderId = response.data.orderId;
+        // 检查是否有orderId参数，决定是修改订单还是创建订单
+        const orderId = this.$route.query.orderId;
         
-        // 如果是从购物车创建的订单，触发购物车更新事件
-        if (this.orderSource === 'cart' && this.$bus) {
-          this.$bus.emit('cart-updated');
+        if (orderId) {
+          // 修改订单模式 - 只更新shipping information
+          const updateData = {
+            shipping_name: this.shippingInfo.name,
+            shipping_phone: this.shippingInfo.phone,
+            shipping_email: this.shippingInfo.email,
+            shipping_address: this.shippingInfo.address,
+            shipping_zip_code: this.shippingInfo.zipCode,
+            shipping_country: this.shippingInfo.country,
+            shipping_state: this.shippingInfo.state,
+            shipping_city: this.shippingInfo.city,
+            shipping_phone_country_code: this.shippingInfo.phone_country_code
+          };
+          
+          const response = await this.$api.putWithErrorHandler(`/orders/${orderId}`, updateData);
+          console.log('修改订单响应:', response);
+          
+          //this.$messageHandler.showSuccess(this.$t('checkout.orderUpdated') || '订单信息已更新', 'checkout.success.orderUpdated');
+          
+          // 跳转到支付页面
+          this.$router.push({
+            name: 'OrderPayment',
+            params: { orderId: orderId },
+            query: { from: 'checkout' }
+          });
+        } else {
+          // 创建订单模式
+          const requestData = {
+            orderItems: this.orderItems,
+            shipping_info: this.shippingInfo,
+            total_amount: this.orderTotal,
+            shipping_fee: this.shippingFee,
+            create_time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          };
+
+          // 如果是询价单订单，添加inquiry_id
+          if (this.orderSource === 'inquiry' && this.inquiryId) {
+            requestData.inquiry_id = this.inquiryId;
+          }
+
+          const response = await this.$api.postWithErrorHandler('/payment/common/create', requestData);
+          console.log('创建订单响应:', response);
+          this.orderId = response.data.orderId;
+          
+          // 如果是从购物车创建的订单，触发购物车更新事件
+          if (this.orderSource === 'cart' && this.$bus) {
+            this.$bus.emit('cart-updated');
+          }
+          
+          // 跳转到支付页面
+          this.$router.push({
+            name: 'OrderPayment',
+            params: { orderId: this.orderId },
+            query: { from: 'checkout' }
+          });
         }
-        
-        // 跳转到支付页面
-        this.$router.push({
-          name: 'OrderPayment',
-          params: { orderId: this.orderId },
-          query: { from: 'checkout' }
-        });
       } catch (error) {
-        console.error('创建订单失败:', error);
-        this.$messageHandler.showError(error, 'checkout.error.createOrderFailed');
+        console.error('订单操作失败:', error);
+        const currentOrderId = this.$route.query.orderId;
+        this.$messageHandler.showError(error, currentOrderId ? 'checkout.error.updateOrderFailed' : 'checkout.error.createOrderFailed');
       } finally {
         this.submitting = false;
       }
@@ -1035,7 +1017,7 @@ export default {
        
        if (inquiryId) {
          // 如果有inquiry_id，直接打开现有的inquiry
-         await this.loadInquiryData(inquiryId);
+         //await this.loadInquiryData(inquiryId);
          this.showInquiryDialog = true;
        } else {
          // 如果没有inquiry_id，创建新的custom类型inquiry
@@ -1054,7 +1036,6 @@ export default {
          });
          
          if (createInquiryResponse.success) {
-           this.inquiryId = createInquiryResponse.data.id;
            
            // 从sessionStorage获取购物车商品数据
            const selectedCartItems = JSON.parse(sessionStorage.getItem('selectedCartItems') || '[]');
@@ -1066,15 +1047,16 @@ export default {
                quantity: item.quantity
              }));
              
-             await this.$api.postWithErrorHandler(`/inquiries/${this.inquiryId}/items/batch`, {
+             await this.$api.postWithErrorHandler(`/inquiries/${createInquiryResponse.data.id}/items/batch`, {
                items: items
              }, {
                fallbackKey: 'inquiry.error.addItemsFailed'
              });
+             this.inquiryId = createInquiryResponse.data.id;
            }
            
            // 重新获取询价单详情（包含完整的商品信息）
-           await this.loadInquiryData(this.inquiryId);
+           //await this.loadInquiryData(this.inquiryId);
            
            // 显示浮动窗口
            this.showInquiryDialog = true;
@@ -1084,7 +1066,7 @@ export default {
          this.$messageHandler.showError('创建咨询失败', 'inquiry.error.createFailed');
        }
      },
-     async loadInquiryData(inquiryId) {
+     /*async loadInquiryData(inquiryId) {
        try {
          const response = await this.$api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
            fallbackKey: 'inquiry.fetchError'
@@ -1100,7 +1082,7 @@ export default {
          console.error('加载inquiry数据失败:', error);
          this.$messageHandler.showError('加载咨询数据失败', 'inquiry.error.loadFailed');
        }
-     },
+     },*/
      // 关闭询价对话框
      closeInquiryDialog() {
        this.showInquiryDialog = false;
@@ -2272,7 +2254,7 @@ export default {
 }
 
 /* 移动端取消高度限制 */
-@media (max-width: 768px) {
+@include mobile {
   .address-list {
     max-height: none;
   }
@@ -2489,7 +2471,7 @@ export default {
 }
 
 /* 移动端自定义对话框优化 */
-@media (max-width: 768px) {
+@include mobile {
   .custom-dialog-overlay {
     padding: 0;
     align-items: stretch;
@@ -2752,7 +2734,7 @@ export default {
   }
 }
 
-@media (max-width: 768px) {
+@include mobile {
   .inquiry-floating-window {
     /*bottom: 10px;
     right: 10px;
@@ -2870,133 +2852,6 @@ export default {
     display: block;
   }
 
-  /* 手机端产品卡片样式 */
-  .product-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
 
-  .product-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .product-card-left {
-    width: 80px;
-    flex-shrink: 0;
-  }
-
-  .product-card-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-width: calc(100% - 92px);
-    /* 减去左侧图片宽度80px + gap 12px */
-    min-width: 0;
-    /* 允许flex项目收缩到内容以下 */
-  }
-
-  .product-image {
-    width: 80px;
-    height: 80px;
-    border-radius: 4px;
-    overflow: hidden;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-
-  .product-details {
-    width: 100%;
-  }
-
-  .product-info-top {
-    margin-bottom: 8px;
-  }
-
-  .product-name {
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.4;
-    margin-bottom: 4px;
-    color: #333333;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-  }
-
-  .product-code {
-    font-size: 12px;
-    color: #666666;
-    margin-bottom: 2px;
-  }
-
-  .product-type {
-    font-size: 11px;
-    color: #888888;
-    font-style: italic;
-  }
-
-  .product-price-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-
-    .price-calc {
-      color: #666666;
-      font-size: 13px;
-    }
-
-    .subtotal {
-      color: #007bff;
-      font-weight: 600;
-      font-size: 14px;
-    }
-  }
-
-  .product-price-calc {
-    font-size: 14px;
-    color: #333333;
-    font-weight: 500;
-  }
-
-  .product-field {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-width: 100px;
-
-    .field-label {
-      font-size: 12px;
-      color: #666666;
-      margin-right: 8px;
-    }
-
-    .field-value {
-      font-size: 14px;
-      font-weight: 500;
-      color: #333333;
-    }
-
-    &.subtotal {
-      .field-value {
-        color: #007bff;
-        font-weight: 600;
-      }
-    }
-  }
 }
 </style>

@@ -600,7 +600,7 @@ export default {
 }
 
 // 移动端适配
-@media (max-width: 768px) {
+@include mobile {
   .filter-card {
     .el-form {
       .el-form-item {

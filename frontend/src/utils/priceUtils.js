@@ -57,12 +57,11 @@ export const updateAllItemsCalculatedPrice = (items) => {
 };
 
 /**
- * 获取价格范围的显示文本
+ * 根据商品信息获取对应的价格
  * @param {Object|Array} item - 商品对象
- * @param {Function} formatPrice - 价格格式化函数
- * @returns {string} 格式化的价格范围显示文本
+ * @returns {number} 计算出的价格
  */
-export const getPriceRangeDisplayUtil = (item, formatPrice) => {
+export const getPriceByRange = (item) => {
   // 确保不修改原始对象，创建一个浅拷贝
   const itemCopy = { ...item };
   const priceRanges = itemCopy?.price_ranges;
@@ -71,9 +70,19 @@ export const getPriceRangeDisplayUtil = (item, formatPrice) => {
   if (Array.isArray(priceRanges) && priceRanges.length > 0) {
     const calculatedPrice = calculatePriceByQuantity(priceRanges, itemCopy.quantity);
     if (calculatedPrice !== null) {
-      return formatPrice(calculatedPrice);
+      return calculatedPrice;
     }
   }
   
-  return formatPrice(itemCopy.price || itemCopy.original_price || 0);
+  return itemCopy.price || itemCopy.original_price || 0;
+};
+
+/**
+ * 获取价格范围的显示文本
+ * @param {Object|Array} item - 商品对象
+ * @param {Function} formatPrice - 价格格式化函数
+ * @returns {string} 格式化的价格范围显示文本
+ */
+export const getPriceRangeDisplayUtil = (item, formatPrice) => {
+  return formatPrice(getPriceByRange(item));
 };

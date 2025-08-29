@@ -48,7 +48,7 @@
             <div class="data-info">
               <div class="data-title">{{ item.title }}</div>
               <div class="data-value">{{ item.value }}</div>
-              <el-badge v-if="item.title === '未读消息数' && item.value > 0" :value="item.value"
+              <el-badge v-if="item.title === '未读消息' && item.value > 0" :value="item.value"
                 class="data-badge unread-badge" type="danger" />
             </div>
           </div>
@@ -84,26 +84,26 @@
       <el-col :span="8">
         <el-card shadow="hover">
           <template #header>
-            <span>询价统计</span>
+            <span>订单统计</span>
           </template>
           <div class="stat-item">
-            <span class="stat-label">总询价数：</span>
-            <span class="stat-value">{{ (statistics.inquiryStats && statistics.inquiryStats.total_inquiries) || 0
+            <span class="stat-label">未付款订单：</span>
+            <span class="stat-value">{{ (statistics.orderStats && statistics.orderStats.unpaid_orders) || 0
               }}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">待处理：</span>
-            <span class="stat-value">{{ (statistics.inquiryStats && statistics.inquiryStats.pending_inquiries) || 0
+            <span class="stat-label">未发货订单：</span>
+            <span class="stat-value">{{ (statistics.orderStats && statistics.orderStats.unshipped_orders) || 0
               }}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">已批准：</span>
-            <span class="stat-value">{{ (statistics.inquiryStats && statistics.inquiryStats.approved_inquiries) || 0
+            <span class="stat-label">已发货订单：</span>
+            <span class="stat-value">{{ (statistics.orderStats && statistics.orderStats.shipped_orders) || 0
               }}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">已拒绝：</span>
-            <span class="stat-value">{{ (statistics.inquiryStats && statistics.inquiryStats.rejected_inquiries) || 0
+            <span class="stat-label">最近7天订单：</span>
+            <span class="stat-value">{{ (statistics.orderStats && statistics.orderStats.recent_7days_orders) || 0
               }}</span>
           </div>
         </el-card>
@@ -261,11 +261,12 @@ export default {
           business_users: 0,
           admin_users: 0
         },
-        inquiryStats: {
-          total_inquiries: 0,
-          pending_inquiries: 0,
-          approved_inquiries: 0,
-          rejected_inquiries: 0
+        orderStats: {
+          total_orders: 0,
+          unpaid_orders: 0,
+          unshipped_orders: 0,
+          shipped_orders: 0,
+          recent_7days_orders: 0
         },
         messageStats: {
           total_messages: 0,
@@ -295,13 +296,13 @@ export default {
           iconClass: 'user-icon'
         },
         {
-          title: '询价总数',
+          title: '订单总数',
           value: this.statistics.orders,
           icon: 'List',
           iconClass: 'inquiry-icon'
         },
         {
-          title: '未读消息数',
+          title: '未读消息',
           value: this.statistics.messages,
           icon: 'Message',
           iconClass: 'message-icon'
@@ -337,11 +338,12 @@ export default {
               business_users: (data.userStats && data.userStats.business_users) || 0,
               admin_users: (data.userStats && data.userStats.admin_users) || 0
             },
-            inquiryStats: {
-              total_inquiries: (data.inquiryStats && data.inquiryStats.total_inquiries) || 0,
-              pending_inquiries: (data.inquiryStats && data.inquiryStats.pending_inquiries) || 0,
-              approved_inquiries: (data.inquiryStats && data.inquiryStats.approved_inquiries) || 0,
-              rejected_inquiries: (data.inquiryStats && data.inquiryStats.rejected_inquiries) || 0
+            orderStats: {
+              total_orders: (data.orderStats && data.orderStats.total_orders) || 0,
+              unpaid_orders: (data.orderStats && data.orderStats.unpaid_orders) || 0,
+              unshipped_orders: (data.orderStats && data.orderStats.unshipped_orders) || 0,
+              shipped_orders: (data.orderStats && data.orderStats.shipped_orders) || 0,
+              recent_7days_orders: (data.orderStats && data.orderStats.recent_7days_orders) || 0
             },
             messageStats: {
               total_messages: (data.messageStats && data.messageStats.total_messages) || 0,
@@ -367,11 +369,12 @@ export default {
             business_users: 0,
             admin_users: 0
           },
-          inquiryStats: {
-            total_inquiries: 0,
-            pending_inquiries: 0,
-            approved_inquiries: 0,
-            rejected_inquiries: 0
+          orderStats: {
+            total_orders: 0,
+            unpaid_orders: 0,
+            unshipped_orders: 0,
+            shipped_orders: 0,
+            recent_7days_orders: 0
           },
           messageStats: {
             total_messages: 0,
@@ -493,8 +496,8 @@ export default {
         case '用户总数':
           this.navigateTo('/admin/regular-users')
           break
-        case '询价总数':
-          this.navigateTo('/admin/inquiries')
+        case '订单总数':
+          this.navigateTo('/admin/orders')
           break
         case '未读消息数':
           // 跳转到询价管理页面并过滤未读消息
@@ -843,7 +846,7 @@ export default {
   background-color: #f5f7fa;
 }
 
-@media (max-width: 768px) {
+@include mobile {
   .data-card {
     margin-bottom: 15px;
   }

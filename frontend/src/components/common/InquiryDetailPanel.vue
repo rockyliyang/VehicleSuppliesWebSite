@@ -1,6 +1,25 @@
 <template>
   <div class="inquiry-detail-panel" :class="{ 'mobile-layout': isMobile }">
-    <div v-if="inquiry" class="inquiry-detail-content" :class="{ 'mobile-content': isMobile }">
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="loading-content">
+        <i class="material-icons spinning">refresh</i>
+        <p>{{ $t('common.loading') || '加载中...' }}</p>
+      </div>
+    </div>
+
+    <!-- 错误状态 -->
+    <div v-else-if="error" class="error-state">
+      <div class="error-content">
+        <i class="material-icons">error</i>
+        <p>{{ error }}</p>
+        <button @click="fetchInquiryDetails()" class="retry-btn">
+          {{ $t('common.retry') || '重试' }}
+        </button>
+      </div>
+    </div>
+
+    <div v-else-if="inquiry" class="inquiry-detail-content" :class="{ 'mobile-content': isMobile }">
       <!-- 手机端：聊天窗口在上面 -->
       <template v-if="isMobile">
         <!-- Sales Communication -->
@@ -245,9 +264,10 @@
         </div>
 
         <!-- Sales Communication -->
-        <CommunicationSection :messages="inquiry.messages" :inquiry-id="inquiry.id" :items-count="inquiry.items.length"
-          :status="inquiry.status" :initial-message="newMessage" :is-mobile="isMobile"
-          :is-checkout-mode="isCheckoutMode" @update-message="updateMessage" @checkout="handleCheckout" />
+        <CommunicationSection v-if="inquiry.id" :messages="inquiry.messages" :inquiry-id="inquiry.id"
+          :items-count="inquiry.items.length" :status="inquiry.status" :initial-message="newMessage"
+          :is-mobile="isMobile" :is-checkout-mode="isCheckoutMode" @update-message="updateMessage"
+          @checkout="handleCheckout" />
       </template>
     </div>
 
@@ -270,8 +290,8 @@ export default {
     CommunicationSection
   },
   props: {
-    inquiry: {
-      type: Object,
+    inquiryId: {
+      type: [String, Number],
       default: null
     },
     isMobile: {
@@ -286,6 +306,9 @@ export default {
   emits: ['remove-item', 'update-message', 'checkout-inquiry', 'item-added', 'new-messages-received'],
   data() {
     return {
+      inquiry: null,
+      loading: false,
+      error: null,
       newMessage: '',
       showAddProduct: false,
       searchKeyword: '',
@@ -296,14 +319,24 @@ export default {
     };
   },
   watch: {
-    inquiry: {
-      handler(newInquiry) {
-        console.log('newInquiry:', newInquiry);
-        if (newInquiry && newInquiry.newMessage !== undefined) {
-          this.newMessage = newInquiry.newMessage;
+    inquiryId: {
+      handler(newInquiryId) {
+        if (newInquiryId) {
+          this.fetchInquiryDetails();
+        } else {
+          this.inquiry = null;
         }
       },
       immediate: true
+    },
+    inquiry: {
+      handler(newInquiry) {
+        console.log('newInquiry:', newInquiry);
+        console.log('isCheckoutMode:',this.isCheckoutMode);
+        if (newInquiry && newInquiry.newMessage !== undefined) {
+          this.newMessage = newInquiry.newMessage;
+        }
+      }
     }
   },
   computed: {
@@ -317,6 +350,29 @@ export default {
     }
   },
   methods: {
+    // 获取询价详情数据
+    async fetchInquiryDetails() {
+      if (!this.inquiryId) return;
+      
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const response = await this.$api.getWithErrorHandler(`/inquiries/${this.inquiryId}`, {}, {
+          fallbackKey: 'INQUIRY.FETCH.FAILED'
+        });
+        
+        this.inquiry = response.data.inquiry;
+        this.inquiry.items = response.data.items;
+      } catch (error) {
+        console.error('获取询价详情失败:', error);
+        this.error = '获取询价详情失败';
+        this.inquiry = null;
+      } finally {
+        this.loading = false;
+      }
+    },
+    
     formatTime(timestamp) {
       return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },

@@ -31,13 +31,15 @@
           </div>
           <div class="order-status">
             <span class="label">{{ $t('payment.orderStatus') || '订单状态' }}:</span>
-            <span class="value" :class="getOrderStatusClass(orderData.order.status)">{{
-              getOrderStatusText(orderData.order.status) }}</span>
+            <span class="value" :class="getOrderStatusClass(orderData.order.status)">{{ getOrderStatusText(orderData.order.status) }}</span>
           </div>
-          <div v-if="orderData.order.paid_at" class="payment-time">
+          <div class="order-time">
+            <span class="label">{{ $t('payment.orderTime') || '订单时间' }}:</span>
+            <span class="value">{{ orderData.order.created_at_local || formatDate(orderData.order.created_at) }}</span>
+          </div>
+          <div v-if="orderData.order.paid_at_local || orderData.order.paid_at" class="payment-time">
             <span class="label">{{ $t('payment.paidAt') || '支付时间' }}:</span>
-            <span class="value">{{ formatDateWithTimezone(orderData.order.paid_at, orderData.order.paid_time_zone)
-              }}</span>
+            <span class="value">{{ orderData.order.paid_at_local || formatDateWithTimezone(orderData.order.paid_at, orderData.order.paid_time_zone) }}</span>
           </div>
         </div>
       </div>
@@ -80,28 +82,13 @@
         </div>
 
         <!-- 手机端卡片显示 -->
-        <div class="mobile-only">
-          <div class="product-cards">
-            <div v-for="item in orderData.items" :key="item.id" class="product-card">
-              <div class="product-card-left">
-                <div class="product-image">
-                  <img :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.product_name">
-                </div>
-              </div>
-              <div class="product-card-right">
-                <div class="product-info-top">
-                  <div class="product-name">{{ item.product_name }}</div>
-                  <div class="product-code">{{ $t('payment.productType') || '产品类型' }}: {{ item.category_name }}</div>
-                  <div v-if="item.product_type" class="product-type">{{ item.product_type }}</div>
-                </div>
-                <div class="product-price-row">
-                  <span class="price-calc">${{ item.price }} × {{ item.quantity }}</span>
-                  <span class="subtotal">${{ (item.price * item.quantity).toFixed(2) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <HProductCard 
+          :items="orderData.items" 
+          :force-card-view="false"
+          :product-code-label="$t('payment.productType') || '产品类型'"
+          :product-code-field="'category_name'"
+          price-field="price"
+          class="mobile-only" />
         <div class="order-total">
           <div class="total-container">
             <div class="total-row">
@@ -204,6 +191,10 @@
               <span class="info-label">{{ $t('payment.shippingStatus') || '物流状态' }}</span>
               <span class="info-value">{{ orderData.logistics[0].shipping_status || 'N/A' }}</span>
             </div>
+            <div class="info-item" v-if="orderData.logistics[0].shipped_at_local || orderData.logistics[0].shipped_at">
+              <span class="info-label">{{ $t('payment.shippedDate') || '发货时间' }}</span>
+              <span class="info-value">{{ orderData.logistics[0].shipped_at_local || orderData.logistics[0].shipped_at || 'N/A' }}</span>
+            </div>
           </div>
 
           <!-- 物流跟踪信息 -->
@@ -266,6 +257,7 @@
               </el-button>
             </div>
 
+            
             <!-- 桌面端支付宝iframe显示 -->
             <div v-else-if="alipayFormData && !alipayDisabled" class="alipay-iframe-container">
               <div class="iframe-wrapper">
@@ -273,7 +265,6 @@
                   scrolling="auto" sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation"></iframe>
               </div>
             </div>
-
             <!-- 支付宝不可用提示 -->
             <div v-else-if="alipayDisabled" class="alipay-disabled-notice">
               <p>{{ $t('payment.alipayTemporarilyDisabled') || 'Alipay payment is temporarily disabled due to exchange rate unavailability' }}</p>
@@ -324,7 +315,7 @@
             </el-button>
           </div>
         </div>
-        <InquiryDetailPanel :inquiry="currentInquiryData" :is-mobile="isMobile" :is-checkout-mode="true"
+        <InquiryDetailPanel :inquiry-id="inquiryId" :is-mobile="isMobile" :is-checkout-mode="true"
           @update-message="handleUpdateInquiryMessage" @close="closeInquiryDialog" />
       </div>
     </div>
@@ -335,6 +326,7 @@
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import InquiryDetailPanel from '@/components/common/InquiryDetailPanel.vue';
+import HProductCard from '@/components/common/H-ProductCard.vue';
 import { Document, ShoppingBag, Location, CreditCard, ArrowLeft, FullScreen, Close, Van } from '@element-plus/icons-vue';
 
 export default {
@@ -343,6 +335,7 @@ export default {
     PageBanner,
     NavigationMenu,
     InquiryDetailPanel,
+    HProductCard,
     Document,
     ShoppingBag,
     Location,
@@ -421,6 +414,7 @@ export default {
       await this.generateAlipayForm('alipay');
     }
   },
+  
   mounted() {
     // PayPal SDK在fetchPayPalConfig完成后加载
     if (this.paypalConfig) {
@@ -440,10 +434,10 @@ export default {
       // 检查来源页面，设置相应的面包屑导航
       const fromRoute = this.$route.query.from || this.$route.meta.from;
       if (fromRoute === 'checkout' || this.$route.name === 'OrderPayment' && this.$router.options.history.state.back?.includes('checkout')) {
-        // 从结账页面进入
+        // 从结账页面进入，返回checkout时需要传递orderId
         this.breadcrumbItems = [
           { text: this.$t('cart.title') || '购物车', to: { path: '/cart' } },
-          { text: this.$t('checkout.title') || 'Checkout', to: { path: '/unified-checkout' } },
+          { text: this.$t('checkout.title') || 'Checkout', to: { path: '/unified-checkout', query: { orderId: this.orderId } } },
           { text: this.$t('payment.orderPayment') || 'Order Payment', to: null }
         ];
       } else if (fromRoute === 'orders' || this.$route.name === 'OrderPayment' && this.$router.options.history.state.back?.includes('orders')) {
@@ -956,7 +950,7 @@ export default {
        
       if (inquiryId) {
         // 如果有inquiry_id，直接打开现有的inquiry
-        await this.loadInquiryData(inquiryId);
+        //await this.loadInquiryData(inquiryId);
         this.showInquiryDialog = true;
       } else {
         // 如果没有inquiry_id，创建新的custom类型inquiry
@@ -990,9 +984,8 @@ export default {
               fallbackKey: 'inquiry.error.addItemsFailed'
             });
           }
-           
-          // 重新获取询价单详情（包含完整的商品信息）
-          await this.loadInquiryData(this.inquiryId);
+                     // 重新获取询价单详情（包含完整的商品信息）
+          //await this.loadInquiryData(this.inquiryId);
            
           // 显示浮动窗口
           this.showInquiryDialog = true;
@@ -1100,8 +1093,16 @@ export default {
       }
     },
     handleBackClick() {
-      // 直接返回上一页
-      this.$router.go(-1);
+      // 带上orderId跳转到UnifiedCheckout页面
+      if (this.orderData && this.orderData.order && this.orderData.order.id) {
+        this.$router.push({
+          name: 'UnifiedCheckout',
+          query: { orderId: this.orderData.order.id }
+        });
+      } else {
+        // 如果没有orderId，直接返回上一页
+        this.$router.go(-1);
+      }
     },
     async fetchExchangeRate() {
       try {
@@ -1156,17 +1157,20 @@ export default {
         'paid': this.$t('order.status.paid') || '已支付',
         'shipped': this.$t('order.status.shipped') || '已发货',
         'delivered': this.$t('order.status.delivered') || '已送达',
-        'cancelled': this.$t('order.status.cancelled') || '已取消'
+        'cancelled': this.$t('order.status.cancelled') || '已取消',
+        'pay_timeout': this.$t('order.status.payTimeout') || '支付超时'
       };
       return statusMap[status] || status;
     },
+
     getOrderStatusClass(status) {
       return {
         'status-pending': status === 'pending',
         'status-paid': status === 'paid',
         'status-shipped': status === 'shipped',
         'status-delivered': status === 'delivered',
-        'status-cancelled': status === 'cancelled'
+        'status-cancelled': status === 'cancelled',
+        'status-pay-timeout': status === 'pay_timeout'
       };
     }
   }
@@ -1873,7 +1877,7 @@ export default {
     flex-direction: column;
   }
 
-  @media (max-width: 768px) {
+  @include mobile {
     bottom: 10px;
     right: 10px;
     left: 10px;
@@ -2000,134 +2004,7 @@ export default {
     display: block;
   }
 
-  /* 手机端产品卡片样式 */
-  .product-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .product-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .product-card-left {
-    width: 80px;
-    flex-shrink: 0;
-  }
-
-  .product-card-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-width: calc(100% - 92px);
-    /* 减去左侧图片宽度80px + gap 12px */
-    min-width: 0;
-    /* 允许flex项目收缩到内容以下 */
-  }
-
-  .product-image {
-    width: 80px;
-    height: 80px;
-    border-radius: 4px;
-    overflow: hidden;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-
-  .product-details {
-    width: 100%;
-  }
-
-  .product-info-top {
-    margin-bottom: 8px;
-  }
-
-  .product-name {
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.4;
-    margin-bottom: 4px;
-    color: #333333;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-  }
-
-  .product-code {
-    font-size: 12px;
-    color: #666666;
-    margin-bottom: 2px;
-  }
-
-  .product-type {
-    font-size: 11px;
-    color: #888888;
-    font-style: italic;
-  }
-
-  .product-price-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-
-    .price-calc {
-      color: #666666;
-      font-size: 13px;
-    }
-
-    .subtotal {
-      color: #007bff;
-      font-weight: 600;
-      font-size: 14px;
-    }
-  }
-
-  .product-price-calc {
-    font-size: 14px;
-    color: #333333;
-    font-weight: 500;
-  }
-
-  .product-field {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-width: 100px;
-
-    .field-label {
-      font-size: 12px;
-      color: #666666;
-      margin-right: 8px;
-    }
-
-    .field-value {
-      font-size: 14px;
-      font-weight: 500;
-      color: #333333;
-    }
-
-    &.subtotal {
-      .field-value {
-        color: #007bff;
-        font-weight: 600;
-      }
-    }
-  }
+  /* 手机端产品卡片样式已移至通用组件ProductCards.vue */
 
   /* 支付宝标题样式 */
   .alipay-header {
@@ -2292,13 +2169,19 @@ export default {
     color: #dc2626;
     border: 1px solid #f87171;
   }
+
+  &.status-pay-timeout {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #ef4444;
+  }
 }
 
 /* 物流信息部分样式 */
 .logistics-section {
   @include card;
   margin-bottom: $spacing-lg;
-  
+
   .section-title {
     .el-icon {
       font-size: 20px;

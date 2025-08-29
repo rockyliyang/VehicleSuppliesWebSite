@@ -376,7 +376,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@include mobile {
   .banner-content h1 {
     font-size: 2rem;
   }

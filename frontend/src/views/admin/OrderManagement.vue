@@ -1,10 +1,22 @@
 <template>
   <div class="order-management">
     <div class="page-header">
-      <h1>{{ $t('order.management.title', 'Order Management') }}</h1>
-      <p v-if="!isAdmin" class="page-description">{{ $t("order.management.description.user", "View and manage your orders") }}</p>
-      <p v-else class="page-description">{{ $t("order.management.description.admin", "Manage all orders and logistics")
-        }}</p>
+      <div class="header-content">
+        <div class="header-left">
+          <h1>{{ $t('order.management.title', 'Order Management') }}</h1>
+          <p v-if="!isAdmin" class="page-description">{{ $t("order.management.description.user", "View and manage your orders") }}</p>
+          <p v-else class="page-description">{{ $t("order.management.description.admin", "Manage all orders and  logistics")
+            }}</p>
+        </div>
+        <div class="header-right" v-if="isBusiness">
+          <el-button type="primary" @click="goBackToDashboard" class="back-button">
+            <el-icon>
+              <ArrowLeft />
+            </el-icon>
+            {{ $t('common.back', 'Back') || '返回' }}
+          </el-button>
+        </div>
+      </div>
     </div>
 
     <!-- 筛选条件 -->
@@ -14,10 +26,11 @@
           <el-select v-model="filters.status" :placeholder="$t('order.filter.allStatus', 'All Status') || '选择状态'"
             clearable style="width: 150px;">
             <el-option value="pending" :label="$t('order.status.pending', 'Pending') || '待处理'" />
-            <el-option value="confirmed" :label="$t('order.status.confirmed', 'Confirmed') || '已确认'" />
+            <el-option value="paid" :label="$t('order.status.paid', 'Paid') || '已付款'" />
             <el-option value="shipped" :label="$t('order.status.shipped', 'Shipped') || '已发货'" />
             <el-option value="delivered" :label="$t('order.status.delivered', 'Delivered') || '已送达'" />
             <el-option value="cancelled" :label="$t('order.status.cancelled', 'Cancelled') || '已取消'" />
+            <el-option value="pay_timeout" :label="$t('order.status.payTimeout', 'Pay Timeout') || '支付超时'" />
           </el-select>
         </el-form-item>
         <el-form-item v-if="isAdmin" :label="$t('order.filter.user', 'User') || '用户'">
@@ -50,17 +63,18 @@
 
     <!-- 订单列表 -->
     <el-card class="order-list-card">
-      <el-table v-loading="loading" :data="orders" stripe :table-layout="'auto'" class="order-table">
-        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="250" fixed="right">
+      <el-table v-loading="loading" :data="orders" stripe :table-layout="'auto'" class="order-table"
+        @row-click="viewOrderDetail">
+        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="60" >
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="viewOrderDetail(row)">{{ $t('order.action.view', 'View')
-              || '查看' }}</el-button>
-            <el-button v-if="isAdmin" type="success" size="small" @click="manageLogistics(row)" :disabled="row.status === 'pending'">{{ 
+            <el-button v-if="canManageLogistics" type="success" size="small" @click.stop="manageLogistics(row)"
+              :disabled="row.status === 'pending' || row.status === 'pay_timeout'">{{
               $t('order.action.logistics', 'Logistics') || '物流' }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="id" :label="$t('order.table.orderId', 'Order ID') || '订单号'" width="140" show-overflow-tooltip />
-        <el-table-column :label="$t('order.table.customer', 'Customer') || '客户'" min-width="180">
+        <el-table-column prop="id" :label="$t('order.table.orderId', 'Order ID') || '订单号'" width="80"
+          show-overflow-tooltip />
+        <el-table-column :label="$t('order.table.customer', 'Customer') || '客户'" width="50">
           <template #default="{ row }">
             <div>
               <div class="customer-name">{{ row.username }}</div>
@@ -68,29 +82,32 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.table.totalAmount', 'Total Amount') || '总金额'" width="140" align="right">
+        <el-table-column :label="$t('order.table.totalAmount', 'Total Amount') || '总金额'" width="isMobile ? 0 :140" align="right"
+          class-name="desktop-only">
           <template #default="{ row }">
             <span class="amount-text">${{ row.total_amount }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.table.status', 'Status') || '状态'" width="120" align="center">
+        <el-table-column :label="$t('order.table.status', 'Status') || '状态'" width="isMobile ? 0 :80" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small">{{ formatStatus(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'" width="250">
+        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'" width="isMobile ? 0 :250" class-name="desktop-only">
           <template #default="{ row }">
-            <span class="date-text">{{ formatDateWithTimezone(row.created_at_local || row.created_at, row.create_time_zone) }}</span>
+            <span class="date-text">{{ formatDateWithTimezone(row.created_at_local || row.created_at,
+              row.create_time_zone) }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.paidDate', 'Paid Date') || '支付日期'" width="250">
+        <el-table-column :label="$t('order.paidDate', 'Paid Date') || '支付日期'" width="isMobile ? 0 :250" class-name="desktop-only">
           <template #default="{ row }">
-            <span class="date-text">{{ row.paid_at ? formatDateWithTimezone(row.paid_at, row.paid_time_zone) : '-' }}</span>
+            <span class="date-text">{{ row.paid_at ? formatDateWithTimezone(row.paid_at, row.paid_time_zone) : '-'
+              }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'" width="140" align="center">
+        <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'" width="isMobile ? 0 :140"  align="center" class-name="desktop-only">
           <template #default="{ row }">
-            <el-tag v-if="row.shipping_status" :type="getLogisticsStatusType(row.shipping_status)" size="small">{{ 
+            <el-tag v-if="row.shipping_status" :type="getLogisticsStatusType(row.shipping_status)" size="small">{{
               formatLogisticsStatus(row.shipping_status) }}</el-tag>
             <span v-else class="no-logistics">{{ $t('order.logistics.noLogistics', 'No Logistics') || '无物流' }}</span>
           </template>
@@ -104,8 +121,6 @@
           @current-change="handleCurrentChange" />
       </div>
     </el-card>
-
-
 
     <!-- 订单详情模态框 -->
     <div v-if="showOrderDetail" class="modal-overlay" @click="closeOrderDetail">
@@ -135,11 +150,14 @@
                   </div>
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.orderDate', 'Order Date') }}</span>
-                    <span class="info-value">{{ formatDateWithTimezone(selectedOrder.created_at_local || selectedOrder.created_at, selectedOrder.create_time_zone) }}</span>
+                    <span class="info-value">{{ formatDateWithTimezone(selectedOrder.created_at_local ||
+                      selectedOrder.created_at, selectedOrder.create_time_zone) }}</span>
                   </div>
                   <div class="info-row" v-if="selectedOrder.paid_at">
                     <span class="info-label">{{ $t('order.detail.paidDate', 'Paid Date') || '支付日期' }}</span>
-                    <span class="info-value">{{ formatDateWithTimezone(selectedOrder.paid_at, selectedOrder.paid_time_zone) }}</span>
+                    <span class="info-value">{{ formatDateWithTimezone(selectedOrder.paid_at,
+                      selectedOrder.paid_time_zone)
+                      }}</span>
                   </div>
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.orderTotal', 'Order Total') }}</span>
@@ -184,7 +202,7 @@
                 <h4>{{ $t('order.detail.logisticsInfo', 'Logistics Information') }}</h4>
               </div>
               <div class="card-content">
-                <div class="info-grid-two-column">
+                <div class="info-grid-three-column">
                   <div class="info-row" v-if="selectedOrder.logistics_company_name">
                     <span class="info-label">{{ $t('order.logistics.company', 'Company') }}</span>
                     <span class="info-value">{{ selectedOrder.logistics_company_name }}</span>
@@ -195,7 +213,7 @@
                       {{ formatLogisticsStatus(selectedOrder.shipping_status) }}
                     </span>
                   </div>
-                  <div class="info-row full-width" v-if="selectedOrder.shipping_no">
+                  <div class="info-row" v-if="selectedOrder.shipping_no">
                     <span class="info-label">{{ $t('order.logistics.trackingNumber', 'Tracking Number') }}</span>
                     <span class="info-value tracking-number">{{ selectedOrder.shipping_no }}</span>
                   </div>
@@ -231,45 +249,42 @@
                 </table>
               </div>
               <div class="order-total">
-                <!-- 统计信息一行显示 -->
-                <div class="total-summary-row">
-                  <div class="total-item">
-                    <span class="total-label">{{ $t('order.detail.subtotal', 'Subtotal') || '商品小计' }}</span>
-                    <span class="total-amount">${{ calculateSubtotal(selectedOrder.items) }}</span>
+                <!-- 统计信息五列显示 -->
+                <div class="info-grid-five-column">
+                  <div class="info-row">
+                    <span class="info-label">{{ $t('order.detail.subtotal', 'Subtotal') || '商品小计' }}</span>
+                    <span class="info-value">${{ calculateSubtotal(selectedOrder.items) }}</span>
                   </div>
-                  <div class="total-item">
-                    <span class="total-label">{{ $t('order.detail.shippingFee', 'Shipping Fee') || '运费' }}</span>
-                    <span v-if="!isAdmin || !editingPrice" class="total-amount">${{ selectedOrder.shipping_fee || '0.00' }}</span>
+                  <div class="info-row">
+                    <span class="info-label">{{ $t('order.detail.shippingFee', 'Shipping Fee') || '运费' }}</span>
+                    <span v-if="!canManageLogistics || !editingPrice" class="info-value">${{ selectedOrder.shipping_fee || '0.00'
+                      }}</span>
                     <div v-else class="price-edit-container">
-                      <input 
-                        type="number" 
-                        v-model.number="editableShippingFee" 
-                        step="0.01" 
-                        min="0" 
-                        class="price-input"
-                        @blur="updateShippingFee"
-                        @keyup.enter="updateShippingFee"
-                      />
+                      <input type="number" v-model.number="editableShippingFee" step="0.01" min="0" class="price-input"
+                        @blur="updateShippingFee" @keyup.enter="updateShippingFee" />
                     </div>
                   </div>
-                  <div class="total-item final-total">
-                    <span class="total-label">{{ $t('order.detail.orderTotal', 'Order Total') }}</span>
-                    <span v-if="!isAdmin || !editingPrice" class="total-amount">${{ selectedOrder.total_amount }}</span>
+                  <div class="info-row">
+                    <span class="info-label">{{ $t('order.detail.orderTotal', 'Order Total') }}</span>
+                    <span v-if="!canManageLogistics || !editingPrice" class="info-value total-final">${{ selectedOrder.total_amount
+                      }}</span>
                     <div v-else class="price-edit-container">
-                      <input 
-                        type="number" 
-                        v-model.number="editableTotalAmount" 
-                        step="0.01" 
-                        min="0" 
-                        class="price-input"
-                        @blur="updateTotalAmount"
-                        @keyup.enter="updateTotalAmount"
-                      />
+                      <input type="number" v-model.number="editableTotalAmount" step="0.01" min="0" class="price-input"
+                        @blur="updateTotalAmount" @keyup.enter="updateTotalAmount" />
                     </div>
+                  </div>
+                  <div class="info-row" v-if="selectedOrder.original_amount">
+                    <span class="info-label">{{ $t('order.detail.originalAmount', 'Original Amount') || '原始金额' }}</span>
+                    <span class="info-value">${{ selectedOrder.original_amount }}</span>
+                  </div>
+                  <div class="info-row" v-if="selectedOrder.update_amount_time">
+                    <span class="info-label">{{ $t('order.detail.updateAmountTime', 'Price Updated Time') || '价格修改时间'
+                      }}</span>
+                    <span class="info-value">{{ formatDateWithTimezone(selectedOrder.update_amount_time) }}</span>
                   </div>
                 </div>
                 <!-- 管理员价格编辑按钮 -->
-                <div v-if="isAdmin" class="price-edit-actions">
+                <div v-if="canManageLogistics && selectedOrder.status === 'pending'" class="price-edit-actions">
                   <el-button v-if="!editingPrice" type="primary" size="large" @click="startEditingPrice">
                     {{ $t('order.action.editPrice', 'Edit Price') || '修改价格' }}
                   </el-button>
@@ -305,7 +320,7 @@
             <!-- 物流基本信息 -->
             <div class="form-section">
               <h4 class="section-title">{{ $t('order.logistics.basicInfo', 'Basic Information') }}</h4>
-              <div class="form-grid">
+              <div class="form-grid-three-column">
                 <div class="form-group">
                   <label for="logistics-company" class="form-label">{{ $t('order.logistics.company', 'LogisticsCompany')
                     }}</label>
@@ -332,15 +347,25 @@
                   <select id="logistics-status" v-model="logisticsForm.shipping_status" required class="form-control">
                     <option value="">{{ $t('order.logistics.selectStatus', 'Select status') }}</option>
                     <option value="pending">{{ $t('order.logistics.statusPending', 'Pending') }}</option>
+                    <option value="processing">{{ $t('order.logistics.statusProcessing', 'Processing') }}</option>
                     <option value="shipped">{{ $t('order.logistics.statusShipped', 'Shipped') }}</option>
                     <option value="in_transit">{{ $t('order.logistics.statusInTransit', 'In Transit') }}</option>
                     <option value="delivered">{{ $t('order.logistics.statusDelivered', 'Delivered') }}</option>
-                    <option value="returned">{{ $t('order.logistics.statusReturned', 'Returned') }}</option>
+                    <option value="exception">{{ $t('order.logistics.statusException', 'Exception') }}</option>
                   </select>
                 </div>
               </div>
-            </div>
 
+              <!-- 发货时间选择 -->
+              <div class="form-grid-one-column" style="margin-top: 20px;">
+                <div class="form-group">
+                  <label for="shipped-date" class="form-label">{{ $t('order.logistics.shippedDate', 'Shipped Date')
+                    }}</label>
+                  <input id="shipped-date" type="datetime-local" v-model="logisticsForm.shipped_at" class="form-control"
+                    :placeholder="$t('order.logistics.shippedDatePlaceholder', 'Select shipped date and time')">
+                </div>
+              </div>
+            </div>
             <!-- 收货人信息 -->
             <div class="form-section">
               <h4 class="section-title">{{ $t('order.logistics.recipientInfo', 'Recipient Information') }}</h4>
@@ -436,13 +461,10 @@
       </div>
     </div>
 
-
-
     <!-- 加载状态 -->
     <div v-if="loading" class="loading">
       <p>{{ $t('order.loading', 'Loading orders...') }}</p>
     </div>
-
     <!-- 空状态 -->
     <div v-if="!loading && orders.length === 0" class="empty-state">
       <p>{{ $t('order.noOrders', 'No orders found.') }}</p>
@@ -452,12 +474,13 @@
 
 <script>
 import { mapState } from 'vuex'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, ArrowLeft } from '@element-plus/icons-vue'
 
 export default {
   name: 'OrderManagement',
   components: {
-    Refresh
+    Refresh,
+    ArrowLeft
   },
   data() {
     return {
@@ -494,7 +517,8 @@ export default {
         shipping_zip_code: '',
         shipping_country: '',
         shipping_state: '',
-        shipping_city: ''
+        shipping_city: '',
+        shipped_at: ''
       },
       // 价格编辑相关
       editingPrice: false,
@@ -508,6 +532,15 @@ export default {
     ...mapState(['user']),
     isAdmin() {
       return this.user && this.user.role === 'admin'
+    },
+    canManageLogistics() {
+      return this.user && (this.user.role === 'admin' || this.user.role === 'business')
+    },
+    isMobile() {
+      return window.innerWidth <= 768
+    },    
+    isBusiness() {
+      return this.user && this.user.role === 'business'
     },
     countries() {
       return this.$store.getters['countryState/countries'] || [];
@@ -536,10 +569,12 @@ export default {
   },
   mounted() {
     this.loadOrders()
-    if (this.isAdmin) {
+    if (this.canManageLogistics) {
       this.loadLogisticsCompanies()
-      this.loadUsers()
     }
+
+      this.loadUsers()
+    
     this.loadCountryStateData()
   },
   methods: {
@@ -613,6 +648,7 @@ export default {
           
           if (hasLogisticsInfo) {
             // 已有logistics信息，使用logistics表的字段（带logistics_前缀的字段）
+            const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
             this.logisticsForm = {
               logistics_company_id: latestOrder.logistics_company_id || '',
               shipping_no: latestOrder.shipping_no || '',
@@ -625,10 +661,16 @@ export default {
               shipping_zip_code: latestOrder.logistics_shipping_zip_code || '',
               shipping_country: latestOrder.logistics_shipping_country || '',
               shipping_state: latestOrder.logistics_shipping_state || '',
-              shipping_city: latestOrder.logistics_shipping_city || ''
+              shipping_city: latestOrder.logistics_shipping_city || '',
+              shipped_at: latestOrder.shipped_at ? this.formatDateTimeLocal(latestOrder.shipped_at) : '',
+              shipped_time_zone: latestOrder.shipped_time_zone || defaultTimezone
             }
           } else {
-            // 新建logistics信息，使用order表的收货信息填充
+            // 新建logistics信息，使用order表的收货信息填充，并设置默认发货时间为当前时间
+            const now = new Date()
+            const defaultShippedAt = now.toISOString().slice(0, 16) // 格式化为 YYYY-MM-DDTHH:mm
+            const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+            
             this.logisticsForm = {
               logistics_company_id: '',
               shipping_no: '',
@@ -641,7 +683,9 @@ export default {
               shipping_zip_code: latestOrder.shipping_zip_code || '',
               shipping_country: latestOrder.shipping_country || '',
               shipping_state: latestOrder.shipping_state || '',
-              shipping_city: latestOrder.shipping_city || ''
+              shipping_city: latestOrder.shipping_city || '',
+              shipped_at: defaultShippedAt,
+              shipped_time_zone: defaultTimezone
             }
           }
           
@@ -657,6 +701,7 @@ export default {
         
         if (hasLogisticsInfo) {
           // 已有logistics信息，使用logistics表的字段（带logistics_前缀的字段）
+          const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
           this.logisticsForm = {
             logistics_company_id: order.logistics_company_id || '',
             shipping_no: order.shipping_no || '',
@@ -669,10 +714,15 @@ export default {
             shipping_zip_code: order.logistics_shipping_zip_code || '',
             shipping_country: order.logistics_shipping_country || '',
             shipping_state: order.logistics_shipping_state || '',
-            shipping_city: order.logistics_shipping_city || ''
+            shipping_city: order.logistics_shipping_city || '',
+            shipped_at: order.shipped_at ? this.formatDateTimeLocal(order.shipped_at) : '',
+            shipped_time_zone: order.shipped_time_zone || defaultTimezone
           }
         } else {
-          // 新建logistics信息，使用order表的收货信息填充
+          // 新建logistics信息，使用order表的收货信息填充，并设置默认发货时间为当前时间
+          const now = new Date()
+          const defaultShippedAt = now.toISOString().slice(0, 16) // 格式化为 YYYY-MM-DDTHH:mm
+          
           this.logisticsForm = {
             logistics_company_id: '',
             shipping_no: '',
@@ -685,7 +735,8 @@ export default {
             shipping_zip_code: order.shipping_zip_code || '',
             shipping_country: order.shipping_country || '',
             shipping_state: order.shipping_state || '',
-            shipping_city: order.shipping_city || ''
+            shipping_city: order.shipping_city || '',
+            shipped_at: defaultShippedAt
           }
         }
         
@@ -695,6 +746,12 @@ export default {
 
     // 价格编辑相关方法
     startEditingPrice() {
+      // 只有pending状态的订单才能编辑价格
+      if (this.selectedOrder.status !== 'pending') {
+        this.$message.warning(this.$t('order.error.onlyPendingCanEditPrice', 'Only pending orders can edit price') || '只有待处理状态的订单才能修改价格')
+        return
+      }
+      
       this.editingPrice = true
       this.editableShippingFee = this.selectedOrder.shipping_fee || 0
       this.editableTotalAmount = this.selectedOrder.total_amount || 0
@@ -722,11 +779,31 @@ export default {
           this.selectedOrder.shipping_fee = priceData.shipping_fee
           this.selectedOrder.total_amount = priceData.total_amount
           
+          // 从服务端返回的数据中获取original_amount和update_amount_time
+          if (response.data) {
+            if (response.data.original_amount !== undefined) {
+              this.selectedOrder.original_amount = response.data.original_amount
+            }
+            if (response.data.update_amount_time) {
+              this.selectedOrder.update_amount_time = response.data.update_amount_time
+            }
+          }
+          
           // 更新订单列表中的数据
           const orderIndex = this.orders.findIndex(order => order.id === this.selectedOrder.id)
           if (orderIndex !== -1) {
             this.orders[orderIndex].shipping_fee = priceData.shipping_fee
             this.orders[orderIndex].total_amount = priceData.total_amount
+            
+            // 同时更新订单列表中的original_amount和update_amount_time
+            if (response.data) {
+              if (response.data.original_amount !== undefined) {
+                this.orders[orderIndex].original_amount = response.data.original_amount
+              }
+              if (response.data.update_amount_time) {
+                this.orders[orderIndex].update_amount_time = response.data.update_amount_time
+              }
+            }
           }
           
           this.editingPrice = false
@@ -778,15 +855,22 @@ export default {
           this.showLogisticsModal = false
           
           // 重置物流表单
+          const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
           this.logisticsForm = {
             logistics_company_id: '',
             shipping_no: '',
             shipping_status: 'pending',
             shipping_name: '',
             shipping_phone: '',
+            shipping_phone_country_code: '',
             shipping_email: '',
             shipping_address: '',
-            shipping_zip_code: ''
+            shipping_zip_code: '',
+            shipping_country: '',
+            shipping_state: '',
+            shipping_city: '',
+            shipped_at: '',
+            shipped_time_zone: defaultTimezone
           }
           
           // 如果订单详情模态框是打开的，也需要关闭
@@ -826,15 +910,22 @@ export default {
         this.selectedOrder = null
       }
       // 重置物流表单
+      const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
       this.logisticsForm = {
         logistics_company_id: '',
         shipping_no: '',
         shipping_status: 'pending',
         shipping_name: '',
         shipping_phone: '',
+        shipping_phone_country_code: '',
         shipping_email: '',
         shipping_address: '',
-        shipping_zip_code: ''
+        shipping_zip_code: '',
+        shipping_country: '',
+        shipping_state: '',
+        shipping_city: '',
+        shipped_at: '',
+        shipped_time_zone: defaultTimezone
       }
     },
 
@@ -848,27 +939,26 @@ export default {
     formatStatus(status) {
       const statusMap = {
         pending: 'Pending',
-        confirmed: 'Confirmed',
+        paid: 'Paid',
         shipped: 'Shipped',
         delivered: 'Delivered',
-        cancelled: 'Cancelled'
+        cancelled: 'Cancelled',
+        pay_timeout: 'Pay Timeout'
       }
       return statusMap[status] || status
     },
 
     formatLogisticsStatus(status) {
       const statusMap = {
-        pending: 'Pending',
-        picked_up: 'Picked Up',
-        in_transit: 'In Transit',
-        out_for_delivery: 'Out for Delivery',
-        delivered: 'Delivered',
-        failed: 'Failed',
-        returned: 'Returned'
+        pending: this.$t('order.logistics.statusPending', 'Pending'),
+        processing: this.$t('order.logistics.statusProcessing', 'Processing'),
+        shipped: this.$t('order.logistics.statusShipped', 'Shipped'),
+        in_transit: this.$t('order.logistics.statusInTransit', 'In Transit'),
+        delivered: this.$t('order.logistics.statusDelivered', 'Delivered'),
+        exception: this.$t('order.logistics.statusException', 'Exception')
       }
       return statusMap[status] || status
     },
-
 
 
     formatDate(dateString) {
@@ -893,14 +983,24 @@ export default {
       return timezone ? `${formattedDate} (${timezone})` : formattedDate;
     },
 
+    // 格式化日期时间为datetime-local输入框格式
+    formatDateTimeLocal(dateString) {
+      if (!dateString || dateString === '') {
+        return ''
+      }
+      const date = new Date(dateString)
+      return date.toISOString().slice(0, 16) // 格式化为 YYYY-MM-DDTHH:mm
+    },
+
     // 获取状态对应的Element Plus tag类型
     getStatusType(status) {
       const typeMap = {
         pending: 'warning',
-        confirmed: 'info',
+        paid: 'info',
         shipped: 'primary',
         delivered: 'success',
-        cancelled: 'danger'
+        cancelled: 'danger',
+        pay_timeout: 'danger'
       }
       return typeMap[status] || 'info'
     },
@@ -909,12 +1009,11 @@ export default {
     getLogisticsStatusType(status) {
       const typeMap = {
         pending: 'warning',
-        picked_up: 'info',
+        processing: 'info', 
+        shipped: 'primary',
         in_transit: 'primary',
-        out_for_delivery: 'warning',
         delivered: 'success',
-        failed: 'danger',
-        returned: 'danger'
+        exception: 'danger'
       }
       return typeMap[status] || 'info'
     },
@@ -1033,10 +1132,14 @@ export default {
       this.logisticsForm.shipping_state = '';
       this.logisticsForm.shipping_city = '';
     },
-
     // 处理省份变化
     handleStateChange() {
       this.logisticsForm.shipping_city = '';
+    },
+
+    // 返回业务仪表板
+    goBackToDashboard() {
+      this.$router.push('/business');
     }
   }
 }
@@ -1053,6 +1156,20 @@ export default {
   margin-bottom: 30px;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.header-right {
+  display: block;
+}
+
 .page-header h1 {
   color: #333;
   font-size: 28px;
@@ -1064,6 +1181,93 @@ export default {
   color: #666;
   font-size: 14px;
   margin: 0;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 移动端样式 */
+@include mobile {
+  .mobile-only {
+    display: block !important;
+  }
+
+  .header-right {
+    display: block;
+  }
+
+  .header-content {
+    align-items: center;
+  }
+
+  /* 隐藏桌面端列 */
+  .order-table :deep(.desktop-only) {
+    display: none !important;
+  }
+
+  /* 调整移动端表格样式 */
+  .order-table {
+    font-size: 14px;
+  }
+
+  .order-table :deep(.el-table__cell) {
+    padding: 8px 4px;
+  }
+
+
+  .customer-name {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .customer-email {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  /* 对话框全屏显示 */
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-content {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    overflow-y: auto;
+  }
+
+  .order-detail-modal,
+  .logistics-modal {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+  }
+
+  .modal-body {
+    padding: 20px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
 }
 
 /* Element Plus 卡片样式 */
@@ -1225,6 +1429,11 @@ export default {
   color: #856404;
 }
 
+.logistics-processing {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
 .logistics-shipped {
   background-color: #cce5ff;
   color: #004085;
@@ -1240,7 +1449,7 @@ export default {
   color: #155724;
 }
 
-.logistics-returned {
+.logistics-exception {
   background-color: #f8d7da;
   color: #721c24;
 }
@@ -1283,6 +1492,17 @@ export default {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border-radius: 12px 12px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* 物流模态框header固定 */
+.logistics-modal .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 }
 
 .modal-title {
@@ -1345,7 +1565,7 @@ export default {
   width: 100%;
 }
 
-@media (max-width: 768px) {
+@include mobile {
   .order-detail-grid {
     gap: 16px;
   }
@@ -1427,29 +1647,45 @@ export default {
 
 .info-grid-five-column {
   display: grid;
-  grid-template-columns: repeat(5, minmax(160px, 1fr));
-  gap: 12px 16px;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 12px 8px;
+  min-width: 0;
+}
+
+.info-grid-three-column {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 8px;
   min-width: 0;
 }
 
 @media (max-width: 1200px) {
   .info-grid-five-column {
-    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    grid-template-columns: repeat(4, minmax(110px, 1fr));
   }
 }
 
 @media (max-width: 900px) {
   .info-grid-five-column {
-    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    grid-template-columns: repeat(3, minmax(100px, 1fr));
+  }
+
+  .info-grid-three-column {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
+@include mobile {
   .info-grid-four-column {
     grid-template-columns: 1fr 1fr;
   }
+
   .info-grid-five-column {
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
+  }
+
+  .info-grid-three-column {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1457,7 +1693,12 @@ export default {
   .info-grid-four-column {
     grid-template-columns: 1fr;
   }
+
   .info-grid-five-column {
+    grid-template-columns: 1fr;
+  }
+
+  .info-grid-three-column {
     grid-template-columns: 1fr;
   }
 }
@@ -1773,9 +2014,9 @@ export default {
 
 /* 物流模态框样式 */
 .logistics-modal {
-  max-width: 1000px;
-  width: 95%;
-  max-height: 95vh;
+  max-width: 1200px;
+  width: 98%;
+  max-height: 98vh;
   overflow-y: auto;
 }
 
@@ -1803,8 +2044,20 @@ export default {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 16px;
+}
+
+.form-grid-three-column {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@include mobile {
+  .form-grid-three-column {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-group {
@@ -1953,7 +2206,7 @@ export default {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@include mobile {
   .order-detail-grid {
     grid-template-columns: 1fr;
   }

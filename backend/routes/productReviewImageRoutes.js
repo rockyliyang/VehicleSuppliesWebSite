@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productReviewImageController = require('../controllers/productReviewImageController');
-const { authenticateToken, requireRole } = require('../middleware/jwt');
+const { verifyToken, requireRole } = require('../middleware/jwt');
 
 // 公开路由（不需要认证）
 // 获取评论图片列表（只显示已审核通过的评论图片）
@@ -11,7 +11,7 @@ router.get('/review/:review_id', productReviewImageController.getReviewImages);
 router.get('/:id', productReviewImageController.getReviewImage);
 
 // 需要用户认证的路由
-router.use(authenticateToken);
+router.use(verifyToken);
 
 // 用户图片操作
 // 上传评论图片

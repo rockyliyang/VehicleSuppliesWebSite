@@ -121,7 +121,7 @@ button:focus {
   }
 }
 
-@media (max-width: 768px) {
+@include mobile {
   .container {
     width: 100%;
     padding: 0 15px;

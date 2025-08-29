@@ -87,6 +87,7 @@ export default createStore({
     userCurrency: 'USD', // 用户货币设置
     isLoggedIn: false,
     isAdminLoggedIn: false,
+    isBusinessLoggedIn: false,
     categories: [],
     banners: [], // Banner 数据
     // 购物车状态
@@ -100,6 +101,7 @@ export default createStore({
     setUser(state, user) {
       state.user = user
       state.isAdminLoggedIn = false
+      state.isBusinessLoggedIn = false
       state.isLoggedIn = false
       if (user) {
         // 如果用户数据包含currency字段，则更新userCurrency
@@ -108,6 +110,8 @@ export default createStore({
         }
         if (user.role === 'admin') {
           state.isAdminLoggedIn = true
+        } else if (user.role === 'business') {
+          state.isBusinessLoggedIn = true
         } else {
           state.isLoggedIn = true
         }

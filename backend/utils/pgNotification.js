@@ -127,6 +127,13 @@ class PgNotificationManager extends EventEmitter {
    * @param {object} messageData - 消息数据
    */
   async notifyNewMessage(inquiryId, messageData) {
+    // 如果正在关闭或连接池已关闭，直接触发本地事件
+    if (this.isShuttingDown || !this.pool || this.pool.ended) {
+      console.log('Service is shutting down or pool is closed, using local event only');
+      this.emit('newMessage', { inquiryId: parseInt(inquiryId), messageData });
+      return;
+    }
+
     try {
       const payload = {
         inquiryId: parseInt(inquiryId),

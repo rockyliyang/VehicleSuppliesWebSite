@@ -2656,7 +2656,7 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'admin.inquiry.error.loadDetailFailed', 'zh-CN', '加载询价详情失败'),
 (gen_random_uuid(), 'admin.inquiry.success.statusUpdated', 'en', 'Status updated successfully'),
 (gen_random_uuid(), 'admin.inquiry.success.statusUpdated', 'zh-CN', '状态更新成功'),
-(gen_random_uuid(), 'admin.inquiry.table.unreadCount', 'en', 'Unread Messages'),
+(gen_random_uuid(), 'admin.inquiry.table.unreadCount', 'en', 'Unread'),
 (gen_random_uuid(), 'admin.inquiry.table.unreadCount', 'zh-CN', '未读消息'),
 (gen_random_uuid(), 'admin.inquiry.table.noUnread', 'en', 'No Unread'),
 (gen_random_uuid(), 'admin.inquiry.table.noUnread', 'zh-CN', '无未读'),
@@ -3379,6 +3379,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'order.action.logistics', 'zh-CN', '物流'),
 (gen_random_uuid(), 'order.logistics.noLogistics', 'en', 'No Logistics'),
 (gen_random_uuid(), 'order.logistics.noLogistics', 'zh-CN', '无物流'),
+(gen_random_uuid(), 'order.logistics.shippedDate', 'en', 'Shipped Date'),
+(gen_random_uuid(), 'order.logistics.shippedDate', 'zh-CN', '发货日期'),
 
 -- Order Detail Modal
 (gen_random_uuid(), 'order.detail.title', 'en', 'Order Detail'),
@@ -3415,7 +3417,10 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'order.detail.zipCode', 'zh-CN', '邮政编码'),
 (gen_random_uuid(), 'order.detail.logisticsInfo', 'en', 'Logistics Information'),
 (gen_random_uuid(), 'order.detail.logisticsInfo', 'zh-CN', '物流信息'),
-
+(gen_random_uuid(), 'order.detail.originalAmount', 'en', 'Original Amount'),
+(gen_random_uuid(), 'order.detail.originalAmount', 'zh-CN', '原价'),
+(gen_random_uuid(), 'order.detail.updateAmountTime', 'en', 'Update Amount Time'),
+(gen_random_uuid(), 'order.detail.updateAmountTime', 'zh-CN', '更新金额时间'),
 -- Logistics Management
 (gen_random_uuid(), 'order.logistics.manageTitle', 'en', 'Manage Logistics'),
 (gen_random_uuid(), 'order.logistics.manageTitle', 'zh-CN', '管理物流'),
@@ -3465,6 +3470,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'order.logistics.updating', 'zh-CN', '更新中...'),
 (gen_random_uuid(), 'order.logistics.updateButton', 'en', 'Update Logistics'),
 (gen_random_uuid(), 'order.logistics.updateButton', 'zh-CN', '更新物流'),
+(gen_random_uuid(), 'order.paidDate', 'en', 'Paid Date'),
+(gen_random_uuid(), 'order.paidDate', 'zh-CN', '支付日期'),
 
 -- Common UI Elements
 (gen_random_uuid(), 'common.previous', 'en', 'Previous'),
@@ -4251,8 +4258,16 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'payment.success.paymentSuccess', 'zh-CN', '支付成功完成'),
 (gen_random_uuid(), 'payment.error.paypalFailed', 'en', 'PayPal payment failed'),
 (gen_random_uuid(), 'payment.error.paypalFailed', 'zh-CN', 'PayPal支付失败'),
+(gen_random_uuid(), 'checkout.error.fetchLogisticsFailed', 'en', 'Failed to fetch logistics data'),
+(gen_random_uuid(), 'checkout.error.fetchLogisticsFailed', 'zh-CN', '获取物流数据失败'),
 
 -- OrderPayment.vue 页面翻译键
+(gen_random_uuid(), 'payment.shippedDate', 'en', 'Shipped Date'),
+(gen_random_uuid(), 'payment.shippedDate', 'zh-CN', '发货日期'),
+(gen_random_uuid(), 'payment.orderTime', 'en', 'Order Time'),
+(gen_random_uuid(), 'payment.orderTime', 'zh-CN', '订单时间'),
+(gen_random_uuid(), 'payment.fetchOrderFailed', 'en', 'Failed to fetch order details'),
+(gen_random_uuid(), 'payment.fetchOrderFailed', 'zh-CN', '获取订单详情失败'),
 (gen_random_uuid(), 'payment.mobilePaymentTip', 'en', 'Click the button to pay with Alipay'),
 (gen_random_uuid(), 'payment.mobilePaymentTip', 'zh-CN', '点击按钮使用支付宝支付'),
 (gen_random_uuid(), 'payment.payWithAlipay', 'en', 'Pay with Alipay'),
@@ -4723,6 +4738,9 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 
 (gen_random_uuid(), 'payment.alipayTemporarilyDisabled', 'en', 'Alipay payment is temporarily disabled due to exchange rate unavailability.'),
 (gen_random_uuid(), 'payment.alipayTemporarilyDisabled', 'zh-CN', '由于汇率不可用，支付宝支付暂时禁用。'),
+
+(gen_random_uuid(), 'admin.inquiry.detail.lastQuoteTime', 'en', 'Last Quote Time'),
+(gen_random_uuid(), 'admin.inquiry.detail.lastQuoteTime', 'zh-CN', '最后报价时间'),
 
 -- OrderPayment.vue 新增的物流和支付状态相关翻译键
 (gen_random_uuid(), 'payment.orderStatus', 'en', 'Order Status'),

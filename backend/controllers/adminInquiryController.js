@@ -94,7 +94,6 @@ exports.getAllInquiries = async (req, res) => {
         u.username,
         u.email,
         COALESCE(item_stats.item_count, 0) as item_count,
-        COALESCE(item_stats.total_quoted_price, 0) as total_quoted_price,
         COALESCE(message_stats.message_count, 0) as message_count,
         COALESCE(unread_stats.unread_count, 0) as unread_count
       FROM inquiries i
@@ -102,8 +101,7 @@ exports.getAllInquiries = async (req, res) => {
       LEFT JOIN (
         SELECT 
           inquiry_id,
-          COUNT(id) as item_count,
-          SUM(CASE WHEN unit_price IS NOT NULL THEN quantity * unit_price ELSE 0 END) as total_quoted_price
+          COUNT(id) as item_count
         FROM inquiry_items 
         WHERE deleted = false 
         GROUP BY inquiry_id
@@ -137,7 +135,6 @@ exports.getAllInquiries = async (req, res) => {
     // 处理返回数据格式
     const formattedInquiries = inquiries.getRows().map(inquiry => ({
       ...inquiry,
-      total_quoted_price: parseFloat(inquiry.total_quoted_price) || 0,
       item_count: parseInt(inquiry.item_count) || 0,
       message_count: parseInt(inquiry.message_count) || 0,
       unread_count: parseInt(inquiry.unread_count) || 0
@@ -191,6 +188,7 @@ exports.getInquiryDetail = async (req, res) => {
         i.inquiry_type,
         i.created_at,
         i.updated_at,
+        i.update_price_time,
         u.username,
         u.email,
         u.phone
@@ -210,13 +208,20 @@ exports.getInquiryDetail = async (req, res) => {
     
     const inquiry = inquiryResult.getFirstRow();
     
+    // 检查价格是否过期（48小时）
+    const priceExpired = inquiry.update_price_time && 
+      (new Date() - new Date(inquiry.update_price_time)) > (48 * 60 * 60 * 1000);
+    
     // 查询询价商品
     const itemsQuery = `
       SELECT 
         ii.id,
         ii.product_id,
         ii.quantity,
-        ii.unit_price,
+        CASE 
+          WHEN $2 = true THEN NULL 
+          ELSE ii.unit_price 
+        END as unit_price,
         'pending' as item_status,
         ii.created_at,
         ii.updated_at,
@@ -230,7 +235,39 @@ exports.getInquiryDetail = async (req, res) => {
       ORDER BY ii.created_at ASC
     `;
     
-    const items = await query(itemsQuery, [inquiryId]);
+    const items = await query(itemsQuery, [inquiryId, priceExpired]);
+    const itemsData = items.getRows();
+    
+    // 一次性查询所有商品的价格范围
+    if (itemsData.length > 0) {
+      const productIds = itemsData.map(item => item.product_id);
+      const priceRangesQuery = `
+        SELECT product_id, min_quantity, max_quantity, price
+        FROM product_price_ranges
+        WHERE product_id = ANY($1) AND deleted = false
+        ORDER BY product_id, min_quantity ASC
+      `;
+      const priceRanges = await query(priceRangesQuery, [productIds]);
+      const priceRangesData = priceRanges.getRows();
+      
+      // 将价格范围按product_id分组
+      const priceRangesByProduct = {};
+      priceRangesData.forEach(range => {
+        if (!priceRangesByProduct[range.product_id]) {
+          priceRangesByProduct[range.product_id] = [];
+        }
+        priceRangesByProduct[range.product_id].push({
+          min_quantity: range.min_quantity,
+          max_quantity: range.max_quantity,
+          price: range.price
+        });
+      });
+      
+      // 为每个商品添加价格范围
+      itemsData.forEach(item => {
+        item.price_ranges = priceRangesByProduct[item.product_id] || [];
+      });
+    }
     
     // 查询询价消息
     const messagesQuery = `
@@ -254,7 +291,7 @@ exports.getInquiryDetail = async (req, res) => {
       message: getMessage('INQUIRY.FETCH.SUCCESS'),
       data: {
         inquiry: inquiryResult.getFirstRow(),
-        items: items.getRows(),
+        items: itemsData,
         messages: messages.getRows()
       }
     });
@@ -301,10 +338,18 @@ exports.updateItemQuote = async (req, res) => {
       });
     }
     
+    const inquiryId = itemResult.getFirstRow().inquiry_id;
+    
     // 更新商品报价
-        await query(
-          'UPDATE inquiry_items SET unit_price = $1, updated_by = $2, updated_at = NOW() WHERE id = $3',
-          [quotedPrice, adminId, itemId]
+    await query(
+      'UPDATE inquiry_items SET unit_price = $1, updated_by = $2, updated_at = NOW() WHERE id = $3',
+      [quotedPrice, adminId, itemId]
+    );
+    
+    // 更新询价单的报价时间
+    await query(
+      'UPDATE inquiries SET update_price_time = NOW(), updated_by = $1, updated_at = NOW() WHERE id = $2',
+      [adminId, inquiryId]
     );
     
 

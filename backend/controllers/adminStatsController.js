@@ -28,7 +28,7 @@ exports.getDashboardStats = async (req, res) => {
       SELECT 
         (SELECT COUNT(*) FROM products WHERE deleted = false AND status = 'on_shelf') as product_count,
         (SELECT COUNT(*) FROM users WHERE deleted = false AND id IN (${placeholders})) as user_count,
-        (SELECT COUNT(*) FROM inquiries WHERE deleted = false AND user_id IN (${placeholders2})) as order_count,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND user_id IN (${placeholders2})) as order_count,
         (SELECT COUNT(*) FROM inquiry_messages im 
          INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
          WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id IN (${placeholders3})) as message_count
@@ -45,14 +45,15 @@ exports.getDashboardStats = async (req, res) => {
       WHERE deleted = false AND id IN (${placeholders})
     `, params);
 
-    // 获取询价统计（只统计管理的用户）
-    const inquiryStats = await query(`
+    // 获取订单统计（只统计管理的用户）
+    const orderStats = await query(`
       SELECT 
-        COUNT(*) as total_inquiries,
-        COUNT(CASE WHEN status = 'inquiried' THEN 1 END) as pending_inquiries,
-        COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_inquiries,
-        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_inquiries
-      FROM inquiries 
+        COUNT(*) as total_orders,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as unpaid_orders,
+        COUNT(CASE WHEN status = 'paid' THEN 1 END) as unshipped_orders,
+        COUNT(CASE WHEN status = 'shipped' THEN 1 END) as shipped_orders,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as recent_7days_orders
+      FROM orders 
       WHERE deleted = false AND user_id IN (${placeholders})
     `, params);
 
@@ -108,7 +109,7 @@ exports.getDashboardStats = async (req, res) => {
         orders: stats.rows[0].order_count,
         messages: stats.rows[0].message_count,
         userStats: userStats.rows[0],
-        inquiryStats: inquiryStats.rows[0],
+        orderStats: orderStats.rows[0],
         messageStats: messageStatsResponse,
         trends: {
           inquiries: inquiryTrend.rows,
@@ -231,6 +232,98 @@ exports.getRecentInquiries = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: getMessage('INQUIRY.FETCH.FAILED')
+    });
+  }
+};
+
+/**
+ * 获取业务员工作台统计数据
+ * GET /api/admin/stats/salesperson-dashboard
+ */
+exports.getBusinessDashboardStats = async (req, res) => {
+  try {
+    const currentUserId = req.userId; // 从JWT中获取当前登录用户ID
+    
+    // 获取当前业务员管理的用户ID列表
+    const managedUserIds = await getManagedUserIds(currentUserId);
+    const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
+    
+    // 获取询价和订单统计数据
+    const stats = await query(`
+      SELECT 
+        (SELECT COUNT(*) FROM inquiries WHERE deleted = false AND user_id IN (${placeholders})) as inquiry_count,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND user_id IN (${placeholders})) as order_count,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'pending' AND user_id IN (${placeholders})) as unpaid_orders,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'paid' AND user_id IN (${placeholders})) as unshipped_orders,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'shipped' AND user_id IN (${placeholders})) as shipped_orders,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND created_at >= NOW() - INTERVAL '7 days' AND user_id IN (${placeholders})) as recent_7days_orders,
+        (SELECT COUNT(*) FROM inquiry_messages im 
+         INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
+         WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id IN (${placeholders})) as unread_user_messages
+    `, params);
+
+    // 获取消息统计
+    const messageStats = await query(`
+      SELECT 
+        COUNT(*) as total_messages,
+        COUNT(CASE WHEN sender_type = 'user' AND is_read = 0 THEN 1 END) as user_unread_messages,
+        COUNT(CASE WHEN sender_type = 'admin' THEN 1 END) as admin_messages,
+        COUNT(CASE WHEN sender_type = 'user' THEN 1 END) as user_messages
+      FROM inquiry_messages im inner join inquiries i on im.inquiry_id = i.id and i.deleted=false
+      WHERE im.deleted = false AND i.user_id IN (${placeholders})
+    `, params);
+    
+    const adminUnreadStats = await query(`
+      SELECT COUNT(CASE WHEN sender_type = 'admin' AND is_read = 0 THEN 1 END) as admin_unread_messages
+      FROM inquiry_messages im inner join inquiries i on im.inquiry_id = i.id and i.deleted=false
+      WHERE im.deleted = false AND im.sender_id = $1   
+    `, [currentUserId]);
+
+    // 获取今日统计
+    const todayStats = await query(`
+      SELECT 
+        (SELECT COUNT(*) FROM inquiry_messages im 
+         INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
+         WHERE im.deleted = false AND DATE(im.created_at) = CURRENT_DATE AND i.user_id IN (${placeholders})) as today_messages,
+        (SELECT COUNT(*) FROM inquiries 
+         WHERE deleted = false AND DATE(created_at) = CURRENT_DATE AND user_id IN (${placeholders})) as today_inquiries,
+        (SELECT COUNT(*) FROM orders 
+         WHERE deleted = false AND DATE(created_at) = CURRENT_DATE AND user_id IN (${placeholders})) as today_orders
+    `, params);
+
+    // 获取新订单数量（最近7天）
+    const newOrdersStats = await query(`
+      SELECT COUNT(*) as new_orders
+      FROM orders 
+      WHERE deleted = false 
+        AND created_at >= NOW() - INTERVAL '7 days'
+        AND user_id IN (${placeholders})
+    `, params);
+
+    let messageStatsResponse = messageStats.rows[0];
+    messageStatsResponse.admin_unread_messages = adminUnreadStats.rows[0].admin_unread_messages;
+
+    return res.json({
+      success: true,
+      message: getMessage('ADMIN.STATS.FETCH.SUCCESS'),
+      data: {
+        inquiries: stats.rows[0].inquiry_count,
+        orders: stats.rows[0].order_count,
+        unpaidOrders: stats.rows[0].unpaid_orders,
+        unshippedOrders: stats.rows[0].unshipped_orders,
+        shippedOrders: stats.rows[0].shipped_orders,
+        recent7daysOrders: stats.rows[0].recent_7days_orders,
+        newOrders: newOrdersStats.rows[0].new_orders,
+        unreadUserMessages: stats.rows[0].unread_user_messages,
+        messageStats: messageStatsResponse,
+        todayStats: todayStats.rows[0]
+      }
+    });
+  } catch (error) {
+    console.error('获取业务员统计数据失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('ADMIN.STATS.FETCH.FAILED')
     });
   }
 };

@@ -22,7 +22,7 @@ export default {
   },
   computed: {
     isAdminRoute() {
-      return this.$route.path.startsWith('/admin')
+      return this.$route.path.startsWith('/admin') || this.$route.path.startsWith('/business')
     },
     isAuthRoute() {
       return ['/login'].includes(this.$route.path)

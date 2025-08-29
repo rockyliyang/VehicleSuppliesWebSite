@@ -1181,7 +1181,7 @@ textarea.form-control {
   margin-top: 15px;
 }
 
-@media (max-width: 768px) {
+@include mobile {
 
   .nav-item,
   .content-item {

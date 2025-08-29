@@ -5,12 +5,16 @@
 
 const express = require('express');
 const router = express.Router();
-const { verifyToken, requireAdmin, isAdmin } = require('../middleware/jwt');
+const { verifyToken, isAdmin, requireRole } = require('../middleware/jwt');
 const adminStatsController = require('../controllers/adminStatsController');
 
-// 所有路由都需要管理员权限
-router.use(verifyToken);
-router.use(isAdmin);
+// 管理员专用路由
+router.use('/dashboard', verifyToken, isAdmin);
+router.use('/recent-products', verifyToken, isAdmin);
+router.use('/recent-inquiries', verifyToken, isAdmin);
+
+// 业务员专用路由
+router.use('/business-dashboard', verifyToken, requireRole(['admin', 'business']));
 
 /**
  * 获取管理员控制面板统计数据
@@ -29,5 +33,11 @@ router.get('/recent-products', adminStatsController.getRecentProducts);
  * GET /api/admin/stats/recent-inquiries?limit=5
  */
 router.get('/recent-inquiries', adminStatsController.getRecentInquiries);
+
+/**
+ * 获取业务员工作台统计数据
+ * GET /api/admin/stats/business-dashboard
+ */
+router.get('/business-dashboard', adminStatsController.getBusinessDashboardStats);
 
 module.exports = router;

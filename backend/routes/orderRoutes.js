@@ -14,4 +14,7 @@ router.get('/', orderController.getOrders);
 // 获取订单详情
 router.get('/:orderId', orderController.getOrderDetail);
 
+// 修改订单信息（仅限shipping information字段）
+router.put('/:orderId', orderController.updateOrder);
+
 module.exports = router;

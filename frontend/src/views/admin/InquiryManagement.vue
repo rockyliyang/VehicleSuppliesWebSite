@@ -1,8 +1,18 @@
 <template>
   <div class="inquiry-management">
     <div class="page-header">
-      <h1>{{ $t('inquiry.management.title') || '询价管理' }}</h1>
-      <p>{{ $t('admin.inquiry.description') || '管理用户询价单，查看询价详情，处理报价和消息' }}</p>
+      <div class="header-content">
+        <div class="header-left">
+          <h1>{{ $t('inquiry.management.title') || '询价管理' }}</h1>
+          <p>{{ $t('admin.inquiry.description') || '管理用户询价单，查看询价详情，处理报价和消息' }}</p>
+        </div>
+        <div class="header-right" v-if="isBusiness">
+          <el-button type="primary" @click="goBackToDashboard" size="small">
+            <el-icon><ArrowLeft /></el-icon>
+            {{ $t('common.back') || '返回' }}
+          </el-button>
+        </div>
+      </div>
     </div>
 
     <!-- 筛选条件 -->
@@ -51,22 +61,22 @@
     </el-card>
 
     <!-- 询价列表 -->
-    <el-card class="c">
-      <el-table v-loading="loading" :data="inquiries" stripe>
+    <el-card class="inquiry-list-card">
+      <!-- 桌面端表格 -->
+      <el-table v-if="!isMobile" v-loading="loading" :data="inquiries" stripe @row-click="handleRowClick">
         <el-table-column :label="$t('admin.inquiry.table.unreadCount') || '未读消息'" width="100" fixed="left">
           <template #default="{ row }">
             <div class="unread-message-cell">
-              <span v-if="row.unread_count > 0" class="unread-number">{{ row.unread_count }}</span>
+              <span v-if="row.unread_count > 0" class="unread-number unread-highlight flash-unread">{{ row.unread_count }}</span>
               <span v-else class="no-unread">0</span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="user_inquiry_id" :label="$t('inquiry.management.table.id') || '询价单号'" width="120" />
-        <el-table-column prop="title" :label="$t('admin.inquiry.table.title') || '标题'" min-width="150" />
-        <el-table-column :label="$t('inquiry.management.table.user') || '用户'" width="150">
+        <el-table-column prop="user_inquiry_id" :label="$t('inquiry.management.table.id') || '询价单号'" width="100" />
+        <el-table-column prop="title" :label="$t('admin.inquiry.table.title') || '标题'" min-width="100" />
+        <el-table-column :label="$t('inquiry.management.table.user') || '用户'" width="200">
           <template #default="{ row }">
             <div>
-              <div>{{ row.username }}</div>
               <div class="text-secondary">{{ row.email }}</div>
             </div>
           </template>
@@ -81,12 +91,6 @@
             {{ row.item_count }}
           </template>
         </el-table-column>
-        <el-table-column :label="$t('admin.inquiry.table.totalPrice') || '总报价'" width="120">
-          <template #default="{ row }">
-            <span v-if="row.total_quoted_price > 0">${{ row.total_quoted_price.toFixed(2) }}</span>
-            <span v-else class="text-secondary">{{ $t('admin.inquiry.table.notQuoted') || '未报价' }}</span>
-          </template>
-        </el-table-column>
         <el-table-column :label="$t('admin.inquiry.table.messageCount') || '消息数'" width="100">
           <template #default="{ row }">
             {{ row.message_count }}
@@ -97,16 +101,27 @@
             {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column :label="$t('inquiry.management.table.actions') || '操作'" width="240" fixed="right">
+      </el-table>
+
+      <!-- 移动端表格 -->
+      <el-table v-else v-loading="loading" :data="inquiries" stripe @row-click="handleRowClick">
+        <el-table-column :label="$t('admin.inquiry.table.unreadCount') || '未读'" width="60" align="center">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="viewDetail(row.id)">{{ $t('inquiry.management.action.view')
-              || '查看' }}</el-button>
-            <el-button type="success" size="small" @click="updateStatus(row, 'approved')"
-              :disabled="row.status !== 'inquiried'">{{
-              $t('admin.inquiry.action.approve') || '批准' }}</el-button>
-            <el-button type="danger" size="small" @click="updateStatus(row, 'rejected')"
-              :disabled="row.status !== 'inquiried'">{{
-              $t('admin.inquiry.action.reject') || '拒绝' }}</el-button>
+            <div class="unread-message-cell">
+              <span v-if="row.unread_count > 0" class="unread-number unread-highlight flash-unread">{{ row.unread_count }}</span>
+              <span v-else class="no-unread">-</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="user_inquiry_id" :label="$t('inquiry.management.table.id') || '单号'" width="80" />
+        <el-table-column :label="$t('inquiry.management.table.user') || '用户'" min-width="120">
+          <template #default="{ row }">
+            <div class="mobile-user-info">
+              <div class="user-email">{{ row.email }}</div>
+              <div class="inquiry-status">
+                <el-tag :type="getStatusType(row.status)" size="small">{{ getStatusText(row.status) }}</el-tag>
+              </div>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -129,14 +144,16 @@
 </template>
 
 <script>
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, ArrowLeft } from '@element-plus/icons-vue'
 import InquiryDetail from '../../components/admin/InquiryDetail.vue'
+import { mapState } from 'vuex'
 
 export default {
   name: 'InquiryManagement',
   components: {
     InquiryDetail,
-    Refresh
+    Refresh,
+    ArrowLeft
   },
   data() {
     return {
@@ -162,6 +179,15 @@ export default {
       refreshTimer: null,
       userOptions: [],
       userSearchLoading: false
+    }
+  },
+  computed: {
+    ...mapState(['user']),
+    isMobile() {
+      return window.innerWidth <= 768
+    },
+    isBusiness() {
+      return this.user && this.user.role === 'business'
     }
   },
   watch: {
@@ -193,6 +219,9 @@ export default {
     this.loadUsers()
     this.startAutoRefresh()
     
+    // 监听窗口大小变化
+    window.addEventListener('resize', this.handleResize)
+    
     // 检查是否有查看询价详情的查询参数
     const viewInquiryId = this.$route.query.view;
     if (viewInquiryId) {
@@ -210,6 +239,7 @@ export default {
       clearTimeout(this.userIdTimer)
     }
     this.stopAutoRefresh()
+    window.removeEventListener('resize', this.handleResize)
   },
   methods: {
     async loadInquiries() {
@@ -232,7 +262,16 @@ export default {
           params,
           fallbackKey: 'admin.inquiry.error.loadFailed'
         })
-        this.inquiries = response.data.inquiries
+        // 对询价列表进行排序，有未读消息的排在前面
+        const inquiries = response.data.inquiries || []
+        this.inquiries = inquiries.sort((a, b) => {
+          // 首先按未读消息数量排序（降序）
+          if (a.unread_count !== b.unread_count) {
+            return (b.unread_count || 0) - (a.unread_count || 0)
+          }
+          // 如果未读消息数量相同，按创建时间排序（最新的在前）
+          return new Date(b.created_at) - new Date(a.created_at)
+        })
         this.pagination = response.data.pagination
       } catch (error) {
         // 错误已经被统一处理
@@ -298,14 +337,9 @@ export default {
       }
     },
     
-    handleStatusUpdated() {
-      this.loadInquiries()
+    handleRowClick(row) {
+      this.viewDetail(row.id)
     },
-    
-    handleQuoteUpdated() {
-      this.loadInquiries()
-    },
-    
     handleMessagesRead() {
       this.loadInquiries()
     },
@@ -423,13 +457,247 @@ export default {
         clearInterval(this.refreshTimer)
         this.refreshTimer = null
       }
+    },
+
+    // 处理窗口大小变化
+    handleResize() {
+      this.$forceUpdate()
+    },
+
+    // 返回业务仪表板
+    goBackToDashboard() {
+      this.$router.push('/business')
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
+@import '@/assets/styles/_variables.scss';
 @import '@/assets/styles/_mixins.scss';
+
+.inquiry-management {
+  padding: 20px;
+
+  .page-header {
+    margin-bottom: 20px;
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+
+      .header-left {
+        flex: 1;
+
+        h1 {
+          margin: 0 0 8px 0;
+          color: #303133;
+          font-size: 24px;
+          font-weight: 600;
+        }
+
+        p {
+          margin: 0;
+          color: #606266;
+          font-size: 14px;
+        }
+      }
+
+      .header-right {
+        flex-shrink: 0;
+        margin-top: 5px;
+      }
+    }
+  }
+
+  .filter-card {
+    margin-bottom: 20px;
+
+    .el-form {
+      margin-bottom: 0;
+    }
+  }
+
+  .inquiry-list-card {
+    .text-secondary {
+      color: #909399;
+      font-size: 12px;
+    }
+
+    .text-danger {
+      color: #f56c6c;
+    }
+
+    .unread-message-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+
+      .unread-count-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+
+        .unread-number {
+          font-size: 18px;
+          font-weight: 600;
+          color: #f56c6c;
+          line-height: 1;
+        }
+
+        .unread-highlight {
+          background-color: #fef0f0;
+          color: #f56c6c !important;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid #fbc4c4;
+          font-weight: 700;
+        }
+
+        .unread-label {
+          font-size: 11px;
+          color: #909399;
+          line-height: 1;
+        }
+      }
+
+      .no-unread {
+        color: #909399;
+        font-size: 12px;
+      }
+
+      .flash-unread {
+        animation: flashUnreadNumber 2s infinite;
+      }
+
+      .mark-read-btn {
+        padding: 0;
+        font-size: 11px;
+        color: #67c23a;
+
+        &:hover {
+          color: #529b2e;
+        }
+      }
+    }
+
+    .pagination-wrapper {
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    .mobile-user-info {
+      .user-email {
+        font-size: 12px;
+        color: #606266;
+        margin-bottom: 4px;
+      }
+
+      .inquiry-status {
+        .el-tag {
+          font-size: 10px;
+        }
+      }
+    }
+  }
+}
+
+// 对话框样式优化
+:deep(.inquiry-detail-dialog) {
+  .el-dialog {
+    max-height: 96vh;
+    margin: 2vh auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .el-dialog__header {
+    flex-shrink: 0;
+    padding: 15px 20px;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .el-dialog__body {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .inquiry-detail {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 15px;
+  }
+}
+
+@include mobile {
+  .inquiry-management {
+    padding: 10px;
+
+    .page-header {
+      h1 {
+        font-size: 20px;
+      }
+    }
+
+    .filter-card {
+      .el-form {
+        .el-form-item {
+          display: block;
+          margin-bottom: 15px;
+
+          .el-form-item__content {
+            margin-left: 0 !important;
+          }
+        }
+      }
+    }
+
+    .inquiry-list-card {
+      .el-table {
+        font-size: 12px;
+      }
+
+      .unread-message-cell {
+        .flash-unread {
+          font-size: 14px !important;
+          font-weight: 800 !important;
+        }
+      }
+
+      .pagination-wrapper {
+        text-align: center;
+
+        .el-pagination {
+          justify-content: center;
+        }
+      }
+    }
+  }
+
+  // 移动端对话框优化
+  :deep(.inquiry-detail-dialog) {
+    .el-dialog {
+      width: 98% !important;
+      margin: 1vh auto;
+      max-height: 98vh;
+    }
+
+    .inquiry-detail {
+      padding: 10px;
+      gap: 10px;
+    }
+  }
+}
 
 .inquiry-management {
   padding: 20px;
@@ -601,6 +869,20 @@ export default {
       padding: 10px;
       gap: 10px;
     }
+  }
+}
+
+// 未读消息数字闪烁动画
+@keyframes flashUnreadNumber {
+  0%, 100% {
+    color: #f56c6c;
+    text-shadow: 0 0 3px rgba(245, 108, 108, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    color: #ff4757;
+    text-shadow: 0 0 8px rgba(255, 71, 87, 0.6);
+    transform: scale(1.1);
   }
 }
 </style>

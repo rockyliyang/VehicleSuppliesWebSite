@@ -772,7 +772,7 @@ export default {
 }
 
 // 移动端适配
-@media (max-width: 768px) {
+@include mobile {
   .business-groups {
     padding: 16px;
   }

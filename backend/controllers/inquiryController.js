@@ -33,7 +33,6 @@ exports.getUserInquiries = async (req, res) => {
         i.created_at,
         i.updated_at,
         COUNT(ii.id) as item_count,
-        SUM(CASE WHEN ii.unit_price IS NOT NULL THEN ii.quantity * ii.unit_price ELSE 0 END) as total_quoted_price,
         COALESCE(unread_counts.unread_count, 0) as unread_count
       FROM inquiries i
       LEFT JOIN inquiry_items ii ON i.id = ii.inquiry_id AND ii.deleted = false
@@ -63,70 +62,52 @@ exports.getUserInquiries = async (req, res) => {
     const countResult = await query(countQuery, queryParams.slice(0, -2));
     const total = parseInt(countResult.getFirstRow().total);
     
-    // 为每个询价单查询商品预览图片（最多5张）
-    const inquiriesWithItems = [];
-    for (const inquiry of inquiries.getRows()) {
-      const itemsQuery = `
+    // 一次性查询所有询价单的商品预览图片（每个询价单最多5张）
+    const inquiryIds = inquiries.getRows().map(inquiry => inquiry.id);
+    let allItemsData = [];
+    
+    if (inquiryIds.length > 0) {
+      // 使用窗口函数一次性查询所有询价单的前5个商品
+      const allItemsQuery = `
         SELECT 
+          ii.inquiry_id,
           ii.id,
           ii.product_id,
           ii.quantity,
           ii.unit_price,
           p.name as product_name,
-          p.price as original_price,
-          p.product_length,
-          p.product_width,
-          p.product_height,
-          p.product_weight,
-          pc.name as category_name,
+
           (SELECT image_url FROM product_images WHERE product_id = p.id AND deleted = false ORDER BY sort_order ASC LIMIT 1) as image_url
-        FROM inquiry_items ii
+        FROM (
+          SELECT 
+            ii.*,
+            ROW_NUMBER() OVER (PARTITION BY ii.inquiry_id ORDER BY ii.created_at ASC) as rn
+          FROM inquiry_items ii
+          WHERE ii.inquiry_id = ANY($1) AND ii.deleted = false
+        ) ii
         JOIN products p ON ii.product_id = p.id
-        LEFT JOIN product_categories pc ON p.category_id = pc.id
-        WHERE ii.inquiry_id = $1 AND ii.deleted = false
-        ORDER BY ii.created_at ASC
-        LIMIT 5
+        WHERE ii.rn <= 5
+        ORDER BY ii.inquiry_id, ii.created_at ASC
       `;
       
-      const items = await query(itemsQuery, [inquiry.id]);
-      const itemsData = items.getRows();
-      
-      // 一次性查询所有商品的价格范围
-      if (itemsData.length > 0) {
-        const productIds = itemsData.map(item => item.product_id);
-        const priceRangesQuery = `
-          SELECT product_id, min_quantity, max_quantity, price
-          FROM product_price_ranges
-          WHERE product_id = ANY($1) AND deleted = false
-          ORDER BY product_id, min_quantity ASC
-        `;
-        const priceRanges = await query(priceRangesQuery, [productIds]);
-        const priceRangesData = priceRanges.getRows();
-        
-        // 将价格范围按product_id分组
-        const priceRangesByProduct = {};
-        priceRangesData.forEach(range => {
-          if (!priceRangesByProduct[range.product_id]) {
-            priceRangesByProduct[range.product_id] = [];
-          }
-          priceRangesByProduct[range.product_id].push({
-            min_quantity: range.min_quantity,
-            max_quantity: range.max_quantity,
-            price: range.price
-          });
-        });
-        
-        // 为每个商品添加价格范围
-        itemsData.forEach(item => {
-          item.price_ranges = priceRangesByProduct[item.product_id] || [];
-        });
-      }
-      
-      inquiriesWithItems.push({
-        ...inquiry,
-        items: itemsData
-      });
+      const allItems = await query(allItemsQuery, [inquiryIds]);
+      allItemsData = allItems.getRows();
     }
+    
+    // 将商品按询价单ID分组
+    const itemsByInquiry = {};
+    allItemsData.forEach(item => {
+      if (!itemsByInquiry[item.inquiry_id]) {
+        itemsByInquiry[item.inquiry_id] = [];
+      }
+      itemsByInquiry[item.inquiry_id].push(item);
+    });
+    
+    // 构建最终结果
+    const inquiriesWithItems = inquiries.getRows().map(inquiry => ({
+      ...inquiry,
+      items: itemsByInquiry[inquiry.id] || []
+    }));
     
     return res.json({
       success: true,
@@ -167,6 +148,7 @@ exports.getInquiryDetail = async (req, res) => {
         i.inquiry_type,
         i.created_at,
         i.updated_at,
+        i.update_price_time,
         u.username as created_by_name
       FROM inquiries i
       LEFT JOIN users u ON i.created_by = u.id
@@ -184,13 +166,20 @@ exports.getInquiryDetail = async (req, res) => {
     
     const inquiry = inquiryResult.getFirstRow();
     
+    // 检查价格是否过期（48小时）
+    const priceExpired = inquiry.update_price_time && 
+      (new Date() - new Date(inquiry.update_price_time)) > (48 * 60 * 60 * 1000);
+    
     // 查询询价商品
     const itemsQuery = `
       SELECT 
         ii.id,
         ii.product_id,
         ii.quantity,
-        ii.unit_price,
+        CASE 
+          WHEN $2 = true THEN NULL 
+          ELSE ii.unit_price 
+        END as unit_price,
         'pending' as item_status,
         p.name as product_name,
         p.product_code,
@@ -208,7 +197,7 @@ exports.getInquiryDetail = async (req, res) => {
       ORDER BY ii.created_at ASC
     `;
     
-    const items = await query(itemsQuery, [inquiryId]);
+    const items = await query(itemsQuery, [inquiryId, priceExpired]);
     const itemsData = items.getRows();
     
     // 一次性查询所有商品的价格范围

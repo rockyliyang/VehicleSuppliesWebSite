@@ -48,6 +48,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/business',
+    name: 'BusinessDashboard',
+    component: createRetryableImport(() => import('../views/admin/BusinessDashboard.vue')),
+    meta: { requiresAuth: true, requiresRole: 'business' }
+  },
+  {
     path: '/admin',
     component: createRetryableImport(() => import('../views/Admin.vue')),
     meta: { requiresAuth: true },
@@ -58,7 +64,7 @@ const routes = [
         path: 'dashboard',
         name: 'AdminDashboard',
         component: createRetryableImport(() => import('../views/admin/Dashboard.vue')),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiresRole: 'admin' }
       },
       {
         path: 'products',
@@ -170,6 +176,24 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/business-login',
+    name: 'BusinessLogin',
+    component: createRetryableImport(() => import('../views/admin/BusinessLogin.vue')),
+    meta: { requiresAuth: false }
+  },  
+  {
+    path: '/business-inquiries',
+    name: 'BusinessInquiries',
+    component: createRetryableImport(() => import('../views/admin/InquiryManagement.vue')),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/business-orders',
+    name: 'BusinessOrders',
+    component: createRetryableImport(() => import('../views/admin/OrderManagement.vue')),
+    meta: { requiresAuth: true }
+  },  
+  {
     path: '/cart',
     name: 'Cart',
     component: createRetryableImport(() => import('../views/Cart.vue')),
@@ -272,7 +296,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authRequired = to.meta.requiresAuth ?? true
 
-  if (to.path === '/admin-login' || to.path === '/login') {
+  if (to.path === '/admin-login' || to.path === '/login' || to.path === '/business-login') {
     // 如果是登录页，直接通过
     return next()
   }
@@ -281,25 +305,27 @@ router.beforeEach(async (to, from, next) => {
   if (to.path.startsWith('/admin') && to.path !== '/admin-login') {
     loginPath = '/admin-login'
   }
+  else if (to.path.startsWith('/business') && to.path !== '/business-login') {
+    loginPath = '/business-login'
+  }
 
   if (authRequired) {
     // 如果状态未初始化，先尝试恢复登录状态
-    let isLoggedIn = store.state.isLoggedIn
-    let isAdminLoggedIn = store.state.isAdminLoggedIn
+
     
-    if (!isLoggedIn && !isAdminLoggedIn) {
+    if (!store.state.isLoggedIn || !store.state.isAdminLoggedIn || !store.state.isBusinessLoggedIn) {
       try {
         // 尝试从cookie恢复登录状态
         await store.dispatch('restoreLoginState')
-        isLoggedIn = store.state.isLoggedIn
-        isAdminLoggedIn = store.state.isAdminLoggedIn
+
       } catch (error) {
         console.log('恢复登录状态失败:', error)
       }
     }
 
     // 检查对应的登录状态
-    const hasValidAuth = loginPath === '/admin-login' ? isAdminLoggedIn : isLoggedIn
+    const hasValidAuth = loginPath === '/login' ? store.state.isLoggedIn : 
+                         (loginPath === '/admin-login' ? store.state.isAdminLoggedIn:store.state.isBusinessLoggedIn)
 
     if (!hasValidAuth) {
       return next({

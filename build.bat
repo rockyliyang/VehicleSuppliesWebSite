@@ -97,25 +97,31 @@ if exist "db\patch\*" (
     mkdir "%RELEASE_DIR%\db\patch"
     xcopy /s /e "db\patch" "%RELEASE_DIR%\db\patch\"
     
-    :: Create timestamped directory in patched folder
-    for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do (
-        set "dt=%%a"
-        if defined dt (
-            set "YY=!dt:~2,2!" & set "YYYY=!dt:~0,4!" & set "MM=!dt:~4,2!" & set "DD=!dt:~6,2!"
-            set "HH=!dt:~8,2!" & set "Min=!dt:~10,2!" & set "Sec=!dt:~12,2!"
-            set "timestamp=!YYYY!!MM!!DD!_!HH!!Min!!Sec!"
+    :: Check if there are actually files to move before creating timestamped directory
+    dir "db\patch\*" >nul 2>&1
+    if !errorlevel!==0 (
+        :: Create timestamped directory in patched folder
+        for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do (
+            set "dt=%%a"
+            if defined dt (
+                set "YY=!dt:~2,2!" & set "YYYY=!dt:~0,4!" & set "MM=!dt:~4,2!" & set "DD=!dt:~6,2!"
+                set "HH=!dt:~8,2!" & set "Min=!dt:~10,2!" & set "Sec=!dt:~12,2!"
+                set "timestamp=!YYYY!!MM!!DD!_!HH!!Min!!Sec!"
+            )
         )
+        
+        echo [BUILD] Creating patched directory with timestamp: !timestamp!
+        if not exist "db\patched" mkdir "db\patched"
+        mkdir "db\patched\!timestamp!"
+        
+        :: Move patch files to timestamped directory
+        echo [BUILD] Moving patch files to db\patched\!timestamp!...
+        move "db\patch\*" "db\patched\!timestamp!\"
+        
+        echo [BUILD] Patch files processed successfully
+    ) else (
+        echo [BUILD] Patch directory exists but no files found to move
     )
-    
-    echo [BUILD] Creating patched directory with timestamp: !timestamp!
-    if not exist "db\patched" mkdir "db\patched"
-    mkdir "db\patched\!timestamp!"
-    
-    :: Move patch files to timestamped directory
-    echo [BUILD] Moving patch files to db\patched\!timestamp!...
-    move "db\patch\*" "db\patched\!timestamp!\"
-    
-     echo [BUILD] Patch files processed successfully
 ) else (
     echo [BUILD] No patch files found, skipping patch processing
 )

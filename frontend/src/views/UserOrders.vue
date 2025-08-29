@@ -19,7 +19,8 @@
               </el-table-column>
               <el-table-column :label="$t('orders.orderDate') || '下单时间'" width="280">
                 <template #default="{row}">
-                  <span class="order-date">{{ formatDateWithTimezone(row.created_at_local || row.created_at, row.create_time_zone) }}</span>
+                  <span class="order-date">{{ formatDateWithTimezone(row.created_at_local , row.create_time_zone)
+                    }}</span>
                 </template>
               </el-table-column>
               <el-table-column :label="$t('orders.totalAmount') || '订单金额'" width="150">
@@ -39,7 +40,9 @@
               </el-table-column>
               <el-table-column :label="$t('orders.paidDate') || '支付时间'" width="280">
                 <template #default="{row}">
-                  <span class="order-date">{{ row.paid_at ? formatDateWithTimezone(row.paid_at, row.paid_time_zone) : '-' }}</span>
+                  <span class="order-date">{{ row.paid_at_local ? formatDateWithTimezone(row.paid_at_local,
+                    row.paid_time_zone) :
+                    '-' }}</span>
                 </template>
               </el-table-column>
             </el-table>
@@ -57,7 +60,8 @@
                 <div class="order-card-body">
                   <div class="order-info-row">
                     <span class="label">{{ $t('orders.orderDate') || '下单时间' }}:</span>
-                    <span class="value">{{ formatDateWithTimezone(order.created_at_local || order.created_at, order.create_time_zone) }}</span>
+                    <span class="value">{{ formatDateWithTimezone(order.created_at_local || order.created_at,
+                      order.create_time_zone) }}</span>
                   </div>
                   <div class="order-info-row" v-if="order.paid_at">
                     <span class="label">{{ $t('orders.paidDate') || '支付时间' }}:</span>
@@ -150,6 +154,7 @@ export default {
     },
     formatDateWithTimezone(dateString, timezone) {
       if (!dateString) return '';
+      
       const date = new Date(dateString);
       const formattedDate = date.toLocaleString('zh-CN', {
         year: 'numeric',
@@ -159,6 +164,7 @@ export default {
         minute: '2-digit',
         second: '2-digit'
       });
+      //console.log(`dateString: ${dateString},formattedDate: ${formattedDate}`);
       return timezone ? `${formattedDate} (${timezone})` : formattedDate;
     },
     getStatusText(status) {
@@ -167,7 +173,8 @@ export default {
         'paid': this.$t('orders.status.paid') || '已支付',
         'shipped': this.$t('orders.status.shipped') || '已发货',
         'delivered': this.$t('orders.status.delivered') || '已送达',
-        'cancelled': this.$t('orders.status.cancelled') || '已取消'
+        'cancelled': this.$t('orders.status.cancelled') || '已取消',
+        'pay_timeout': this.$t('orders.status.payTimeout') || '支付超时'
       };
       return statusMap[status] || status;
     },
@@ -177,7 +184,8 @@ export default {
         'paid': 'success',
         'shipped': 'primary',
         'delivered': 'success',
-        'cancelled': 'danger'
+        'cancelled': 'danger',
+        'pay_timeout': 'danger'
       };
       return typeMap[status] || 'info';
     },

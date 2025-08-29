@@ -382,7 +382,21 @@ export default {
         this.$messageHandler.showWarning(this.$t('cart.selectItemsFirst') || '请先选择要结算的商品');
         return;
       }
-      sessionStorage.setItem('selectedCartItems', JSON.stringify(this.selectedItems));
+      const checkoutData = this.selectedItems.map(item => {return {
+          id: item.id,
+          product_id: item.product_id,
+          product_code: item.product_code,
+          name: item.name,
+          image_url: item.thumbnail_url || item.image_url,
+          quantity: item.quantity,
+          price: item.calculatedPrice,
+          // 添加产品尺寸重量信息用于运费计算
+          length: item.product_length || 0,
+          width: item.product_width || 0,
+          height: item.product_height || 0,
+          weight: item.product_weight || 0
+        }});
+      sessionStorage.setItem('selectedCartItems', JSON.stringify(checkoutData) );
       this.$router.push({
         name: 'UnifiedCheckout',
         query: { from: 'cart' }

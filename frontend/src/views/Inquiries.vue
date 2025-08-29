@@ -121,7 +121,7 @@
               ($t('inquiry.mobile.createNew') || '新建询价单') }}</h3>
           </div>
 
-          <InquiryDetailPanel :inquiry="selectedMobileInquiry" :is-mobile="true" :is-checkout-mode="isCheckoutMode" @remove-item="handleRemoveItem"
+          <InquiryDetailPanel :inquiry-id="selectedMobileInquiry?.id" :is-mobile="true" :is-checkout-mode="isCheckoutMode" @remove-item="handleRemoveItem"
             @send-message="handleSendMessage" @update-message="handleUpdateMessage"
             @checkout-inquiry="handleCheckoutInquiry" @item-added="handleMobileItemAdded"
             @new-messages-received="handleNewMessagesReceived" />

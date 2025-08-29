@@ -47,7 +47,7 @@ export default {
           const res = await this.$api.postWithErrorHandler('/users/login', {
             username: this.form.email,
             password: this.form.password,
-            admin: true
+            role: 'admin'
           });
           if (res.success) {
             this.$messageHandler.showSuccess('登录成功', 'login.success.loginSuccess');
@@ -55,7 +55,13 @@ export default {
             this.$store.commit('setUser', user)
             // 管理员登录后设置语言为中文
             await this.$store.dispatch('language/changeLanguageTemp', 'zh-CN');
-            this.$router.push(this.$route.query.redirect || '/admin')
+            
+            // 根据用户角色重定向到不同页面
+            let redirectPath = this.$route.query.redirect
+            if (!redirectPath) {
+              redirectPath = '/admin'
+            }
+            this.$router.push(redirectPath)
           } else {
             this.$messageHandler.showError(res.message, 'admin.login.error.loginFailed');
           }

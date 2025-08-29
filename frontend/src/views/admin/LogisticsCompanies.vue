@@ -2863,7 +2863,7 @@ export default {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@include mobile {
   .fee-factor-form-dialog {
     .el-dialog {
       width: 95% !important;

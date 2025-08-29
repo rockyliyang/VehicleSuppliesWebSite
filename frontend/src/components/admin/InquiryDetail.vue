@@ -10,16 +10,6 @@
               <span>{{ $t('inquiry.detail.title') || '询价详情' }}</span>
               <div class="header-actions">
                 <el-tag :type="getStatusType(inquiry.status)">{{ getStatusText(inquiry.status) }}</el-tag>
-                <el-button-group class="status-actions">
-                  <el-button type="success" size="small" @click="updateStatus('approved')"
-                    :disabled="inquiry.status !== 'inquiried'">
-                    {{ $t('admin.inquiry.action.approve') || '批准' }}
-                  </el-button>
-                  <el-button type="danger" size="small" @click="updateStatus('rejected')"
-                    :disabled="inquiry.status !== 'inquiried'">
-                    {{ $t('admin.inquiry.action.reject') || '拒绝' }}
-                  </el-button>
-                </el-button-group>
               </div>
             </div>
           </template>
@@ -53,6 +43,7 @@
                 <label>{{ $t('admin.inquiry.detail.updatedAt') || '更新时间' }}:</label>
                 <span>{{ formatDate(inquiry.updated_at) }}</span>
               </div>
+
             </el-col>
           </el-row>
         </el-card>
@@ -64,9 +55,15 @@
         <div class="left-panel">
           <el-card class="inquiry-items-card">
             <template #header>
-              <span>{{ $t('inquiry.detail.products') || '商品列表' }} ({{ items.length }})</span>
+              <div class="products-header">
+                <span class="products-title">{{ $t('inquiry.detail.products') || '商品列表' }} ({{ items.length }})</span>
+                <span v-if="inquiry.update_price_time" class="last-quote-time">
+                  {{ $t('admin.inquiry.detail.lastQuoteTime') || '上次报价时间' }}: {{ formatDate(inquiry.update_price_time) }}
+                </span>
+              </div>
             </template>
-            <div class="items-table-container">
+            <!-- 桌面端表格显示 -->
+            <div class="items-table-container desktop-only">
               <el-table :data="items" stripe size="small" height="100%">
                 <el-table-column :label="$t('inquiry.detail.product_name') || '商品名称'" min-width="180">
                   <template #default="{ row }">
@@ -80,19 +77,17 @@
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column :label="$t('admin.inquiry.detail.originalPrice') || '原价'" width="80">
+                <el-table-column :label="$t('admin.inquiry.detail.originalPrice') || '原价'" width="100">
                   <template #default="{ row }">
-                    ${{ Number(row.original_price).toFixed(2) }}
+                    {{ getPriceRangeDisplay(row) }}
                   </template>
                 </el-table-column>
-                <el-table-column :label="$t('inquiry.detail.quantity') || '数量'" width="100">
+                <el-table-column :label="$t('inquiry.detail.quantity') || '数量'" width="80">
                   <template #default="{ row }">
-                    <el-input-number v-model="row.quantity" :min="1" :precision="0" :step="1" size="small"
-                      @change="updateItemQuote(row)"
-                      :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'" />
+                    <span>{{ row.quantity }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column :label="$t('inquiry.detail.unit_price') || '单价'" width="100">
+                <el-table-column :label="$t('inquiry.detail.unit_price') || '单价'" width="130">
                   <template #default="{ row }">
                     <el-input-number v-model="row.unit_price" :min="0" :precision="2" :step="0.01" size="small"
                       @change="updateItemQuote(row)"
@@ -106,6 +101,49 @@
                   </template>
                 </el-table-column>
               </el-table>
+            </div>
+
+            <!-- 手机端卡片显示 -->
+            <div class="mobile-only">
+              <div class="product-cards">
+                <div v-for="item in items" :key="item.id" class="product-card">
+                  <div class="product-card-left">
+                    <div class="product-image">
+                      <img :src="item.image_url || require('@/assets/images/default-image.svg')" :alt="item.product_name">
+                    </div>
+                  </div>
+                  <div class="product-card-right">
+                    <div class="product-info-top">
+                      <div class="product-name">{{ item.product_name }}</div>
+                      <div class="product-code">{{ $t('inquiry.detail.product_code') || '产品编号' }}: {{ item.product_code }}</div>
+                      <div class="product-original-price">{{ $t('admin.inquiry.detail.originalPrice') || '原价' }}: {{ getPriceRangeDisplay(item) }}</div>
+                    </div>
+                    <div class="product-quote-section">
+                      <div class="quantity-info">
+                        <span class="field-label">{{ $t('inquiry.detail.quantity') || '数量' }}:</span>
+                        <span class="field-value">{{ item.quantity }}</span>
+                      </div>
+                      <div class="price-input-section">
+                        <label class="price-label">{{ $t('inquiry.detail.unit_price') || '单价' }}:</label>
+                        <el-input-number 
+                          v-model="item.unit_price" 
+                          :min="0" 
+                          :precision="2" 
+                          :step="0.01" 
+                          size="small"
+                          @change="updateItemQuote(item)"
+                          :disabled="inquiry.status === 'approved' || inquiry.status === 'rejected'"
+                          class="mobile-price-input" />
+                      </div>
+                      <div class="total-price-section">
+                        <span class="field-label">{{ $t('inquiry.detail.total_price') || '总价' }}:</span>
+                        <span v-if="item.unit_price" class="field-value total-price">${{ (item.quantity * item.unit_price).toFixed(2) }}</span>
+                        <span v-else class="field-value text-muted">{{ $t('admin.inquiry.detail.notQuoted') || '未报价' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- 总计 -->
@@ -179,6 +217,7 @@
 
 <script>
 import InquiryPolling from '@/utils/inquiryPolling';
+import {getPriceByRange, getPriceRangeDisplayUtil } from '@/utils/priceUtils';
 
 export default {
   name: 'InquiryDetail',
@@ -207,16 +246,25 @@ export default {
     }
   },
   computed: {
-    totalOriginalPrice() {
-      return this.items.reduce((total, item) => total + (item.quantity * item.original_price), 0)
-    },
+     totalOriginalPrice() {
+       if (!this.items || this.items.length === 0) {
+         return 0
+       }
+       return this.items.reduce((total, item) => {
+         // 使用getPriceByRange计算出的价格
+         const priceRange = getPriceByRange(item)
+         return total + (priceRange * item.quantity)
+       }, 0)
+     },
     
     totalQuotedPrice() {
       return this.items.reduce((total, item) => {
         if (item.unit_price) {
           return total + (item.quantity * item.unit_price)
-        }
-        return total
+        } 
+        const priceRange = getPriceByRange(item)
+         return total + (priceRange * item.quantity)
+
       }, 0)
     },
     
@@ -477,6 +525,12 @@ export default {
       })
     },
     
+    // 获取价格范围显示文本
+    getPriceRangeDisplay(item) {
+      const formatPrice = this.$store.getters.formatPrice;
+      return getPriceRangeDisplayUtil(item, formatPrice);
+    },
+    
     async markMessagesAsRead() {
        try {
          await this.$api.putWithErrorHandler(`/admin/inquiries/${this.inquiryId}/messages/read`, {}, {
@@ -574,6 +628,40 @@ export default {
           overflow-y: auto;
         }
 
+        .products-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-bottom: 15px;
+
+          .products-title {
+            font-weight: 600;
+            color: #303133;
+          }
+
+          .last-quote-time {
+            font-size: 12px;
+            color: #909399;
+            font-weight: normal;
+          }
+        }
+
+        .desktop-only {
+          @include mobile {
+            display: none;
+          }
+        }
+
+        .mobile-only {
+          display: none;
+          
+          @include mobile {
+            display: block;
+          }
+        }
+
         .items-table-container {
           flex: 1;
           min-height: 0;
@@ -602,6 +690,133 @@ export default {
             .product-code {
               font-size: 11px;
               color: #909399;
+            }
+          }
+        }
+
+        // 手机端卡片样式
+        .product-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .product-card {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 12px;
+          background: #ffffff;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          transition: box-shadow 0.2s ease;
+          width: 100%;
+          box-sizing: border-box;
+          overflow: hidden;
+
+          &:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+          }
+        }
+
+        .product-card-left {
+          width: 60px;
+          flex-shrink: 0;
+
+          .product-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
+            overflow: hidden;
+
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+          }
+        }
+
+        .product-card-right {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        .product-info-top {
+          .product-name {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 6px;
+            color: #333333;
+          }
+
+          .product-code {
+            font-size: 12px;
+            color: #666666;
+            margin-bottom: 4px;
+          }
+
+          .product-original-price {
+            font-size: 12px;
+            color: #888888;
+            font-weight: 500;
+          }
+        }
+
+        .product-quote-section {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+
+          .quantity-info,
+          .total-price-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .field-label {
+              font-size: 12px;
+              color: #666666;
+              font-weight: 500;
+            }
+
+            .field-value {
+              font-size: 14px;
+              font-weight: 600;
+              color: #333333;
+
+              &.total-price {
+                color: #409eff;
+              }
+
+              &.text-muted {
+                color: #999999;
+                font-weight: normal;
+              }
+            }
+          }
+
+          .price-input-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .price-label {
+              font-size: 12px;
+              color: #666666;
+              font-weight: 500;
+              min-width: 40px;
+            }
+
+            .mobile-price-input {
+              flex: 1;
+              max-width: 120px;
             }
           }
         }
@@ -770,149 +985,176 @@ export default {
       }
     }
 
-    // 移动端响应式
-    @media (max-width: 768px) {
-      .inquiry-content {
-        gap: 10px;
-      }
-
-      .top-section {
-        .inquiry-info-card {
-          .card-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-
-            .header-actions {
-              width: 100%;
-              justify-content: flex-end;
-            }
-          }
-
-          .info-item {
-            label {
-              width: 60px;
-              font-size: 11px;
-            }
-
-            span {
-              font-size: 11px;
-            }
-          }
-        }
-      }
-
-      .main-section {
-        flex-direction: column;
-        gap: 10px;
-
-        .left-panel,
-        .right-panel {
-          flex: none;
-          height: 300px;
-        }
-
-        .left-panel {
-          .inquiry-items-card {
-            .el-card__body {
-              padding: 10px;
-            }
-
-            .product-info {
-              .product-image {
-                width: 30px;
-                height: 30px;
-                margin-right: 6px;
-              }
-
-              .product-details {
-                .product-name {
-                  font-size: 11px;
-                }
-
-                .product-code {
-                  font-size: 10px;
-                }
-              }
-            }
-
-            .total-section {
-              margin-top: 10px;
-              padding-top: 10px;
-
-              .total-item {
-                margin-bottom: 4px;
-
-                label,
-                span {
-                  font-size: 11px;
-                }
-
-                .total-quoted {
-                  font-size: 12px;
-                }
-              }
-            }
-          }
-        }
-
-        .right-panel {
-          .messages-card {
-            .el-card__body {
-              padding: 10px;
-            }
-
-            .messages-list {
-              margin-bottom: 10px;
-
-              .message-wrapper {
-                .message-item {
-                  padding: 8px;
-                  max-width: 85%;
-
-                  .message-header {
-                    margin-bottom: 4px;
-
-                    .sender-name {
-                      font-size: 11px;
-                    }
-
-                    .message-time {
-                      font-size: 10px;
-                    }
-                  }
-
-                  .message-content {
-                    font-size: 11px;
-                    line-height: 1.3;
-                  }
-                }
-
-                &.admin-message-wrapper {
-                  margin-left: 10px;
-                }
-              }
-
-              .no-messages {
-                padding: 20px 0;
-                font-size: 11px;
-              }
-            }
-
-            .send-message-section {
-              .send-actions {
-                margin-top: 6px;
-              }
-            }
-          }
-        }
-      }
-    }
+    // 移动端响应式样式已移至 @include mobile 中
   }
 }
 
 @include mobile {
   .inquiry-detail {
+    .inquiry-content {
+      gap: 10px;
+    }
+
+    .top-section {
+      flex-direction: column;
+      gap: 10px;
+      
+      .inquiry-info-card {
+        .card-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+
+          .header-actions {
+            width: 100%;
+            justify-content: flex-end;
+          }
+        }
+      }
+    }
+
+    .main-section {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .left-panel {
+      flex: none;
+      height: auto;
+      min-height: 300px;
+      
+      .inquiry-items-card {
+        .el-card__body {
+          padding: 10px;
+        }
+
+        .product-info {
+          .product-image {
+            width: 30px;
+            height: 30px;
+            margin-right: 6px;
+          }
+
+          .product-details {
+            .product-name {
+              font-size: 11px;
+            }
+
+            .product-code {
+              font-size: 10px;
+            }
+          }
+        }
+
+        .total-section {
+          margin-top: 10px;
+          padding-top: 10px;
+
+          .total-item {
+            margin-bottom: 4px;
+
+            label,
+            span {
+              font-size: 11px;
+            }
+
+            .total-quoted {
+              font-size: 12px;
+            }
+          }
+        }
+      }
+    }
+
+    .right-panel {
+      flex: none;
+      height: 400px;
+      min-height: 400px;
+      display: block !important;
+      
+      .messages-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        
+        .el-card__body {
+          padding: 10px;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .messages-list {
+          flex: 1;
+          margin-bottom: 10px;
+          overflow-y: auto;
+          max-height: none;
+          height: 100%;
+          padding-right: 5px;
+          width: 100%;
+          box-sizing: border-box;
+
+          .message-wrapper {
+            margin-bottom: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            
+            .message-item {
+              padding: 8px;
+              max-width: 75%;
+              word-wrap: break-word;
+              word-break: break-word;
+              overflow-wrap: break-word;
+
+              .message-header {
+                margin-bottom: 4px;
+
+                .sender-name {
+                  font-size: 11px;
+                }
+
+                .message-time {
+                  font-size: 10px;
+                }
+              }
+
+              .message-content {
+                font-size: 11px;
+                line-height: 1.3;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                word-break: break-word;
+                overflow-wrap: break-word;
+              }
+            }
+
+            &.admin-message-wrapper {
+              margin-left: 5px;
+            }
+
+            &.user-message-wrapper {
+              margin-right: 5px;
+            }
+          }
+
+          .no-messages {
+            padding: 20px 0;
+            font-size: 11px;
+            text-align: center;
+          }
+        }
+
+        .send-message-section {
+          flex-shrink: 0;
+          
+          .send-actions {
+            margin-top: 6px;
+          }
+        }
+      }
+    }
+
     .inquiry-info-card {
       .info-item {
         label {

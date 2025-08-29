@@ -261,7 +261,7 @@
         </div>
         <div class="inquiry-window-body">
           <!-- 沟通组件 -->
-          <InquiryDetailPanel :inquiry="currentInquiry" :is-mobile="isMobile"
+          <InquiryDetailPanel :inquiry-id="currentInquiryId" :is-mobile="isMobile"
             @update-message="handleUpdateInquiryMessage" @checkout-inquiry="handleInquiryCheckout"
             @new-messages-received="handleNewMessages" />
         </div>
@@ -358,7 +358,6 @@ export default {
       // 询价相关数据
       showInquiryDialog: false,
       currentInquiryId: null,
-      currentInquiryData: null, // 存储完整的询价单数据
       inquiryMessages: [],
       inquiryStatus: 'pending',
       initialInquiryMessage: '',
@@ -490,10 +489,7 @@ export default {
     hasSelectedProducts() {
       return this.currentProductSelected || this.buyTogetherProducts.some(item => item.selected)
     },
-    // 返回当前询价对象，供InquiryDetailPanel使用
-    currentInquiry() {
-      return this.currentInquiryData;
-    },
+    // 移除currentInquiry计算属性，现在直接传递inquiryId
     showBuyNowDialog: {
       get() {
         return this.$store.state.showBuyNowDialog || false;
@@ -1065,7 +1061,7 @@ export default {
       this.showInquiryDialog = false;
       // 清理数据
       this.currentInquiryId = null;
-      this.currentInquiryData = null;
+
       this.inquiryMessages = [];
       this.inquiryStatus = 'pending';
       this.initialInquiryMessage = '';
@@ -1199,21 +1195,8 @@ export default {
      // 显示询价对话框
      showInquiryDialogWithData(data) {
        this.currentInquiryId = data.inquiryId;
-       this.initialInquiryMessage = '';
-       this.showInquiryDialog = true;
-       
-       // 如果传入了完整的询价单数据，直接使用
-       if (data.inquiry && data.items) {
-         this.currentInquiryData = {
-           ...data.inquiry,
-           items: data.items
-         };
-         this.inquiryStatus = data.inquiry.status || 'inquiried';
-         //console.log('使用完整询价单数据:', this.currentInquiryData);
-       } else {
-          console.error('The data is wrong', data);
-       }
-       
+        this.showInquiryDialog = true;
+  
        // 如果不是新询价单，加载消息
        /*if (!data.isNew) {
          this.loadInquiryMessages();
@@ -1419,7 +1402,7 @@ export default {
 
 
 /* 移动端适配 */
-@media (max-width: 768px) {
+@include mobile {
   .inquiry-floating-window {
     /*bottom: 10px;
     right: 10px;
@@ -2335,7 +2318,7 @@ export default {
 
 /* 确认对话框样式已移至全局样式文件 elegant-messages.scss */
 
-@media (max-width: 768px) {
+@include mobile {
   .container {
     padding: 0 $spacing-md;
   }

@@ -626,7 +626,7 @@ export default {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@include mobile {
   .news-detail-container {
     padding: $news-mobile-container-padding $news-mobile-container-padding-sm;
   }

@@ -232,7 +232,8 @@ class OrderManagementController {
         shipping_city,
         shipping_phone_country_code,
         shipping_status,
-        notes
+        notes,
+        shipped_at
       } = req.body;
       
       const userId = req.userId;
@@ -294,9 +295,10 @@ class OrderManagementController {
               shipping_phone_country_code = $11,
               shipping_status = $12,
               notes = $13,
+              shipped_at = $14,
               updated_at = CURRENT_TIMESTAMP,
-              updated_by = $14
-            WHERE order_id = $15 AND deleted = FALSE
+              updated_by = $15
+            WHERE order_id = $16 AND deleted = FALSE
           `;
           
           await connection.query(updateQuery, [
@@ -313,6 +315,7 @@ class OrderManagementController {
             shipping_phone_country_code,
             shipping_status,
             notes,
+            shipped_at,
             userId,
             orderId
           ]);
@@ -323,8 +326,8 @@ class OrderManagementController {
               order_id, logistics_company_id, shipping_no, shipping_name,
               shipping_phone, shipping_email, shipping_address, shipping_zip_code,
               shipping_country, shipping_state, shipping_city, shipping_phone_country_code,
-              shipping_status, notes, created_by, updated_by
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15)
+              shipping_status, notes, shipped_at, created_by, updated_by
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $16)
           `;
           
           await connection.query(insertQuery, [
@@ -342,6 +345,7 @@ class OrderManagementController {
             shipping_phone_country_code,
             shipping_status,
             notes,
+            shipped_at,
             userId
           ]);
         }
@@ -413,10 +417,18 @@ class OrderManagementController {
       
       // 业务员只能查看自己用户的订单
       if (userRole !== 'admin') {
-        whereClause += ` AND o.user_id IN (
-          SELECT id FROM users WHERE created_by = $2 AND deleted = FALSE
-        )`;
-        params.push(userId);
+        const managedUserIds = await getManagedUserIds(userId);
+        if (managedUserIds.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: getMessage('ORDER.NOT_FOUND_OR_NO_PERMISSION')
+          });
+        }
+        
+        // 手动生成占位符，从当前参数数量+1开始
+        const userIdPlaceholders = managedUserIds.map((_, index) => `$${params.length + index + 1}`).join(',');
+        whereClause += ` AND o.user_id IN (${userIdPlaceholders})`;
+        params.push(...managedUserIds);
       }
       
       // 查询订单基本信息
@@ -426,6 +438,8 @@ class OrderManagementController {
           o.order_guid,
           o.user_id,
           o.total_amount,
+          o.original_amount,
+          o.update_amount_time,
           o.status,
           o.payment_method,
           o.payment_id,
@@ -461,6 +475,7 @@ class OrderManagementController {
           l.shipping_phone_country_code as logistics_shipping_phone_country_code,
           l.tracking_info,
           l.notes as logistics_notes,
+          l.shipped_at,
           l.created_at as logistics_created_at,
           l.updated_at as logistics_updated_at
         FROM orders o
@@ -485,8 +500,8 @@ class OrderManagementController {
       const itemsQuery = `
         SELECT 
           oi.*,
-          p.name as current_product_name,
-          p.product_code as current_product_code
+          p.name as product_name,
+          p.product_code as product_code
         FROM order_items oi
         LEFT JOIN products p ON oi.product_id = p.id AND p.deleted = FALSE
         WHERE oi.order_id = $1 AND oi.deleted = FALSE
@@ -526,7 +541,7 @@ class OrderManagementController {
       
       // 验证订单是否存在
       const orderCheckQuery = `
-        SELECT id, user_id FROM orders WHERE id = $1 AND deleted = FALSE
+        SELECT id, user_id, total_amount, original_amount FROM orders WHERE id = $1 AND deleted = FALSE
       `;
       const orderResult = await query(orderCheckQuery, [orderId]);
       
@@ -578,6 +593,18 @@ class OrderManagementController {
         });
       }
       
+      // 检查是否需要更新金额时间字段
+      const needsAmountTimeUpdate = updateData.hasOwnProperty('total_amount') || updateData.hasOwnProperty('shipping_fee');
+      
+      // 如果需要更新金额时间且original_amount为空，则设置original_amount为当前total_amount
+      let additionalFields = '';
+      if (needsAmountTimeUpdate) {
+        additionalFields = ', update_amount_time = CURRENT_TIMESTAMP';
+        if (order.original_amount === null || order.original_amount === undefined) {
+          additionalFields += `, original_amount = ${order.total_amount}`;
+        }
+      }
+      
       // 构建SQL更新语句
       const setClause = Object.keys(updateData)
         .map((key, index) => `${key} = $${index + 1}`)
@@ -585,7 +612,7 @@ class OrderManagementController {
       
       const updateQuery = `
         UPDATE orders 
-        SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+        SET ${setClause}, updated_at = CURRENT_TIMESTAMP${additionalFields}
         WHERE id = $${updateParams.length + 1} AND deleted = FALSE
         RETURNING *
       `;

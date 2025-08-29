@@ -100,7 +100,7 @@
       </div>
 
       <!-- Inquiry Detail Panel -->
-      <InquiryDetailPanel :inquiry="activeInquiry" @remove-item="removeFromInquiry" @item-added="handleItemAdded"
+      <InquiryDetailPanel :inquiry-id="activeInquiryId" @remove-item="removeFromInquiry" @item-added="handleItemAdded"
         @update-message="updateInquiryMessage" @checkout-inquiry="handleCheckoutInquiry"
         @new-messages-received="handleNewMessagesReceived" />
     </div>
@@ -261,60 +261,10 @@ export default {
           // 如果有询价单，设置第一个为活跃状态并加载详情
           if (this.inquiries.length > 0) {
             this.activeInquiryId = this.inquiries[0].id;
-            await this.fetchInquiryDetail(this.inquiries[0].id);
           }
         }
       } catch (error) {
         console.error('获取询价列表失败:', error);
-      }
-    },
-    
-    async fetchInquiryDetail(inquiryId) {
-      try {
-        const response = await api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
-          fallbackKey: 'INQUIRY.FETCH.FAILED'
-        });
-        
-        if (response.success) {
-          const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
-          if (inquiry) {
-            // 更新询价基本信息，包括inquiry_type
-            inquiry.inquiry_type = response.data.inquiry.inquiry_type;
-            inquiry.status = response.data.inquiry.status;
-            inquiry.title = response.data.inquiry.title;
-            inquiry.items = response.data.items;
-            /*inquiry.items = response.data.items.map(item => ({
-              id: item.id,
-              productId: item.product_id,
-              product_id: item.product_id,
-              name: item.product_name,
-              product_name: item.product_name,
-              imageUrl: item.image_url || require('@/assets/images/default-image.svg'),
-              image_url: item.image_url,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              price: item.price || item.unit_price,
-              price_ranges: item.price_ranges || []
-            }));*/
-            /*
-            inquiry.messages = response.data.messages.map(msg => ({
-              id: msg.id,
-              sender: msg.sender_type === 'user' ? this.$t('inquiry.you') || '您' : this.$t('inquiry.salesRep') || '销售代表',
-              content: msg.message,
-              timestamp: new Date(msg.created_at).getTime(),
-              isUser: msg.sender_type === 'user'
-            }));*/
-            
-            // 更新已询价商品ID集合并通知父组件
-            const updatedInquiredProductIds = new Set(this.inquiredProductIds);
-            inquiry.items.forEach(item => {
-              updatedInquiredProductIds.add(item.productId);
-            });
-            this.$emit('update-inquired-products', updatedInquiredProductIds);
-          }
-        }
-      } catch (error) {
-        console.error('获取询价详情失败:', error);
       }
     },
     
@@ -448,12 +398,7 @@ export default {
       
       // 标记该询价单的消息为已读
       await this.markInquiryMessagesAsRead(inquiryId);
-      
-      // 如果该询价单的详情还未加载，则加载详情
-      const inquiry = this.inquiries.find(inq => inq.id === inquiryId);
-      if (inquiry && inquiry.items.length === 0 && inquiry.messages.length === 0) {
-        await this.fetchInquiryDetail(inquiryId);
-      }
+
     },
     
     async addToInquiry(cartItem) {

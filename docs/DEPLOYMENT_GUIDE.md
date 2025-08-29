@@ -20,14 +20,18 @@ pm2 set pm2-logrotate:retain 30       # 保留最近 30 份日志
 ### 0.2 install postgresql
 sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 
-//on alibaba cloud linux 3, we need update to 8
-sudo sed -i 's/\$releasever/8/g' /etc/yum.repos.d/pgdg-redhat-all.repo
 
 sudo dnf module enable postgresql:16 -y
 sudo dnf install postgresql-server
 sudo postgresql-setup --initdb
 sudo systemctl enable postgresql
 sudo systemctl start postgresql
+
+//on alibaba cloud linux 3, we need update to 8
+sudo sed -i 's/\$releasever/8/g' /etc/yum.repos.d/pgdg-redhat-all.repo
+sudo /usr/pgsql-17/bin/postgresql-17-setup initdb
+sudo systemctl enable postgresql-17
+sudo systemctl start postgresql-17
 
 #### 0.2.1 set postgresql password
 sudo -u postgres psql  
@@ -334,7 +338,9 @@ In production, Nginx replaces the proxy configuration from `vue.config.js` used 
     # Restart Nginx
     sudo systemctl restart nginx
     ```
-
+4. init data
+   node migrate_country_state_complete.js --data-only    # 仅导入数据
+   
 ### Important Notes:
 
 - **Token Forwarding**: The `/api` location block extracts the `aex-token` cookie and forwards it as an `Authorization` header to the backend.

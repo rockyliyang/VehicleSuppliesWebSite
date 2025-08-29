@@ -57,7 +57,7 @@ async function getEmailContent(type, language, data) {
       };
   }
 }
-const { verifyToken, isAdmin } = require('../middleware/jwt');
+const { verifyToken, isAdmin,requireRole } = require('../middleware/jwt');
 const { getMessage } = require('../config/messages');
 const { v4: uuidv4 } = require('uuid');
 
@@ -170,7 +170,7 @@ router.post('/reset-password', async (req, res) => {
 // 用户登录
 router.post('/login', async (req, res) => {
   try {
-    const { username, password, admin } = req.body; // admin: true/false
+    const { username, password, role } = req.body; // role: 'admin', 'business', 'user'
     // 查找用户（获取完整信息用于生成token）
     const users = await query(
       'SELECT id, username, email, phone, password, user_role, is_active, currency FROM users WHERE (email = $1 or username = $2) AND deleted = false',
@@ -183,9 +183,13 @@ router.post('/login', async (req, res) => {
     const user = users.getFirstRow();
     
     // 角色校验
-    if (admin) {
+    if (role === 'admin') {
       if (user.user_role !== 'admin') {
         return res.status(403).json({ success: false, message: getMessage('USER.NOT_ADMIN'), data: null });
+      }
+    } else if (role === 'business') {
+      if (user.user_role !== 'business') {
+        return res.status(403).json({ success: false, message: getMessage('USER.NOT_BUSINESS'), data: null });
       }
     } else {
       if (user.user_role !== 'user' || user.is_active !== 1) {
@@ -502,7 +506,7 @@ router.post('/admin/create', verifyToken, isAdmin, async (req, res) => {
 });
 
 // 获取所有用户列表（仅管理员）
-router.get('/admin/users', verifyToken, isAdmin, async (req, res) => {
+router.get('/admin/users', verifyToken, requireRole(['admin', 'business']), async (req, res) => {
   try {
     const users = await query(
       'SELECT id, username, email, phone, user_role, created_at FROM users WHERE deleted = false'

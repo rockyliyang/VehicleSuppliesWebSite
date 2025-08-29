@@ -67,7 +67,7 @@
         </div>
         <div class="inquiry-window-body">
           <!-- 沟通组件 -->
-          <InquiryDetailPanel :inquiry="currentInquiry" :is-mobile="isMobile"
+          <InquiryDetailPanel :inquiry-id="currentInquiryId" :is-mobile="isMobile"
             @update-message="handleUpdateInquiryMessage" @new-messages-received="handleNewMessages" />
         </div>
       </div>
@@ -116,7 +116,6 @@ export default {
       // 询价相关状态
       showInquiryDialog: false,
       currentInquiryId: null,
-      currentInquiryData: null, // 存储完整的询价单数据
       inquiryMessages: [],
       inquiryStatus: 'inquiried',
       initialInquiryMessage: '',
@@ -136,10 +135,7 @@ export default {
     isMobile() {
       return window.innerWidth <= 768;
     },
-    // 返回当前询价对象，供InquiryDetailPanel使用
-    currentInquiry() {
-      return this.currentInquiryData;
-    }
+    // 移除currentInquiry计算属性，现在直接传递inquiryId
   },
   created() {
     this.fetchCategories()
@@ -276,18 +272,8 @@ export default {
     // 显示询价对话框
     showInquiryDialogWithData(data) {
       this.currentInquiryId = data.inquiryId;
-      this.initialInquiryMessage = '';
       this.showInquiryDialog = true;
-      
-      // 如果传入了完整的询价单数据，直接使用
-      if (data.inquiry && data.items) {
-        this.currentInquiryData = {
-          ...data.inquiry,
-          items: data.items
-        };
-        this.inquiryStatus = data.inquiry.status || 'inquiried';
-        console.log('使用完整询价单数据:', this.currentInquiryData);
-      } 
+
     },
 
     // 加载询价消息
@@ -325,7 +311,7 @@ export default {
     closeInquiryDialog() {
       this.showInquiryDialog = false;
       this.currentInquiryId = null;
-      this.currentInquiryData = null;
+
       this.inquiryMessages = [];
     },
 
@@ -778,7 +764,7 @@ export default {
 }
 
 /* 移动端适配 */
-@media (max-width: 768px) {
+@include mobile {
   .inquiry-floating-window {
     top: 0;
     left: 0;
@@ -828,7 +814,7 @@ export default {
 }
 
 /* 移动端登录对话框适配 */
-@media (max-width: 768px) {
+@include mobile {
   .login-dialog-container {
     max-width: 95%;
     width: 95%;

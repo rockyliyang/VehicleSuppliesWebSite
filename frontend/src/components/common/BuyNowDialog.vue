@@ -179,8 +179,8 @@ export default {
           name: this.product.name,
           image_url: this.product.thumbnail_url || this.product.image_url,
           quantity: this.quantity,
-          price: this.unitPrice,
-          calculatedPrice: this.unitPrice,
+          price: this.calculatedPrice,
+          //calculatedPrice: this.unitPrice,
           selected: true,
           // 添加产品尺寸重量信息用于运费计算
           length: this.product.product_length || 0,
@@ -409,7 +409,7 @@ export default {
 }
 
 // 响应式设计
-@media (max-width: 768px) {
+@include mobile {
   .buy-now-dialog {
     width: 95%;
     margin: $spacing-md;

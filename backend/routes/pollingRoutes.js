@@ -59,19 +59,19 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
       [inquiryId]
     );
     
-    log('INFO', `Inquiry check completed`, {
-      requestId,
-      inquiryId,
-      duration: `${Date.now() - inquiryCheckStart}ms`,
-      found: inquiryCheck.getRowCount() > 0
-    });
+    // log('INFO', `Inquiry check completed`, {
+    //   requestId,
+    //   inquiryId,
+    //   duration: `${Date.now() - inquiryCheckStart}ms`,
+    //   found: inquiryCheck.getRowCount() > 0
+    // });
     
     if (inquiryCheck.getRowCount() === 0) {
-      log('WARN', `Inquiry not found`, {
-        requestId,
-        inquiryId,
-        userId
-      });
+      // log('WARN', `Inquiry not found`, {
+      //   requestId,
+      //   inquiryId,
+      //   userId
+      // });
       return res.status(404).json({
         success: false,
         message: getMessage('INQUIRY.NOT_FOUND')
@@ -86,35 +86,35 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
       [userId]
     );
     
-    log('INFO', `User role check completed`, {
-      requestId,
-      inquiryId,
-      userId,
-      duration: `${Date.now() - userCheckStart}ms`
-    });
+    // log('INFO', `User role check completed`, {
+    //   requestId,
+    //   inquiryId,
+    //   userId,
+    //   duration: `${Date.now() - userCheckStart}ms`
+    // });
     
     const userRole = userCheck.getFirstRow()?.user_role;
     if (userRole !== 'admin' && inquiry.user_id !== userId) {
-      log('WARN', `Access denied`, {
-        requestId,
-        inquiryId,
-        userId,
-        userRole,
-        inquiryOwnerId: inquiry.user_id
-      });
+      // log('WARN', `Access denied`, {
+      //   requestId,
+      //   inquiryId,
+      //   userId,
+      //   userRole,
+      //   inquiryOwnerId: inquiry.user_id
+      // });
       return res.status(403).json({
         success: false,
         message: getMessage('COMMON.ACCESS_DENIED')
       });
     }
     
-    log('INFO', `Authorization successful`, {
-      requestId,
-      inquiryId,
-      userId,
-      userRole,
-      isOwner: inquiry.user_id === userId
-    });
+    // log('INFO', `Authorization successful`, {
+    //   requestId,
+    //   inquiryId,
+    //   userId,
+    //   userRole,
+    //   isOwner: inquiry.user_id === userId
+    // });
     
     // 长轮询实现：检查是否有新消息
     const checkForNewMessages = async () => {
@@ -152,42 +152,42 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
       const messages = await query(messagesQuery, queryParams);
       const result = messages.getRows();
       
-      log('INFO', `Message check completed`, {
-        requestId,
-        inquiryId,
-        duration: `${Date.now() - checkStart}ms`,
-        lastMessageId: lastMessageId || 'none',
-        foundMessages: result.length,
-        messageIds: result.map(m => m.id)
-      });
+      // log('INFO', `Message check completed`, {
+      //   requestId,
+      //   inquiryId,
+      //   duration: `${Date.now() - checkStart}ms`,
+      //   lastMessageId: lastMessageId || 'none',
+      //   foundMessages: result.length,
+      //   messageIds: result.map(m => m.id)
+      // });
       
       return result;
     };
     
     // 立即检查一次是否有新消息
-    log('INFO', `Starting immediate message check`, {
-      requestId,
-      inquiryId
-    });
+    // log('INFO', `Starting immediate message check`, {
+    //   requestId,
+    //   inquiryId
+    // });
     
     let messages = await checkForNewMessages();
     
     // 如果有新消息，立即返回
     if (messages.length > 0) {
-      log('INFO', `Found immediate messages, returning early`, {
-        requestId,
-        inquiryId,
-        messageCount: messages.length,
-        totalDuration: `${Date.now() - requestStartTime}ms`
-      });
+      // log('INFO', `Found immediate messages, returning early`, {
+      //   requestId,
+      //   inquiryId,
+      //   messageCount: messages.length,
+      //   totalDuration: `${Date.now() - requestStartTime}ms`
+      // });
       return await sendResponse(messages);
     }
     
-    log('INFO', `No immediate messages found, starting long poll wait`, {
-      requestId,
-      inquiryId,
-      timeout
-    });
+    // log('INFO', `No immediate messages found, starting long poll wait`, {
+    //   requestId,
+    //   inquiryId,
+    //   timeout
+    // });
     
     // 没有新消息时，开始事件驱动的长轮询等待
     const startTime = Date.now();
@@ -197,11 +197,11 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
       return new Promise(async (resolve) => {
         let resolved = false;
         
-        log('INFO', `Setting up long poll listeners`, {
-          requestId,
-          inquiryId,
-          maxTimeout
-        });
+        // log('INFO', `Setting up long poll listeners`, {
+        //   requestId,
+        //   inquiryId,
+        //   maxTimeout
+        // });
         
         // 设置超时
         const timeoutId = setTimeout(() => {
@@ -236,13 +236,13 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         
         const messageHandler = async (eventData) => {
           
-          log('INFO', `Received message event`, {
-            resolved,
-            requestId,
-            inquiryId,
-            eventInquiryId: eventData.inquiryId,
-            isMatch: eventData.inquiryId == inquiryId
-          });
+          // log('INFO', `Received message event`, {
+          //   resolved,
+          //   requestId,
+          //   inquiryId,
+          //   eventInquiryId: eventData.inquiryId,
+          //   isMatch: eventData.inquiryId == inquiryId
+          // });
           if (resolved) return;
           
           // 检查是否是当前询价的消息
@@ -252,12 +252,12 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
               if (newMessages.length > 0 && !resolved) {
                 resolved = true;
                 cleanup();
-                log('INFO', `Long poll resolved with new messages`, {
-                  requestId,
-                  inquiryId,
-                  messageCount: newMessages.length,
-                  duration: `${Date.now() - startTime}ms`
-                });
+                // log('INFO', `Long poll resolved with new messages`, {
+                //   requestId,
+                //   inquiryId,
+                //   messageCount: newMessages.length,
+                //   duration: `${Date.now() - startTime}ms`
+                // });
                 resolve(newMessages);
               } else {
                 log('INFO', `Event triggered but no new messages found`, {
@@ -285,27 +285,27 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         const cleanup = () => {
           clearTimeout(timeoutId);
           pgNotificationManager.removeListener('newMessage', messageHandler);
-          log('INFO', `Long poll cleanup completed`, {
-            requestId,
-            inquiryId
-          });
+          // log('INFO', `Long poll cleanup completed`, {
+          //   requestId,
+          //   inquiryId
+          // });
         };
 
         pgNotificationManager.on('newMessage', messageHandler);
-        log('INFO', `Long poll setup newMessage completed`, {
-          requestId,
-          inquiryId
-        });
+        // log('INFO', `Long poll setup newMessage completed`, {
+        //   requestId,
+        //   inquiryId
+        // });
         // 处理请求中断
         req.on('close', () => {
           if (!resolved) {
             resolved = true;
             cleanup();
-            log('INFO', `Long poll request closed by client`, {
-              requestId,
-              inquiryId,
-              duration: `${Date.now() - startTime}ms`
-            });
+            // log('INFO', `Long poll request closed by client`, {
+            //   requestId,
+            //   inquiryId,
+            //   duration: `${Date.now() - startTime}ms`
+            // });
             resolve([]);
           }
         });
@@ -315,22 +315,22 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
     // 等待新消息或超时
     messages = await pollForMessages();
     
-    log('INFO', `Long poll wait completed`, {
-      requestId,
-      inquiryId,
-      messageCount: messages.length,
-      waitDuration: `${Date.now() - startTime}ms`
-    });
+    // log('INFO', `Long poll wait completed`, {
+    //   requestId,
+    //   inquiryId,
+    //   messageCount: messages.length,
+    //   waitDuration: `${Date.now() - startTime}ms`
+    // });
     
     // 发送响应的辅助函数
     async function sendResponse(messages) {
       const responseStart = Date.now();
       
-      log('INFO', `Preparing response`, {
-        requestId,
-        inquiryId,
-        messageCount: messages.length
-      });
+      // log('INFO', `Preparing response`, {
+      //   requestId,
+      //   inquiryId,
+      //   messageCount: messages.length
+      // });
       
       // 获取总消息数
       const totalCountStart = Date.now();
@@ -339,12 +339,12 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         [inquiryId]
       );
       
-      log('INFO', `Total count query completed`, {
-        requestId,
-        inquiryId,
-        duration: `${Date.now() - totalCountStart}ms`,
-        totalCount: parseInt(totalCount.getFirstRow().total)
-      });
+      // log('INFO', `Total count query completed`, {
+      //   requestId,
+      //   inquiryId,
+      //   duration: `${Date.now() - totalCountStart}ms`,
+      //   totalCount: parseInt(totalCount.getFirstRow().total)
+      // });
       
       // 获取未读消息数（对于当前用户）
       const unreadCountStart = Date.now();
@@ -356,12 +356,12 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         [inquiryId, userRole === 'admin' ? 'admin' : 'user', userId]
       );
       
-      log('INFO', `Unread count query completed`, {
-        requestId,
-        inquiryId,
-        duration: `${Date.now() - unreadCountStart}ms`,
-        unreadCount: unreadCount.getFirstRow().unread
-      });
+      // log('INFO', `Unread count query completed`, {
+      //   requestId,
+      //   inquiryId,
+      //   duration: `${Date.now() - unreadCountStart}ms`,
+      //   unreadCount: unreadCount.getFirstRow().unread
+      // });
       
       const responseData = {
         success: true,
@@ -376,17 +376,17 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         }
       };
       
-      log('INFO', `Sending response`, {
-        requestId,
-        inquiryId,
-        responsePreparationDuration: `${Date.now() - responseStart}ms`,
-        totalRequestDuration: `${Date.now() - requestStartTime}ms`,
-        hasNewMessages: responseData.data.hasNewMessages,
-        newMessagesCount: responseData.data.newMessages.length,
-        totalCount: responseData.data.totalCount,
-        unreadCount: responseData.data.unreadCount,
-        lastMessageId: responseData.data.lastMessageId
-      });
+      // log('INFO', `Sending response`, {
+      //   requestId,
+      //   inquiryId,
+      //   responsePreparationDuration: `${Date.now() - responseStart}ms`,
+      //   totalRequestDuration: `${Date.now() - requestStartTime}ms`,
+      //   hasNewMessages: responseData.data.hasNewMessages,
+      //   newMessagesCount: responseData.data.newMessages.length,
+      //   totalCount: responseData.data.totalCount,
+      //   unreadCount: responseData.data.unreadCount,
+      //   lastMessageId: responseData.data.lastMessageId
+      // });
       
       return res.json(responseData);
     }
@@ -425,16 +425,16 @@ router.get('/:inquiryId/messages/history', verifyToken, async (req, res) => {
     const { page = 1, limit = 50, beforeMessageId } = req.query;
     const offset = (page - 1) * limit;
     
-    log('INFO', `History messages request started`, {
-      requestId,
-      inquiryId,
-      userId,
-      page,
-      limit,
-      beforeMessageId,
-      userAgent: req.get('User-Agent'),
-      ip: req.ip
-    });
+    // log('INFO', `History messages request started`, {
+    //   requestId,
+    //   inquiryId,
+    //   userId,
+    //   page,
+    //   limit,
+    //   beforeMessageId,
+    //   userAgent: req.get('User-Agent'),
+    //   ip: req.ip
+    // });
     
     // 验证用户权限
     const inquiryCheckStart = Date.now();
@@ -480,23 +480,23 @@ router.get('/:inquiryId/messages/history', verifyToken, async (req, res) => {
     const userRole = userCheck.getFirstRow()?.role;
     const hasAccess = userRole === 'admin' || inquiry.user_id === userId;
     
-    log('INFO', `User authorization check completed`, {
-      requestId,
-      inquiryId,
-      userId,
-      userRole,
-      inquiryUserId: inquiry.user_id,
-      hasAccess
-    });
+    // log('INFO', `User authorization check completed`, {
+    //   requestId,
+    //   inquiryId,
+    //   userId,
+    //   userRole,
+    //   inquiryUserId: inquiry.user_id,
+    //   hasAccess
+    // });
     
     if (!hasAccess) {
-      log('WARN', `Access denied for user`, {
-        requestId,
-        inquiryId,
-        userId,
-        userRole,
-        inquiryUserId: inquiry.user_id
-      });
+      // log('WARN', `Access denied for user`, {
+      //   requestId,
+      //   inquiryId,
+      //   userId,
+      //   userRole,
+      //   inquiryUserId: inquiry.user_id
+      // });
       
       return res.status(403).json({
         success: false,
@@ -515,14 +515,14 @@ router.get('/:inquiryId/messages/history', verifyToken, async (req, res) => {
       paramIndex++;
     }
     
-    log('INFO', `Fetching message history`, {
-      requestId,
-      inquiryId,
-      page,
-      limit,
-      offset,
-      beforeMessageId
-    });
+    // log('INFO', `Fetching message history`, {
+    //   requestId,
+    //   inquiryId,
+    //   page,
+    //   limit,
+    //   offset,
+    //   beforeMessageId
+    // });
     
     // 查询历史消息
     const messagesQueryStart = Date.now();
@@ -546,12 +546,12 @@ router.get('/:inquiryId/messages/history', verifyToken, async (req, res) => {
     queryParams.push(parseInt(limit), parseInt(offset));
     const messages = await query(messagesQuery, queryParams);
     
-    log('INFO', `Messages query completed`, {
-      requestId,
-      inquiryId,
-      duration: `${Date.now() - messagesQueryStart}ms`,
-      messageCount: messages.getRowCount()
-    });
+    // log('INFO', `Messages query completed`, {
+    //   requestId,
+    //   inquiryId,
+    //   duration: `${Date.now() - messagesQueryStart}ms`,
+    //   messageCount: messages.getRowCount()
+    // });
     
     // 获取总数
     const totalCountQueryStart = Date.now();

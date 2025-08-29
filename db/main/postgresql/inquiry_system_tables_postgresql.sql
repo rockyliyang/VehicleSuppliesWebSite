@@ -10,9 +10,10 @@ CREATE TABLE IF NOT EXISTS inquiries (
     user_id BIGINT NOT NULL,
     user_inquiry_id INTEGER DEFAULT NULL,
     title VARCHAR(32) DEFAULT '',
-    status VARCHAR(16) DEFAULT 'pending',
+    status VARCHAR(16) DEFAULT 'inquiried',
     inquiry_type VARCHAR(16) DEFAULT 'custom',
     total_amount DECIMAL(10,2) DEFAULT 0.00,
+    update_price_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -37,7 +38,7 @@ CREATE TRIGGER update_inquiries_updated_at BEFORE UPDATE ON inquiries
 -- 添加检查约束
 ALTER TABLE inquiries 
     ADD CONSTRAINT chk_inquiry_status
-    CHECK (status IN ('inquiried',  'approved', 'rejected', 'paid'));
+    CHECK (status IN ('inquiried', 'paid'));
 
 ALTER TABLE inquiries 
     ADD CONSTRAINT chk_inquiry_type
@@ -166,7 +167,8 @@ COMMENT ON COLUMN inquiries.guid IS '全局唯一标识符';
 COMMENT ON COLUMN inquiries.user_id IS '用户ID';
 COMMENT ON COLUMN inquiries.user_inquiry_id IS '用户级别的询价单编号';
 COMMENT ON COLUMN inquiries.title IS '询价单标题';
-COMMENT ON COLUMN inquiries.status IS '询价状态: inquiried-已询价, approved-已批准, rejected-已拒绝';
+COMMENT ON COLUMN inquiries.status IS '询价状态: inquiried-已询价, paid-已付款';
+COMMENT ON COLUMN inquiries.update_price_time IS '报价更新时间';
 COMMENT ON COLUMN inquiries.inquiry_type IS '询价类型: single-单品询价, custom-自定义询价';
 COMMENT ON COLUMN inquiries.total_amount IS '总金额';
 COMMENT ON COLUMN inquiries.deleted IS '软删除标记: 0-正常, 1-已删除';
