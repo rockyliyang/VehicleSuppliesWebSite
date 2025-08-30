@@ -561,6 +561,29 @@ const MESSAGES = {
     VALUE_TYPE_EXISTS: 'Tag with this value and type combination already exists',
     NO_FIELDS_TO_UPDATE: 'No fields to update',
     HAS_RELATED_RECORDS: 'Cannot delete tag with existing related records'
+  },
+
+  // 访问记录相关
+  VISITOR_LOG: {
+    CREATE_SUCCESS: 'Visitor log created successfully',
+    CREATE_FAILED: 'Failed to create visitor log',
+    GET_SUCCESS: 'Visitor log retrieved successfully',
+    GET_FAILED: 'Failed to retrieve visitor log',
+    LIST_GET_SUCCESS: 'Visitor logs retrieved successfully',
+    LIST_GET_FAILED: 'Failed to retrieve visitor logs',
+    UPDATE_SUCCESS: 'Visitor log updated successfully',
+    UPDATE_FAILED: 'Failed to update visitor log',
+    DELETE_SUCCESS: 'Visitor log deleted successfully',
+    DELETE_FAILED: 'Failed to delete visitor log',
+    BATCH_DELETE_SUCCESS: 'Visitor logs deleted successfully',
+    BATCH_DELETE_FAILED: 'Failed to delete visitor logs',
+    NOT_FOUND: 'Visitor log not found',
+    STATS_GET_SUCCESS: 'Visitor statistics retrieved successfully',
+    STATS_GET_FAILED: 'Failed to retrieve visitor statistics',
+    REQUIRED_FIELDS: 'Session ID and page URL are required',
+    INVALID_DURATION: 'Duration must be a positive number',
+    INVALID_BOUNCE_RATE: 'Bounce rate must be a boolean value',
+    INVALID_NEW_VISITOR: 'New visitor flag must be a boolean value'
   }
 };
 

@@ -90,6 +90,12 @@
             <el-menu-item index="/admin/admin-users">管理员</el-menu-item>
             <el-menu-item index="/admin/business-groups">业务组管理</el-menu-item>
           </el-sub-menu>
+          <el-menu-item index="/admin/visitor-logs">
+            <el-icon>
+              <Document />
+            </el-icon>
+            <span>访问记录</span>
+          </el-menu-item>
           <el-menu-item index="/admin/settings">
             <el-icon>
               <Setting />
@@ -235,6 +241,9 @@ export default {
       } else if (route.path.includes('/admin/business-groups')) {
         this.activeMenu = '/admin/business-groups'
         this.currentPage = '业务组管理'
+      } else if (route.path.includes('/admin/visitor-logs')) {
+        this.activeMenu = '/admin/visitor-logs'
+        this.currentPage = '访问记录'
       } else if (route.path.includes('/admin/settings')) {
         this.activeMenu = '/admin/settings'
         this.currentPage = '系统设置'

@@ -3,6 +3,7 @@ import Home from '../views/Home.vue'
 import store from '../store'
 import api from '../utils/api'
 import { createRetryableImport } from '../utils/chunkRetry'
+import visitorTracker from '../utils/visitorTracker'
 
 const routes = [
   {
@@ -154,6 +155,12 @@ const routes = [
         path: 'countries',
         name: 'AdminCountries',
         component: createRetryableImport(() => import('../views/admin/CountryManagement.vue')),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'visitor-logs',
+        name: 'AdminVisitorLogs',
+        component: createRetryableImport(() => import('../views/admin/VisitorLogs.vue')),
         meta: { requiresAuth: true }
       },
       {
@@ -355,6 +362,23 @@ router.beforeEach(async (to, from, next) => {
   }
   
   next()
+})
+
+// 路由后置守卫 - 记录页面访问
+router.afterEach(async (to) => {
+  try {
+    // 只在首次进入网站时记录（不是页面内跳转）
+    await visitorTracker.trackSiteEntry(to)
+    
+    // 如果用户已登录，更新访问记录中的用户信息
+    if (store.state.user && store.state.user.id) {
+      await visitorTracker.updateVisitorInfo({
+        userId: store.state.user.id
+      })
+    }
+  } catch (error) {
+    console.warn('Failed to track site entry:', error)
+  }
 })
 
 export default router
