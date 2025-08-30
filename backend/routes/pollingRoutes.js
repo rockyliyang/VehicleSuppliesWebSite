@@ -560,12 +560,12 @@ router.get('/:inquiryId/messages/history', verifyToken, async (req, res) => {
       [inquiryId]
     );
     
-    log('INFO', `Total count query completed`, {
-      requestId,
-      inquiryId,
-      duration: `${Date.now() - totalCountQueryStart}ms`,
-      totalCount: totalCount.getFirstRow().total
-    });
+    // log('INFO', `Total count query completed`, {
+    //   requestId,
+    //   inquiryId,
+    //   duration: `${Date.now() - totalCountQueryStart}ms`,
+    //   totalCount: totalCount.getFirstRow().total
+    // });
     
     const totalPages = Math.ceil(parseInt(totalCount.getFirstRow().total) / limit);
     const hasMore = offset + messages.getRows().length < parseInt(totalCount.getFirstRow().total);
@@ -582,17 +582,17 @@ router.get('/:inquiryId/messages/history', verifyToken, async (req, res) => {
       }
     };
     
-    log('INFO', `History messages request completed successfully`, {
-      requestId,
-      inquiryId,
-      userId,
-      totalDuration: `${Date.now() - requestStartTime}ms`,
-      messageCount: messages.getRowCount(),
-      totalCount: parseInt(totalCount.getFirstRow().total),
-      page,
-      totalPages,
-      hasMore
-    });
+    // log('INFO', `History messages request completed successfully`, {
+    //   requestId,
+    //   inquiryId,
+    //   userId,
+    //   totalDuration: `${Date.now() - requestStartTime}ms`,
+    //   messageCount: messages.getRowCount(),
+    //   totalCount: parseInt(totalCount.getFirstRow().total),
+    //   page,
+    //   totalPages,
+    //   hasMore
+    // });
     
     return res.json(responseData);
     
@@ -627,15 +627,15 @@ router.put('/:inquiryId/messages/mark-read', verifyToken, async (req, res) => {
     const inquiryId = req.params.inquiryId;
     const { messageIds } = req.body; // 可选：指定消息ID数组
     
-    log('INFO', `Mark messages as read request started`, {
-      requestId,
-      inquiryId,
-      userId,
-      messageIds: messageIds || 'all unread',
-      messageCount: messageIds ? messageIds.length : 'all',
-      userAgent: req.get('User-Agent'),
-      ip: req.ip
-    });
+    // log('INFO', `Mark messages as read request started`, {
+    //   requestId,
+    //   inquiryId,
+    //   userId,
+    //   messageIds: messageIds || 'all unread',
+    //   messageCount: messageIds ? messageIds.length : 'all',
+    //   userAgent: req.get('User-Agent'),
+    //   ip: req.ip
+    // });
     
     // 验证用户权限
     const inquiryCheckStart = Date.now();
@@ -644,12 +644,12 @@ router.put('/:inquiryId/messages/mark-read', verifyToken, async (req, res) => {
       [inquiryId]
     );
     
-    log('INFO', `Inquiry existence check completed`, {
-      requestId,
-      inquiryId,
-      duration: `${Date.now() - inquiryCheckStart}ms`,
-      found: inquiryCheck.getRowCount() > 0
-    });
+    // log('INFO', `Inquiry existence check completed`, {
+    //   requestId,
+    //   inquiryId,
+    //   duration: `${Date.now() - inquiryCheckStart}ms`,
+    //   found: inquiryCheck.getRowCount() > 0
+    // });
     
     if (inquiryCheck.getRowCount() === 0) {
       log('WARN', `Inquiry not found`, {
@@ -718,12 +718,12 @@ router.put('/:inquiryId/messages/mark-read', verifyToken, async (req, res) => {
       `;
       queryParams = [userId, inquiryId, ...messageIds];
       
-      log('INFO', `Marking specific messages as read`, {
-        requestId,
-        inquiryId,
-        messageIds,
-        messageCount: messageIds.length
-      });
+      // log('INFO', `Marking specific messages as read`, {
+      //   requestId,
+      //   inquiryId,
+      //   messageIds,
+      //   messageCount: messageIds.length
+      // });
     } else {
       // 标记所有未读消息为已读（排除自己发送的消息）
       updateQuery = `
@@ -733,23 +733,23 @@ router.put('/:inquiryId/messages/mark-read', verifyToken, async (req, res) => {
       `;
       queryParams = [userId, inquiryId, userId];
       
-      log('INFO', `Marking all unread messages as read`, {
-        requestId,
-        inquiryId,
-        userId
-      });
+      // log('INFO', `Marking all unread messages as read`, {
+      //   requestId,
+      //   inquiryId,
+      //   userId
+      // });
     }
     
     const updateStart = Date.now();
     const result = await query(updateQuery, queryParams);
     const affectedRows = result.getRowCount();
     
-    log('INFO', `Mark as read update completed`, {
-      requestId,
-      inquiryId,
-      duration: `${Date.now() - updateStart}ms`,
-      affectedRows
-    });
+    // log('INFO', `Mark as read update completed`, {
+    //   requestId,
+    //   inquiryId,
+    //   duration: `${Date.now() - updateStart}ms`,
+    //   affectedRows
+    // });
     
     const responseData = {
       success: true,

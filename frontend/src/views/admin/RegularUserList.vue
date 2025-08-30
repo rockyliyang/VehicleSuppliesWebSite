@@ -37,6 +37,7 @@
         v-loading="loading"
         @row-dblclick="showBusinessGroupDialog"
         stripe
+        :row-style="{cursor: 'pointer'}"
       >
         <el-table-column prop="id" :label="$t('admin.users.table.id') || 'ID'" width="80" />
         <el-table-column prop="name" :label="$t('admin.users.table.name') || '姓名'" width="140" show-overflow-tooltip />
@@ -53,6 +54,13 @@
           <template #default="{row}">
             <el-tag :type="row.isActive ? 'success' : 'danger'">
               {{ row.isActive ? ($t('admin.users.status.active') || '已激活') : ($t('admin.users.status.inactive') || '未激活') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="isSuper" :label="$t('admin.users.table.isSuper') || '超级用户'" width="100" align="center">
+          <template #default="{row}">
+            <el-tag :type="row.isSuper ? 'warning' : 'info'">
+              {{ row.isSuper ? ($t('admin.users.status.super') || '是') : ($t('admin.users.status.normal') || '否') }}
             </el-tag>
           </template>
         </el-table-column>
@@ -78,7 +86,7 @@
     </el-card>
 
     <!-- 业务组修改对话框 -->
-    <el-dialog v-model="businessGroupDialogVisible" :title="$t('admin.users.dialog.title') || '修改用户业务组'" width="500px">
+    <el-dialog v-model="businessGroupDialogVisible" :title="$t('admin.users.dialog.title') || '编辑用户信息'" width="500px">
       <div v-if="selectedUserForGroup" class="business-group-edit">
         <el-descriptions :column="1" border>
           <el-descriptions-item :label="$t('admin.users.dialog.userName') || '用户姓名'">{{ selectedUserForGroup.name }}</el-descriptions-item>
@@ -102,11 +110,22 @@
             </el-option>
           </el-select>
         </div>
+
+        <div class="super-status-selection">
+          <h4>{{ $t('admin.users.editDialog.setSuperStatus') || '设置超级用户状态' }}</h4>
+          <el-radio-group v-model="editFormData.isSuper">
+            <el-radio :label="false">{{ $t('admin.users.status.normal') || '普通用户' }}</el-radio>
+            <el-radio :label="true">{{ $t('admin.users.status.super') || '超级用户' }}</el-radio>
+          </el-radio-group>
+          <div class="super-status-description">
+            <p>{{ $t('admin.users.editDialog.superDescription') || '超级用户可以访问所有状态的产品记录，包括下架的产品。' }}</p>
+          </div>
+        </div>
       </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="businessGroupDialogVisible = false">{{ $t('common.cancel') || '取消' }}</el-button>
-          <el-button type="primary" @click="updateUserBusinessGroup" :loading="updating">
+          <el-button type="primary" @click="updateUserInfo" :loading="updating">
             {{ updating ? ($t('common.saving') || '保存中...') : ($t('common.save') || '保存') }}
           </el-button>
         </span>
@@ -145,6 +164,11 @@ export default {
       currentPage: 1,
       pageSize: 10,
       total: 0,
+      
+      // 用户编辑表单数据
+      editFormData: {
+        isSuper: false
+      },
       
       // 业务组修改对话框
       businessGroupDialogVisible: false,
@@ -206,6 +230,7 @@ export default {
             } : null,
             businessGroupId: user.business_group_id || null,
             isActive: user.is_active !== false,
+            isSuper: user.is_super === true,
             createdAt: user.created_at,
             updatedAt: user.updated_at
           }))
@@ -282,39 +307,52 @@ export default {
         id: user.id,
         name: user.name,
         email: user.email,
-        currentBusinessGroup: user.currentBusinessGroup
+        currentBusinessGroup: user.currentBusinessGroup,
+        isSuper: user.isSuper
       }
       this.selectedBusinessGroupId = user.businessGroupId
+      this.editFormData.isSuper = user.isSuper
       this.businessGroupDialogVisible = true
     },
     
-    // 更新用户业务组
-    async updateUserBusinessGroup() {
+    // 更新用户信息（业务组和超级用户状态）
+    async updateUserInfo() {
       if (!this.selectedUserForGroup) return
       
       const currentGroupId = this.selectedUserForGroup.currentBusinessGroup?.id
-      if (currentGroupId === this.selectedBusinessGroupId) {
-        this.$messageHandler.showInfo("业务组没有变化", "admin.users.info.noChange")
+      const groupChanged = currentGroupId !== this.selectedBusinessGroupId
+      const superStatusChanged = this.selectedUserForGroup.isSuper !== this.editFormData.isSuper
+      
+      if (!groupChanged && !superStatusChanged) {
+        this.$messageHandler.showInfo("用户信息没有变化", "admin.users.info.noChange")
         this.businessGroupDialogVisible = false
         return
       }
       
       this.updating = true
       try {
-        const response = await this.$api.patch(`/admin/users/${this.selectedUserForGroup.id}/business-group`, {
-          business_group_id: this.selectedBusinessGroupId
-        })
+        const updateData = {}
+        
+        if (groupChanged) {
+          updateData.business_group_id = this.selectedBusinessGroupId
+        }
+        
+        if (superStatusChanged) {
+          updateData.is_super = this.editFormData.isSuper
+        }
+        
+        const response = await this.$api.put(`/admin/users/${this.selectedUserForGroup.id}`, updateData)
         
         if (response.success) {
-          this.$messageHandler.showSuccess("业务组更新成功", "admin.users.success.businessGroupUpdateSuccess")
+          this.$messageHandler.showSuccess("用户信息更新成功", "admin.users.success.updateSuccess")
           this.businessGroupDialogVisible = false
           this.loadUsers()
         } else {
-          this.$messageHandler.showError(response.message, "admin.users.error.businessGroupUpdateFailed")
+          this.$messageHandler.showError(response.message, "admin.users.error.updateFailed")
         }
       } catch (error) {
-        console.error("业务组更新失败:", error)
-        this.$messageHandler.showError("业务组更新失败", "admin.users.error.businessGroupUpdateFailed")
+        console.error("用户信息更新失败:", error)
+        this.$messageHandler.showError("用户信息更新失败", "admin.users.error.updateFailed")
       } finally {
         this.updating = false
       }
@@ -363,6 +401,53 @@ export default {
     .pagination-wrapper {
       margin-top: 20px;
       text-align: right;
+    }
+  }
+}
+
+.user-edit {
+  .super-status-selection {
+    margin-top: 20px;
+
+    h4 {
+      margin-bottom: 15px;
+      color: #303133;
+      font-weight: 500;
+    }
+
+    .el-radio-group {
+      margin-bottom: 15px;
+
+      .el-radio {
+        margin-right: 20px;
+      }
+    }
+
+    .super-status-description {
+      padding: 10px;
+      background-color: #f5f7fa;
+      border-radius: 4px;
+      border-left: 4px solid #409eff;
+
+      p {
+        margin: 0;
+        color: #606266;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  :deep(.el-descriptions) {
+    margin-bottom: 20px;
+
+    .el-descriptions__label {
+      color: #303133;
+      font-weight: 500;
+    }
+
+    .el-descriptions__content {
+      color: #606266;
     }
   }
 }

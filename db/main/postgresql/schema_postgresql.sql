@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(100) NOT NULL,
   phone VARCHAR(20),
   user_role VARCHAR(10) NOT NULL DEFAULT 'user' CHECK (user_role IN ('admin', 'user', 'business')),
+  is_super BOOLEAN NOT NULL DEFAULT FALSE,
   business_group_id BIGINT DEFAULT NULL,
   language VARCHAR(10) DEFAULT NULL,
   apple_id VARCHAR(256) DEFAULT NULL,
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- 添加注释
+COMMENT ON COLUMN users.is_super IS '超级用户标识，可访问所有状态的产品记录';
 COMMENT ON COLUMN users.business_group_id IS '普通用户关联的业务组ID（用于联系表单分配）';
 COMMENT ON COLUMN users.language IS 'User preferred language for emails, NULL means English';
 COMMENT ON COLUMN users.apple_id IS 'Apple用户唯一标识';

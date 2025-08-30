@@ -483,6 +483,7 @@ class UserManagementController {
           u.email,
           u.phone,
           u.user_role,
+          u.is_super,
           u.language,
           u.business_group_id,
           bg.group_name as business_group_name,
@@ -512,6 +513,7 @@ class UserManagementController {
           email: row.email,
           phone: row.phone,
           user_role: row.user_role,
+          is_super: row.is_super,
           language: row.language,
           created_at: row.created_at,
           updated_at: row.updated_at
@@ -570,7 +572,7 @@ class UserManagementController {
   async updateUser(req, res) {
     try {
       const { id } = req.params;
-      const { username, email, phone, language } = req.body;
+      const { username, email, phone, language, password, is_super, business_group_id } = req.body;
       
       // 检查用户是否存在
       const userRows = await query(
@@ -618,6 +620,22 @@ class UserManagementController {
         }
       }
       
+      // 处理密码加密
+      let hashedPassword = null;
+      if (password) {
+        // 验证密码长度
+        if (password.length < 6) {
+          return res.status(400).json({
+            success: false,
+            message: 'USER_MANAGEMENT.PASSWORD_TOO_SHORT',
+            data: null
+          });
+        }
+        
+        const bcrypt = require('bcrypt');
+        hashedPassword = await bcrypt.hash(password, 10);
+      }
+      
       // 构建更新字段
       const updateFields = [];
       const updateValues = [];
@@ -645,6 +663,40 @@ class UserManagementController {
       if (language !== undefined) {
         updateFields.push(`language = $${paramIndex}`);
         updateValues.push(language || null);
+        paramIndex++;
+      }
+      
+      if (hashedPassword !== null) {
+        updateFields.push(`password = $${paramIndex}`);
+        updateValues.push(hashedPassword);
+        paramIndex++;
+      }
+      
+      if (is_super !== undefined) {
+        updateFields.push(`is_super = $${paramIndex}`);
+        updateValues.push(is_super === true || is_super === 'true');
+        paramIndex++;
+      }
+      
+      if (business_group_id !== undefined) {
+        // 验证业务组是否存在（如果不为null）
+        if (business_group_id !== null) {
+          const bgRows = await query(
+            'SELECT id FROM business_groups WHERE id = $1 AND deleted = false',
+            [business_group_id]
+          );
+          
+          if (bgRows.getRowCount() === 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'BUSINESS_GROUP.NOT_FOUND',
+              data: null
+            });
+          }
+        }
+        
+        updateFields.push(`business_group_id = $${paramIndex}`);
+        updateValues.push(business_group_id);
         paramIndex++;
       }
       

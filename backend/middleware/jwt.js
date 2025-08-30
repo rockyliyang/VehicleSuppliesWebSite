@@ -158,11 +158,76 @@ const requireBusinessStaff = (req, res, next) => {
   next();
 };
 
+// 可选的JWT Token解码中间件（不强制要求token）
+const optionalToken = (req, res, next) => {
+  try {
+    // 从请求头或Cookie中获取token
+    let token = req.header('Authorization');
+    if (!token && req.cookies) {
+      token = req.cookies.token;
+    }
+    if (token && token.startsWith('Bearer ')) {
+      token = token.replace('Bearer ', '');
+    }
+    
+    // 如果没有token，设置用户信息为null并继续
+    if (!token) {
+      req.userId = null;
+      req.username = null;
+      req.userEmail = null;
+      req.phone = null;
+      req.userRole = null;
+      req.userCurrency = null;
+      req.token = null;
+      return next();
+    }
+    
+    // 尝试验证token
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // 将解码后的用户信息添加到请求对象中
+      req.userId = decoded.userId;
+      req.username = decoded.username;
+      req.userEmail = decoded.email;
+      req.phone = decoded.phone;
+      req.userRole = decoded.role;
+      req.userCurrency = decoded.currency;
+      req.token = token;
+      
+      next();
+    } catch (tokenError) {
+      // 如果token无效或过期，设置用户信息为null并继续
+      req.userId = null;
+      req.username = null;
+      req.userEmail = null;
+      req.phone = null;
+      req.userRole = null;
+      req.userCurrency = null;
+      req.token = null;
+      
+      next();
+    }
+  } catch (error) {
+    // 发生其他错误时，设置用户信息为null并继续
+    req.userId = null;
+    req.username = null;
+    req.userEmail = null;
+    req.phone = null;
+    req.userRole = null;
+    req.userCurrency = null;
+    req.token = null;
+    
+    next();
+  }
+};
+
 // 验证管理员权限的中间件（组合verifyToken和isAdmin）
 const verifyAdmin = [verifyToken, isAdmin];
 
 module.exports = {
   verifyToken,
+  optionalToken,
   isAdmin,
   verifyAdmin,
   requireRole,

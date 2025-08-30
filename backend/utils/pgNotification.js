@@ -173,18 +173,18 @@ class PgNotificationManager extends EventEmitter {
         clearTimeout(this.reconnectTimer);
         this.reconnectTimer = null;
       }
-      
+
       if (this.listenerClient) {
         // 移除事件监听器，避免触发重连
         this.listenerClient.removeAllListeners();
         await this.listenerClient.end();
+        this.listenerClient.release();
       }
       
       // 注意：不要关闭共享的连接池，它由db.js管理
       // if (this.pool) {
       //   await this.pool.end();
       // }
-      
       console.log('PostgreSQL notification manager closed');
     } catch (error) {
       console.error('Error closing PostgreSQL notification manager:', error);

@@ -9,13 +9,16 @@
     <el-card class="filter-card">
       <el-form :model="filters" inline>
         <el-form-item :label="$t('admin.salesUsers.filter.businessGroup') || '业务组'">
-          <el-select v-model="filters.businessGroup" :placeholder="$t('admin.salesUsers.filter.businessGroupPlaceholder') || '选择业务组'" clearable @change="handleFilterChange" style="width: 200px;">
+          <el-select v-model="filters.businessGroup"
+            :placeholder="$t('admin.salesUsers.filter.businessGroupPlaceholder') || '选择业务组'" clearable
+            @change="handleFilterChange" style="width: 200px;">
             <el-option :label="$t('common.all') || '全部'" value="" />
             <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id" />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('admin.salesUsers.filter.search') || '搜索'">
-          <el-input v-model="filters.search" :placeholder="$t('admin.salesUsers.filter.searchPlaceholder') || '搜索姓名或邮箱'" clearable @input="handleFilterChange" style="width: 250px;" />
+          <el-input v-model="filters.search" :placeholder="$t('admin.salesUsers.filter.searchPlaceholder') || '搜索姓名或邮箱'"
+            clearable @input="handleFilterChange" style="width: 250px;" />
         </el-form-item>
         <el-form-item>
           <el-button @click="clearFilters">{{ $t('common.reset') || '重置' }}</el-button>
@@ -25,7 +28,8 @@
             </el-icon>
             {{ $t('common.refresh') || '刷新' }}
           </el-button>
-          <el-button type="primary" @click="showCreateDialog">{{ $t('admin.salesUsers.action.create') || '新增业务员' }}</el-button>
+          <el-button type="primary" @click="showCreateDialog">{{ $t('admin.salesUsers.action.create') || '新增业务员'
+            }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -41,40 +45,50 @@
       <!-- 用户列表 -->
       <el-table :data="paginatedUsers" style="width: 100%" v-loading="loading" stripe>
         <el-table-column prop="id" :label="$t('admin.salesUsers.table.id') || 'ID'" width="80" />
-        <el-table-column prop="name" :label="$t('admin.salesUsers.table.name') || '姓名'" width="140" show-overflow-tooltip />
-        <el-table-column prop="email" :label="$t('admin.salesUsers.table.email') || '邮箱'" width="220" show-overflow-tooltip />
+        <el-table-column prop="name" :label="$t('admin.salesUsers.table.name') || '姓名'" width="140"
+          show-overflow-tooltip />
+        <el-table-column prop="email" :label="$t('admin.salesUsers.table.email') || '邮箱'" width="220"
+          show-overflow-tooltip />
         <el-table-column prop="role" :label="$t('admin.salesUsers.table.role') || '角色'" width="100" align="center">
           <template #default>
             <el-tag type="warning">{{ $t('admin.salesUsers.table.salesRole') || '业务员' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="businessGroups" :label="$t('admin.salesUsers.table.businessGroups') || '所属业务组'" min-width="180">
+        <el-table-column prop="businessGroups" :label="$t('admin.salesUsers.table.businessGroups') || '所属业务组'"
+          min-width="180">
           <template #default="{row}">
             <div v-if="row.businessGroups && row.businessGroups.length > 0" class="business-groups">
-              <el-tag v-for="group in row.businessGroups" :key="group.id" size="small" type="success" style="margin-right: 4px; margin-bottom: 2px;">
+              <el-tag v-for="group in row.businessGroups" :key="group.id" size="small" type="success"
+                style="margin-right: 4px; margin-bottom: 2px;">
                 {{ group.name }}
               </el-tag>
             </div>
             <span v-else class="no-group">{{ $t('admin.salesUsers.table.noGroup') || '未分配' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="isActive" :label="$t('admin.salesUsers.table.status') || '状态'" width="100" align="center">
+        <el-table-column prop="isActive" :label="$t('admin.salesUsers.table.status') || '状态'" width="100"
+          align="center">
           <template #default="{row}">
             <el-tag :type="row.isActive ? 'success' : 'danger'">
-              {{ row.isActive ? ($t('admin.salesUsers.table.active') || '已激活') : ($t('admin.salesUsers.table.inactive') || '未激活') }}
+              {{ row.isActive ? ($t('admin.salesUsers.table.active') || '已激活') : ($t('admin.salesUsers.table.inactive')
+              || '未激活') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" :label="$t('admin.salesUsers.table.createdAt') || '注册时间'" width="160" align="center">
+        <el-table-column prop="createdAt" :label="$t('admin.salesUsers.table.createdAt') || '注册时间'" width="160"
+          align="center">
           <template #default="{row}">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
         <el-table-column :label="$t('admin.salesUsers.table.actions') || '操作'" width="250" fixed="right">
           <template #default="{row}">
-            <el-button type="primary" size="small" @click="showUserDetail(row)">{{ $t('admin.salesUsers.action.detail') || '详情' }}</el-button>
-            <el-button type="success" size="small" @click="showEditDialog(row)">{{ $t('admin.salesUsers.action.edit') || '编辑' }}</el-button>
-            <el-button type="danger" size="small" @click="confirmDelete(row)">{{ $t('admin.salesUsers.action.delete') || '删除' }}</el-button>
+            <el-button type="primary" size="small" @click="showUserDetail(row)">{{ $t('admin.salesUsers.action.detail')
+              || '详情' }}</el-button>
+            <el-button type="success" size="small" @click="showEditDialog(row)">{{ $t('admin.salesUsers.action.edit') ||
+              '编辑' }}</el-button>
+            <el-button type="danger" size="small" @click="confirmDelete(row)">{{ $t('admin.salesUsers.action.delete') ||
+              '删除' }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -91,15 +105,19 @@
     <el-dialog v-model="detailDialogVisible" :title="$t('admin.salesUsers.detail.title') || '业务员详情'" width="600px">
       <div v-if="selectedUser" class="user-detail">
         <el-descriptions :column="2" border>
-          <el-descriptions-item :label="$t('admin.salesUsers.detail.id') || 'ID'">{{ selectedUser.id }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('admin.salesUsers.detail.name') || '姓名'">{{ selectedUser.name }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('admin.salesUsers.detail.email') || '邮箱'">{{ selectedUser.email }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.id') || 'ID'">{{ selectedUser.id
+            }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.name') || '姓名'">{{ selectedUser.name
+            }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.email') || '邮箱'">{{ selectedUser.email
+            }}</el-descriptions-item>
           <el-descriptions-item :label="$t('admin.salesUsers.detail.role') || '角色'">
             <el-tag type="warning">{{ $t('admin.salesUsers.table.salesRole') || '业务员' }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item :label="$t('admin.salesUsers.detail.businessGroups') || '所属业务组'">
             <div v-if="selectedUser.businessGroups && selectedUser.businessGroups.length > 0" class="business-groups">
-              <el-tag v-for="group in selectedUser.businessGroups" :key="group.id" type="success" style="margin-right: 4px; margin-bottom: 2px;">
+              <el-tag v-for="group in selectedUser.businessGroups" :key="group.id" type="success"
+                style="margin-right: 4px; margin-bottom: 2px;">
                 {{ group.name }}
               </el-tag>
             </div>
@@ -107,11 +125,14 @@
           </el-descriptions-item>
           <el-descriptions-item :label="$t('admin.salesUsers.detail.status') || '状态'">
             <el-tag :type="selectedUser.isActive ? 'success' : 'danger'">
-              {{ selectedUser.isActive ? ($t('admin.salesUsers.table.active') || '已激活') : ($t('admin.salesUsers.table.inactive') || '未激活') }}
+              {{ selectedUser.isActive ? ($t('admin.salesUsers.table.active') || '已激活') :
+              ($t('admin.salesUsers.table.inactive') || '未激活') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item :label="$t('admin.salesUsers.detail.createdAt') || '注册时间'">{{ formatDate(selectedUser.createdAt) }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('admin.salesUsers.detail.updatedAt') || '更新时间'">{{ formatDate(selectedUser.updatedAt) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.createdAt') || '注册时间'">{{
+            formatDate(selectedUser.createdAt) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('admin.salesUsers.detail.updatedAt') || '更新时间'">{{
+            formatDate(selectedUser.updatedAt) }}</el-descriptions-item>
         </el-descriptions>
       </div>
       <template #footer>
@@ -125,16 +146,21 @@
     <el-dialog v-model="createDialogVisible" :title="$t('admin.salesUsers.create.title') || '新增业务员'" width="500px">
       <el-form :model="createForm" :rules="createRules" ref="createFormRef" label-width="100px">
         <el-form-item :label="$t('admin.salesUsers.create.name') || '姓名'" prop="username">
-          <el-input v-model="createForm.username" :placeholder="$t('admin.salesUsers.create.namePlaceholder') || '请输入姓名'" />
+          <el-input v-model="createForm.username"
+            :placeholder="$t('admin.salesUsers.create.namePlaceholder') || '请输入姓名'" />
         </el-form-item>
         <el-form-item :label="$t('admin.salesUsers.create.email') || '邮箱'" prop="email">
-          <el-input v-model="createForm.email" :placeholder="$t('admin.salesUsers.create.emailPlaceholder') || '请输入邮箱'" />
+          <el-input v-model="createForm.email"
+            :placeholder="$t('admin.salesUsers.create.emailPlaceholder') || '请输入邮箱'" />
         </el-form-item>
         <el-form-item :label="$t('admin.salesUsers.create.password') || '密码'" prop="password">
-          <el-input v-model="createForm.password" type="password" :placeholder="$t('admin.salesUsers.create.passwordPlaceholder') || '请输入密码'" show-password autocomplete="off" />
+          <el-input v-model="createForm.password" type="password"
+            :placeholder="$t('admin.salesUsers.create.passwordPlaceholder') || '请输入密码'" show-password
+            autocomplete="off" />
         </el-form-item>
         <el-form-item :label="$t('admin.salesUsers.create.businessGroup') || '业务组'" prop="businessGroupId">
-          <el-select v-model="createForm.businessGroupId" :placeholder="$t('admin.salesUsers.create.businessGroupPlaceholder') || '请选择业务组'" style="width: 100%">
+          <el-select v-model="createForm.businessGroupId"
+            :placeholder="$t('admin.salesUsers.create.businessGroupPlaceholder') || '请选择业务组'" style="width: 100%">
             <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id" />
           </el-select>
         </el-form-item>
@@ -142,7 +168,8 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="createDialogVisible = false">{{ $t('common.cancel') || '取消' }}</el-button>
-          <el-button type="primary" @click="createUser" :loading="creating">{{ creating ? ($t('common.creating') || '创建中...') : ($t('common.confirm') || '确定') }}</el-button>
+          <el-button type="primary" @click="createUser" :loading="creating">{{ creating ? ($t('common.creating') ||
+            '创建中...') : ($t('common.confirm') || '确定') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -157,10 +184,14 @@
           <el-input v-model="editForm.email" :placeholder="$t('admin.salesUsers.edit.emailPlaceholder') || '请输入邮箱'" />
         </el-form-item>
         <el-form-item :label="$t('admin.salesUsers.edit.password') || '密码'" prop="password">
-          <el-input v-model="editForm.password" type="password" :placeholder="$t('admin.salesUsers.edit.passwordPlaceholder') || '留空则不修改密码'" show-password autocomplete="off" />
+          <el-input v-model="editForm.password" type="password"
+            :placeholder="$t('admin.salesUsers.edit.passwordPlaceholder') || '留空则不修改密码'" show-password
+            autocomplete="off" />
         </el-form-item>
         <el-form-item :label="$t('admin.salesUsers.edit.businessGroups') || '业务组'" v-if="canEditBusinessGroup">
-          <el-select v-model="editForm.businessGroupIds" :placeholder="$t('admin.salesUsers.edit.businessGroupsPlaceholder') || '请选择业务组'" style="width: 100%" multiple clearable :disabled="!canEditBusinessGroup">
+          <el-select v-model="editForm.businessGroupIds"
+            :placeholder="$t('admin.salesUsers.edit.businessGroupsPlaceholder') || '请选择业务组'" style="width: 100%"
+            multiple clearable :disabled="!canEditBusinessGroup">
             <el-option v-for="group in businessGroups" :key="group.id" :label="group.name" :value="group.id">
               <span>{{ group.name }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">
@@ -169,14 +200,16 @@
             </el-option>
           </el-select>
           <div class="form-tip" v-if="!canEditBusinessGroup">
-            <el-text type="info" size="small">{{ $t('admin.salesUsers.edit.noPermissionTip') || '您没有权限修改业务组' }}</el-text>
+            <el-text type="info" size="small">{{ $t('admin.salesUsers.edit.noPermissionTip') || '您没有权限修改业务组'
+              }}</el-text>
           </div>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="editDialogVisible = false">{{ $t('common.cancel') || '取消' }}</el-button>
-          <el-button type="primary" @click="updateUser" :loading="updating">{{ updating ? ($t('common.updating') || '更新中...') : ($t('common.confirm') || '确定') }}</el-button>
+          <el-button type="primary" @click="updateUser" :loading="updating">{{ updating ? ($t('common.updating') ||
+            '更新中...') : ($t('common.confirm') || '确定') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -484,7 +517,7 @@ export default {
         }
         
         // 更新基本信息
-        const response = await this.$api.patch(`/admin/users/${this.editForm.id}`, updateData)
+        const response = await this.$api.put(`/admin/users/${this.editForm.id}`, updateData)
         
         if (response.success) {
           // 如果有权限且业务组发生变化，则更新业务组

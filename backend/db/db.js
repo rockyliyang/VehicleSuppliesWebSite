@@ -92,6 +92,7 @@ class DatabaseConnection {
 
 // 统一的连接获取方法
 async function getConnection() {
+
   if (DB_TYPE === 'postgresql') {
     const client = await pool.connect();
     return new DatabaseConnection(client, 'postgresql');

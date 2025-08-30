@@ -246,12 +246,12 @@ async function gracefulShutdown(signal, exitCode = 0) {
 // 优雅关闭服务器
 process.on('SIGTERM', () => {
   console.log(`[Signal] SIGTERM received - PID: ${process.pid}, Time: ${new Date().toISOString()}`);
-  gracefulShutdown('SIGTERM');
+  gracefulShutdown('SIGTERM',1);
 });
 
 process.on('SIGINT', () => {
   console.log(`[Signal] SIGINT received - PID: ${process.pid}, Time: ${new Date().toISOString()}`);
-  gracefulShutdown('SIGINT');
+  gracefulShutdown('SIGINT',1);
 });
 
 // 处理未捕获的异常

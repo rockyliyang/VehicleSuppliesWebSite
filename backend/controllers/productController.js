@@ -359,6 +359,18 @@ exports.getAllProducts = async (req, res) => {
     const { page = 1, limit = 10, sort_by = 'id', sort_order = 'desc', keyword, category_id, status, product_type } = req.query;
     const offset = (page - 1) * limit;
 
+    // 获取当前用户的is_super状态
+    let isSuper = false;
+    if (req.userId) {
+      const userResult = await query(
+        'SELECT is_super FROM users WHERE id = $1 AND deleted = false',
+        [req.userId]
+      );
+      if (userResult.getRowCount() > 0) {
+        isSuper = userResult.getFirstRow().is_super;
+      }
+    }
+
     let querystr = `
       SELECT p.*, c.name as category_name, 
         (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1) as thumbnail_url
@@ -368,6 +380,9 @@ exports.getAllProducts = async (req, res) => {
     `;
     const params = [];
     let paramIndex = 1;
+
+    // 如果不是超级用户，只能访问上架状态的产品
+
 
     if (keyword) {
       querystr += ` AND (p.name ILIKE $${paramIndex} OR p.product_code ILIKE $${paramIndex + 1})`;
@@ -381,10 +396,18 @@ exports.getAllProducts = async (req, res) => {
       paramIndex += 1;
     }
 
-    if (status !== undefined) {
-      querystr += ` AND p.status = $${paramIndex}`;
-      params.push(status);
-      paramIndex += 1;
+    // 如果是管理员或业务员，可以通过status参数过滤
+    if (req.userRole === 'admin' || req.userRole === 'business') {
+      if (status !== undefined) {
+        querystr += ` AND p.status = $${paramIndex}`;
+        params.push(status);
+        paramIndex += 1;
+      }
+    } else {
+      // 如果不是超级用户，只能访问上架状态的产品
+      if (!isSuper) {
+        querystr += ` AND p.status = 'on_shelf'`;
+      }
     }
 
     if (product_type) {

@@ -3777,6 +3777,19 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'admin.users.actions.edit_group', 'en', 'Edit Group'),
 (gen_random_uuid(), 'admin.users.actions.edit_group', 'zh-CN', '修改业务组'),
 
+
+
+(gen_random_uuid(), 'admin.users.table.isSuper', 'en', 'Is Super User'),
+(gen_random_uuid(), 'admin.users.table.isSuper', 'zh-CN', '是否超级用户'),
+(gen_random_uuid(), 'admin.users.status.super', 'en', 'Super User'),
+(gen_random_uuid(), 'admin.users.status.super', 'zh-CN', '超级用户'),
+(gen_random_uuid(), 'admin.users.status.normal', 'en', 'Normal User'),
+(gen_random_uuid(), 'admin.users.status.normal', 'zh-CN', '普通用户'),
+(gen_random_uuid(), 'admin.users.editDialog.setSuperStatus', 'en', 'Set Super User Status'),
+(gen_random_uuid(), 'admin.users.editDialog.setSuperStatus', 'zh-CN', '设置超级用户状态'),
+(gen_random_uuid(), 'admin.users.editDialog.superDescription', 'en', 'Super users have full access to the system.'),
+(gen_random_uuid(), 'admin.users.editDialog.superDescription', 'zh-CN', '超级用户具有系统的完全访问权限。'),
+
 -- 通用按钮和状态翻译
 (gen_random_uuid(), 'common.saving', 'en', 'Saving...'),
 (gen_random_uuid(), 'common.saving', 'zh-CN', '保存中...'),
@@ -3800,8 +3813,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'admin.users.status.inactive', 'zh-CN', '未激活'),
 (gen_random_uuid(), 'admin.users.table.createdAt', 'en', 'Registration Time'),
 (gen_random_uuid(), 'admin.users.table.createdAt', 'zh-CN', '注册时间'),
-(gen_random_uuid(), 'admin.users.dialog.title', 'en', 'Modify User Business Group'),
-(gen_random_uuid(), 'admin.users.dialog.title', 'zh-CN', '修改用户业务组'),
+(gen_random_uuid(), 'admin.users.dialog.title', 'en', 'Modify User Information'),
+(gen_random_uuid(), 'admin.users.dialog.title', 'zh-CN', '修改用户信息'),
 (gen_random_uuid(), 'admin.users.dialog.userName', 'en', 'User Name'),
 (gen_random_uuid(), 'admin.users.dialog.userName', 'zh-CN', '用户姓名'),
 (gen_random_uuid(), 'admin.users.dialog.userEmail', 'en', 'User Email'),

@@ -56,9 +56,9 @@ export async function createOrOpenInquiry(product, context) {
       });
       
       // 刷新询价单详情
-      const inquiryResponse = await context.$api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
-        fallbackKey: 'product.error.refreshInquiryFailed'
-      });
+      //const inquiryResponse = await context.$api.getWithErrorHandler(`/inquiries/${inquiryId}`, {
+      //  fallbackKey: 'product.error.refreshInquiryFailed'
+     // });
       
       //context.$messageHandler.showSuccess(
         //context.$t('product.success.inquiryCreated') || 'Inquiry created successfully',
@@ -68,8 +68,8 @@ export async function createOrOpenInquiry(product, context) {
       return {
         inquiryId: inquiryId,
         isNew: true,
-        inquiry: createInquiryResponse.data,
-        items: inquiryResponse.data.items || []
+        //inquiry: createInquiryResponse.data,
+        //items: inquiryResponse.data.items || []
       };
     }
   } catch (error) {
@@ -124,11 +124,6 @@ export async function handleChatNow(product, context, showLoginDialog, showInqui
     // 显示询价对话框
     showInquiryDialog({
       inquiryId: result.inquiryId,
-      isNew: result.isNew,
-      product: product,
-      quantity: 1,
-      inquiry: result.inquiry,
-      items: result.items
     });
     
     return true;

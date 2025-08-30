@@ -425,18 +425,13 @@ export default {
           width: item.product_width,
           height: item.product_height,
           weight: item.product_weight,
-          selected: true
-        }));
-        
-        // 为每个商品添加inquiry_id标识，用于UnifiedCheckout识别订单来源
-        const cartItemsWithInquiry = cartItems.map(item => ({
-          ...item,
+          selected: true,
           inquiry_id: this.inquiry.id
         }));
         
-        console.log('cartItemsWithInquiry:', cartItemsWithInquiry);
+        console.log('cartItemsWithInquiry:', cartItems);
         // 将商品数据存储到sessionStorage，供UnifiedCheckout页面使用
-        sessionStorage.setItem('selectedCartItems', JSON.stringify(cartItemsWithInquiry));
+        sessionStorage.setItem('selectedCartItems', JSON.stringify(cartItems));
         
         // 发出checkout事件，更新询价单状态为Checkouted
         this.$emit('checkout-inquiry', this.inquiry.id);

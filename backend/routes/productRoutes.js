@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
-const { verifyToken } = require('../middleware/jwt');
+const { verifyToken, optionalToken } = require('../middleware/jwt');
 
-// Public routes - no JWT auth required
-router.get('/', productController.getAllProducts);
+// Public routes - optional JWT auth (can get user info if logged in)
+router.get('/', optionalToken, productController.getAllProducts);
 router.get('/search', productController.searchProducts);
 router.get('/:id', productController.getProductById);
 router.get('/:productId/price', productController.getPriceByQuantity);

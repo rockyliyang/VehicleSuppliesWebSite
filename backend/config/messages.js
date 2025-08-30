@@ -386,6 +386,7 @@ const MESSAGES = {
     NO_FIELDS_TO_UPDATE: 'No fields to update',
     USER_UPDATE_SUCCESS: 'User updated successfully',
     USER_UPDATE_FAILED: 'Failed to update user',
+    PASSWORD_TOO_SHORT: 'Password must be at least 6 characters long',
     CANNOT_DELETE_SELF: 'Cannot delete your own account',
      CANNOT_DELETE_ADMIN: 'Cannot delete admin account',
      CANNOT_DELETE_REGULAR_USER: 'Cannot delete regular user account',
