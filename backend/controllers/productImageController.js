@@ -32,7 +32,7 @@ const uploadMain = multer({
   storage: storage, 
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|avif)$/)) {
       return cb(new Error(getMessage('PRODUCT_IMAGE.INVALID_FILE_TYPE')), false);
     }
     cb(null, true);
@@ -44,7 +44,7 @@ const uploadCarousel = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB限制，支持视频
   fileFilter: function (req, file, cb) {
     // 支持图片和视频格式
-    const isImage = file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/);
+    const isImage = file.originalname.match(/\.(jpg|jpeg|png|gif|webp|avif)$/);
     const isVideo = file.originalname.match(/\.(mp4|webm|ogg)$/);
     
     if (!isImage && !isVideo) {

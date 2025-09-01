@@ -93,7 +93,7 @@ async function fetchExchangeRates() {
   }
 }
 
-fetchExchangeRates();
+//fetchExchangeRates();
 // 设置每天上午10点执行汇率获取任务
 cron.schedule('0 10 * * *', fetchExchangeRates, {
   scheduled: true,

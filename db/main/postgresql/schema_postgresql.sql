@@ -825,7 +825,7 @@ INSERT INTO company_info (guid, company_name, address, phone, email) VALUES (gen
 INSERT INTO site_settings (guid, setting_key, setting_value, setting_group) VALUES 
 (gen_random_uuid(), 'site_logo', '/static/images/logo.png', 'general'),
 (gen_random_uuid(), 'site_title', 'AUTO EASE EXPERT CO., LTD', 'general'),
-(gen_random_uuid(), 'copyright_text', '© 2023 AUTO EASE EXPERT CO., LTD. All Rights Reserved', 'general');
+(gen_random_uuid(), 'copyright_text', '© 2025 AUTO EASE EXPERT CO., LTD. All Rights Reserved', 'general');
 
 -- 第三方登录记录表
 CREATE TABLE IF NOT EXISTS third_party_logins (
@@ -927,7 +927,7 @@ CREATE TRIGGER update_user_products_modtime
 
 -- 创建默认管理员用户 (密码: admin123)
 INSERT INTO users (guid, username, password, email, user_role) 
-VALUES (gen_random_uuid(), 'admin', '$2a$10$NlSQyZ/jQTcsdZdvnAQ27eGGmSSZJ1WXvVLGx.5xwAhSMKqs7OIbW', 'admin@autoeasetechx.com', 'admin');
+VALUES (gen_random_uuid(), 'admin', '$2a$10$cwY5LmaMC5j17oqGUKmBMe5FCSizuXvqMi23rpqEGFpIc4NRd2PTS', 'admin@autoeasetechx.com', 'admin');
 
 
 -- 用户地址表
@@ -1132,49 +1132,5 @@ ALTER TABLE product_review_images ADD CONSTRAINT fk_product_review_images_update
 -- 创建更新时间戳触发器
 CREATE TRIGGER update_product_review_images_modtime
     BEFORE UPDATE ON product_review_images
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
--- Banner表
-CREATE TABLE IF NOT EXISTS banners (
-  id BIGSERIAL PRIMARY KEY,
-  guid UUID DEFAULT gen_random_uuid() NOT NULL,
-  image_url VARCHAR(512) NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  link VARCHAR(512),
-  sort_order INT NOT NULL DEFAULT 0,
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  deleted BOOLEAN NOT NULL DEFAULT FALSE,
-  created_by BIGINT DEFAULT NULL,
-  updated_by BIGINT DEFAULT NULL
-);
-
--- 添加注释
-COMMENT ON TABLE banners IS 'Banner轮播图表';
-COMMENT ON COLUMN banners.image_url IS 'Banner图片URL';
-COMMENT ON COLUMN banners.title IS 'Banner标题';
-COMMENT ON COLUMN banners.description IS 'Banner描述';
-COMMENT ON COLUMN banners.link IS 'Banner链接地址';
-COMMENT ON COLUMN banners.sort_order IS '排序字段，数值越大排序越靠前';
-COMMENT ON COLUMN banners.is_active IS '是否启用';
-COMMENT ON COLUMN banners.created_by IS '创建者用户ID';
-COMMENT ON COLUMN banners.updated_by IS '最后更新者用户ID';
-
--- 创建普通索引
-CREATE INDEX idx_banners_sort_order ON banners (sort_order DESC);
-CREATE INDEX idx_banners_is_active ON banners (is_active);
-CREATE INDEX idx_banners_created_by ON banners (created_by);
-CREATE INDEX idx_banners_updated_by ON banners (updated_by);
-
--- 添加外键约束
-ALTER TABLE banners ADD CONSTRAINT fk_banners_created_by FOREIGN KEY (created_by) REFERENCES users(id);
-ALTER TABLE banners ADD CONSTRAINT fk_banners_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
-
--- 创建更新时间戳触发器
-CREATE TRIGGER update_banners_modtime
-    BEFORE UPDATE ON banners
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();

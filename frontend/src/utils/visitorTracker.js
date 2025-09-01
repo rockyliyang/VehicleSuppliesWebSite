@@ -183,7 +183,7 @@ class VisitorTracker {
       
       if (navigator.sendBeacon) {
         const blob = new Blob([JSON.stringify(updateData)], { type: 'application/json' })
-        navigator.sendBeacon('/api/visitor-logs/update-duration', blob)
+        navigator.sendBeacon('/api/visitor-logs/duration', blob)
       } else {
         this.sendSiteExitLog()
       }
@@ -275,7 +275,7 @@ class VisitorTracker {
         const blob = new Blob([JSON.stringify(updateData)], { type: 'application/json' })
         navigator.sendBeacon('/api/visitor-logs/update-duration', blob)
       } else {
-        await api.patchWithErrorHandler('/visitor-logs/update-duration', updateData, {
+        await api.putWithErrorHandler('/visitor-logs/duration', updateData, {
           fallbackKey: 'VISITOR_TRACK_EXIT_FAILED'
         })
       }
