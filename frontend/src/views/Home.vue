@@ -202,8 +202,10 @@ export default {
 
     // 更新Banner高度
     updateBannerHeight() {
-      if (window.innerWidth <= 768) {
-        this.bannerHeight = '250px';
+      if (window.innerWidth <= 480) {
+        this.bannerHeight = '176px'; // 与CSS变量$mobile-banner-height-sm保持一致
+      } else if (window.innerWidth <= 768) {
+        this.bannerHeight = '224px'; // 与CSS变量$mobile-banner-height-md保持一致
       } else if (window.innerWidth <= 1024) {
         this.bannerHeight = '350px';
       } else {

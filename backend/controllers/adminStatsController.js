@@ -20,8 +20,8 @@ exports.getDashboardStats = async (req, res) => {
     const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
     
     // 为每个子查询生成独立的占位符
-    const placeholders2 = managedUserIds.map((_, index) => `$${params.length + index + 1}`).join(',');
-    const placeholders3 = managedUserIds.map((_, index) => `$${params.length * 2 + index + 1}`).join(',');
+    const { placeholders: placeholders2, params: params2 } = generateUserIdsPlaceholders(managedUserIds);
+    const { placeholders: placeholders3, params: params3 } = generateUserIdsPlaceholders(managedUserIds);
     
     // 获取统计数据（只统计管理的用户相关数据）
     const stats = await query(`
@@ -32,7 +32,7 @@ exports.getDashboardStats = async (req, res) => {
         (SELECT COUNT(*) FROM inquiry_messages im 
          INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
          WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id IN (${placeholders3})) as message_count
-    `, [...params, ...params, ...params]);
+    `, [...params, ...params2, ...params3]);
 
     // 获取用户统计（只统计管理的用户）
     const userStats = await query(`
@@ -260,7 +260,7 @@ exports.getBusinessDashboardStats = async (req, res) => {
         (SELECT COUNT(*) FROM inquiry_messages im 
          INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
          WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id IN (${placeholders})) as unread_user_messages
-    `, params);
+    `, [...params, ...params, ...params, ...params, ...params, ...params, ...params]);
 
     // 获取消息统计
     const messageStats = await query(`
@@ -289,7 +289,7 @@ exports.getBusinessDashboardStats = async (req, res) => {
          WHERE deleted = false AND DATE(created_at) = CURRENT_DATE AND user_id IN (${placeholders})) as today_inquiries,
         (SELECT COUNT(*) FROM orders 
          WHERE deleted = false AND DATE(created_at) = CURRENT_DATE AND user_id IN (${placeholders})) as today_orders
-    `, params);
+    `, [...params, ...params, ...params]);
 
     // 获取新订单数量（最近7天）
     const newOrdersStats = await query(`

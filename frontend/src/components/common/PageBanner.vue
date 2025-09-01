@@ -40,7 +40,7 @@ export default {
 
 /* Modern Banner */
 .page-banner {
-  height: $banner-height;
+  height: $banner-height-desktop;
   background: v-bind('`url(${bannerImage}) center/cover`');
   @include flex-center;
   color: $white;
@@ -91,15 +91,13 @@ export default {
 }
 
 /* 移动端适配 */
-@include mobile {
+@media (max-width: $mobile-breakpoint-md) {
   .page-banner {
-    height: $banner-height-mobile;
-    /* 使用变量定义的移动端高度 */
+    height: $mobile-banner-height-md;
   }
 
   .banner-title {
     font-size: $font-size-2xl;
-    /* 减小移动端标题字体 */
     margin: 0 0 $spacing-md 0;
     line-height: 1.2;
   }
@@ -110,7 +108,6 @@ export default {
   }
 }
 
-/* 超小屏幕适配 */
 @media (max-width: $mobile-breakpoint-sm) {
   .page-banner {
     height: $mobile-banner-height-sm;

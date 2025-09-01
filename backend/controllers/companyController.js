@@ -59,7 +59,7 @@ exports.uploadImage = async (req, res) => {
   }
   
   const ext = path.extname(req.file.originalname).toLowerCase();
-  if (ext !== '.jpg' && ext !== '.jpeg' && ext !== '.png') {
+  if (ext !== '.jpg' && ext !== '.jpeg' && ext !== '.png' && ext !== '.webp') {
     fs.unlinkSync(req.file.path);
     return res.json({ success: false, message: getMessage('COMPANY.INVALID_FILE_FORMAT'), data: null });
   }

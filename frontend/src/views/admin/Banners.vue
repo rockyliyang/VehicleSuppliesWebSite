@@ -33,14 +33,15 @@
     </el-table>
 
     <!-- Banner表单对话框 -->
-    <el-dialog :title="dialogStatus === 'create' ? '添加Banner' : '编辑Banner'" v-model="dialogVisible" width="600px" :close-on-click-modal="false">
+    <el-dialog :title="dialogStatus === 'create' ? '添加Banner' : '编辑Banner'" v-model="dialogVisible" width="600px"
+      :close-on-click-modal="false">
       <el-form :model="bannerForm" :rules="rules" ref="bannerForm" label-width="100px">
         <el-form-item label="标题" prop="title">
           <el-input v-model="bannerForm.title" placeholder="请输入标题" @input="updateUploadData" />
         </el-form-item>
         <el-form-item label="Banner图片" prop="image_url">
-          <el-upload class="banner-uploader" action="/api/company/upload/image" :show-file-list="false" :on-success="handleImageSuccess"
-            :before-upload="beforeImageUpload" :data="uploadData">
+          <el-upload class="banner-uploader" action="/api/company/upload/image" :show-file-list="false"
+            :on-success="handleImageSuccess" :before-upload="beforeImageUpload" :data="uploadData">
             <img v-if="bannerForm.image_url" :src="bannerForm.image_url" class="banner-preview">
             <el-icon v-else class="banner-uploader-icon">
               <Plus />
@@ -262,15 +263,16 @@ export default {
       
       const isJPG = file.type === 'image/jpeg'
       const isPNG = file.type === 'image/png'
+      const isWebp = file.type === 'image/webp'
       const isLt2M = file.size / 1024 / 1024 < 2
 
-      if (!isJPG && !isPNG) {
-        this.$messageHandler.showError('上传图片只能是 JPG 或 PNG 格式!', 'admin.banners.error.invalidFormat')
+      if (!isJPG && !isPNG && !isWebp) {
+        this.$messageHandler.showError('上传图片只能是 JPG , PNG , WebP 格式!', 'admin.banners.error.invalidFormat')
       }
       if (!isLt2M) {
         this.$messageHandler.showError('上传图片大小不能超过 2MB!', 'admin.banners.error.fileTooLarge')
       }
-      return (isJPG || isPNG) && isLt2M
+      return (isJPG || isPNG || isWebp) && isLt2M
     }
   }
 }
