@@ -264,17 +264,23 @@ class VisitorTracker {
       const isBounce = !this.hasInteracted && duration < 30 // 30秒内无交互认为是跳出
       
       const updateData = {
-        sessionId: this.sessionId,
-        pageUrl: window.location.pathname + window.location.search,
+        session_id: this.sessionId,
+        page_url: window.location.pathname + window.location.search,
         duration: duration,
-        isBounce: isBounce
+        is_bounce: isBounce
       }
       
       // 使用 sendBeacon 确保数据能够发送
-      if (navigator.sendBeacon) {
-        const blob = new Blob([JSON.stringify(updateData)], { type: 'application/json' })
-        navigator.sendBeacon('/api/visitor-logs/update-duration', blob)
-      } else {
+      if ('fetch' in window) {
+        await fetch('/api/visitor-logs/duration', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData),
+        keepalive: true  // 关键：页面卸载时保持请求
+      })
+    } else {
         await api.putWithErrorHandler('/visitor-logs/duration', updateData, {
           fallbackKey: 'VISITOR_TRACK_EXIT_FAILED'
         })

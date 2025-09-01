@@ -4223,6 +4223,11 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'inquiry.salesRep', 'zh-CN', '销售代表'),
 (gen_random_uuid(), 'inquiry.fetchError', 'en', 'Failed to fetch inquiries'),
 (gen_random_uuid(), 'inquiry.fetchError', 'zh-CN', '获取询价单失败'),
+
+(gen_random_uuid(), 'inquiry.searchProductPlaceholder', 'en', 'Search for products'),
+(gen_random_uuid(), 'inquiry.searchProductPlaceholder', 'zh-CN', '搜索产品'),
+
+
 (gen_random_uuid(), 'INQUIRY.CREATE.FAILED', 'en', 'Failed to create inquiry'),
 (gen_random_uuid(), 'INQUIRY.CREATE.FAILED', 'zh-CN', '创建询价单失败'),
 

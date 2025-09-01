@@ -100,8 +100,8 @@
       </div>
 
       <!-- Inquiry Detail Panel -->
-      <InquiryDetailPanel :inquiry-id="activeInquiryId" @remove-item="removeFromInquiry" @item-added="handleItemAdded"
-        @update-message="updateInquiryMessage" @checkout-inquiry="handleCheckoutInquiry"
+      <InquiryDetailPanel ref="inquiryDetailPanel" :inquiry-id="activeInquiryId" @remove-item="handleItemRemoved"
+        @item-added="handleItemAdded" @update-message="updateInquiryMessage" @checkout-inquiry="handleCheckoutInquiry"
         @new-messages-received="handleNewMessagesReceived" />
     </div>
   </div>
@@ -208,6 +208,12 @@ export default {
       try {
         //MessageHandler.showInfo(this.$t('cart.refreshingInquiries') || '正在刷新询价单...', 'INQUIRY.REFRESHING');
         await this.fetchInquiries();
+        
+        // 如果有激活的询价单，也刷新详情面板
+        if (this.activeInquiryId && this.$refs.inquiryDetailPanel) {
+          await this.$refs.inquiryDetailPanel.fetchInquiryDetails();
+        }
+        
         //MessageHandler.showSuccess(this.$t('cart.inquiriesRefreshed') || '询价单已刷新', 'INQUIRY.REFRESHED');
       } catch (error) {
         console.error('刷新询价单失败:', error);
@@ -414,7 +420,7 @@ export default {
         this.$messageHandler.showWarning(this.$t('cart.productAlreadyInInquiry') || `商品 "${cartItem.name}" 已在其他询价单中`, 'cart.warning.productAlreadyInInquiry');
         return;
       }
-      
+      console.log('cartItem',cartItem);
       try {
         const response = await api.postWithErrorHandler(`/inquiries/${this.activeInquiryId}/items`, {
           productId: cartItem.product_id,
@@ -488,10 +494,10 @@ export default {
       
       //let successCount = 0;
       let failedItems = [];
-      
+      console.log('addMultipleToInquiry:',itemsToAdd)
       for (const cartItem of itemsToAdd) {
         try {
-          const response = await api.postWithErrorHandler(`/inquiries/${this.activeInquiryId}/items`, {
+          const response = await api.post(`/inquiries/${this.activeInquiryId}/items`, {
             productId: cartItem.product_id,
             quantity: cartItem.quantity || 1,
             unitPrice: cartItem.price
@@ -513,6 +519,11 @@ export default {
               
               activeInquiry.items.push(inquiryItem);
               
+              // 立即通知 InquiryDetailPanel 添加新商品
+              if (this.$refs.inquiryDetailPanel && this.$refs.inquiryDetailPanel.inquiry && this.$refs.inquiryDetailPanel.inquiry.id === this.activeInquiryId) {
+                this.$refs.inquiryDetailPanel.inquiry.items.push(inquiryItem);
+              }
+              
               // 更新已询价商品ID集合
               const updatedInquiredProductIds = new Set(this.inquiredProductIds);
               updatedInquiredProductIds.add(cartItem.product_id);
@@ -527,6 +538,7 @@ export default {
         }
       }
       
+      // 移除批量刷新，因为现在每个商品添加后都会立即更新
       // 显示结果消息
       //if (successCount > 0) {
         //MessageHandler.showSuccess(
@@ -534,12 +546,12 @@ export default {
         //);
       //}
       
-      if (failedItems.length > 0) {
+      /*if (failedItems.length > 0) {
         this.$messageHandler.showWarning(
           this.$t('cart.someItemsFailedToAdd', { items: failedItems.join(', ') }) || `以下商品添加失败: ${failedItems.join(', ')}`,
           'INQUIRY.ADD_MULTIPLE_ITEMS.PARTIAL_FAILED'
         );
-      }
+      }*/
     },
     
     // 处理添加商品事件
@@ -555,30 +567,20 @@ export default {
       }
     },
     
-    async removeFromInquiry(inquiryId, itemId, productId) {
-      try {
-        await api.deleteWithErrorHandler(`/inquiries/${inquiryId}/items/${itemId}`, {
-          fallbackKey: 'INQUIRY.ITEM.DELETE.FAILED'
-        });
-        
-        // 从前端数据中移除商品
-        const inquiry = this.inquiries.find(inquiry => inquiry.id === inquiryId);
-        if (inquiry) {
-          const itemIndex = inquiry.items.findIndex(item => item.id === itemId);
-          if (itemIndex !== -1) {
-            inquiry.items.splice(itemIndex, 1);
-            
-            // 更新已询价商品ID集合并通知父组件
-            const updatedInquiredProductIds = new Set(this.inquiredProductIds);
-            updatedInquiredProductIds.delete(productId);
-            this.$emit('update-inquired-products', updatedInquiredProductIds);
-          }
+    // 处理商品删除事件（仅更新已询价商品ID集合）
+    handleItemRemoved(inquiryId, itemId, productId) {
+      // 从前端数据中移除商品
+      const inquiry = this.inquiries.find(inquiry => inquiry.id === inquiryId);
+      if (inquiry) {
+        const itemIndex = inquiry.items.findIndex(item => item.id === itemId);
+        if (itemIndex !== -1) {
+          inquiry.items.splice(itemIndex, 1);
+          
+          // 更新已询价商品ID集合并通知父组件
+          const updatedInquiredProductIds = new Set(this.inquiredProductIds);
+          updatedInquiredProductIds.delete(productId);
+          this.$emit('update-inquired-products', updatedInquiredProductIds);
         }
-        
-        //this.$messageHandler.showSuccess(this.$t('cart.itemRemovedFromInquiry') || '商品已从询价单中移除', 'INQUIRY.ITEM.DELETE.SUCCESS');
-      } catch (error) {
-        console.error('删除询价商品失败:', error);
-        this.$messageHandler.showError(this.$t('cart.removeFromInquiryFailed') || '删除询价商品失败', 'INQUIRY.ITEM.DELETE.FAILED');
       }
     },
     

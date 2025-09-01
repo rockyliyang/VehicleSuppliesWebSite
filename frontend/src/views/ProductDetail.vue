@@ -280,14 +280,14 @@
     </div>
 
     <!-- 立即购买对话框 -->
-    <BuyNowDialog v-model="showBuyNowDialog" :product="product" :initial-quantity="1" @checkout="handleCheckout" />
+    <BuyNowDialog v-model="showBuyNowDialog" :product="product" :initial-quantity="getMinQuantityFromPriceRanges(product)" @checkout="handleCheckout" />
   </div>
 </template>
 
 <script>
 // 使用全局注册的$api替代axios
 import { handleImageError } from '../utils/imageUtils';
-import { handleChatNow, handleAddToCart, handleLoginSuccess,  addBrowsingHistory, checkFavoriteStatus } from '../utils/productUtils';
+import { handleChatNow, handleAddToCart, handleLoginSuccess,  addBrowsingHistory, checkFavoriteStatus, getMinQuantityFromPriceRanges } from '../utils/productUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import InquiryDetailPanel from '../components/common/InquiryDetailPanel.vue'
@@ -801,16 +801,23 @@ export default {
       this.$router.push('/contact');
     },
     
+    // 获取价格范围中的最小数量
+    getMinQuantityFromPriceRanges(product) {
+      return getMinQuantityFromPriceRanges(product);
+    },
+    
     async addToCart() {
       if (this.addingToCart) return;
       
+      const minQuantity = this.getMinQuantityFromPriceRanges(this.product);
       const success = await handleAddToCart(
         this.product, 
         this, 
         this.showLoginDialog, 
         (loading) => {
           this.addingToCart = loading;
-        }
+        },
+        minQuantity
       );
       
       if (!success) {

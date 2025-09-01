@@ -55,8 +55,9 @@ exports.getManagedUserIds = async (adminUserId) => {
  */
 exports.generateUserIdsPlaceholders = (userIds) => {
   if (!userIds || userIds.length === 0) {
+    // 当没有用户ID时，返回一个永远不匹配的条件
     return {
-      placeholders: 'NULL',
+      placeholders: '-1',
       params: []
     };
   }

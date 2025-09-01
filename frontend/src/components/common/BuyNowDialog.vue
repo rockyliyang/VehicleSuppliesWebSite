@@ -25,7 +25,7 @@
         <!-- 数量选择 -->
         <div class="quantity-section">
           <label class="quantity-label">{{ $t('productDetail.quantity') || '数量' }}:</label>
-          <el-input-number v-model="quantity" :min="1" :max="maxQuantity" size="default" controls-position="right"
+          <el-input-number v-model="quantity" :min="minQuantity" :max="maxQuantity" size="default" controls-position="right"
             @change="calculatePrice">
           </el-input-number>
         </div>
@@ -77,6 +77,7 @@
 
 <script>
 import { Close } from '@element-plus/icons-vue'
+import { getMinQuantityFromPriceRanges } from '@/utils/productUtils'
 
 export default {
   name: 'BuyNowDialog',
@@ -126,6 +127,9 @@ export default {
       }
       // 其他类型商品没有库存限制
       return 999999
+    },
+    minQuantity() {
+      return getMinQuantityFromPriceRanges(this.product)
     }
   },
   watch: {

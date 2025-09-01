@@ -71,7 +71,7 @@
                   <!-- single类型的询价不允许删除商品，checkout模式下隐藏删除按钮 -->
                   <button v-if="!isCheckoutMode && inquiry.inquiry_type !== 'single'"
                     class="remove-item-btn remove-inquiry-item-btn"
-                    @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)"
+                    @click="removeItem(item)"
                     :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
                     <i class="material-icons">remove_circle_outline</i>
@@ -190,7 +190,7 @@
                   <!-- single类型的询价不允许删除商品，checkout模式下隐藏删除按钮 -->
                   <button v-if="!isCheckoutMode && inquiry.inquiry_type !== 'single'"
                     class="remove-item-btn remove-inquiry-item-btn"
-                    @click="$emit('remove-item', inquiry.id, item.id, item.product_id || item.productId)"
+                    @click="removeItem(item)"
                     :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
                     <i class="material-icons">remove_circle_outline</i>
@@ -283,6 +283,7 @@
 <script>
 import CommunicationSection from './CommunicationSection.vue';
 import { calculatePriceByQuantity, getPriceRangeDisplayUtil } from '@/utils/priceUtils';
+import { getMinQuantityFromPriceRanges } from '@/utils/productUtils';
 
 export default {
   name: 'InquiryDetailPanel',
@@ -339,6 +340,7 @@ export default {
       }
     }
   },
+
   computed: {
     // 计算总价
     totalPrice() {
@@ -512,9 +514,12 @@ export default {
       }
       
       try {
+        // 获取产品的最小数量
+        const minQuantity = this.getMinQuantityFromPriceRanges(product);
+        
         const response = await this.$api.postWithErrorHandler(`/inquiries/${this.inquiry.id}/items`, {
           productId: product.id,
-          quantity: 1,
+          quantity: minQuantity,
           unitPrice: product.price
         }, {
           fallbackKey: 'INQUIRY.ADD_ITEM.FAILED'
@@ -534,6 +539,10 @@ export default {
             unit_price: response.data.unit_price || product.price,
             price: response.data.price || response.data.unit_price || product.price
           };
+          
+          // 更新本地询价单列表
+          this.inquiry.items.push(newItem);
+          
           this.$emit('item-added', newItem);
           this.cancelAddProduct();
         }
@@ -568,6 +577,16 @@ export default {
         return;
       }
       
+      // 使用本地价格范围数据验证最小数量
+      if (item.price_ranges && item.price_ranges.length > 0) {
+        const minQuantity = this.getMinQuantityFromPriceRanges({ price_ranges: item.price_ranges });
+        if (item.quantity < minQuantity) {
+          this.$messageHandler.showWarning(`数量不能小于最小起订量 ${minQuantity}`);
+          item.quantity = minQuantity;
+          return;
+        }
+      }
+      
       try {
         const response = await this.$api.putWithErrorHandler(`/inquiries/${this.inquiry.id}/items/${item.id}`, {
           quantity: item.quantity
@@ -584,8 +603,25 @@ export default {
     },
     
     // 移除商品
-    removeItem(item) {
-      this.$emit('remove-item', item);
+    async removeItem(item) {
+      try {
+        await this.$api.deleteWithErrorHandler(`/inquiries/${this.inquiry.id}/items/${item.id}`, {
+          fallbackKey: 'INQUIRY.ITEM.DELETE.FAILED'
+        });
+        
+        // 直接从本地数据中移除商品
+        const itemIndex = this.inquiry.items.findIndex(i => i.id === item.id);
+        if (itemIndex !== -1) {
+          this.inquiry.items.splice(itemIndex, 1);
+        }
+        
+        // 通知父组件更新已询价商品ID集合
+        this.$emit('remove-item', this.inquiry.id, item.id, item.product_id || item.productId);
+        
+      } catch (error) {
+        console.error('删除询价商品失败:', error);
+        this.$messageHandler.showError(this.$t('cart.removeFromInquiryFailed') || '删除询价商品失败', 'INQUIRY.ITEM.DELETE.FAILED');
+      }
     },
     
     // 显示添加产品表单
@@ -614,6 +650,11 @@ export default {
       
       // 如果没有价格范围，返回原始价格或默认价格
       return item.original_price || item.price || 0;
+    },
+    
+    // 获取产品的最小数量
+    getMinQuantityFromPriceRanges(product) {
+      return getMinQuantityFromPriceRanges(product);
     }
   }
 };

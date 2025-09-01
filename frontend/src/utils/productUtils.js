@@ -3,6 +3,21 @@
  */
 
 /**
+ * 获取产品价格范围中的最小数量
+ * @param {Object} product - 产品对象
+ * @returns {number} 最小数量，默认为1
+ */
+export function getMinQuantityFromPriceRanges(product) {
+  if (!product || !product.price_ranges || !Array.isArray(product.price_ranges) || product.price_ranges.length === 0) {
+    return 1;
+  }
+  
+  // 按最小数量排序，取第一个（最小的）
+  const sortedRanges = [...product.price_ranges].sort((a, b) => a.min_quantity - b.min_quantity);
+  return sortedRanges[0].min_quantity || 1;
+}
+
+/**
  * 创建询价单或打开现有询价单
  * @param {Object} product - 产品对象
  * @param {Object} context - Vue组件上下文对象，包含 $api, $messageHandler, $t 等
@@ -48,9 +63,10 @@ export async function createOrOpenInquiry(product, context) {
       const inquiryId = createInquiryResponse.data.id;
       
       // 添加商品到询价单（不传递单价，由管理员后续设置）
+      const minQuantity = getMinQuantityFromPriceRanges(product);
       await context.$api.postWithErrorHandler(`/inquiries/${inquiryId}/items`, {
         productId: product.id,
-        quantity: 1
+        quantity: minQuantity
       }, {
         fallbackKey: 'product.error.addItemToInquiryFailed'
       });
@@ -138,9 +154,10 @@ export async function handleChatNow(product, context, showLoginDialog, showInqui
  * @param {Object} context - Vue组件上下文对象
  * @param {Function} showLoginDialog - 显示登录对话框的回调函数
  * @param {Function} setAddingState - 设置添加状态的回调函数
+ * @param {number} quantity - 添加数量，默认为1
  * @returns {Promise<boolean>} 返回是否成功添加
  */
-export async function handleAddToCart(product, context, showLoginDialog, setAddingState) {
+export async function handleAddToCart(product, context, showLoginDialog, setAddingState, quantity = 1) {
   // 检查用户是否已登录
   if (!context.$store.getters.isLoggedIn) {
     // 显示登录对话框
@@ -160,7 +177,7 @@ export async function handleAddToCart(product, context, showLoginDialog, setAddi
       api: context.$api,
       messageHandler: context.$messageHandler,
       $bus: context.$bus
-    });
+    }, quantity);
     
     return true;
   } catch (error) {

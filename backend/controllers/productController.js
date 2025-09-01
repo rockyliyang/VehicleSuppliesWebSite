@@ -98,6 +98,32 @@ const formatPriceRangeDisplay = (priceRanges, currencySymbol = '$') => {
   }).join('; ');
 };
 
+// 公共函数：获取产品的阶梯价格
+const getProductPriceRanges = async (productIds) => {
+  if (!Array.isArray(productIds) || productIds.length === 0) {
+    return {};
+  }
+  
+  const priceRangesResult = await query(
+    'SELECT product_id, min_quantity, max_quantity, price FROM product_price_ranges WHERE product_id = ANY($1) ORDER BY product_id, min_quantity ASC',
+    [productIds]
+  );
+  
+  const priceRangesMap = {};
+  priceRangesResult.getRows().forEach(range => {
+    if (!priceRangesMap[range.product_id]) {
+      priceRangesMap[range.product_id] = [];
+    }
+    priceRangesMap[range.product_id].push({
+      min_quantity: range.min_quantity,
+      max_quantity: range.max_quantity,
+      price: range.price
+    });
+  });
+  
+  return priceRangesMap;
+};
+
 // Generate a unique product code
 exports.generateProductCode = async (req, res) => {
   try {
@@ -447,22 +473,7 @@ exports.getAllProducts = async (req, res) => {
     let productsWithPriceRanges = products;
     if (products.length > 0) {
       const productIds = products.map(p => p.id);
-      const priceRangesResult = await query(
-        'SELECT product_id, min_quantity, max_quantity, price FROM product_price_ranges WHERE product_id = ANY($1) ORDER BY product_id, min_quantity ASC',
-        [productIds]
-      );
-      
-      const priceRangesMap = {};
-      priceRangesResult.getRows().forEach(range => {
-        if (!priceRangesMap[range.product_id]) {
-          priceRangesMap[range.product_id] = [];
-        }
-        priceRangesMap[range.product_id].push({
-          min_quantity: range.min_quantity,
-          max_quantity: range.max_quantity,
-          price: range.price
-        });
-      });
+      const priceRangesMap = await getProductPriceRanges(productIds);
       
       productsWithPriceRanges = products.map(product => ({
         ...product,
@@ -846,15 +857,16 @@ const parseAlibabaPriceRanges = (priceString) => {
   
   // 在 pieces$数字 后面如果紧跟数字（但不是小数点后的数字），则添加空格
   // 使用更精确的正则表达式，避免在小数点后添加空格
-  processedString = processedString.replace(/pieces\$[\d.]+(?=\d+\s*-|\d+\s*pieces|>=)/g, match => match + ' ');
+  // 假设价格总是两位小数，匹配格式：pieces$XX.XX
+  processedString = processedString.replace(/pieces\$\d+\.\d{2}(?=\d+\s*-|\d+\s*pieces|>=)/g, match => match + ' ');
   
-  const regex = /(>=\s*\d+\s*pieces\$[\d.]+|\d+\s*-\s*\d+\s*pieces\$[\d.]+|\d+\s*pieces\$[\d.]+)/g;
+  const regex = /(>=\s*\d+\s*pieces\$\d+\.\d{2}|\d+\s*-\s*\d+\s*pieces\$\d+\.\d{2}|\d+\s*pieces\$\d+\.\d{2})/g;
   const segments = processedString.match(regex) || [];
 
   segments.forEach((segment, index) => {
     try {
-      // 提取价格
-      const priceMatch = segment.match(/\$([\d.]+)/);
+      // 提取价格 - 假设价格总是两位小数格式
+      const priceMatch = segment.match(/\$(\d+\.\d{2})/);
       if (!priceMatch) return;
       
       const price = parseFloat(priceMatch[1]);
@@ -1120,22 +1132,32 @@ exports.searchProducts = async (req, res) => {
       LIMIT $3
     `, [`%${trimmedKeyword}%`, `${trimmedKeyword}%`, searchLimit]);
 
-    const products = rows.getRows().map(product => ({
-      id: product.id,
-      guid: product.guid,
-      name: product.name,
-      product_code: product.product_code,
-      price: product.price,
-      stock: product.stock,
-      status: product.status,
-      category_name: product.category_name,
-      thumbnail_url: product.thumbnail_url || ''
-    }));
+    const products = rows.getRows();
+    
+    // 获取所有产品的阶梯价格
+    let productsWithPriceRanges = products;
+    if (products.length > 0) {
+      const productIds = products.map(p => p.id);
+      const priceRangesMap = await getProductPriceRanges(productIds);
+      
+      productsWithPriceRanges = products.map(product => ({
+        id: product.id,
+        guid: product.guid,
+        name: product.name,
+        product_code: product.product_code,
+        price: product.price,
+        stock: product.stock,
+        status: product.status,
+        category_name: product.category_name,
+        thumbnail_url: product.thumbnail_url || '',
+        price_ranges: priceRangesMap[product.id] || []
+      }));
+    }
 
     res.json({
       success: true,
       message: getMessage('PRODUCT.SEARCH_SUCCESS'),
-      data: products
+      data: productsWithPriceRanges
     });
   } catch (error) {
     console.error('产品搜索失败:', error);
@@ -1525,3 +1547,6 @@ exports.updateProductLinks = async (req, res) => {
     connection.release();
   }
 };
+
+// 导出公共函数
+exports.getProductPriceRanges = getProductPriceRanges;

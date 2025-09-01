@@ -85,7 +85,7 @@
 
 <script>
 import { handleImageError } from '../utils/imageUtils';
-import { handleChatNow, handleAddToCart, handleLoginSuccess } from '../utils/productUtils';
+import { handleChatNow, handleAddToCart, handleLoginSuccess, getMinQuantityFromPriceRanges } from '../utils/productUtils';
 import ProductCard from '../components/common/ProductCard.vue';
 import PageBanner from '../components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
@@ -247,13 +247,15 @@ export default {
     async handleAddToCartEvent(data) {
       const { product } = data;
       
+      const minQuantity = getMinQuantityFromPriceRanges(product);
       const success = await handleAddToCart(
         product, 
         this, 
         this.showLoginDialog, 
         () => {
           // 这里可以设置产品卡片的加载状态，但由于ProductCard已经简化，暂时不处理
-        }
+        },
+        minQuantity
       );
       
       if (!success) {

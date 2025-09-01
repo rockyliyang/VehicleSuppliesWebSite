@@ -86,3 +86,18 @@ export const getPriceByRange = (item) => {
 export const getPriceRangeDisplayUtil = (item, formatPrice) => {
   return formatPrice(getPriceByRange(item));
 };
+
+/**
+ * 从价格范围中获取最小起订量
+ * @param {Object} product - 商品对象，包含 price_ranges 属性
+ * @returns {number} 最小起订量，如果没有价格范围则返回1
+ */
+export const getMinQuantityFromPriceRanges = (product) => {
+  if (!product || !product.price_ranges || product.price_ranges.length === 0) {
+    return 1;
+  }
+  
+  // 找到最小的 min_quantity
+  const minQuantity = Math.min(...product.price_ranges.map(range => range.min_quantity));
+  return minQuantity > 0 ? minQuantity : 1;
+};

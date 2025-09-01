@@ -157,7 +157,7 @@
 
 <script>
 import { handleImageError } from '../utils/imageUtils';
-import { updateItemCalculatedPrice, updateAllItemsCalculatedPrice } from '@/utils/priceUtils';
+import { updateItemCalculatedPrice, updateAllItemsCalculatedPrice, getMinQuantityFromPriceRanges } from '@/utils/priceUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import InquiryPanel from '@/components/common/InquiryPanel.vue';
@@ -267,6 +267,24 @@ export default {
         if (!cartItem) {
           console.error('找不到购物车项目');
           return;
+        }
+
+        // 获取商品详细信息以验证最小数量
+        try {
+          const productResponse = await this.$api.get(`/products/${cartItem.product_id}`);
+          if (productResponse.success) {
+            const minQuantity = getMinQuantityFromPriceRanges(productResponse.data);
+            if (quantity < minQuantity) {
+              /*this.$messageHandler.showWarning(
+                `商品最小起订量为 ${minQuantity}，已自动调整数量`,
+                'cart.warning.minQuantity'
+              );*/
+              quantity = minQuantity;
+              cartItem.quantity = minQuantity;
+            }
+          }
+        } catch (productError) {
+          console.error('获取商品信息失败:', productError);
         }
 
         const response = await this.$api.put(`/cart/item/${cartItemId}`, { 
@@ -420,13 +438,29 @@ export default {
       this.selectedItems = this.cartItems.filter(item => item.selected);
     },
     
-    decreaseQuantity(item) {
-      if (item.quantity > 1) {
+    async decreaseQuantity(item) {
+      // 获取商品的最小起订量
+      let minQuantity = 1;
+      try {
+        const productResponse = await this.$api.get(`/products/${item.product_id}`);
+        if (productResponse.success) {
+          minQuantity = getMinQuantityFromPriceRanges(productResponse.data);
+        }
+      } catch (error) {
+        console.error('获取商品信息失败:', error);
+      }
+      
+      if (item.quantity > minQuantity) {
         item.quantity--;
         // 立即更新价格显示
         this.updateItemPrice(item);
         this.updateQuantity(item.id, item.quantity);
-      }
+      } /*else {
+        this.$messageHandler.showWarning(
+          `商品最小起订量为 ${minQuantity}，无法继续减少`,
+          'cart.warning.minQuantityReached'
+        );
+      }*/
     },
     
     increaseQuantity(item) {
@@ -464,7 +498,7 @@ export default {
     },
     
     // Add product to inquiry
-    addToInquiry(item) {
+    /*addToInquiry(item) {
       const isMobile = window.innerWidth <= 767;
       
       if (isMobile) {
@@ -486,7 +520,7 @@ export default {
       if (this.$refs.inquiryPanel) {
         this.$refs.inquiryPanel.addToInquiry(item);
       }
-    },
+    },*/
     
     // Add selected products to inquiry
     async addSelectedToInquiry() {

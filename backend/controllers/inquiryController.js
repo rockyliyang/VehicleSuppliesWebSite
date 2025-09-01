@@ -2,7 +2,7 @@ const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
 const sseHandler = require('../utils/sseHandler');
 const pgNotificationManager = require('../utils/pgNotification');
-
+const { getProductPriceRanges } = require('./productController');
 // 获取用户询价列表
 exports.getUserInquiries = async (req, res) => {
   try {
@@ -203,27 +203,8 @@ exports.getInquiryDetail = async (req, res) => {
     // 一次性查询所有商品的价格范围
     if (itemsData.length > 0) {
       const productIds = itemsData.map(item => item.product_id);
-      const priceRangesQuery = `
-        SELECT product_id, min_quantity, max_quantity, price
-        FROM product_price_ranges
-        WHERE product_id = ANY($1) AND deleted = false
-        ORDER BY product_id, min_quantity ASC
-      `;
-      const priceRanges = await query(priceRangesQuery, [productIds]);
-      const priceRangesData = priceRanges.getRows();
-      
-      // 将价格范围按product_id分组
-      const priceRangesByProduct = {};
-      priceRangesData.forEach(range => {
-        if (!priceRangesByProduct[range.product_id]) {
-          priceRangesByProduct[range.product_id] = [];
-        }
-        priceRangesByProduct[range.product_id].push({
-          min_quantity: range.min_quantity,
-          max_quantity: range.max_quantity,
-          price: range.price
-        });
-      });
+
+      const priceRangesByProduct = await getProductPriceRanges(productIds);
       
       // 为每个商品添加价格范围
       itemsData.forEach(item => {
@@ -457,6 +438,10 @@ exports.addItemToInquiry = async (req, res) => {
       [inquiryId, productId, quantity, null, userId, userId]
     );
     
+    // 获取商品价格范围
+
+    const priceRanges = await getProductPriceRanges([productId]);
+    
     // 返回与getInquiryDetail相同的数据结构
     return res.json({
       success: true,
@@ -470,7 +455,8 @@ exports.addItemToInquiry = async (req, res) => {
         product_name: productResult.getFirstRow().product_name,
         product_code: productResult.getFirstRow().product_code,
         original_price: productResult.getFirstRow().original_price,
-        image_url: productResult.getFirstRow().image_url
+        image_url: productResult.getFirstRow().image_url,
+        price_ranges: priceRanges[productId] || []
       }
     });
   } catch (error) {

@@ -80,8 +80,7 @@ exports.getUserCart = async (req, res) => {
 exports.addToCart = async (req, res) => {
   try {
     const userId = req.userId;
-    const { productId } = req.body;
-    const quantity = 1;
+    const { productId, quantity: requestedQuantity } = req.body;
     
     if (!productId) {
       return res.status(400).json({
@@ -90,13 +89,31 @@ exports.addToCart = async (req, res) => {
       });
     }
     
-    // 检查商品是否存在
+    // 检查商品是否存在并获取价格范围
     const product = await query('SELECT id, stock, product_type FROM products WHERE id = $1 AND deleted = false', [productId]);
     
     if (!product || product.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
         message: getMessage('CART.PRODUCT_NOT_FOUND')
+      });
+    }
+    
+    // 获取商品的价格范围以确定最小数量
+    const priceRanges = await query(
+      'SELECT min_quantity FROM product_price_ranges WHERE product_id = $1 AND deleted = false ORDER BY min_quantity ASC LIMIT 1',
+      [productId]
+    );
+    
+    // 确定最小数量
+    const minQuantity = (priceRanges && priceRanges.getRowCount() > 0) ? priceRanges.getFirstRow().min_quantity : 1;
+    const quantity = requestedQuantity || minQuantity;
+    
+    // 验证数量不能小于最小数量
+    if (quantity < minQuantity) {
+      return res.status(400).json({
+        success: false,
+        message: `数量不能小于最小起订量 ${minQuantity}`
       });
     }
     
@@ -174,8 +191,24 @@ exports.updateCartItem = async (req, res) => {
       });
     }
     
-    // 只对自营商品检查库存
+    // 获取商品的最小数量
     const cartItemData = cartItem.getFirstRow();
+    const priceRanges = await query(
+      'SELECT min_quantity FROM product_price_ranges WHERE product_id = $1 AND deleted = false ORDER BY min_quantity ASC LIMIT 1',
+      [cartItemData.product_id]
+    );
+    
+    const minQuantity = (priceRanges && priceRanges.getRowCount() > 0) ? priceRanges.getFirstRow().min_quantity : 1;
+    
+    // 验证数量不能小于最小数量
+    if (quantity < minQuantity) {
+      return res.status(400).json({
+        success: false,
+        message: `数量不能小于最小起订量 ${minQuantity}`
+      });
+    }
+    
+    // 只对自营商品检查库存
     if (cartItemData.product_type === 'self_operated' && cartItemData.stock < quantity) {
       return res.status(400).json({
         success: false,

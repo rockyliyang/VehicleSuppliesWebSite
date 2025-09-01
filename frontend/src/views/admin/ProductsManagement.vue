@@ -1078,11 +1078,6 @@ export default {
       // 按最小数量排序
       const sortedRanges = [...priceRanges].sort((a, b) => a.min_quantity - b.min_quantity);
 
-      // 检查第一个范围是否从1开始
-      if (sortedRanges[0].min_quantity !== 1) {
-        return { valid: false, message: '第一个价格范围必须从数量1开始' };
-      }
-
       // 检查范围是否连续，没有间隔
       for (let i = 0; i < sortedRanges.length; i++) {
         const current = sortedRanges[i];

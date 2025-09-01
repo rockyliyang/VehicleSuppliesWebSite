@@ -601,10 +601,13 @@ async function uploadProduct(productData, selectedImages) {
         imageHtmlString;
     }
     
+    // 检查是否导入价格
+    const importPriceCheckbox = document.getElementById('import-price-checkbox');
+    const shouldImportPrice = importPriceCheckbox && importPriceCheckbox.checked;
+    
     // 准备上传数据（不包含图片URL，因为图片已经单独上传）
     const uploadData = {
       title: productData.title,
-      price: productData.price,
       productId: productData.productId,
       url: productData.url,
       supplierName: productData.supplierName,
@@ -616,6 +619,11 @@ async function uploadProduct(productData, selectedImages) {
       category_id: selectedCategoryId, // 添加选中的分类ID
       // 不包含图片URL，因为图片已经通过/api/product-images/upload上传
     };
+    
+    // 根据用户选择决定是否包含价格信息
+    if (shouldImportPrice) {
+      uploadData.price = productData.price;
+    }
     
     console.log('正在上传产品...');
     
