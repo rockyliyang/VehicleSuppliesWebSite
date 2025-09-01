@@ -6,6 +6,66 @@ function isVideoUrl(url) {
   return videoExtensions.some(ext => lowerUrl.includes(ext));
 }
 
+// 将图片转换为WebP格式
+async function convertToWebP(blob, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    // 检查是否为图片类型
+    if (!blob.type.startsWith('image/')) {
+      resolve(blob); // 非图片直接返回原blob
+      return;
+    }
+    
+    // 检查是否为JPEG或PNG
+    if (!blob.type.includes('jpeg') && !blob.type.includes('jpg') && !blob.type.includes('png')) {
+      resolve(blob); // 非JPEG/PNG直接返回原blob
+      return;
+    }
+    
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 创建图片URL
+    const url = URL.createObjectURL(blob);
+    
+    img.onload = function() {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      // 绘制图片到canvas
+      ctx.drawImage(img, 0, 0);
+      
+      // 转换为WebP格式
+      canvas.toBlob((webpBlob) => {
+        // 清理URL
+        URL.revokeObjectURL(url);
+        
+        if (webpBlob) {
+          resolve(webpBlob);
+        } else {
+          // 如果转换失败，返回原blob
+          resolve(blob);
+        }
+      }, 'image/webp', quality);
+    };
+    
+    img.onerror = function() {
+      // 清理URL
+      URL.revokeObjectURL(url);
+      // 图片加载失败，返回原blob
+      resolve(blob);
+    };
+    
+    img.src = url;
+  });
+}
+
+// 检查是否启用WebP转换
+function isWebPConversionEnabled() {
+  const checkbox = document.getElementById('convert-to-webp-checkbox');
+  return checkbox ? checkbox.checked : true; // 默认启用
+}
+
 // 从URL参数获取产品数据
 function getProductDataFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -429,7 +489,12 @@ async function uploadImages(imageUrls, imageType = 0, sessionId) {
         continue;
       }
       
-      const blob = await imageResponse.blob();
+      let blob = await imageResponse.blob();
+      
+      // 检查是否需要转换为WebP格式
+      if (isWebPConversionEnabled()) {
+        blob = await convertToWebP(blob);
+      }
       
       // 2. 创建FormData上传到后端
       const formData = new FormData();
@@ -437,7 +502,14 @@ async function uploadImages(imageUrls, imageType = 0, sessionId) {
       // 生成文件名
       const url = new URL(imageUrl);
       const pathParts = url.pathname.split('/');
-      const originalName = pathParts[pathParts.length - 1] || 'image.jpg';
+      let originalName = pathParts[pathParts.length - 1] || 'image.jpg';
+      
+      // 如果转换为WebP，更新文件扩展名
+      if (isWebPConversionEnabled() && blob.type === 'image/webp') {
+        const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
+        originalName = `${nameWithoutExt}.webp`;
+      }
+      
       const fileName = `1688_${Date.now()}_${originalName}`;
       
       formData.append('images', blob, fileName);
