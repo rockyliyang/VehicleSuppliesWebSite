@@ -248,32 +248,41 @@ router.post('/login', async (req, res) => {
 // 检查token有效性并续期
 router.post('/check-token', verifyToken, async (req, res) => {
   try {
-    // 生成新的token，包含完整用户信息
-    const newToken = jwt.sign(
-      { 
-        userId: req.userId, 
-        username: req.username,
-        email: req.userEmail, 
-        phone: req.phone,
-        role: req.userRole, 
-        currency: req.userCurrency 
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    const { renew = true } = req.body; // 默认为true，保持向后兼容
+    
+    let responseMessage = getMessage('USER.TOKEN_VALID');
+    
+    // 如果需要续期token
+    if (renew) {
+      // 生成新的token，包含完整用户信息
+      const newToken = jwt.sign(
+        { 
+          userId: req.userId, 
+          username: req.username,
+          email: req.userEmail, 
+          phone: req.phone,
+          role: req.userRole, 
+          currency: req.userCurrency 
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
 
-    // 更新Cookie，有效期也为1小时
-    res.cookie('aex-token', newToken, {
-      httpOnly: process.env.NODE_ENV === 'production' ? true : false,
-      secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 1000 // 1小时
-    });
+      // 更新Cookie，有效期也为1小时
+      res.cookie('aex-token', newToken, {
+        httpOnly: process.env.NODE_ENV === 'production' ? true : false,
+        secure: process.env.COOKIE_SECURE === 'true',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 1000 // 1小时
+      });
+      
+      responseMessage = getMessage('USER.TOKEN_VALID_RENEWED');
+    }
 
     // 直接从token中获取用户信息，不再查询数据库
     res.json({ 
       success: true,
-      message: getMessage('USER.TOKEN_VALID_RENEWED'),
+      message: responseMessage,
       data: {
         user: {
           id: req.userId,

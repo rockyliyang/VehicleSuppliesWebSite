@@ -4,12 +4,10 @@
       <!-- 桌面端布局 -->
       <div class="footer-grid desktop-footer">
         <div>
-        <img 
-          class="footer-logo h-8 w-auto mb-6" 
-          :src="companyInfo.logo_url || require('@/assets/images/logo.png')"
-          :alt="companyInfo.company_name || 'Auto Ease Tech X Logo'" />
+          <img class="footer-logo h-8 w-auto mb-6" :src="companyInfo.logo_url || require('@/assets/images/logo.png')"
+            :alt="companyInfo.company_name || 'Auto Ease Tech X Logo'" />
           <p class="footer-intro mb-6">
-            {{ companyInfo.company_intro || defaultCompanyIntro }}
+            {{ companyInfo.description || defaultCompanyIntro }}
           </p>
           <div class="social-links">
             <a href="#" class="social-link">
@@ -53,7 +51,8 @@
           <h3 class="text-xl font-semibold mb-6">{{$t('OurProducts')}}</h3>
           <ul class="footer-list">
             <li v-for="category in categories.slice(0, 7)" :key="category.id">
-              <router-link :to="`/products?category=${category.id}`" class="footer-link">{{ category.name }}</router-link>
+              <router-link :to="`/products?category=${category.id}`" class="footer-link">{{ category.name
+                }}</router-link>
             </li>
           </ul>
         </div>
@@ -89,7 +88,8 @@
         <div class="mobile-footer-section">
           <div class="mobile-footer-header" @click="toggleSection('quickLinks')">
             <h3 class="mobile-footer-title">{{$t('QuickLinks')}}</h3>
-            <i class="fas fa-chevron-down mobile-footer-icon" :class="{ 'rotated': expandedSection === 'quickLinks' }"></i>
+            <i class="fas fa-chevron-down mobile-footer-icon"
+              :class="{ 'rotated': expandedSection === 'quickLinks' }"></i>
           </div>
           <div class="mobile-footer-content" :class="{ 'expanded': expandedSection === 'quickLinks' }">
             <ul class="footer-list">
@@ -116,12 +116,14 @@
         <div class="mobile-footer-section">
           <div class="mobile-footer-header" @click="toggleSection('ourProducts')">
             <h3 class="mobile-footer-title">{{$t('OurProducts')}}</h3>
-            <i class="fas fa-chevron-down mobile-footer-icon" :class="{ 'rotated': expandedSection === 'ourProducts' }"></i>
+            <i class="fas fa-chevron-down mobile-footer-icon"
+              :class="{ 'rotated': expandedSection === 'ourProducts' }"></i>
           </div>
           <div class="mobile-footer-content" :class="{ 'expanded': expandedSection === 'ourProducts' }">
             <ul class="footer-list">
               <li v-for="category in categories.slice(0, 7)" :key="category.id">
-                <router-link :to="`/products?category=${category.id}`" class="footer-link">{{ category.name }}</router-link>
+                <router-link :to="`/products?category=${category.id}`" class="footer-link">{{ category.name
+                  }}</router-link>
               </li>
             </ul>
           </div>
@@ -131,7 +133,8 @@
         <div class="mobile-footer-section">
           <div class="mobile-footer-header" @click="toggleSection('contactInfo')">
             <h3 class="mobile-footer-title">{{$t('ContactInfo')}}</h3>
-            <i class="fas fa-chevron-down mobile-footer-icon" :class="{ 'rotated': expandedSection === 'contactInfo' }"></i>
+            <i class="fas fa-chevron-down mobile-footer-icon"
+              :class="{ 'rotated': expandedSection === 'contactInfo' }"></i>
           </div>
           <div class="mobile-footer-content" :class="{ 'expanded': expandedSection === 'contactInfo' }">
             <ul class="footer-list contact-list">
@@ -175,8 +178,8 @@ export default {
     return {
       companyInfo: {},
       categories: [],
-      defaultAddress: '123 Innovation Drive, Tech Park,  CA 94103, United States',
-      defaultCompanyIntro: 'Auto Ease Xpert Co., Ltd. is a leading manufacturer of high-quality automotive electronic products designed to make your driving experience more comfortable and convenient.',
+      defaultAddress: '',
+      defaultCompanyIntro: 'Auto Ease Tecx Co., Ltd. is a leading manufacturer of high-quality automotive electronic products designed to make your driving experience more comfortable and convenient.',
       expandedSection: 'quickLinks' // 默认展开第一个栏目
     };
   },
@@ -212,12 +215,13 @@ export default {
 <style lang="scss" scoped>
 @import '@/assets/styles/_variables.scss';
 @import '@/assets/styles/_mixins.scss';
+
 /* Footer 主容器 */
 .footer-container {
   background-color: $gray-800;
   color: $white;
   padding: $spacing-4xl 0 $spacing-2xl;
-  
+
   @include mobile {
     padding: $spacing-xl 0 $spacing-md;
   }
@@ -247,9 +251,9 @@ export default {
   }
 
   /* 为每列添加一致的内边距 */
-  > div {
+  >div {
     padding-right: $spacing-md;
-    
+
     &:last-child {
       padding-right: 0;
     }
@@ -259,7 +263,7 @@ export default {
 /* 移动端可伸缩布局 */
 .mobile-footer {
   display: none;
-  
+
   @include mobile {
     display: block;
     margin-bottom: $spacing-lg;
@@ -269,7 +273,7 @@ export default {
 /* 移动端栏目容器 */
 .mobile-footer-section {
   border-bottom: 1px solid $gray-700;
-  
+
   &:last-child {
     border-bottom: none;
   }
@@ -283,7 +287,7 @@ export default {
   padding: $spacing-lg $spacing-sm;
   cursor: pointer;
   transition: background-color $transition-base;
-  
+
   &:hover {
     background-color: rgba(255, 255, 255, 0.05);
   }
@@ -306,7 +310,7 @@ export default {
   color: $gray-400;
   font-size: $font-size-sm;
   transition: transform $transition-base;
-  
+
   &.rotated {
     transform: rotate(180deg);
   }
@@ -317,28 +321,28 @@ export default {
   overflow: hidden;
   transition: max-height $transition-slow, padding $transition-slow;
   padding: 0 $spacing-sm;
-  
+
   &.expanded {
     max-height: $mobile-footer-max-height;
     padding: $spacing-md $spacing-sm $spacing-lg;
   }
-  
+
   .footer-list {
     margin: 0;
-    
+
     li {
       margin-bottom: $spacing-sm;
-      
+
       &:last-child {
         margin-bottom: 0;
       }
     }
   }
-  
+
   .contact-list {
     li {
       margin-bottom: $spacing-md;
-      
+
       &:last-child {
         margin-bottom: 0;
       }
@@ -352,7 +356,7 @@ export default {
   font-size: $font-size-sm;
   margin-bottom: $spacing-lg;
   line-height: $line-height-relaxed;
-  
+
   @include mobile {
     margin-bottom: $spacing-md;
     font-size: $font-size-sm;
@@ -363,7 +367,7 @@ export default {
 .social-links {
   @include flex-start;
   gap: $spacing-md;
-  
+
   @include mobile {
     justify-content: center;
     margin-top: $spacing-sm;
@@ -428,7 +432,7 @@ export default {
   padding-top: $spacing-md;
   border-top: 1px solid $gray-700;
   text-align: center;
-  
+
   @include mobile {
     padding-top: $spacing-md;
   }
@@ -438,7 +442,7 @@ export default {
 .copyright-text {
   color: $gray-500;
   font-size: $font-size-sm;
-  
+
   @include mobile {
     font-size: $font-size-xs;
   }
@@ -453,7 +457,7 @@ h3 {
   border-bottom: 2px solid $primary-color;
   padding-bottom: $spacing-xs;
   display: inline-block;
-  
+
   @include mobile {
     font-size: $font-size-md;
     margin-bottom: $spacing-md;

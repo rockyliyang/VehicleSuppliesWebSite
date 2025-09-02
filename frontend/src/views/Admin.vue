@@ -254,7 +254,7 @@ export default {
     },
     async checkTokenValidity() {
       try {
-        const res = await this.$api.post('/users/check-token')
+        const res = await this.$api.post('/users/check-token', { renew: false })
         if (!res.success) throw new Error('Token invalid')
       } catch (e) {
         this.$store.commit('setUser', null)
