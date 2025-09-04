@@ -5,6 +5,7 @@ node_modules/
 dist/
 /backend/public/keys/
 /backend/public/static/
+/backend/public/static_backup/
 /released
 
 # 环境变量文件

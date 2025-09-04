@@ -20,7 +20,9 @@
     "test:env:prod": "cross-env NODE_ENV=production node scripts/test-env.js",
     "schedule": "node schedule.js",
     "schedule:dev": "nodemon --signal SIGTERM --inspect=9231 schedule.js --delay 2s",
-    "schedule:prod": "cross-env NODE_ENV=production node schedule.js"
+    "schedule:prod": "cross-env NODE_ENV=production node schedule.js",
+    "clean-media": "node tools/cleanUnusedMedia.js",
+    "clean-media:prod": "cross-env NODE_ENV=production node tools/cleanUnusedMedia.js"
   },
   "dependencies": {
     "@paypal/paypal-server-sdk": "^1.1.0",
