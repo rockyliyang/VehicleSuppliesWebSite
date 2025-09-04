@@ -36,6 +36,7 @@ tar --exclude="node_modules" ^
     --exclude=".DS_Store" ^
     --exclude="./public/static/images"^
     --exclude="./public/static/videos"^
+    --exclude="./public/static_backup"^
     -czvf "%RELEASE_DIR%\%BACKEND_ARCHIVE_NAME%" ^
     -C "%BACKEND_DIR%" .
 

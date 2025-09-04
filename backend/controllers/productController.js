@@ -6,7 +6,7 @@ const { getMessage } = require('../config/messages');
 // 验证阶梯价格范围的辅助函数
 const validatePriceRanges = (priceRanges) => {
   if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
-    return { valid: false, message: 'Price ranges must be a non-empty array' };
+    return { valid: false, message: getMessage('PRODUCT.PRICE_RANGES_EMPTY') };
   }
 
   // 按最小数量排序
@@ -14,7 +14,7 @@ const validatePriceRanges = (priceRanges) => {
 
   // 检查第一个范围是否从1开始
   if (sortedRanges[0].min_quantity !== 1) {
-    return { valid: false, message: 'First price range must start from quantity 1' };
+    return { valid: false, message: getMessage('PRODUCT.PRICE_RANGE_START_FROM_ONE') };
   }
 
   // 检查范围是否连续，没有间隔
@@ -23,17 +23,17 @@ const validatePriceRanges = (priceRanges) => {
     
     // 验证基本字段
     if (!current.min_quantity || current.min_quantity <= 0) {
-      return { valid: false, message: `Invalid min_quantity at range ${i + 1}` };
+      return { valid: false, message: getMessage('PRODUCT.INVALID_MIN_QUANTITY', { range: i + 1 }) };
     }
     
     if (!current.price || current.price <= 0) {
-      return { valid: false, message: `Invalid price at range ${i + 1}` };
+      return { valid: false, message: getMessage('PRODUCT.INVALID_PRICE', { range: i + 1 }) };
     }
 
     // 验证max_quantity（如果存在）
     if (current.max_quantity !== null && current.max_quantity !== undefined) {
       if (current.max_quantity < current.min_quantity) {
-        return { valid: false, message: `max_quantity must be >= min_quantity at range ${i + 1}` };
+        return { valid: false, message: getMessage('PRODUCT.MAX_QUANTITY_INVALID', { range: i + 1 }) };
       }
     }
 
@@ -43,17 +43,17 @@ const validatePriceRanges = (priceRanges) => {
       
       // 当前范围必须有max_quantity（除了最后一个）
       if (current.max_quantity === null || current.max_quantity === undefined) {
-        return { valid: false, message: `Range ${i + 1} must have max_quantity (except the last range)` };
+        return { valid: false, message: getMessage('PRODUCT.RANGE_MUST_HAVE_MAX_QUANTITY', { range: i + 1 }) };
       }
       
       // 下一个范围的min_quantity必须等于当前范围的max_quantity + 1
       if (next.min_quantity !== current.max_quantity + 1) {
-        return { valid: false, message: `Gap detected between range ${i + 1} and ${i + 2}. Range ${i + 2} should start from ${current.max_quantity + 1}` };
+        return { valid: false, message: getMessage('PRODUCT.PRICE_RANGE_GAP_DETECTED', { range1: i + 1, range2: i + 2, expectedStart: current.max_quantity + 1 }) };
       }
     } else {
       // 最后一个范围的max_quantity应该是null（表示无上限）
       if (current.max_quantity !== null && current.max_quantity !== undefined) {
-        return { valid: false, message: 'Last price range should have no upper limit (max_quantity should be null)' };
+        return { valid: false, message: getMessage('PRODUCT.LAST_PRICE_RANGE_NO_LIMIT') };
       }
     }
   }
@@ -1037,7 +1037,7 @@ exports.importFrom1688 = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: '1688产品导入成功',
+      message: getMessage('PRODUCT.IMPORT_1688_SUCCESS'),
       data: {
         id: productId_new,
         name: title,
@@ -1056,7 +1056,7 @@ exports.importFrom1688 = async (req, res) => {
     console.error('1688产品导入失败:', error);
     res.status(500).json({
       success: false,
-      message: '1688产品导入失败: ' + error.message
+      message: getMessage('PRODUCT.IMPORT_1688_FAILED') + ': ' + error.message
     });
   } finally {
     connection.release();
@@ -1178,7 +1178,7 @@ exports.getPriceByQuantity = async (req, res) => {
     if (!quantity || isNaN(parseInt(quantity)) || parseInt(quantity) <= 0) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid quantity parameter'
+        message: getMessage('PRODUCT.INVALID_QUANTITY_PARAMETER')
       });
     }
 
@@ -1215,7 +1215,7 @@ exports.getPriceByQuantity = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Price retrieved successfully',
+      message: getMessage('PRODUCT.PRICE_GET_SUCCESS'),
       data: {
         product_id: productId,
         quantity: qty,
@@ -1227,7 +1227,7 @@ exports.getPriceByQuantity = async (req, res) => {
     console.error('获取产品价格失败:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get product price'
+      message: getMessage('PRODUCT.PRICE_GET_FAILED')
     });
   }
 };
@@ -1274,14 +1274,14 @@ exports.getProductLinks = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Product links retrieved successfully',
+      message: getMessage('PRODUCT.LINKS_GET_SUCCESS'),
       data: links.getRows()
     });
   } catch (error) {
     console.error('获取产品关联失败:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get product links'
+      message: getMessage('PRODUCT.LINKS_GET_FAILED')
     });
   }
 };
@@ -1371,7 +1371,7 @@ exports.addProductLink = async (req, res) => {
       if (linkProductExists.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Link product not found'
+          message: getMessage('PRODUCT.LINK_PRODUCT_NOT_FOUND')
         });
       }
 
@@ -1384,7 +1384,7 @@ exports.addProductLink = async (req, res) => {
       if (existingLink.getRowCount() > 0) {
         return res.status(400).json({
           success: false,
-          message: 'Product link already exists'
+          message: getMessage('PRODUCT.LINK_ALREADY_EXISTS')
         });
       }
 
@@ -1408,7 +1408,7 @@ exports.addProductLink = async (req, res) => {
     } else {
       return res.status(400).json({
         success: false,
-        message: 'No valid link data provided'
+        message: getMessage('PRODUCT.NO_VALID_LINK_DATA')
       });
     }
 
@@ -1424,7 +1424,7 @@ exports.addProductLink = async (req, res) => {
     console.error('添加产品关联失败:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add product link'
+      message: getMessage('PRODUCT.ADD_LINK_FAILED')
     });
   } finally {
     connection.release();
@@ -1448,7 +1448,7 @@ exports.deleteProductLink = async (req, res) => {
     if (existing.getRowCount() === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Product link not found'
+        message: getMessage('PRODUCT.LINK_NOT_FOUND')
       });
     }
 
@@ -1462,14 +1462,14 @@ exports.deleteProductLink = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Product link deleted successfully'
+      message: getMessage('PRODUCT.LINK_DELETE_SUCCESS')
     });
   } catch (error) {
     await connection.rollback();
     console.error('删除产品关联失败:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete product link'
+      message: getMessage('PRODUCT.LINK_DELETE_FAILED')
     });
   } finally {
     connection.release();
@@ -1534,14 +1534,14 @@ exports.updateProductLinks = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Product links updated successfully'
+      message: getMessage('PRODUCT.LINKS_UPDATE_SUCCESS')
     });
   } catch (error) {
     await connection.rollback();
     console.error('更新产品关联失败:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update product links'
+      message: getMessage('PRODUCT.LINKS_UPDATE_FAILED')
     });
   } finally {
     connection.release();

@@ -66,19 +66,17 @@
         <div v-if="loading" class="loading-container" v-loading="loading" element-loading-text="加载中...">
           <div style="height: 200px;"></div>
         </div>
-        
+
         <div v-else class="mobile-news-container">
           <div v-for="nav in navList" :key="nav.id" class="news-category-card">
             <div class="category-header">
               <h3 class="category-title">{{ $t(nav.name_key) }}</h3>
               <span class="category-count">{{ getCategoryNewsCount(nav.name_key) }}</span>
             </div>
-            
+
             <div class="category-news-grid">
-              <div v-for="content in getCategoryNews(nav.name_key, 4)" 
-                   :key="content.id" 
-                   class="news-card" 
-                   @click="goToDetail(content)">
+              <div v-for="content in getCategoryNews(nav.name_key, 4)" :key="content.id" class="news-card"
+                @click="goToDetail(content)">
                 <div class="news-image">
                   <img :src="content.main_image || defaultImage" :alt="content.title" @error="handleImageError">
                 </div>
@@ -90,7 +88,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-if="getCategoryNewsCount(nav.name_key) > 4" class="view-more-button" @click="viewMoreNews(nav.id)">
               {{ $t('news.viewMore') }} <i class="el-icon-arrow-right"></i>
             </div>
@@ -166,7 +164,7 @@ export default {
         }
       } catch (error) {
         console.error('获取导航菜单失败:', error);
-        this.$messageHandler.showError('获取导航菜单失败', 'news.error.fetchNavFailed');
+        
       }
     },
 
@@ -660,7 +658,7 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
   box-shadow: $main-content-shadow;
   margin-bottom: 24px;
   overflow: hidden;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -695,7 +693,7 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
   grid-template-columns: 1fr 1fr; // 每行两个新闻
   gap: 16px;
   padding: 20px;
-  
+
   .news-card {
     background: white;
     border: 1px solid #f0f0f0;
@@ -703,19 +701,19 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
     overflow: hidden;
     transition: all 0.3s ease;
     cursor: pointer;
-    
+
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       border-color: $news-primary;
     }
   }
-  
+
   .news-image {
     width: 100%;
     height: 120px;
     overflow: hidden;
-    
+
     img {
       width: 100%;
       height: 100%;
@@ -723,11 +721,11 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
       transition: transform 0.3s ease;
     }
   }
-  
+
   .news-content {
     padding: 12px;
   }
-  
+
   .news-title {
     font-size: 14px;
     font-weight: 600;
@@ -739,14 +737,14 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .news-meta {
     display: flex;
     align-items: center;
     font-size: 12px;
     color: #666;
     margin-bottom: 0;
-    
+
     i {
       color: $news-primary;
       margin-right: 4px;
@@ -766,15 +764,15 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
   cursor: pointer;
   transition: all 0.3s ease;
   border-top: 1px solid rgba($news-primary, 0.1);
-  
+
   &:hover {
     background: rgba($news-primary, 0.1);
-    
+
     i {
       transform: translateX(4px);
     }
   }
-  
+
   i {
     transition: transform 0.3s ease;
   }
@@ -794,56 +792,57 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
 }
 
 @media (max-width: $content-mobile-breakpoint) {
+
   // 隐藏桌面端布局
   .desktop-layout {
     display: none;
   }
-  
+
   // 显示移动端布局
   .mobile-layout {
     display: block;
   }
-  
+
   // 移动端卡片布局优化
   .mobile-news-container {
     padding: 16px 0;
   }
-  
+
   .category-news-grid {
     gap: 12px;
     padding: 16px;
-    
+
     .news-image {
       height: 100px;
     }
-    
+
     .news-content {
       padding: 10px;
     }
-    
+
     .news-title {
       font-size: 13px;
       -webkit-line-clamp: 2;
     }
-    
+
     .news-meta {
       font-size: 11px;
     }
   }
-  
+
   .category-header {
     padding: 16px 20px;
   }
-  
+
   .category-title {
     font-size: 16px;
   }
-  
+
   .category-count {
     font-size: 13px;
     padding: 3px 10px;
   }
-  
+
   .news-category-card {
     margin-bottom: 20px;
   }
@@ -863,38 +862,38 @@ $news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); // 科�
   .category-news-grid {
     gap: 10px;
     padding: 12px;
-    
+
     .news-image {
       height: 80px;
     }
-    
+
     .news-content {
       padding: 8px;
     }
-    
+
     .news-title {
       font-size: 12px;
       -webkit-line-clamp: 2;
     }
-    
+
     .news-meta {
       font-size: 10px;
     }
   }
-  
+
   .category-header {
     padding: 12px 16px;
   }
-  
+
   .category-title {
     font-size: 14px;
   }
-  
+
   .category-count {
     font-size: 12px;
     padding: 2px 8px;
   }
-  
+
   .news-category-card {
     margin-bottom: 16px;
   }

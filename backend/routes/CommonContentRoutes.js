@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const commonContentController = require('../controllers/CommonContentController');
 const jwt = require('../middleware/jwt');
+const { getMessage } = require('../config/messages');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -59,25 +60,25 @@ const handleMulterError = (err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: '文件大小超过限制（最大5MB）'
+        message: getMessage('COMMON_CONTENT.FILE_SIZE_LIMIT_EXCEEDED')
       });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
-        message: '文件数量超过限制（最大10个）'
+        message: getMessage('COMMON_CONTENT.FILE_COUNT_LIMIT_EXCEEDED')
       });
     }
     return res.status(400).json({
       success: false,
-      message: '文件上传错误: ' + err.message
+      message: getMessage('COMMON_CONTENT.FILE_UPLOAD_ERROR') + ': ' + err.message
     });
   }
   
   if (err.message && err.message.includes('文件类型不支持')) {
     return res.status(400).json({
       success: false,
-      message: err.message
+      message: getMessage('COMMON_CONTENT.UNSUPPORTED_FILE_TYPE')
     });
   }
   

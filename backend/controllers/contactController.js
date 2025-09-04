@@ -20,7 +20,7 @@ class ContactController {
       if (!email) {
         return res.status(400).json({
           success: false,
-          message: 'CONTACT.EMAIL_REQUIRED',
+          message: getMessage('CONTACT.EMAIL_REQUIRED'),
           data: null
         });
       }
@@ -57,14 +57,14 @@ class ContactController {
         
         res.json({
           success: true,
-          message: 'CONTACT.VERIFICATION_CODE_SENT',
+          message: getMessage('CONTACT.VERIFICATION_CODE_SENT'),
           data: null
         });
       } catch (emailError) {
         console.error('验证码邮件发送失败:', emailError);
         res.status(500).json({
           success: false,
-          message: 'CONTACT.GET_CODE_FAILED',
+          message: getMessage('CONTACT.GET_CODE_FAILED'),
           data: null
         });
       }
@@ -72,7 +72,7 @@ class ContactController {
       console.error('获取验证码错误:', error);
       res.status(500).json({
         success: false,
-        message: 'CONTACT.GET_CODE_FAILED',
+        message: getMessage('CONTACT.GET_CODE_FAILED'),
         data: null
       });
     }
@@ -103,7 +103,7 @@ class ContactController {
       if (!captcha) {
         return res.status(400).json({
           success: false,
-          message: 'CONTACT.CAPTCHA_REQUIRED',
+          message: getMessage('CONTACT.CAPTCHA_REQUIRED'),
           data: null
         });
       }
@@ -111,7 +111,7 @@ class ContactController {
       if (!req.session || !req.session.captcha) {
         return res.status(400).json({
           success: false,
-          message: 'CONTACT.CAPTCHA_EXPIRED',
+          message: getMessage('CONTACT.CAPTCHA_EXPIRED'),
           data: null
         });
       }
@@ -119,7 +119,7 @@ class ContactController {
       if (req.session.captcha.toLowerCase() !== captcha.toLowerCase()) {
         return res.status(400).json({
           success: false,
-          message: 'CONTACT.CAPTCHA_INVALID',
+          message: getMessage('CONTACT.CAPTCHA_INVALID'),
           data: null
         });
       }
@@ -131,7 +131,7 @@ class ContactController {
       if (!name || !email || !subject || !message ) {
         return res.status(400).json({
           success: false,
-          message: 'CONTACT.VALIDATION_FAILED',
+          message: getMessage('CONTACT.VALIDATION_FAILED'),
           data: null
         });
       }
@@ -140,7 +140,7 @@ class ContactController {
       if (subject.length > 128) {
         return res.status(400).json({
           success: false,
-          message: 'CONTACT.SUBJECT_TOO_LONG',
+          message: getMessage('CONTACT.SUBJECT_TOO_LONG'),
           data: null
         });
       }
@@ -148,7 +148,7 @@ class ContactController {
       if (message.length < 10) {
         return res.status(400).json({
           success: false,
-          message: 'CONTACT.MESSAGE_TOO_SHORT',
+          message: getMessage('CONTACT.MESSAGE_TOO_SHORT'),
           data: null
         });
       }
@@ -156,7 +156,7 @@ class ContactController {
       if (message.length > 2000) {
         return res.status(400).json({
           success: false,
-          message: 'CONTACT.MESSAGE_TOO_LONG',
+          message: getMessage('CONTACT.MESSAGE_TOO_LONG'),
           data: null
         });
       }
@@ -731,7 +731,7 @@ class ContactController {
       const finalUserTranslations = userTranslations || adminTranslations;
       
       // 发送给业务组的通知邮件（管理员邮件保持中文）
-      const adminSubject = adminTranslations['EMAIL_TEMPLATE.ADMIN_NOTIFICATION_TITLE'] || '新的联系消息';
+      const adminSubject = adminTranslations['EMAIL_TEMPLATE.ADMIN_NOTIFICATION_TITLE'] || getMessage('EMAIL_TEMPLATE.ADMIN_NOTIFICATION_TITLE', adminLanguage);
       const adminHtml = await this.generateAdminNotificationTemplate(contactData, businessGroup, adminLanguage, adminTranslations);
       
       await sendMail(
@@ -741,7 +741,7 @@ class ContactController {
       );
       
       // 发送给用户的确认邮件（根据用户语言偏好）
-      const userSubject = finalUserTranslations['EMAIL_TEMPLATE.USER_CONFIRMATION_TITLE'] || (userLanguage === 'zh' ? '感谢您联系我们' : 'Thank you for contacting us');
+      const userSubject = finalUserTranslations['EMAIL_TEMPLATE.USER_CONFIRMATION_TITLE'] || getMessage('EMAIL_TEMPLATE.USER_CONFIRMATION_TITLE', userLanguage);
       const userHtml = await this.generateUserConfirmationTemplate(contactData, userEmailLanguage, finalUserTranslations);
       
       await sendMail(
@@ -866,12 +866,12 @@ class ContactController {
       const translations = await this.getEmailTranslations(userLanguage);
       
       // 发送验证码邮件
-      const subject = translations['EMAIL_TEMPLATE.VERIFICATION_CODE_SUBJECT'] || (userLanguage === 'zh-CN' ? '联系表单验证码' : 'Contact Form Verification Code');
+      const subject = translations['EMAIL_TEMPLATE.VERIFICATION_CODE_SUBJECT'] || getMessage('EMAIL_TEMPLATE.VERIFICATION_CODE_SUBJECT', userLanguage);
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2>${translations['EMAIL_TEMPLATE.VERIFICATION_CODE_TITLE'] || (userLanguage === 'zh-CN' ? '验证码' : 'Verification Code')}</h2>
-          <p>${translations['EMAIL_TEMPLATE.VERIFICATION_CODE_CONTENT'] || (userLanguage === 'zh-CN' ? '您的验证码是：' : 'Your verification code is:')} <strong style="font-size: 24px; color: #e53e3e;">${code}</strong></p>
-          <p>${translations['EMAIL_TEMPLATE.VERIFICATION_CODE_EXPIRE'] || (userLanguage === 'zh-CN' ? '验证码有效期为5分钟，请及时使用。' : 'The verification code is valid for 5 minutes, please use it promptly.')}</p>
+          <h2>${translations['EMAIL_TEMPLATE.VERIFICATION_CODE_TITLE'] || getMessage('EMAIL_TEMPLATE.VERIFICATION_CODE_TITLE', userLanguage)}</h2>
+          <p>${translations['EMAIL_TEMPLATE.VERIFICATION_CODE_CONTENT'] || getMessage('EMAIL_TEMPLATE.VERIFICATION_CODE_CONTENT', userLanguage)} <strong style="font-size: 24px; color: #e53e3e;">${code}</strong></p>
+          <p>${translations['EMAIL_TEMPLATE.VERIFICATION_CODE_EXPIRE'] || getMessage('EMAIL_TEMPLATE.VERIFICATION_CODE_EXPIRE', userLanguage)}</p>
         </div>
       `;
       

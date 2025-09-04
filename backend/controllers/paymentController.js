@@ -327,11 +327,11 @@ exports.createCommonOrder = async (req, res) => {
     
     // 验证 shippingInfo 的必要字段
     if (!shipping_info.name || !shipping_info.phone || !shipping_info.email) {
-      return res.json({ success: false, message: 'Shipping information is incomplete. Name, phone, and email are required.', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.SHIPPING_INFO_INCOMPLETE'), data: null });
     }
     
     if (!shipping_info.address && !shipping_info.detail) {
-      return res.json({ success: false, message: 'Shipping address is required.', data: null });
+      return res.json({ success: false, message: getMessage('PAYMENT.SHIPPING_ADDRESS_REQUIRED'), data: null });
     }*/
     
     // 移除支付方式限制，现在支持所有支付方式

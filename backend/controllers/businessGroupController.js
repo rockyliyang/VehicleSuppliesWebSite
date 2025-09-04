@@ -1,6 +1,7 @@
 const express = require('express');
 const { query } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
+const { getMessage } = require('../config/messages');
 
 /**
  * 业务组控制器
@@ -20,7 +21,7 @@ class BusinessGroupController {
       if (!group_name || !group_email) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.VALIDATION_FAILED',
+          message: getMessage('BUSINESS_GROUP.VALIDATION_FAILED'),
           data: null
         });
       }
@@ -29,7 +30,7 @@ class BusinessGroupController {
       if (group_name.length < 2 || group_name.length > 64) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.NAME_INVALID_LENGTH',
+          message: getMessage('BUSINESS_GROUP.NAME_INVALID_LENGTH'),
           data: null
         });
       }
@@ -39,7 +40,7 @@ class BusinessGroupController {
       if (!emailRegex.test(group_email)) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.INVALID_EMAIL',
+          message: getMessage('BUSINESS_GROUP.INVALID_EMAIL'),
           data: null
         });
       }
@@ -53,7 +54,7 @@ class BusinessGroupController {
       if (existingGroups.getRowCount() > 0) {
         return res.status(409).json({
           success: false,
-          message: 'BUSINESS_GROUP.NAME_EXISTS',
+          message: getMessage('BUSINESS_GROUP.NAME_EXISTS'),
           data: null
         });
       }
@@ -67,7 +68,7 @@ class BusinessGroupController {
       if (existingEmails.getRowCount() > 0) {
         return res.status(409).json({
           success: false,
-          message: 'BUSINESS_GROUP.EMAIL_EXISTS',
+          message: getMessage('BUSINESS_GROUP.EMAIL_EXISTS'),
           data: null
         });
       }
@@ -90,7 +91,7 @@ class BusinessGroupController {
       
       res.status(201).json({
         success: true,
-        message: 'BUSINESS_GROUP.CREATE_SUCCESS',
+        message: getMessage('BUSINESS_GROUP.CREATE_SUCCESS'),
         data: {
           id: groupId,
           group_name,
@@ -105,7 +106,7 @@ class BusinessGroupController {
       console.error('创建业务组错误:', error);
       res.status(500).json({
         success: false,
-        message: 'BUSINESS_GROUP.CREATE_FAILED',
+        message: getMessage('BUSINESS_GROUP.CREATE_FAILED'),
         data: null
       });
     }
@@ -180,7 +181,7 @@ class BusinessGroupController {
       
       res.json({
         success: true,
-        message: 'BUSINESS_GROUP.LIST_SUCCESS',
+        message: getMessage('BUSINESS_GROUP.LIST_SUCCESS'),
         data: {
           items,
           pagination: {
@@ -196,7 +197,7 @@ class BusinessGroupController {
       console.error('获取业务组列表错误:', error);
       res.status(500).json({
         success: false,
-        message: 'BUSINESS_GROUP.LIST_FAILED',
+        message: getMessage('BUSINESS_GROUP.LIST_FAILED'),
         data: null
       });
     }
@@ -222,7 +223,7 @@ class BusinessGroupController {
       if (groupRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'BUSINESS_GROUP.NOT_FOUND',
+          message: getMessage('BUSINESS_GROUP.NOT_FOUND'),
           data: null
         });
       }
@@ -245,7 +246,7 @@ class BusinessGroupController {
       
       res.json({
         success: true,
-        message: 'BUSINESS_GROUP.DETAIL_SUCCESS',
+        message: getMessage('BUSINESS_GROUP.DETAIL_SUCCESS'),
         data: {
           id: group.id,
           group_name: group.group_name,
@@ -270,7 +271,7 @@ class BusinessGroupController {
       console.error('获取业务组详情错误:', error);
       res.status(500).json({
         success: false,
-        message: 'BUSINESS_GROUP.DETAIL_FAILED',
+        message: getMessage('BUSINESS_GROUP.DETAIL_FAILED'),
         data: null
       });
     }
@@ -289,7 +290,7 @@ class BusinessGroupController {
       if (!group_name || !group_email) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.VALIDATION_FAILED',
+          message: getMessage('BUSINESS_GROUP.VALIDATION_FAILED'),
           data: null
         });
       }
@@ -298,7 +299,7 @@ class BusinessGroupController {
       if (group_name.length < 2 || group_name.length > 64) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.NAME_INVALID_LENGTH',
+          message: getMessage('BUSINESS_GROUP.NAME_INVALID_LENGTH'),
           data: null
         });
       }
@@ -308,7 +309,7 @@ class BusinessGroupController {
       if (!emailRegex.test(group_email)) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.INVALID_EMAIL',
+          message: getMessage('BUSINESS_GROUP.INVALID_EMAIL'),
           data: null
         });
       }
@@ -322,7 +323,7 @@ class BusinessGroupController {
       if (existingGroups.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'BUSINESS_GROUP.NOT_FOUND',
+          message: getMessage('BUSINESS_GROUP.NOT_FOUND'),
           data: null
         });
       }
@@ -336,7 +337,7 @@ class BusinessGroupController {
       if (nameConflicts.getRowCount() > 0) {
         return res.status(409).json({
           success: false,
-          message: 'BUSINESS_GROUP.NAME_EXISTS',
+          message: getMessage('BUSINESS_GROUP.NAME_EXISTS'),
           data: null
         });
       }
@@ -350,7 +351,7 @@ class BusinessGroupController {
       if (emailConflicts.getRowCount() > 0) {
         return res.status(409).json({
           success: false,
-          message: 'BUSINESS_GROUP.EMAIL_EXISTS',
+          message: getMessage('BUSINESS_GROUP.EMAIL_EXISTS'),
           data: null
         });
       }
@@ -373,14 +374,14 @@ class BusinessGroupController {
       if (updateResult.affectedRows === 0) {
         return res.status(404).json({
           success: false,
-          message: 'BUSINESS_GROUP.NOT_FOUND',
+          message: getMessage('BUSINESS_GROUP.NOT_FOUND'),
           data: null
         });
       }
       
       res.json({
         success: true,
-        message: 'BUSINESS_GROUP.UPDATE_SUCCESS',
+        message: getMessage('BUSINESS_GROUP.UPDATE_SUCCESS'),
         data: {
           id: parseInt(id),
           group_name,
@@ -394,7 +395,7 @@ class BusinessGroupController {
       console.error('更新业务组错误:', error);
       res.status(500).json({
         success: false,
-        message: 'BUSINESS_GROUP.UPDATE_FAILED',
+        message: getMessage('BUSINESS_GROUP.UPDATE_FAILED'),
         data: null
       });
     }
@@ -417,7 +418,7 @@ class BusinessGroupController {
       if (groupRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'BUSINESS_GROUP.NOT_FOUND',
+          message: getMessage('BUSINESS_GROUP.NOT_FOUND'),
           data: null
         });
       }
@@ -425,7 +426,7 @@ class BusinessGroupController {
       if (groupRows.getFirstRow().is_default) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.CANNOT_DELETE_DEFAULT',
+          message: getMessage('BUSINESS_GROUP.CANNOT_DELETE_DEFAULT'),
           data: null
         });
       }
@@ -439,7 +440,7 @@ class BusinessGroupController {
       if (messageRows.getFirstRow().count > 0) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.HAS_MESSAGES',
+          message: getMessage('BUSINESS_GROUP.HAS_MESSAGES'),
           data: null
         });
       }
@@ -453,7 +454,7 @@ class BusinessGroupController {
       if (deleteResult.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'BUSINESS_GROUP.NOT_FOUND',
+          message: getMessage('BUSINESS_GROUP.NOT_FOUND'),
           data: null
         });
       }
@@ -466,7 +467,7 @@ class BusinessGroupController {
       
       res.json({
         success: true,
-        message: 'BUSINESS_GROUP.DELETE_SUCCESS',
+        message: getMessage('BUSINESS_GROUP.DELETE_SUCCESS'),
         data: null
       });
       
@@ -474,7 +475,7 @@ class BusinessGroupController {
       console.error('删除业务组错误:', error);
       res.status(500).json({
         success: false,
-        message: 'BUSINESS_GROUP.DELETE_FAILED',
+        message: getMessage('BUSINESS_GROUP.DELETE_FAILED'),
         data: null
       });
     }
@@ -492,7 +493,7 @@ class BusinessGroupController {
       if (!user_id) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.USER_ID_REQUIRED',
+          message: getMessage('BUSINESS_GROUP.USER_ID_REQUIRED'),
           data: null
         });
       }
@@ -506,7 +507,7 @@ class BusinessGroupController {
       if (groupRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'BUSINESS_GROUP.NOT_FOUND',
+          message: getMessage('BUSINESS_GROUP.NOT_FOUND'),
           data: null
         });
       }
@@ -520,7 +521,7 @@ class BusinessGroupController {
       if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'USER_MANAGEMENT.USER_NOT_FOUND',
+          message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
           data: null
         });
       }
@@ -528,7 +529,7 @@ class BusinessGroupController {
       if (!['business', 'admin'].includes(userRows.getFirstRow().user_role)) {
         return res.status(400).json({
           success: false,
-          message: 'BUSINESS_GROUP.INVALID_USER_ROLE',
+          message: getMessage('BUSINESS_GROUP.INVALID_USER_ROLE'),
           data: null
         });
       }
@@ -542,7 +543,7 @@ class BusinessGroupController {
       if (existingAssignments.getRowCount() > 0) {
         return res.status(409).json({
           success: false,
-          message: 'BUSINESS_GROUP.USER_ALREADY_ASSIGNED',
+          message: getMessage('BUSINESS_GROUP.USER_ALREADY_ASSIGNED'),
           data: null
         });
       }
@@ -556,7 +557,7 @@ class BusinessGroupController {
       
       res.status(201).json({
         success: true,
-        message: 'BUSINESS_GROUP.USER_ASSIGNED_SUCCESS',
+        message: getMessage('BUSINESS_GROUP.USER_ASSIGNED_SUCCESS'),
         data: {
           id: insertResult.getFirstRow().id,
           user_id: parseInt(user_id),
@@ -569,7 +570,7 @@ class BusinessGroupController {
       console.error('分配用户到业务组错误:', error);
       res.status(500).json({
         success: false,
-        message: 'BUSINESS_GROUP.USER_ASSIGN_FAILED',
+        message: getMessage('BUSINESS_GROUP.USER_ASSIGN_FAILED'),
         data: null
       });
     }
@@ -591,14 +592,14 @@ class BusinessGroupController {
       if (deleteResult.affectedRows === 0) {
         return res.status(404).json({
           success: false,
-          message: 'BUSINESS_GROUP.USER_NOT_IN_GROUP',
+          message: getMessage('BUSINESS_GROUP.USER_NOT_IN_GROUP'),
           data: null
         });
       }
       
       res.json({
         success: true,
-        message: 'BUSINESS_GROUP.USER_REMOVED_SUCCESS',
+        message: getMessage('BUSINESS_GROUP.USER_REMOVED_SUCCESS'),
         data: null
       });
       
@@ -606,7 +607,7 @@ class BusinessGroupController {
       console.error('从业务组移除用户错误:', error);
       res.status(500).json({
         success: false,
-        message: 'BUSINESS_GROUP.USER_REMOVE_FAILED',
+        message: getMessage('BUSINESS_GROUP.USER_REMOVE_FAILED'),
         data: null
       });
     }
@@ -653,7 +654,7 @@ class BusinessGroupController {
       
       res.json({
         success: true,
-        message: 'BUSINESS_GROUP.AVAILABLE_USERS_SUCCESS',
+        message: getMessage('BUSINESS_GROUP.AVAILABLE_USERS_SUCCESS'),
         data: userRows.getRows().map(user => ({
           id: user.id,
           username: user.username,
@@ -667,7 +668,7 @@ class BusinessGroupController {
       console.error('获取可分配用户列表错误:', error);
       res.status(500).json({
         success: false,
-        message: 'BUSINESS_GROUP.AVAILABLE_USERS_FAILED',
+        message: getMessage('BUSINESS_GROUP.AVAILABLE_USERS_FAILED'),
         data: null
       });
     }

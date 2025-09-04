@@ -627,7 +627,7 @@ exports.uploadImages = async (req, res) => {
         if (image_type === 'main' && !content_id) {
             return res.status(400).json({
                 success: false,
-                message: '主图必须关联到具体的内容'
+                message: getMessage('COMMON_CONTENT.MAIN_IMAGE_REQUIRES_CONTENT')
             });
         }
 

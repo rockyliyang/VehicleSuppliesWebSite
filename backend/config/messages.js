@@ -188,6 +188,7 @@ const MESSAGES = {
     ORDER_NOT_PENDING: 'Order is not in pending status',
     REPAY_SUCCESS: 'Repayment initiated successfully',
     REPAY_FAILED: 'Failed to initiate repayment',
+    INVALID_AMOUNT: 'Invalid payment amount',
     EXCHANGE_RATE_GET_SUCCESS: 'Exchange rate retrieved successfully',
     EXCHANGE_RATE_GET_FAILED: 'Failed to retrieve exchange rate',
     EXCHANGE_RATE_NOT_FOUND: 'Exchange rate not found'
@@ -205,7 +206,39 @@ const MESSAGES = {
     UPDATE_FAILED: 'Failed to update product',
     DELETE_SUCCESS: 'Product deleted successfully',
     DELETE_FAILED: 'Failed to delete product',
-    NOT_FOUND: 'Product not found'
+    NOT_FOUND: 'Product not found',
+    
+    // 价格范围验证相关
+    PRICE_RANGES_EMPTY: 'Price ranges must be a non-empty array',
+    PRICE_RANGE_START_FROM_ONE: 'First price range must start from quantity 1',
+    LAST_PRICE_RANGE_NO_LIMIT: 'Last price range should have no upper limit (max_quantity should be null)',
+    INVALID_MIN_QUANTITY: 'Invalid min_quantity at range {range}',
+    INVALID_PRICE: 'Invalid price at range {range}',
+    MAX_QUANTITY_INVALID: 'max_quantity must be >= min_quantity at range {range}',
+    RANGE_MUST_HAVE_MAX_QUANTITY: 'Range {range} must have max_quantity (except the last range)',
+    PRICE_RANGE_GAP_DETECTED: 'Gap detected between range {range1} and {range2}. Range {range2} should start from {expectedStart}',
+    
+    // 1688产品导入相关
+    IMPORT_1688_SUCCESS: '1688 product imported successfully',
+    IMPORT_1688_FAILED: '1688 product import failed',
+    
+    // 产品价格获取相关
+    PRICE_GET_SUCCESS: 'Price retrieved successfully',
+    PRICE_GET_FAILED: 'Failed to get product price',
+    INVALID_QUANTITY_PARAMETER: 'Invalid quantity parameter',
+    
+    // 产品链接管理相关
+    LINKS_GET_SUCCESS: 'Product links retrieved successfully',
+    LINKS_GET_FAILED: 'Failed to get product links',
+    LINK_PRODUCT_NOT_FOUND: 'Link product not found',
+    NO_VALID_LINK_DATA: 'No valid link data provided',
+    ADD_LINK_FAILED: 'Failed to add product link',
+    LINK_NOT_FOUND: 'Product link not found',
+    LINK_ALREADY_EXISTS: 'Product link already exists',
+    LINK_DELETE_SUCCESS: 'Product link deleted successfully',
+    LINK_DELETE_FAILED: 'Failed to delete product link',
+    LINKS_UPDATE_SUCCESS: 'Product links updated successfully',
+    LINKS_UPDATE_FAILED: 'Failed to update product links'
   },
   
   // 公司信息相关
@@ -287,7 +320,8 @@ const MESSAGES = {
     CONTENT_UPDATE_SUCCESS: 'Content updated successfully',
     CONTENT_UPDATE_FAILED: 'Failed to update content',
     CONTENT_DELETE_SUCCESS: 'Content deleted successfully',
-    CONTENT_DELETE_FAILED: 'Failed to delete content'
+    CONTENT_DELETE_FAILED: 'Failed to delete content',
+    MAIN_IMAGE_REQUIRES_CONTENT: 'Main image must be associated with specific content'
   },
 
   // 联系消息相关

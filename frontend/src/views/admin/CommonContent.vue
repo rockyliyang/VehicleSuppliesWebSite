@@ -464,8 +464,8 @@ export default {
           
           this.$messageHandler.showSuccess(
               this.showAddNavModal ?
-                this.$t('admin.commonContent.success.addNav', '添加导航成功') :
-                this.$t('admin.commonContent.success.updateNav', '更新导航成功'),
+                this.$t('admin.commonContent.success.addNav') :
+                this.$t('admin.commonContent.success.updateNav'),
               this.showAddNavModal ? 'admin.commonContent.success.addNav' : 'admin.commonContent.success.updateNav'
             )
           this.closeNavModal()
@@ -562,8 +562,8 @@ export default {
         
         this.$messageHandler.showSuccess(
           this.showAddContentModal ?
-            this.$t('admin.commonContent.success.addContent', '添加内容成功') :
-            this.$t('admin.commonContent.success.updateContent', '更新内容成功'),
+            this.$t('admin.commonContent.success.addContent') :
+            this.$t('admin.commonContent.success.updateContent'),
           this.showAddContentModal ? 'admin.commonContent.success.addContent' : 'admin.commonContent.success.updateContent'
         )
         
@@ -573,7 +573,7 @@ export default {
       } catch (error) {
         console.error('保存内容失败:', error)
         this.$messageHandler.showError(
-          this.$t('admin.commonContent.error.saveContentFailed', '保存内容失败'),
+          this.$t('admin.commonContent.error.saveContentFailed'),
           'admin.commonContent.error.saveContentFailed'
         )
       }
@@ -592,7 +592,7 @@ export default {
         
         if (response) {
           this.$messageHandler.showSuccess(
-            this.$t('admin.commonContent.success.deleteNav', '删除导航成功'),
+            this.$t('admin.commonContent.success.deleteNav'),
             'admin.commonContent.success.deleteNav'
           )
           await this.loadNavList()
@@ -617,7 +617,7 @@ export default {
         
         if (response) {
           this.$messageHandler.showSuccess(
-            this.$t('admin.commonContent.success.deleteContent', '删除内容成功'),
+            this.$t('admin.commonContent.success.deleteContent'),
             'admin.commonContent.success.deleteContent'
           )
           await this.loadContentList(this.selectedNav.id)

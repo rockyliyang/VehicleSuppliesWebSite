@@ -55,7 +55,7 @@ exports.uploadImage = async (req, res) => {
   
   const { imageName } = req.body;
   if (!imageName) {
-    return res.json({ success: false, message: 'Image name is required', data: null });
+    return res.json({ success: false, message: getMessage('COMPANY.IMAGE_NAME_REQUIRED'), data: null });
   }
   
   const ext = path.extname(req.file.originalname).toLowerCase();
@@ -85,7 +85,7 @@ exports.uploadImage = async (req, res) => {
     } else if (imageName.includes('wechat')) {
       successMessage = getMessage('COMPANY.WECHAT_UPLOAD_SUCCESS');
     } else {
-      successMessage = 'Image uploaded successfully';
+      successMessage = getMessage('COMPANY.IMAGE_UPLOAD_SUCCESS');
     }
     
     res.json({ success: true, message: successMessage, data: { url } });

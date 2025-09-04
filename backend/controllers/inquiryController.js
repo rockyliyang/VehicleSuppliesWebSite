@@ -965,7 +965,7 @@ exports.findInquiryByProduct = async (req, res) => {
     } else {
       return res.json({
         success: true,
-        message: 'No matching inquiry found',
+        message: getMessage('INQUIRY.NOT_FOUND'),
         data: null
       });
     }

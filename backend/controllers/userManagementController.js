@@ -291,7 +291,7 @@ class UserManagementController {
       
       res.json({
         success: true,
-        message: 'USER_MANAGEMENT.BUSINESS_STAFF_LIST_SUCCESS',
+        message: getMessage('USER_MANAGEMENT.BUSINESS_STAFF_LIST_SUCCESS'),
         data: {
           items,
           pagination: {
@@ -307,7 +307,7 @@ class UserManagementController {
       console.error('获取业务人员列表错误:', error);
       res.status(500).json({
         success: false,
-        message: 'USER_MANAGEMENT.BUSINESS_STAFF_LIST_FAILED',
+        message: getMessage('USER_MANAGEMENT.BUSINESS_STAFF_LIST_FAILED'),
         data: null
       });
     }
@@ -543,7 +543,7 @@ class UserManagementController {
       
       res.json({
         success: true,
-        message: 'USER_MANAGEMENT.USER_LIST_SUCCESS',
+        message: getMessage('USER_MANAGEMENT.USER_LIST_SUCCESS'),
         data: {
           items,
           pagination: {
@@ -559,7 +559,7 @@ class UserManagementController {
       console.error('获取用户列表错误:', error);
       res.status(500).json({
         success: false,
-        message: 'USER_MANAGEMENT.USER_LIST_FAILED',
+        message: getMessage('USER_MANAGEMENT.USER_LIST_FAILED'),
         data: null
       });
     }
@@ -583,7 +583,7 @@ class UserManagementController {
       if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'USER_MANAGEMENT.USER_NOT_FOUND',
+          message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
           data: null
         });
       }
@@ -598,7 +598,7 @@ class UserManagementController {
         if (existingUsers.getRowCount() > 0) {
           return res.status(400).json({
             success: false,
-            message: 'USER_MANAGEMENT.USERNAME_EXISTS',
+            message: getMessage('USER_MANAGEMENT.USERNAME_EXISTS'),
             data: null
           });
         }
@@ -614,7 +614,7 @@ class UserManagementController {
         if (existingEmails.getRowCount() > 0) {
           return res.status(400).json({
             success: false,
-            message: 'USER_MANAGEMENT.EMAIL_EXISTS',
+            message: getMessage('USER_MANAGEMENT.EMAIL_EXISTS'),
             data: null
           });
         }
@@ -627,7 +627,7 @@ class UserManagementController {
         if (password.length < 6) {
           return res.status(400).json({
             success: false,
-            message: 'USER_MANAGEMENT.PASSWORD_TOO_SHORT',
+            message: getMessage('USER_MANAGEMENT.PASSWORD_TOO_SHORT'),
             data: null
           });
         }
@@ -689,7 +689,7 @@ class UserManagementController {
           if (bgRows.getRowCount() === 0) {
             return res.status(400).json({
               success: false,
-              message: 'BUSINESS_GROUP.NOT_FOUND',
+              message: getMessage('BUSINESS_GROUP.NOT_FOUND'),
               data: null
             });
           }
@@ -703,7 +703,7 @@ class UserManagementController {
       if (updateFields.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.NO_FIELDS_TO_UPDATE',
+          message: getMessage('USER_MANAGEMENT.NO_FIELDS_TO_UPDATE'),
           data: null
         });
       }
@@ -723,14 +723,14 @@ class UserManagementController {
       if (updateResult.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'USER_MANAGEMENT.USER_NOT_FOUND',
+          message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
           data: null
         });
       }
       
       res.json({
         success: true,
-        message: 'USER_MANAGEMENT.USER_UPDATE_SUCCESS',
+        message: getMessage('USER_MANAGEMENT.USER_UPDATE_SUCCESS'),
         data: {
           id: parseInt(id),
           username,
@@ -744,7 +744,7 @@ class UserManagementController {
       console.error('更新用户信息错误:', error);
       res.status(500).json({
         success: false,
-        message: 'USER_MANAGEMENT.USER_UPDATE_FAILED',
+        message: getMessage('USER_MANAGEMENT.USER_UPDATE_FAILED'),
         data: null
       });
     }
@@ -762,7 +762,7 @@ class UserManagementController {
       if (!Array.isArray(user_ids) || user_ids.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.INVALID_USER_IDS',
+          message: getMessage('USER_MANAGEMENT.INVALID_USER_IDS'),
           data: null
         });
       }
@@ -770,7 +770,7 @@ class UserManagementController {
       if (!['user', 'business', 'admin'].includes(user_role)) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.INVALID_ROLE',
+          message: getMessage('USER_MANAGEMENT.INVALID_ROLE'),
           data: null
         });
       }
@@ -779,7 +779,7 @@ class UserManagementController {
       if (user_ids.includes(req.userId)) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.CANNOT_MODIFY_SELF',
+          message: getMessage('USER_MANAGEMENT.CANNOT_MODIFY_SELF'),
           data: null
         });
       }
@@ -793,7 +793,7 @@ class UserManagementController {
       if (userRows.getRowCount() !== user_ids.length) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.SOME_USERS_NOT_FOUND',
+          message: getMessage('USER_MANAGEMENT.SOME_USERS_NOT_FOUND'),
           data: null
         });
       }
@@ -814,7 +814,7 @@ class UserManagementController {
       
       res.json({
         success: true,
-        message: 'USER_MANAGEMENT.BATCH_ROLE_UPDATE_SUCCESS',
+        message: getMessage('USER_MANAGEMENT.BATCH_ROLE_UPDATE_SUCCESS'),
         data: {
           updated_count: updateResult.getRowCount(),
           user_ids: user_ids,
@@ -826,7 +826,7 @@ class UserManagementController {
       console.error('批量更新用户角色错误:', error);
       res.status(500).json({
         success: false,
-        message: 'USER_MANAGEMENT.BATCH_ROLE_UPDATE_FAILED',
+        message: getMessage('USER_MANAGEMENT.BATCH_ROLE_UPDATE_FAILED'),
         data: null
       });
     }
@@ -849,7 +849,7 @@ class UserManagementController {
       if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'USER_MANAGEMENT.USER_NOT_FOUND',
+          message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
           data: null
         });
       }
@@ -869,7 +869,7 @@ class UserManagementController {
       if (parseInt(id) === req.userId) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.CANNOT_DELETE_SELF',
+          message: getMessage('USER_MANAGEMENT.CANNOT_DELETE_SELF'),
           data: null
         });
       }
@@ -923,7 +923,7 @@ class UserManagementController {
       if (userRows.getRowCount() === 0) {
         return res.status(404).json({
           success: false,
-          message: 'USER_MANAGEMENT.USER_NOT_FOUND',
+          message: getMessage('USER_MANAGEMENT.USER_NOT_FOUND'),
           data: null
         });
       }
@@ -934,7 +934,7 @@ class UserManagementController {
       if (!['business', 'admin'].includes(user.user_role)) {
         return res.status(400).json({
           success: false,
-          message: 'USER_MANAGEMENT.INVALID_USER_ROLE_FOR_BUSINESS_GROUP',
+          message: getMessage('USER_MANAGEMENT.INVALID_USER_ROLE_FOR_BUSINESS_GROUP'),
           data: null
         });
       }
@@ -949,7 +949,7 @@ class UserManagementController {
         if (groupRows.getRowCount() !== business_group_ids.length) {
           return res.status(400).json({
             success: false,
-            message: 'USER_MANAGEMENT.INVALID_BUSINESS_GROUPS',
+            message: getMessage('USER_MANAGEMENT.INVALID_BUSINESS_GROUPS'),
             data: null
           });
         }

@@ -55,7 +55,8 @@
 
             <!-- 导航按钮 -->
             <div class="news-navigation">
-              <el-button @click="goToPrevious" :disabled="!prevContent" type="primary" plain class="nav-button prev-button">
+              <el-button @click="goToPrevious" :disabled="!prevContent" type="primary" plain
+                class="nav-button prev-button">
                 <el-icon>
                   <ArrowLeft />
                 </el-icon>
@@ -185,7 +186,6 @@ export default {
         this.navList = response.data.navList || [];
       } catch (error) {
         console.error('获取导航菜单失败:', error);
-        this.$messageHandler.showError(this.$t('common.error.fetch_nav_failed', '获取导航菜单失败'), 'common.error.fetch_nav_failed');
       }
     },
 
@@ -243,7 +243,6 @@ export default {
         }
       } catch (error) {
         console.error('获取内容详情失败:', error);
-        this.$messageHandler.showError(this.$t('common.error.fetch_content_failed', '获取内容详情失败'), 'common.error.fetch_content_failed');
       } finally {
         this.loading = false;
       }
@@ -531,19 +530,19 @@ export default {
   border-color: $primary-color !important;
   color: $primary-color !important;
   border: 1px solid $primary-color !important;
-  
+
   &:hover:not(.is-disabled) {
     background-color: $primary-color !important;
     border-color: $primary-color !important;
     color: white !important;
   }
-  
+
   &.is-disabled {
     background-color: $gray-100 !important;
     border-color: $gray-300 !important;
     color: $gray-400 !important;
   }
-  
+
   &:focus {
     background-color: transparent !important;
     border-color: $primary-color !important;
@@ -561,19 +560,19 @@ export default {
   border-color: $primary-color !important;
   color: $primary-color !important;
   border: 1px solid $primary-color !important;
-  
+
   &:hover:not(.is-disabled) {
     background-color: $primary-color !important;
     border-color: $primary-color !important;
     color: white !important;
   }
-  
+
   &.is-disabled {
     background-color: $gray-100 !important;
     border-color: $gray-300 !important;
     color: $gray-400 !important;
   }
-  
+
   &:focus {
     background-color: transparent !important;
     border-color: $primary-color !important;
@@ -586,13 +585,13 @@ export default {
   color: $gray-700 !important;
   border-color: $gray-200 !important;
   border: 1px solid $gray-200 !important;
-  
+
   &:hover {
     background-color: $primary-color !important;
     border-color: $primary-color !important;
     color: white !important;
   }
-  
+
   &:focus {
     background-color: $gray-200 !important;
     border-color: $gray-200 !important;

@@ -279,7 +279,7 @@ exports.updateOrder = async (req, res) => {
     if (order.status !== 'pending') {
       return res.status(400).json({
         success: false,
-        message: '只有待支付状态的订单可以修改配送信息'
+        message: getMessage('ORDER.UPDATE_STATUS_INVALID')
       });
     }
 
@@ -328,7 +328,7 @@ exports.updateOrder = async (req, res) => {
     if (updateFields.length === 0) {
       return res.status(400).json({
         success: false,
-        message: '没有提供需要更新的字段'
+        message: getMessage('ORDER.UPDATE_NO_FIELDS')
       });
     }
 
@@ -348,13 +348,13 @@ exports.updateOrder = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: '订单配送信息更新成功'
+      message: getMessage('ORDER.UPDATE_SUCCESS')
     });
   } catch (error) {
     console.error('更新订单失败:', error);
     return res.status(500).json({
        success: false,
-       message: '更新订单失败',
+       message: getMessage('ORDER.UPDATE_FAILED'),
        error: error.message
      });
    }
