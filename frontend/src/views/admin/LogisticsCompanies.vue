@@ -48,6 +48,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="name" :label="$t('logistics.table.name') || '公司名称'" min-width="150" />
+        <el-table-column prop="code" :label="$t('logistics.table.code') || '代码'" min-width="120" />
         <el-table-column :label="$t('logistics.table.description') || '描述'" min-width="200">
           <template #default="{ row }">
             {{ row.description || $t('logistics.table.no_description') || '无描述' }}
@@ -87,7 +88,7 @@
               {{ $t('logistics.action.edit') || '编辑' }}
             </el-button>
             <el-button type="success" size="small" @click="openShippingFeeModal(row)">
-              {{ $t('logistics.action.manage_shipping_fee') || '价格范围' }}
+              {{ $t('logistics.action.manage_continued_fee') || '续费费用' }}
             </el-button>
             <el-button type="info" size="small" @click="openFeeFactorModal(row)">
               {{ $t('logistics.action.manage_fee_factor') || '费用系数' }}
@@ -119,6 +120,10 @@
         <el-form-item :label="$t('logistics.form.name') || '公司名称'" required>
           <el-input v-model="companyForm.name" :placeholder="$t('logistics.form.name_placeholder') || '请输入公司名称'"
             required />
+        </el-form-item>
+
+        <el-form-item :label="$t('logistics.form.code') || '代码'">
+          <el-input v-model="companyForm.code" :placeholder="$t('logistics.form.code_placeholder') || '请输入公司代码'" />
         </el-form-item>
 
         <el-form-item :label="$t('logistics.form.description') || '描述'">
@@ -210,7 +215,7 @@
             </div>
             <div class="shipping-fee-table">
               <div v-if="Object.keys(defaultShippingFeeRangesByUnit).length === 0" class="el-empty">
-                <div class="el-empty__description">暂无默认运费范围</div>
+                <div class="el-empty__description">暂无默认续费范围范围</div>
               </div>
               <div v-else>
                 <div v-for="(ranges, unit) in defaultShippingFeeRangesByUnit" :key="unit" class="unit-group">
@@ -518,6 +523,11 @@
                     ${{ parseFloat(row.initial_fee).toFixed(2) }}
                   </template>
                 </el-table-column>
+                <el-table-column :label="$t('logistics.fee_factor.continued_weight') || '续重'" width="120">
+                  <template #default="{ row }">
+                    {{ row.continued_weight }} kg
+                  </template>
+                </el-table-column>
                 <el-table-column :label="$t('logistics.fee_factor.throw_ratio_coefficient') || '抛比系数'" width="120">
                   <template #default="{ row }">
                     {{ row.throw_ratio_coefficient }}
@@ -587,6 +597,11 @@
                     ${{ parseFloat(row.initial_fee).toFixed(2) }}
                   </template>
                 </el-table-column>
+                <el-table-column :label="$t('logistics.fee_factor.continued_weight') || '续重'" width="120">
+                  <template #default="{ row }">
+                    {{ row.continued_weight }} kg
+                  </template>
+                </el-table-column>
                 <el-table-column :label="$t('logistics.fee_factor.throw_ratio_coefficient') || '抛比系数'" width="120">
                   <template #default="{ row }">
                     {{ row.throw_ratio_coefficient }}
@@ -651,6 +666,11 @@
                     ${{ parseFloat(row.initial_fee).toFixed(2) }}
                   </template>
                 </el-table-column>
+                <el-table-column :label="$t('logistics.fee_factor.continued_weight') || '续重'" width="120">
+                  <template #default="{ row }">
+                    {{ row.continued_weight }} kg
+                  </template>
+                </el-table-column>
                 <el-table-column :label="$t('logistics.fee_factor.throw_ratio_coefficient') || '抛比系数'" width="120">
                   <template #default="{ row }">
                     {{ row.throw_ratio_coefficient }}
@@ -708,11 +728,8 @@
       <div class="fee-factor-form-content">
         <!-- 表单描述 -->
         <div class="form-description">
-          <el-alert
-            :title="$t('logistics.fee_factor.form_description') || '费用系数用于计算物流费用，请根据实际情况填写各项参数'"
-            type="info"
-            :closable="false"
-            show-icon>
+          <el-alert :title="$t('logistics.fee_factor.form_description') || '费用系数用于计算物流费用，请根据实际情况填写各项参数'" type="info"
+            :closable="false" show-icon>
           </el-alert>
         </div>
 
@@ -723,9 +740,10 @@
               <h4>{{ $t('logistics.fee_factor.group_settings') || '分组设置' }}</h4>
               <p>{{ $t('logistics.fee_factor.group_settings_desc') || '选择费用系数的适用范围' }}</p>
             </div>
-            
+
             <el-form-item :label="$t('logistics.fee_factor.factor_type') || '系数类型'">
-              <el-radio-group v-model="feeFactorForm.factor_type" @change="handleFactorTypeChange" class="factor-type-radio">
+              <el-radio-group v-model="feeFactorForm.factor_type" @change="handleFactorTypeChange"
+                class="factor-type-radio">
                 <el-radio label="default" class="factor-radio">
                   {{ $t('logistics.fee_factor.default_type') || '默认' }}
                 </el-radio>
@@ -748,8 +766,9 @@
             </el-form-item>
 
             <el-form-item v-if="feeFactorForm.factor_type === 'tag'" :label="$t('logistics.fee_factor.tag') || '标签'">
-              <el-select v-model="feeFactorForm.tags_id" :placeholder="$t('logistics.fee_factor.tag_placeholder') || '选择标签'"
-                clearable style="width: 100%" filterable size="large">
+              <el-select v-model="feeFactorForm.tags_id"
+                :placeholder="$t('logistics.fee_factor.tag_placeholder') || '选择标签'" clearable style="width: 100%"
+                filterable size="large">
                 <el-option v-for="tag in countryTags" :key="tag.id" :label="tag.value" :value="tag.id" />
               </el-select>
             </el-form-item>
@@ -771,8 +790,16 @@
               </el-input-number>
             </el-form-item>
 
+            <el-form-item :label="$t('logistics.fee_factor.continued_weight') || '续重重量'" required>
+              <el-input-number v-model="feeFactorForm.continued_weight" :min="0" :precision="2" style="width: 100%"
+                :placeholder="$t('logistics.fee_factor.additional_weight_placeholder') || '请输入续重重量(kg)'">
+                <template #append>kg</template>
+              </el-input-number>
+            </el-form-item>
+
             <el-form-item :label="$t('logistics.fee_factor.throw_ratio_coefficient') || '抛比系数'" required>
-              <el-input-number v-model="feeFactorForm.throw_ratio_coefficient" :min="0" :precision="3" style="width: 100%"
+              <el-input-number v-model="feeFactorForm.throw_ratio_coefficient" :min="0" :precision="3"
+                style="width: 100%"
                 :placeholder="$t('logistics.fee_factor.throw_ratio_coefficient_placeholder') || '请输入抛比系数'" />
               <div class="field-help">
                 {{ $t('logistics.fee_factor.throw_ratio_help') || '抛比系数用于计算体积重量，通常为5000-6000' }}
@@ -900,6 +927,7 @@ export default {
         country_id: null,
         initial_weight: 0,
         initial_fee: 0,
+        continued_weight: 0,
         throw_ratio_coefficient: 0,
         surcharge: 0,
         discount: 0,
@@ -1106,6 +1134,7 @@ export default {
       this.companyForm = {
         id: null,
         name: '',
+        code: '',
         description: '',
         contact_phone: '',
         contact_email: '',
@@ -1120,6 +1149,7 @@ export default {
       this.companyForm = {
         id: company.id,
         name: company.name,
+        code: company.code || '',
         description: company.description || '',
         contact_phone: company.contact_phone || '',
         contact_email: company.contact_email || '',
@@ -1134,6 +1164,7 @@ export default {
       try {
         const companyData = {
           name: this.companyForm.name,
+          code: this.companyForm.code,
           description: this.companyForm.description,
           contact_phone: this.companyForm.contact_phone,
           contact_email: this.companyForm.contact_email,
@@ -1167,11 +1198,11 @@ export default {
     async deleteCompany(company) {
       try {
         await this.$confirm(
-          this.$t('logistics.confirm.delete_message', { name: company.name }) || `确定要删除"${company.name}"吗？`,
-          this.$t('logistics.confirm.delete_title') || '确认删除',
+          this.$t('logistics.confirm.delete_message', { name: company.name }),
+          this.$t('logistics.confirm.delete_title'),
           {
-            confirmButtonText: this.$t('common.confirm') || '确定',
-            cancelButtonText: this.$t('common.cancel') || '取消',
+            confirmButtonText: this.$t('common.confirm'),
+            cancelButtonText: this.$t('common.cancel'),
             type: 'warning'
           }
         )
@@ -1752,6 +1783,7 @@ export default {
         country_id: null,
         initial_weight: 0,
         initial_fee: 0,
+        continued_weight: 0,
         throw_ratio_coefficient: 0,
         surcharge: 0,
         discount: 0,
@@ -1771,6 +1803,7 @@ export default {
         country_id: factor.country_id,
         initial_weight: factor.initial_weight,
         initial_fee: factor.initial_fee,
+        continued_weight: factor.continued_weight || 0,
         throw_ratio_coefficient: factor.throw_ratio_coefficient,
         surcharge: factor.surcharge,
         discount: factor.discount,
@@ -1801,6 +1834,7 @@ export default {
           tags_id: this.feeFactorForm.factor_type === 'tag' ? this.feeFactorForm.tags_id : null,
           country_id: this.feeFactorForm.factor_type === 'country' ? this.feeFactorForm.country_id : null,
           initial_weight: parseFloat(this.feeFactorForm.initial_weight),
+          continued_weight: parseFloat(this.feeFactorForm.continued_weight),
           initial_fee: parseFloat(this.feeFactorForm.initial_fee),
           throw_ratio_coefficient: parseFloat(this.feeFactorForm.throw_ratio_coefficient),
           surcharge: parseFloat(this.feeFactorForm.surcharge),
@@ -2580,18 +2614,18 @@ export default {
     margin-bottom: 8vh !important;
     max-height: 84vh;
   }
-  
+
   .el-dialog__body {
     padding: 20px;
     max-height: 70vh;
     overflow-y: auto;
   }
-  
+
   .el-dialog__header {
     padding: 16px 20px 12px;
     border-bottom: 1px solid #e4e7ed;
   }
-  
+
   .el-dialog__footer {
     padding: 12px 20px 16px;
     border-top: 1px solid #e4e7ed;
@@ -2869,29 +2903,29 @@ export default {
       width: 95% !important;
       margin: 2.5vh auto !important;
     }
-    
+
     .el-dialog__body {
       padding: 16px;
       max-height: 80vh;
     }
   }
-  
+
   .form-row {
     flex-direction: column;
     gap: 12px;
     margin-bottom: 12px;
   }
-  
+
   .form-item-half {
     flex: none;
     margin-bottom: 12px;
   }
-  
+
   .factor-type-radio {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .factor-radio {
     flex: none;
     min-width: auto;
@@ -2899,40 +2933,40 @@ export default {
     text-align: left;
     justify-content: flex-start;
   }
-  
+
   .factor-radio .el-radio__label {
     padding-left: 8px;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .grouping-selector .el-radio-group {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .company-info {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .form-section {
     padding: 16px;
     margin-bottom: 16px;
   }
-  
+
   .section-title {
     margin-bottom: 16px;
   }
-  
+
   .section-title h4 {
     font-size: 15px;
   }
-  
+
   .section-title p {
     font-size: 12px;
   }

@@ -13,18 +13,13 @@
             <div class="main-image" ref="mainImage" :class="{ 'mobile-view': isMobile }" @mousemove="handleMouseMove"
               @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
               <!-- 显示视频或图片 -->
-              <iframe v-if="isActiveMediaVideo && isEmbedVideo(activeImage)" 
-                :src="getEmbedVideoUrl(activeImage)" 
-                :title="product.name"
-                class="main-video embed-video"
-                frameborder="0"
+              <iframe v-if="isActiveMediaVideo && isEmbedVideo(activeImage)" :src="getEmbedVideoUrl(activeImage)"
+                :title="product.name" class="main-video embed-video" frameborder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-                ref="mainVideoEl"
-                @load="updateMainImgSize">
+                allowfullscreen ref="mainVideoEl" @load="updateMainImgSize">
               </iframe>
-              <video v-else-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted ref="mainVideoEl"
-                class="main-video" @loadedmetadata="updateMainImgSize">
+              <video v-else-if="isActiveMediaVideo" :src="activeImage" :alt="product.name" controls muted
+                ref="mainVideoEl" class="main-video" @loadedmetadata="updateMainImgSize">
                 您的浏览器不支持视频播放。
               </video>
               <img v-else :src="activeImage || product.thumbnail_url" :alt="product.name" @error="handleImageError"
@@ -71,8 +66,8 @@
           <div class="product-info-block">
             <div class="product-header">
               <h1 class="product-title">{{ product.name }}</h1>
-              <el-button :type="isFavorited ? 'danger' : 'default'" circle size="large"
-                @click="toggleFavorite" :loading="favoriteLoading" class="favorite-btn"
+              <el-button :type="isFavorited ? 'danger' : 'default'" circle size="large" @click="toggleFavorite"
+                :loading="favoriteLoading" class="favorite-btn"
                 :title="isFavorited ? $t('productDetail.removeFromFavorites') : $t('productDetail.addToFavorites')">
                 <el-icon :size="24">
                   <Star :style="{ color: (isLoggedIn && isFavorited) ? '#f56c6c' : '#909399' }" />
@@ -280,7 +275,8 @@
     </div>
 
     <!-- 立即购买对话框 -->
-    <BuyNowDialog v-model="showBuyNowDialog" :product="product" :initial-quantity="getMinQuantityFromPriceRanges(product)" @checkout="handleCheckout" />
+    <BuyNowDialog v-model="showBuyNowDialog" :product="product"
+      :initial-quantity="getMinQuantityFromPriceRanges(product)" @checkout="handleCheckout" />
   </div>
 </template>
 
@@ -1547,7 +1543,7 @@ export default {
   width: 100%;
   height: 100%;
   position: relative;
-  
+
   img {
     width: 100%;
     height: 100%;
@@ -2582,12 +2578,11 @@ export default {
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
-  overflow: auto;
+
   border-radius: 12px;
   background: white;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
+  @include flex-center;
 }
 
 /* 移动端登录对话框覆盖整个屏幕 */
@@ -3235,27 +3230,29 @@ export default {
   }
 }
 
-/* Element UI 复选框样式调整 */
-:deep(.el-checkbox) {
-  width: 100%;
-
-  .el-checkbox__label {
+/* 推荐商品和一起购买功能的复选框样式调整 */
+.buy-together-products, .related-product-card {
+  :deep(.el-checkbox) {
     width: 100%;
-    padding-left: $spacing-sm;
+
+    .el-checkbox__label {
+      width: 100%;
+      padding-left: $spacing-sm;
+    }
+
+    .el-checkbox__input {
+      align-self: flex-start;
+      margin-top: 2px;
+    }
   }
 
-  .el-checkbox__input {
-    align-self: flex-start;
-    margin-top: 2px;
+  :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+    background-color: $primary-color;
+    border-color: $primary-color;
   }
-}
 
-:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: $primary-color;
-  border-color: $primary-color;
-}
-
-:deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
-  color: $text-primary;
+  :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+    color: $text-primary;
+  }
 }
 </style>

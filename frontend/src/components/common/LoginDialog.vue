@@ -741,7 +741,8 @@ export default {
   align-items: center;
   margin-bottom: $spacing-md;
   font-size: $font-size-xl;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .remember-checkbox {

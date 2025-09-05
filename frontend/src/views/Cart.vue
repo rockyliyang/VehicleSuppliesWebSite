@@ -404,15 +404,16 @@ export default {
           id: item.id,
           product_id: item.product_id,
           product_code: item.product_code,
-          name: item.name,
+          category_name: item.category_name,
+          product_name: item.product_name,
           image_url: item.thumbnail_url || item.image_url,
           quantity: item.quantity,
           price: item.calculatedPrice,
           // 添加产品尺寸重量信息用于运费计算
-          length: item.product_length || 0,
-          width: item.product_width || 0,
-          height: item.product_height || 0,
-          weight: item.product_weight || 0
+          product_length: item.product_length || 0,
+          product_width: item.product_width || 0,
+          product_height: item.product_height || 0,
+          product_weight: item.product_weight || 0
         }});
       sessionStorage.setItem('selectedCartItems', JSON.stringify(checkoutData) );
       this.$router.push({

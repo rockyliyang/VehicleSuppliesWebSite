@@ -667,6 +667,7 @@ CREATE TABLE IF NOT EXISTS shippingfee_factor (
   tags_id BIGINT DEFAULT NULL,
   country_id BIGINT DEFAULT NULL,
   initial_weight DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+  continued_weight DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
   initial_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
   throw_ratio_coefficient DECIMAL(10, 3) NOT NULL DEFAULT 1.000,
   surcharge DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -686,6 +687,7 @@ COMMENT ON COLUMN shippingfee_factor.logistics_companies_id IS '关联的物流�
 COMMENT ON COLUMN shippingfee_factor.tags_id IS '关联的标签ID，可为空，用于按标签设置运费系数';
 COMMENT ON COLUMN shippingfee_factor.country_id IS '关联的国家ID，可为空，用于按国家设置运费系数';
 COMMENT ON COLUMN shippingfee_factor.initial_weight IS '首重重量（千克）';
+COMMENT ON COLUMN shippingfee_factor.continued_weight IS '续重重量（千克）';
 COMMENT ON COLUMN shippingfee_factor.initial_fee IS '首重费用';
 COMMENT ON COLUMN shippingfee_factor.throw_ratio_coefficient IS '抛比系数';
 COMMENT ON COLUMN shippingfee_factor.surcharge IS '附加费';

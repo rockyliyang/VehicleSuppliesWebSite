@@ -17,7 +17,7 @@
               </el-icon>
               {{ $t('checkout.shippingInfo') || '收货信息' }}
             </div>
-            <div class="shipping-header" >
+            <div class="shipping-header">
               <el-button @click="showAddressDialog = true" type="primary" class="address-select-btn">
                 {{ $t('address.selectFromBook') || '从地址簿选择' }}
               </el-button>
@@ -31,11 +31,11 @@
             <div class="form-row">
               <el-form-item prop="name">
                 <el-input v-model="shippingInfo.name" :placeholder="$t('checkout.namePlaceholder') || '收货人姓名'"
-                   clearable />
+                  clearable />
               </el-form-item>
               <el-form-item prop="country">
                 <el-select v-model="shippingInfo.country" :placeholder="$t('checkout.countryPlaceholder') || '选择国家'"
-                   clearable @change="handleCountryChange">
+                  clearable @change="handleCountryChange">
                   <el-option v-for="country in countries" :key="country.iso3" :label="country.name"
                     :value="country.name">
                   </el-option>
@@ -45,45 +45,43 @@
             <div class="form-row">
               <el-form-item prop="state">
                 <el-select v-if="currentStates.length > 0" v-model="shippingInfo.state"
-                  :placeholder="$t('checkout.statePlaceholder') || '选择省份'"
-                  :disabled=" !shippingInfo.country" clearable @change="handleStateChange">
+                  :placeholder="$t('checkout.statePlaceholder') || '选择省份'" :disabled=" !shippingInfo.country" clearable
+                  @change="handleStateChange">
                   <el-option v-for="state in currentStates" :key="state.id" :label="state.name" :value="state.name">
                   </el-option>
                 </el-select>
                 <el-input v-else v-model="shippingInfo.state" :placeholder="$t('checkout.statePlaceholder') || '选择省份'"
-                   clearable />
+                  clearable />
               </el-form-item>
               <el-form-item prop="city">
-                <el-input v-model="shippingInfo.city" :placeholder="$t('checkout.cityPlaceholder') || '城市'"
-                   clearable />
+                <el-input v-model="shippingInfo.city" :placeholder="$t('checkout.cityPlaceholder') || '城市'" clearable />
               </el-form-item>
             </div>
             <div class="form-row">
               <el-form-item class="phone-input-group">
                 <el-select v-model="shippingInfo.phone_country_code"
-                  :placeholder="$t('checkout.countryCodePlaceholder') || '区号'"  clearable
-                  class="country-code-select">
+                  :placeholder="$t('checkout.countryCodePlaceholder') || '区号'" clearable class="country-code-select">
                   <el-option v-for="country in countries" :key="country.iso3" :label="country.phone_code"
                     :value="country.phone_code">
                   </el-option>
                 </el-select>
                 <el-input v-model="shippingInfo.phone" :placeholder="$t('checkout.phonePlaceholder') || '手机号码'"
-                   clearable class="phone-number-input" />
+                  clearable class="phone-number-input" />
               </el-form-item>
               <el-form-item>
                 <el-input v-model="shippingInfo.email" :placeholder="$t('checkout.emailPlaceholder') || '邮箱地址'"
-                   clearable autocomplete="off" />
+                  clearable autocomplete="off" />
               </el-form-item>
             </div>
             <div class="form-row">
               <el-form-item prop="zipCode">
                 <el-input v-model="shippingInfo.zipCode" :placeholder="$t('checkout.zipCodePlaceholder') || '邮政编码'"
-                   clearable />
+                  clearable />
               </el-form-item>
             </div>
             <el-form-item prop="address">
               <el-input v-model="shippingInfo.address" type="textarea" :rows="3"
-                :placeholder="$t('checkout.addressPlaceholder') || '详细收货地址'"  />
+                :placeholder="$t('checkout.addressPlaceholder') || '详细收货地址'" />
             </el-form-item>
           </el-form>
         </section>
@@ -97,7 +95,7 @@
               </el-icon>
               {{ $t('checkout.orderInfo') || '订单信息' }}
             </div>
-            <div class="order-header-actions" >
+            <div class="order-header-actions">
               <el-button @click="handleBackClick" type="default" class="back-btn">
                 <el-icon>
                   <ArrowLeft />
@@ -143,13 +141,8 @@
 
           <!-- 手机端卡片显示 -->
           <div class="mobile-only">
-            <HProductCard 
-              :items="orderItems"
-              :force-card-view="true"
-              product-code-label="产品类型"
-              product-code-field="category_name"
-              price-field="calculatedPrice"
-            />
+            <HProductCard :items="orderItems" :force-card-view="true" product-code-label="产品类型"
+              product-code-field="category_name" price-field="calculatedPrice" />
           </div>
           <div class="order-total">
             <div class="total-container">
@@ -462,7 +455,24 @@ export default {
       return items;
     },
     countries() {
-      return this.$store.getters['countryState/countries'] || [];
+      const allCountries = this.$store.getters['countryState/countries'] || [];
+      
+      // 如果没有物流公司信息或者物流公司没有code，返回所有国家
+      if (!this.logisticsCompany || !this.logisticsCompany.code) {
+        return allCountries;
+      }
+      
+      // 根据物流公司code过滤国家
+      const companyCode = this.logisticsCompany.code;
+      const filteredCountries = allCountries.filter(country => {
+        // 检查国家是否有tags，并且tags中是否有以companyCode开头的值
+        return country.tags && Array.isArray(country.tags) && 
+               country.tags.some(tag => tag.value && tag.value.startsWith(companyCode));
+      });
+      
+      console.info(`fitler code is ${companyCode}, filtered country count: ${filteredCountries.length}`);
+      // 如果过滤后没有国家，则返回所有国家
+      return filteredCountries.length > 0 ? filteredCountries : allCountries;
     },
     currentStates() {
       if (!this.shippingInfo.country || !this.countries || this.countries.length === 0) {
@@ -529,6 +539,7 @@ export default {
       if (selectedItemsStr) {
         try {
           this.orderItems = JSON.parse(selectedItemsStr);
+          console.info(`[UnifiedCheckout] 从sessionStorage获取选中的购物车商品: ${selectedItemsStr}`);
           this.calculateTotal();
           
           // 检查是否来自询价单（通过检查商品数据结构或特殊标识）
@@ -646,6 +657,8 @@ export default {
     },
 
     async calculateShippingFee() {
+      console.log('logisticsCompany:', this.logisticsCompany);
+      console.log('shippingInfo country:', this.shippingInfo.country);
       if (!this.logisticsCompany || !this.shippingInfo.country) {
         return;
       }
@@ -682,6 +695,10 @@ export default {
         // 转换字符串类型为数字类型
         const initialWeight = parseFloat(shippingFactor.initial_weight) || 0;
         const initialFee = parseFloat(shippingFactor.initial_fee) || 0;
+        let continued_weight = parseFloat(shippingFactor.continued_weight) || 0;
+        if (continued_weight === 0) {
+          continued_weight = initialWeight;
+        }
         const rangeFee = parseFloat(shippingRange.fee) || 0;
         const surcharge = parseFloat(shippingFactor.surcharge) || 0;
         const surcharge2 = parseFloat(shippingFactor.surcharge2) || 0;
@@ -693,7 +710,15 @@ export default {
           fee = initialFee;
         } else {
           // 超过首重
-          fee = initialFee + (calculationWeight * 2 -1) * rangeFee;
+          if (this.logisticsCompany.code === 'dhl')
+          {
+              fee = continued_weight; //dhl 直接给了每0.5 kg 的运费
+          }
+          else
+          {
+              fee = initialFee + (calculationWeight - initialWeight) / continued_weight * rangeFee;
+          }
+          
         }
         
         // 添加附加费
@@ -997,6 +1022,11 @@ export default {
        }
        this.shippingInfo.state = '';
        this.shippingInfo.city = '';
+       
+       // 国家变化时触发运费计算
+       if (countryName) {
+         this.calculateShippingFee();
+       }
      },
      handleStateChange() {
        this.shippingInfo.city = '';

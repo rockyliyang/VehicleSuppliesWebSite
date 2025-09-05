@@ -1130,7 +1130,7 @@ class LogisticsCompanyController {
       const factorsQuery = `
         SELECT 
           sf.id, sf.guid, sf.logistics_companies_id, sf.tags_id, sf.country_id,
-          sf.initial_weight, sf.initial_fee, sf.throw_ratio_coefficient,
+          sf.initial_weight, sf.continued_weight, sf.initial_fee, sf.throw_ratio_coefficient,
           sf.surcharge, sf.surcharge2, sf.other_fee, sf.discount, sf.created_at, sf.updated_at,
           t.value as tag_name,
           c.name as country_name
@@ -1189,6 +1189,7 @@ class LogisticsCompanyController {
         tags_id,
         country_id,
         initial_weight = 0,
+        continued_weight = 0,
         initial_fee = 0,
         throw_ratio_coefficient = 1,
         surcharge = 0,
@@ -1215,7 +1216,7 @@ class LogisticsCompanyController {
       }
       
       // 验证数值范围
-      if (initial_weight < 0 || initial_fee < 0 || throw_ratio_coefficient <= 0 || 
+      if (initial_weight < 0 || continued_weight < 0 || initial_fee < 0 || throw_ratio_coefficient <= 0 || 
           surcharge < 0 || surcharge2 < 0 || other_fee < 0 || discount < 0 || discount > 100) {
         return res.status(400).json({
           success: false,
@@ -1254,11 +1255,11 @@ class LogisticsCompanyController {
       const insertQuery = `
         INSERT INTO shippingfee_factor (
           logistics_companies_id, tags_id, country_id,
-          initial_weight, initial_fee, throw_ratio_coefficient,
+          initial_weight, continued_weight, initial_fee, throw_ratio_coefficient,
           surcharge, surcharge2, other_fee, discount, created_by, updated_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
         RETURNING id, guid, logistics_companies_id, tags_id, country_id,
-                  initial_weight, initial_fee, throw_ratio_coefficient,
+                  initial_weight, continued_weight, initial_fee, throw_ratio_coefficient,
                   surcharge, surcharge2, other_fee, discount, created_at
       `;
       
@@ -1267,6 +1268,7 @@ class LogisticsCompanyController {
         tags_id || null,
         country_id || null,
         initial_weight,
+        continued_weight,
         initial_fee,
         throw_ratio_coefficient,
         surcharge,
@@ -1299,10 +1301,12 @@ class LogisticsCompanyController {
       const { companyId, factorId } = req.params;
       const {
         initial_weight,
+        continued_weight,
         initial_fee,
         throw_ratio_coefficient,
         surcharge,
         surcharge2,
+        other_fee,
         total_fee,
         discount
       } = req.body;
@@ -1327,6 +1331,13 @@ class LogisticsCompanyController {
       
       // 验证数值范围
       if (initial_weight !== undefined && initial_weight < 0) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('LOGISTICS.INVALID_FEE_FACTOR_VALUES')
+        });
+      }
+      
+      if (continued_weight !== undefined && continued_weight < 0) {
         return res.status(400).json({
           success: false,
           message: getMessage('LOGISTICS.INVALID_FEE_FACTOR_VALUES')
@@ -1385,37 +1396,36 @@ class LogisticsCompanyController {
         updateParams.push(initial_weight);
         paramIndex++;
       }
-      
+      if (continued_weight !== undefined) {
+        updateFields.push(`continued_weight = $${paramIndex}`);
+        updateParams.push(continued_weight);
+        paramIndex++;
+      }
       if (initial_fee !== undefined) {
         updateFields.push(`initial_fee = $${paramIndex}`);
         updateParams.push(initial_fee);
         paramIndex++;
       }
-      
       if (throw_ratio_coefficient !== undefined) {
         updateFields.push(`throw_ratio_coefficient = $${paramIndex}`);
         updateParams.push(throw_ratio_coefficient);
         paramIndex++;
       }
-      
       if (surcharge !== undefined) {
         updateFields.push(`surcharge = $${paramIndex}`);
         updateParams.push(surcharge);
         paramIndex++;
       }
-      
       if (surcharge2 !== undefined) {
         updateFields.push(`surcharge2 = $${paramIndex}`);
         updateParams.push(surcharge2);
         paramIndex++;
       }
-      
       if (other_fee !== undefined) {
         updateFields.push(`other_fee = $${paramIndex}`);
         updateParams.push(other_fee);
         paramIndex++;
       }
-      
       if (discount !== undefined) {
         updateFields.push(`discount = $${paramIndex}`);
         updateParams.push(discount);
@@ -1517,7 +1527,7 @@ class LogisticsCompanyController {
       const factorQuery = `
         SELECT 
           sf.id, sf.guid, sf.logistics_companies_id, sf.tags_id, sf.country_id,
-          sf.initial_weight, sf.initial_fee, sf.throw_ratio_coefficient,
+          sf.initial_weight, sf.continued_weight, sf.initial_fee, sf.throw_ratio_coefficient,
           sf.surcharge, sf.surcharge2, sf.other_fee, sf.discount, sf.created_at, sf.updated_at,
           t.name as tag_name,
           c.name as country_name,

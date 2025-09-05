@@ -267,7 +267,11 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'LOGISTICS.COMPANY_DETAIL_SUCCESS', 'en', 'Company details retrieved successfully'),
 (gen_random_uuid(), 'LOGISTICS.COMPANY_DETAIL_SUCCESS', 'zh-CN', '公司详情获取成功'),
 (gen_random_uuid(), 'LOGISTICS.COMPANY_DETAIL_FAILED', 'en', 'Failed to retrieve company details'),
-(gen_random_uuid(), 'LOGISTICS.COMPANY_DETAIL_FAILED', 'zh-CN', '获取公司详情失败');
+(gen_random_uuid(), 'LOGISTICS.COMPANY_DETAIL_FAILED', 'zh-CN', '获取公司详情失败'),
+(gen_random_uuid(), 'logistics.fee_factor.dialog_title', 'en', 'Fee Factor Management'),
+(gen_random_uuid(), 'logistics.fee_factor.dialog_title', 'zh-CN', '运费系数管理'),
+(gen_random_uuid(), 'logistics.fee_factor.company_description', 'en', 'Manage shipping fee factors for this logistics company'),
+(gen_random_uuid(), 'logistics.fee_factor.company_description', 'zh-CN', '管理此物流公司的运费系数');
 
 -- LOGISTICS运费范围相关
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -392,6 +396,13 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'logistics.table.actions', 'zh-CN', '操作'),
 (gen_random_uuid(), 'logistics.table.no_description', 'en', 'No description'),
 (gen_random_uuid(), 'logistics.table.no_description', 'zh-CN', '无描述'),
+(gen_random_uuid(), 'logistics.table.code', 'en', 'Code'),
+(gen_random_uuid(), 'logistics.table.code', 'zh-CN', '代码'),
+(gen_random_uuid(), 'logistics.form.code_placeholder', 'en', 'Please enter code'),
+(gen_random_uuid(), 'logistics.form.code_placeholder', 'zh-CN', '请输入代码'),
+(gen_random_uuid(), 'logistics.form.code', 'en', 'Code'),
+(gen_random_uuid(), 'logistics.form.code', 'zh-CN', '代码'),
+
 (gen_random_uuid(), 'logistics.dialog.add_title', 'en', 'Add New Company'),
 (gen_random_uuid(), 'logistics.dialog.add_title', 'zh-CN', '添加新公司'),
 (gen_random_uuid(), 'logistics.dialog.edit_title', 'en', 'Edit Company'),
@@ -436,8 +447,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- 运费范围管理相关
 
 -- 新增运费范围管理相关翻译键
-(gen_random_uuid(), 'logistics.action.manage_shipping_fee', 'en', 'Shipping Fee'),
-(gen_random_uuid(), 'logistics.action.manage_shipping_fee', 'zh-CN', '运费管理'),
+(gen_random_uuid(), 'logistics.action.manage_continued_fee', 'en', 'Continued fee'),
+(gen_random_uuid(), 'logistics.action.manage_continued_fee', 'zh-CN', '续费费用'),
 (gen_random_uuid(), 'logistics.action.manage_fee_factor', 'en', 'Shipping Fee factor'),
 (gen_random_uuid(), 'logistics.action.manage_fee_factor', 'zh-CN', '运费系数'),
 (gen_random_uuid(), 'logistics.shipping_fee.dialog_title', 'en', 'Shipping Fee Range Management'),
@@ -482,14 +493,14 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'logistics.feeFactor.form.other_fee', 'zh-CN', '其他费用'),
 (gen_random_uuid(), 'logistics.shipping_fee.country_group', 'en', 'Group by Country'),
 (gen_random_uuid(), 'logistics.shipping_fee.country_group', 'zh-CN', '按国家分组'),
-(gen_random_uuid(), 'logistics.shipping_fee.default_settings', 'en', 'Default Shipping Settings'),
-(gen_random_uuid(), 'logistics.shipping_fee.default_settings', 'zh-CN', '默认运费设置'),
+(gen_random_uuid(), 'logistics.shipping_fee.default_settings', 'en', 'Default Continued fee'),
+(gen_random_uuid(), 'logistics.shipping_fee.default_settings', 'zh-CN', '默认续费费用设置'),
 (gen_random_uuid(), 'logistics.shipping_fee.default_description', 'en', 'Applies to all cases without special settings'),
 (gen_random_uuid(), 'logistics.shipping_fee.default_description', 'zh-CN', '适用于所有未特别设置的情况'),
-(gen_random_uuid(), 'logistics.shipping_fee.tag_settings', 'en', 'Tag Shipping Settings'),
-(gen_random_uuid(), 'logistics.shipping_fee.tag_settings', 'zh-CN', '标签运费设置'),
-(gen_random_uuid(), 'logistics.shipping_fee.tag_description', 'en', 'Set shipping fees for specific country tags'),
-(gen_random_uuid(), 'logistics.shipping_fee.tag_description', 'zh-CN', '为特定国家标签设置运费'),
+(gen_random_uuid(), 'logistics.shipping_fee.tag_settings', 'en', 'Tag Continued fee Settings'),
+(gen_random_uuid(), 'logistics.shipping_fee.tag_settings', 'zh-CN', '标签续费费用设置'),
+(gen_random_uuid(), 'logistics.shipping_fee.tag_description', 'en', 'Set continued fee for specific country tags'),
+(gen_random_uuid(), 'logistics.shipping_fee.tag_description', 'zh-CN', '为特定国家标签设置续费费用'),
 (gen_random_uuid(), 'logistics.shipping_fee.no_tag_data', 'en', 'No tag data available'),
 (gen_random_uuid(), 'logistics.shipping_fee.no_tag_data', 'zh-CN', '暂无标签数据'),
 (gen_random_uuid(), 'logistics.shipping_fee.country_settings', 'en', 'Country Shipping Settings'),
@@ -763,6 +774,8 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'common.edit', 'zh-CN', '编辑'),
 (gen_random_uuid(), 'common.delete', 'en', 'Delete'),
 (gen_random_uuid(), 'common.delete', 'zh-CN', '删除'),
+(gen_random_uuid(), 'common.confirm.ok', 'en', 'OK'),
+(gen_random_uuid(), 'common.confirm.ok', 'zh-CN', '确定'),
 -- ProductDetail.vue中的翻译键
 (gen_random_uuid(), 'productDetail.removeFromFavorites', 'en', 'Remove from favorites'),
 (gen_random_uuid(), 'productDetail.removeFromFavorites', 'zh-CN', '取消收藏'),
@@ -2307,6 +2320,9 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'logistics.fee_factor.surcharge_placeholder', 'zh-CN', '请输入附加费'),
 (gen_random_uuid(), 'logistics.fee_factor.discount_placeholder', 'en', 'Enter discount percentage'),
 (gen_random_uuid(), 'logistics.fee_factor.discount_placeholder', 'zh-CN', '请输入折扣百分比'),
+
+(gen_random_uuid(), 'logistics.fee_factor.continued_weight', 'en', 'additional weight'),
+(gen_random_uuid(), 'logistics.fee_factor.continued_weight', 'zh-CN', '续重'),
 
 -- 订单状态更新成功消息
 

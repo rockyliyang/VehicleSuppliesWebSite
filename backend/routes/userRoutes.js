@@ -72,7 +72,8 @@ router.post('/register', async (req, res) => {
     if (!captcha) {
       return res.status(400).json({ success: false, message: getMessage('USER.CAPTCHA_REQUIRED'), data: null });
     }
-    
+    console.log('register req.session:', req.session);
+    console.log('register req.session.captcha:', req.session.captcha);
     if (!req.session || !req.session.captcha) {
       return res.status(400).json({ success: false, message: getMessage('USER.CAPTCHA_EXPIRED'), data: null });
     }
@@ -545,9 +546,15 @@ router.get('/captcha', (req, res) => {
     background: '#f2f2f2'
   });
   
-  // 可将 captcha.text 存入 session 或 redis 以便后续校验
-  req.session = req.session || {};
-  req.session.captcha = captcha.text;
+  // 将 captcha.text 存入 session 以便后续校验
+  if (req.session) {
+    req.session.captcha = captcha.text;
+    console.log(`[Captcha] 验证码已存入session - PID: ${process.pid}`);
+  } else {
+    console.error(`[Captcha] Session middleware not initialized properly - PID: ${process.pid}`);
+    // 记录更多调试信息
+    console.error(`[Captcha] req.session is ${req.session === undefined ? 'undefined' : 'null'}`);
+  }
   
   res.type('svg');
   res.status(200).send(captcha.data);
@@ -670,7 +677,7 @@ router.get('/country-state-data', async (req, res) => {
     }
     
     // 检查是否需要更新（使用整体最后修改时间进行比较）
-    const needUpdate = clientLastModified.overall !== data.lastModified.overall;
+    /*const needUpdate = clientLastModified.overall !== data.lastModified.overall;
     
     if (!needUpdate) {
       return res.json({
@@ -681,7 +688,7 @@ router.get('/country-state-data', async (req, res) => {
           last_modified: data.lastModified
         }
       });
-    }
+    }*/
     
     // 返回数据，包含税率和运费信息
     const responseData = {

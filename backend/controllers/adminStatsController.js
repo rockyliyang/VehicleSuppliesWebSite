@@ -17,22 +17,17 @@ exports.getDashboardStats = async (req, res) => {
     
     // 获取当前管理员管理的用户ID列表
     const managedUserIds = await getManagedUserIds(currentUserId);
-    const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
-    
-    // 为每个子查询生成独立的占位符
-    const { placeholders: placeholders2, params: params2 } = generateUserIdsPlaceholders(managedUserIds);
-    const { placeholders: placeholders3, params: params3 } = generateUserIdsPlaceholders(managedUserIds);
     
     // 获取统计数据（只统计管理的用户相关数据）
     const stats = await query(`
       SELECT 
         (SELECT COUNT(*) FROM products WHERE deleted = false AND status = 'on_shelf') as product_count,
-        (SELECT COUNT(*) FROM users WHERE deleted = false AND id IN (${placeholders})) as user_count,
-        (SELECT COUNT(*) FROM orders WHERE deleted = false AND user_id IN (${placeholders2})) as order_count,
+        (SELECT COUNT(*) FROM users WHERE deleted = false AND id = ANY($1)) as user_count,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND user_id = ANY($1)) as order_count,
         (SELECT COUNT(*) FROM inquiry_messages im 
          INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
-         WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id IN (${placeholders3})) as message_count
-    `, [...params, ...params2, ...params3]);
+         WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id = ANY($1)) as message_count
+    `, [managedUserIds]);
 
     // 获取用户统计（只统计管理的用户）
     const userStats = await query(`
@@ -42,8 +37,8 @@ exports.getDashboardStats = async (req, res) => {
         COUNT(CASE WHEN user_role = 'business' THEN 1 END) as business_users,
         COUNT(CASE WHEN user_role = 'admin' THEN 1 END) as admin_users
       FROM users 
-      WHERE deleted = false AND id IN (${placeholders})
-    `, params);
+      WHERE deleted = false AND id = ANY($1)
+    `, [managedUserIds]);
 
     // 获取订单统计（只统计管理的用户）
     const orderStats = await query(`
@@ -54,8 +49,8 @@ exports.getDashboardStats = async (req, res) => {
         COUNT(CASE WHEN status = 'shipped' THEN 1 END) as shipped_orders,
         COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as recent_7days_orders
       FROM orders 
-      WHERE deleted = false AND user_id IN (${placeholders})
-    `, params);
+      WHERE deleted = false AND user_id = ANY($1)
+    `, [managedUserIds]);
 
     // 获取消息统计（只统计管理的用户）
     const messageStats = await query(`
@@ -65,8 +60,8 @@ exports.getDashboardStats = async (req, res) => {
         COUNT(CASE WHEN sender_type = 'admin' THEN 1 END) as admin_messages,
         COUNT(CASE WHEN sender_type = 'user' THEN 1 END) as user_messages
       FROM inquiry_messages im inner join inquiries i on im.inquiry_id = i.id and i.deleted=false
-      WHERE im.deleted = false AND i.user_id IN (${placeholders})
-       `, params);
+      WHERE im.deleted = false AND i.user_id = ANY($1)
+       `, [managedUserIds]);
     const messageUserUnReadStats = await query(`
       SELECT COUNT(CASE WHEN sender_type = 'admin' AND is_read = 0 THEN 1 END) as admin_unread_messages
       FROM inquiry_messages im inner join inquiries i on im.inquiry_id = i.id and i.deleted=false
@@ -82,10 +77,10 @@ exports.getDashboardStats = async (req, res) => {
       FROM inquiries 
       WHERE created_at >= NOW() - INTERVAL '7 days' 
         AND deleted = false
-        AND user_id IN (${placeholders})
+        AND user_id = ANY($1)
       GROUP BY DATE(created_at)
       ORDER BY date DESC
-    `, params);
+    `, [managedUserIds]);
 
     // 获取最近7天的用户注册趋势（只统计管理的用户）
     const userTrend = await query(`
@@ -95,10 +90,10 @@ exports.getDashboardStats = async (req, res) => {
       FROM users 
       WHERE created_at >= NOW() - INTERVAL '7 days' 
         AND deleted = false
-        AND id IN (${placeholders})
+        AND id = ANY($1)
       GROUP BY DATE(created_at)
       ORDER BY date DESC
-    `, params);
+    `, [managedUserIds]);
 
     return res.json({
       success: true,
@@ -174,7 +169,6 @@ exports.getRecentInquiries = async (req, res) => {
     
     // 获取当前管理员管理的用户ID列表
     const managedUserIds = await getManagedUserIds(currentUserId);
-    const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
     
     const recentInquiries = await query(`
       SELECT 
@@ -217,10 +211,10 @@ exports.getRecentInquiries = async (req, res) => {
         WHERE im.deleted = false
         GROUP BY im.inquiry_id
       ) message_stats ON i.id = message_stats.inquiry_id
-      WHERE i.deleted = false AND i.user_id IN (${placeholders})
+      WHERE i.deleted = false AND i.user_id = ANY($1)
       ORDER BY i.created_at DESC
-      LIMIT $${params.length + 1}
-    `, [...params, parseInt(limit)]);
+      LIMIT $2
+    `, [managedUserIds, parseInt(limit)]);
 
     return res.json({
       success: true,
@@ -246,21 +240,20 @@ exports.getBusinessDashboardStats = async (req, res) => {
     
     // 获取当前业务员管理的用户ID列表
     const managedUserIds = await getManagedUserIds(currentUserId);
-    const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
     
     // 获取询价和订单统计数据
     const stats = await query(`
       SELECT 
-        (SELECT COUNT(*) FROM inquiries WHERE deleted = false AND user_id IN (${placeholders})) as inquiry_count,
-        (SELECT COUNT(*) FROM orders WHERE deleted = false AND user_id IN (${placeholders})) as order_count,
-        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'pending' AND user_id IN (${placeholders})) as unpaid_orders,
-        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'paid' AND user_id IN (${placeholders})) as unshipped_orders,
-        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'shipped' AND user_id IN (${placeholders})) as shipped_orders,
-        (SELECT COUNT(*) FROM orders WHERE deleted = false AND created_at >= NOW() - INTERVAL '7 days' AND user_id IN (${placeholders})) as recent_7days_orders,
+        (SELECT COUNT(*) FROM inquiries WHERE deleted = false AND user_id = ANY($1)) as inquiry_count,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND user_id = ANY($1)) as order_count,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'pending' AND user_id = ANY($1)) as unpaid_orders,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'paid' AND user_id = ANY($1)) as unshipped_orders,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND status = 'shipped' AND user_id = ANY($1)) as shipped_orders,
+        (SELECT COUNT(*) FROM orders WHERE deleted = false AND created_at >= NOW() - INTERVAL '7 days' AND user_id = ANY($1)) as recent_7days_orders,
         (SELECT COUNT(*) FROM inquiry_messages im 
          INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
-         WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id IN (${placeholders})) as unread_user_messages
-    `, [...params, ...params, ...params, ...params, ...params, ...params, ...params]);
+         WHERE im.deleted = false AND im.is_read = 0 AND im.sender_type='user' AND i.user_id = ANY($1)) as unread_user_messages
+    `, [managedUserIds]);
 
     // 获取消息统计
     const messageStats = await query(`
@@ -270,26 +263,26 @@ exports.getBusinessDashboardStats = async (req, res) => {
         COUNT(CASE WHEN sender_type = 'admin' THEN 1 END) as admin_messages,
         COUNT(CASE WHEN sender_type = 'user' THEN 1 END) as user_messages
       FROM inquiry_messages im inner join inquiries i on im.inquiry_id = i.id and i.deleted=false
-      WHERE im.deleted = false AND i.user_id IN (${placeholders})
-    `, params);
+      WHERE im.deleted = false AND i.user_id = ANY($1)
+    `, [managedUserIds]);
     
     const adminUnreadStats = await query(`
       SELECT COUNT(CASE WHEN sender_type = 'admin' AND is_read = 0 THEN 1 END) as admin_unread_messages
       FROM inquiry_messages im inner join inquiries i on im.inquiry_id = i.id and i.deleted=false
-      WHERE im.deleted = false AND im.sender_id = $1   
-    `, [currentUserId]);
+      WHERE im.deleted = false AND i.user_id = ANY($1)
+    `, [managedUserIds]);
 
     // 获取今日统计
     const todayStats = await query(`
       SELECT 
         (SELECT COUNT(*) FROM inquiry_messages im 
          INNER JOIN inquiries i ON im.inquiry_id = i.id and i.deleted=false
-         WHERE im.deleted = false AND DATE(im.created_at) = CURRENT_DATE AND i.user_id IN (${placeholders})) as today_messages,
+         WHERE im.deleted = false AND DATE(im.created_at) = CURRENT_DATE AND i.user_id = ANY($1)) as today_messages,
         (SELECT COUNT(*) FROM inquiries 
-         WHERE deleted = false AND DATE(created_at) = CURRENT_DATE AND user_id IN (${placeholders})) as today_inquiries,
+         WHERE deleted = false AND DATE(created_at) = CURRENT_DATE AND user_id = ANY($1)) as today_inquiries,
         (SELECT COUNT(*) FROM orders 
-         WHERE deleted = false AND DATE(created_at) = CURRENT_DATE AND user_id IN (${placeholders})) as today_orders
-    `, [...params, ...params, ...params]);
+         WHERE deleted = false AND DATE(created_at) = CURRENT_DATE AND user_id = ANY($1)) as today_orders
+    `, [managedUserIds]);
 
     // 获取新订单数量（最近7天）
     const newOrdersStats = await query(`
@@ -297,8 +290,8 @@ exports.getBusinessDashboardStats = async (req, res) => {
       FROM orders 
       WHERE deleted = false 
         AND created_at >= NOW() - INTERVAL '7 days'
-        AND user_id IN (${placeholders})
-    `, params);
+        AND user_id = ANY($1)
+    `, [managedUserIds]);
 
     let messageStatsResponse = messageStats.rows[0];
     messageStatsResponse.admin_unread_messages = adminUnreadStats.rows[0].admin_unread_messages;

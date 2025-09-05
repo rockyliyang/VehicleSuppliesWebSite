@@ -60,43 +60,52 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Session 配置变量，稍后初始化
+// Session 配置变量
 let sessionStore;
+let isShuttingDown = false;
 
-// 延迟初始化session中间件的函数
+// 初始化session中间件
+// Session 配置 - 使用PostgreSQL存储
+sessionStore = new pgSession({
+  pool: pool, // 使用现有的数据库连接池
+  tableName: 'session', // 使用我们创建的session表
+  createTableIfMissing: true, // 让pgSession自动创建表
+  pruneSessionInterval: false, // 禁用自动清理，避免在服务器关闭时出现pool错误
+  // 添加自定义错误日志处理
+  errorLog: (error) => {
+    console.error(`[SessionStore Error] PID: ${process.pid}, Time: ${new Date().toISOString()}`);
+    console.error(`[SessionStore Error] Pool ended status: ${pool.ended}`);
+    console.error(`[SessionStore Error] Is shutting down: ${isShuttingDown}`);
+    console.error(`[SessionStore Error] Error details:`, error);
+    console.error(`[SessionStore Error] Stack trace:`, error.stack);
+  }
+});
+
+app.use(session({
+  store: sessionStore,
+  secret: process.env.SESSION_SECRET || 'your-secret-key-here',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.COOKIE_SECURE === 'true', // 使用COOKIE_SECURE环境变量控制
+    maxAge: 24 * 60 * 60 * 1000 // 24小时
+  }
+}));
+
+console.log(`[Init] Session middleware initialized successfully - PID: ${process.pid}`);
+
+// 保留initializeSession函数以兼容现有代码，但不再执行实际操作
 function initializeSession() {
-  // Session 配置 - 使用PostgreSQL存储
-  sessionStore = new pgSession({
-    pool: pool, // 使用现有的数据库连接池
-    tableName: 'session', // 使用我们创建的session表
-    createTableIfMissing: true, // 让pgSession自动创建表
-    pruneSessionInterval: false, // 禁用自动清理，避免在服务器关闭时出现pool错误
-    // 添加自定义错误日志处理
-    errorLog: (error) => {
-      console.error(`[SessionStore Error] PID: ${process.pid}, Time: ${new Date().toISOString()}`);
-      console.error(`[SessionStore Error] Pool ended status: ${pool.ended}`);
-      console.error(`[SessionStore Error] Is shutting down: ${isShuttingDown}`);
-      console.error(`[SessionStore Error] Error details:`, error);
-      console.error(`[SessionStore Error] Stack trace:`, error.stack);
-    }
-  });
-
-  app.use(session({
-    store: sessionStore,
-    secret: process.env.SESSION_SECRET || 'your-secret-key-here',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.COOKIE_SECURE === 'true', // 使用COOKIE_SECURE环境变量控制
-      maxAge: 24 * 60 * 60 * 1000 // 24小时
-    }
-  }));
+  console.log(`[Init] Session middleware already initialized - PID: ${process.pid}`);
 }
 
 // 静态文件服务
 app.use('/static', express.static(path.join(__dirname, 'public', 'static')));
 app.use('/public/static', express.static(path.join(__dirname, 'public', 'static')));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
+// 注意：session中间件将在服务器启动时初始化，而不是在这里
+// 这样可以确保在数据库连接成功后再初始化session
 
 // API路由
 // API路由
@@ -154,8 +163,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 添加优雅关闭标志
-let isShuttingDown = false;
+// 优雅关闭标志已在session初始化部分定义
 
 const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log(`[Server] 服务器运行在 http://localhost:${PORT}`);
@@ -170,20 +178,10 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
     await pgNotificationManager.initialize();
     await pgNotificationManager.startListening();
     console.log('PostgreSQL notification manager initialized successfully');
-    
-    // 在PostgreSQL通知管理器初始化成功后，再初始化session store
-    // 这样可以确保连接池完全准备好后再创建sessionStore
-    console.log(`[Init] Initializing session store - PID: ${process.pid}, Pool ended: ${pool.ended}`);
-    initializeSession();
-    console.log(`[Init] Session store initialized successfully - PID: ${process.pid}`);
     console.log(`[Init] SessionStore pruneSessionInterval: false (disabled)`);
     console.log(`[Init] SessionStore errorLog handler: enabled`);
   } catch (err) {
     console.error('Failed to initialize PostgreSQL notification manager:', err);
-    // 即使PostgreSQL通知管理器初始化失败，也要初始化session store
-    console.log(`[Init] Initializing session store (fallback) - PID: ${process.pid}, Pool ended: ${pool.ended}`);
-    initializeSession();
-    console.log(`[Init] Session store initialized (fallback) - PID: ${process.pid}`);
     console.log(`[Init] SessionStore pruneSessionInterval: false (disabled)`);
     console.log(`[Init] SessionStore errorLog handler: enabled`);
   }

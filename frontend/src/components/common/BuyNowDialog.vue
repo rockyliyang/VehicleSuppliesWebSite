@@ -18,15 +18,15 @@
           </div>
           <div class="product-info-small">
             <div class="product-name-small">{{ product.name }}</div>
-            <div class="product-code-small">{{ $t('productDetail.productCode') }}: {{ product.product_code }}</div>
+            <div class="product-code-small">{{ $t('productDetail.category') }}: {{ product.category_name }}</div>
           </div>
         </div>
 
         <!-- 数量选择 -->
         <div class="quantity-section">
           <label class="quantity-label">{{ $t('productDetail.quantity') || '数量' }}:</label>
-          <el-input-number v-model="quantity" :min="minQuantity" :max="maxQuantity" size="default" controls-position="right"
-            @change="calculatePrice">
+          <el-input-number v-model="quantity" :min="minQuantity" :max="maxQuantity" size="default"
+            controls-position="right" @change="calculatePrice">
           </el-input-number>
         </div>
 
@@ -180,10 +180,11 @@ export default {
           id: this.product.id,
           product_id: this.product.id,
           product_code: this.product.product_code,
-          name: this.product.name,
+          category_name: this.product.category_name,
+          product_name: this.product.name,
           image_url: this.product.thumbnail_url || this.product.image_url,
           quantity: this.quantity,
-          price: this.calculatedPrice,
+          price: this.calculateUnitPrice(this.quantity),
           //calculatedPrice: this.unitPrice,
           selected: true,
           // 添加产品尺寸重量信息用于运费计算
@@ -192,7 +193,7 @@ export default {
           height: this.product.product_height || 0,
           weight: this.product.product_weight || 0
         }
-        
+        console.info(`[BuyNowDialog] 结算数据: ${JSON.stringify(checkoutData)}`);
         this.$emit('checkout', checkoutData)
         
       } catch (error) {
