@@ -1169,6 +1169,28 @@ exports.searchProducts = async (req, res) => {
   }
 };
 
+// 获取所有产品的基本信息（id和name）
+exports.getAllProductsBasic = async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT id, name FROM products WHERE deleted = false AND status = \'on_shelf\' ORDER BY id',
+      []
+    );
+
+    res.json({
+      success: true,
+      message: getMessage('PRODUCT.LIST_SUCCESS'),
+      data: result.getRows()
+    });
+  } catch (error) {
+    console.error('获取产品基本信息失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('PRODUCT.LIST_FAILED')
+    });
+  }
+};
+
 // 根据产品ID和数量获取对应的价格
 exports.getPriceByQuantity = async (req, res) => {
   try {

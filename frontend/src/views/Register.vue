@@ -47,9 +47,9 @@
             <el-form-item prop="agree" class="agree-form">
               <el-checkbox v-model="form.agree" class="agreement-checkbox">
                 {{ $t('register.agreeText') || '我已阅读并同意' }}
-                <a href="/user-agreement" target="_blank" class="agreement-link">
+                <router-link to="/user-agreement" class="agreement-link">
                   {{ $t('register.userAgreement') || '用户协议' }}
-                </a>
+                </router-link>
               </el-checkbox>
             </el-form-item>
 
@@ -145,6 +145,13 @@ export default {
       Message,
       Lock: markRaw(Lock),
       PictureIcon
+    }
+  },
+  created() {
+    // 从URL参数中获取协议同意状态
+    const agreedParam = this.$route.query.agreed;
+    if (agreedParam) {
+      this.form.agree = agreedParam === 'true';
     }
   },
   mounted() {

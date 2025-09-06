@@ -188,10 +188,10 @@ export default {
           //calculatedPrice: this.unitPrice,
           selected: true,
           // 添加产品尺寸重量信息用于运费计算
-          length: this.product.product_length || 0,
-          width: this.product.product_width || 0,
-          height: this.product.product_height || 0,
-          weight: this.product.product_weight || 0
+          product_length: this.product.product_length || 0,
+          product_width: this.product.product_width || 0,
+          product_height: this.product.product_height || 0,
+          product_weight: this.product.product_weight || 0
         }
         console.info(`[BuyNowDialog] 结算数据: ${JSON.stringify(checkoutData)}`);
         this.$emit('checkout', checkoutData)

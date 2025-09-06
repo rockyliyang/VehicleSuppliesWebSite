@@ -1052,6 +1052,14 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'about.title.about', 'zh-CN', '关 于'),
 (gen_random_uuid(), 'about.title.us', 'en', 'Us'),
 (gen_random_uuid(), 'about.title.us', 'zh-CN', '我 们'),
+(gen_random_uuid(), 'about.company', 'en', 'Our Company'),
+(gen_random_uuid(), 'about.company', 'zh-CN', '我们的公司'),
+(gen_random_uuid(), 'about.certificate', 'en', 'Our Certificate'),
+(gen_random_uuid(), 'about.certificate', 'zh-CN', '我们的证书'),
+(gen_random_uuid(), 'about.culture', 'en', 'Our Culture'),
+(gen_random_uuid(), 'about.culture', 'zh-CN', '我们的文化'),
+(gen_random_uuid(), 'about.honors', 'en', 'Our Honors'),
+(gen_random_uuid(), 'about.honors', 'zh-CN', '我们的荣誉'),
 -- nav 相关
 
 -- 错误处理相关的 fallbackKey
@@ -1618,6 +1626,10 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'news.next_article', 'en', 'Next Article'),
 (gen_random_uuid(), 'news.back_to_list', 'zh-CN', '返回列表'),
 (gen_random_uuid(), 'news.back_to_list', 'en', 'Back to List'),
+(gen_random_uuid(), 'news.industry', 'zh-CN', '行业新闻'),
+(gen_random_uuid(), 'news.industry', 'en', 'Industry News'),
+(gen_random_uuid(), 'news.company', 'zh-CN', '公司新闻'),
+(gen_random_uuid(), 'news.company', 'en', 'Company News'),
 (gen_random_uuid(), 'common.error.fetch_nav_failed', 'zh-CN', '获取导航菜单失败'),
 (gen_random_uuid(), 'common.error.fetch_nav_failed', 'en', 'Failed to fetch navigation menu'),
 
@@ -3739,4 +3751,22 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- product.success.inquiryOpened
 (gen_random_uuid(), 'product.success.inquiryOpened', 'en', 'Inquiry opened successfully'),
 (gen_random_uuid(), 'product.success.inquiryOpened', 'zh-CN', '询价打开成功');
+
+-- 用户协议相关翻译
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- userAgreement.title
+(gen_random_uuid(), 'userAgreement.title', 'en', 'User Agreement'),
+(gen_random_uuid(), 'userAgreement.title', 'zh-CN', '用户协议'),
+-- userAgreement.agreeText
+(gen_random_uuid(), 'userAgreement.agreeText', 'en', 'I have read and agree to the above User Agreement'),
+(gen_random_uuid(), 'userAgreement.agreeText', 'zh-CN', '我已阅读并同意以上用户协议'),
+-- userAgreement.backToRegister
+(gen_random_uuid(), 'userAgreement.backToRegister', 'en', 'Back to Registration'),
+(gen_random_uuid(), 'userAgreement.backToRegister', 'zh-CN', '返回注册页面'),
+-- userAgreement.noContent
+(gen_random_uuid(), 'userAgreement.noContent', 'en', 'No content available'),
+(gen_random_uuid(), 'userAgreement.noContent', 'zh-CN', '暂无内容'),
+-- userAgreement.error.fetchContentFailed
+(gen_random_uuid(), 'userAgreement.error.fetchContentFailed', 'en', 'Failed to fetch user agreement content'),
+(gen_random_uuid(), 'userAgreement.error.fetchContentFailed', 'zh-CN', '获取用户协议内容失败');
 

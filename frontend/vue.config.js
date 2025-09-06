@@ -35,46 +35,81 @@ module.exports = defineConfig({
   // 开发环境开启源映射
   productionSourceMap: process.env.NODE_ENV !== 'production',
   transpileDependencies: true,
-  configureWebpack: {
-    devtool: 'source-map',
-     output: {
-       devtoolModuleFilenameTemplate: info => {
-          const resourcePath = path.normalize(info.resourcePath).replace(/\\/g, '/')
-          
-          // 特殊处理.vue文件，使用相对路径而非hash值确保断点正确工作
-          if (info.resourcePath.endsWith('.vue')) {
-            // 使用相对路径确保每个.vue文件都有唯一的标识
-            const relativePath = path.relative(process.cwd(), info.absoluteResourcePath).replace(/\\/g, '/')
-            return `webpack:///${info.moduleId}/${relativePath}`
+  configureWebpack: config => {
+    // 基础配置
+    config.devtool = process.env.NODE_ENV === 'production' ? false : 'source-map',
+    config.output.devtoolModuleFilenameTemplate = info => {
+      const resourcePath = path.normalize(info.resourcePath).replace(/\\/g, '/')
+      
+      // 特殊处理.vue文件，使用相对路径而非hash值确保断点正确工作
+      if (info.resourcePath.endsWith('.vue')) {
+        // 使用相对路径确保每个.vue文件都有唯一的标识
+        const relativePath = path.relative(process.cwd(), info.absoluteResourcePath).replace(/\\/g, '/')
+        return `webpack:///${info.moduleId}/${relativePath}`
+      }
+     
+      return `webpack:///${resourcePath}`
+    };
+    
+    // 优化配置
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\/]node_modules[\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+            reuseExistingChunk: true
           }
-         
-          return `webpack:///${resourcePath}`
         }
-     },
-     optimization: {
-       splitChunks: {
-         chunks: 'all',
-         cacheGroups: {
-           vendor: {
-             test: /[/]node_modules[/]/,
-             name: 'vendors',
-             chunks: 'all',
-             priority: 10
-           },
-           common: {
-             name: 'common',
-             minChunks: 2,
-             chunks: 'all',
-             priority: 5,
-             reuseExistingChunk: true
-           }
-         }
-       }
-     }
+      }
+    };
+    
+    // 生产环境特定配置
+    if (process.env.NODE_ENV === 'production') {
+      const webpack = require('webpack');
+      // 添加环境变量，确保sitemap生成器知道当前是生产环境
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'process.env.GENERATE_SITEMAP': JSON.stringify(true),
+          'process.env.NODE_ENV': JSON.stringify('production')
+        })
+      );
+      
+      // 在构建完成后执行sitemap生成
+      config.plugins.push({
+        apply: compiler => {
+          compiler.hooks.afterEmit.tapAsync('GenerateSitemap', (compilation, callback) => {
+            // 确保NODE_ENV为production
+            process.env.NODE_ENV = 'production';
+            const { generateSitemap } = require('./src/utils/sitemapGenerator');
+            console.log('开始生成sitemap.xml...');
+            generateSitemap()
+              .then(() => {
+                console.log('sitemap.xml生成成功！');
+                callback();
+              })
+              .catch(error => {
+                console.error('sitemap.xml生成失败:', error);
+                callback();
+              });
+          });
+        }
+      });
+    }
+    
+    // 不返回config，直接修改传入的config对象
   },
   chainWebpack: config => {
-    config.devtool('source-map')
-    
     // 配置页面标题
     config.plugin('html').tap(args => {
       args[0].title = '汽车用品供应商' //set web title
@@ -86,35 +121,6 @@ module.exports = defineConfig({
       args[0].__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = 'false'
       return args
     })
-
-    // 配置源映射加载器
-    config.module
-      .rule('source-map-loader')
-      .test(/\.(js|vue)$/)
-      .enforce('pre')
-      .use('source-map-loader')
-      .loader('source-map-loader')
-      .options({
-        filterSourceMappingUrl: (url, resourcePath) => {
-          // 允许src目录下的所有文件生成源映射，排除node_modules
-          return resourcePath.includes('src') && !resourcePath.includes('node_modules')
-        }
-      })
-
-
-
-    // 确保.vue文件的源映射正确生成
-    config.module
-      .rule('vue')
-      .use('vue-loader')
-      .tap(options => ({
-        ...options,
-        hotReload: true,
-        sourceMap: true,
-        exposeFilename: true
-      }))
-
-
   },
   css: {
     sourceMap: true,
@@ -126,5 +132,5 @@ module.exports = defineConfig({
         `
       }
     }
-  }
+  },
 })

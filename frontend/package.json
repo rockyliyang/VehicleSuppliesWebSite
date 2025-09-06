@@ -5,10 +5,11 @@
   "scripts": {
     "serve": "vue-cli-service serve --source-map",
     "debug": "vue-cli-service serve --source-map --mode development",
-    "build": "vue-cli-service build",
+    "build": "cross-env NODE_ENV=production node src/utils/sitemapGenerator.js && cross-env NODE_ENV=production vue-cli-service build",
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit",
-    "test": "vue-cli-service test:unit"
+    "test": "vue-cli-service test:unit",
+    "generate-sitemap": "cross-env NODE_ENV=production node src/utils/sitemapGenerator.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
@@ -35,6 +36,7 @@
     "@vue/cli-service": "^5.0.8",
     "@vue/compiler-sfc": "^3.4.19",
     "@vue/test-utils": "^2.4.6",
+    "cross-env": "^7.0.3",
     "cross-spawn": "^7.0.6",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.22.0",

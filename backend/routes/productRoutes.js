@@ -5,6 +5,7 @@ const { verifyToken, optionalToken } = require('../middleware/jwt');
 
 // Public routes - optional JWT auth (can get user info if logged in)
 router.get('/', optionalToken, productController.getAllProducts);
+router.get('/basic', productController.getAllProductsBasic);
 router.get('/search', productController.searchProducts);
 router.get('/:id', productController.getProductById);
 router.get('/:productId/price', productController.getPriceByQuantity);

@@ -213,6 +213,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/user-agreement',
+    name: 'UserAgreement',
+    component: createRetryableImport(() => import('../views/UserAgreement.vue')),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: createRetryableImport(() => import('../views/ForgotPassword.vue')),

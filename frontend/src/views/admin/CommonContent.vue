@@ -244,6 +244,10 @@ export default {
         'home': {
           'zh-CN': '首页',
           'en': 'Home'
+        },
+        'register': {
+          'zh-CN': '注册',
+          'en': 'Register'
         }
       },
       navForm: {
