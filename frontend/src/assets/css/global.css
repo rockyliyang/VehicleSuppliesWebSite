@@ -120,10 +120,3 @@ button:focus {
     width: 95%;
   }
 }
-
-@include mobile {
-  .container {
-    width: 100%;
-    padding: 0 15px;
-  }
-}

@@ -102,7 +102,7 @@ function initializeSession() {
 // 静态文件服务
 app.use('/static', express.static(path.join(__dirname, 'public', 'static')));
 app.use('/public/static', express.static(path.join(__dirname, 'public', 'static')));
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
 
 // 注意：session中间件将在服务器启动时初始化，而不是在这里
 // 这样可以确保在数据库连接成功后再初始化session

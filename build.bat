@@ -6,6 +6,7 @@ setlocal enabledelayedexpansion
 :: --- Configuration ---
 set "RELEASE_DIR=release"
 set "FRONTEND_DIR=frontend"
+set "NUXT_FRONTEND_DIR=nuxt-frontend"
 set "BACKEND_DIR=backend"
 set "BACKEND_ARCHIVE_NAME=backend.tar.gz"
 
@@ -18,7 +19,7 @@ if exist "%RELEASE_DIR%" (
 )
 mkdir "%RELEASE_DIR%"
 
-:: 2. Build Frontend
+:: 2. Build Frontend (Management)
 echo [BUILD] Starting frontend build...
 cd "%FRONTEND_DIR%"
 call npm install
@@ -26,6 +27,30 @@ call npm install
 set "VUE_OUTPUT_DIR=../%RELEASE_DIR%/frontend_dist"
 call npm run build
 cd ..
+
+:: 3. Package Nuxt Frontend Source Code (for server-side build)
+echo [BUILD] Packaging nuxt-frontend source code...
+:: Create a tarball of the nuxt-frontend, excluding node_modules and build outputs
+tar --exclude="node_modules" ^
+    --exclude=".nuxt" ^
+    --exclude=".output" ^
+    --exclude=".git" ^
+    --exclude=".DS_Store" ^
+    -czvf "%RELEASE_DIR%\nuxt-frontend.tar.gz" ^
+    -C "%NUXT_FRONTEND_DIR%" .
+
+:: 3.1. Package PM2 Running Directory
+echo [BUILD] Packaging pm2-running directory...
+if exist "pm2-running" (
+    tar --exclude="node_modules" ^
+        --exclude=".git" ^
+        --exclude=".DS_Store" ^
+        -czvf "%RELEASE_DIR%\pm2-running.tar.gz" ^
+        -C "pm2-running" .
+    echo [BUILD] PM2 running directory packaged successfully
+) else (
+    echo [WARNING] PM2 running directory not found, skipping...
+)
 
 :: 4. Package Backend
 echo [BUILD] Packaging backend application...
@@ -151,7 +176,7 @@ echo ==================================================
 echo [DEPLOY] Uploading release to server...
 echo Uploading release.tar.gz to 43.139.94.61:/release/
 scp -i "C:\Code\keys\tencent_ind_web_sever.pem" release.tar.gz root@43.139.94.61:/release/
-scp -i "C:\Code\keys\aliyun-ecs-keypair.pem" release.tar.gz root@47.106.255.240:/release/
+:: scp -i "C:\Code\keys\aliyun-ecs-keypair.pem" release.tar.gz root@47.106.255.240:/release/
 
 rmdir /s /q "%RELEASE_DIR%"
 

@@ -1,0 +1,139 @@
+// 导入 Quill CSS
+@import 'quill/dist/quill.core.css';
+@import 'quill/dist/quill.snow.css';
+
+/* 文本对齐样式 */
+.ql-align-center {
+  text-align: center;
+}
+
+.ql-align-left {
+  text-align: left;
+}
+
+.ql-align-right {
+  text-align: right;
+}
+
+.ql-align-justify {
+  text-align: justify;
+}
+
+/* 缩进样式 */
+.ql-indent-1 {
+  padding-left: 3em;
+}
+
+.ql-indent-2 {
+  padding-left: 6em;
+}
+
+.ql-indent-3 {
+  padding-left: 9em;
+}
+
+.ql-indent-4 {
+  padding-left: 12em;
+}
+
+.ql-indent-5 {
+  padding-left: 15em;
+}
+
+.ql-indent-6 {
+  padding-left: 18em;
+}
+
+.ql-indent-7 {
+  padding-left: 21em;
+}
+
+.ql-indent-8 {
+  padding-left: 24em;
+}
+
+/* 图片居中显示 */
+.ql-align-center img {
+  display: block;
+  margin: 0 auto;
+}
+
+/* 字体样式 */
+.ql-font-serif {
+  font-family: Georgia, Times New Roman, serif;
+}
+
+.ql-font-monospace {
+  font-family: Monaco, Courier New, monospace;
+}
+
+/* 字体大小 */
+.ql-size-small {
+  font-size: 0.75em;
+}
+
+.ql-size-large {
+  font-size: 1.5em;
+}
+
+.ql-size-huge {
+  font-size: 2.5em;
+}
+
+/* 颜色样式 */
+.ql-color-white {
+  color: #fff;
+}
+
+.ql-color-red {
+  color: #e60000;
+}
+
+.ql-color-orange {
+  color: #f90;
+}
+
+.ql-color-yellow {
+  color: #ff0;
+}
+
+.ql-color-green {
+  color: #008a00;
+}
+
+.ql-color-blue {
+  color: #06c;
+}
+
+.ql-color-purple {
+  color: #93f;
+}
+
+/* 背景颜色样式 */
+.ql-bg-black {
+  background-color: #000;
+}
+
+.ql-bg-red {
+  background-color: #e60000;
+}
+
+.ql-bg-orange {
+  background-color: #f90;
+}
+
+.ql-bg-yellow {
+  background-color: #ff0;
+}
+
+.ql-bg-green {
+  background-color: #008a00;
+}
+
+.ql-bg-blue {
+  background-color: #06c;
+}
+
+.ql-bg-purple {
+  background-color: #93f;
+}

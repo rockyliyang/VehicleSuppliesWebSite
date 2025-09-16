@@ -281,7 +281,7 @@
 </template>
 
 <script>
-// 使用全局注册的$api替代axios
+  // 使用全局注册的$api替代axios
 import { handleImageError } from '../utils/imageUtils';
 import { handleChatNow, handleAddToCart, handleLoginSuccess,  addBrowsingHistory, checkFavoriteStatus, getMinQuantityFromPriceRanges } from '../utils/productUtils';
 import PageBanner from '@/components/common/PageBanner.vue';
@@ -3231,7 +3231,8 @@ export default {
 }
 
 /* 推荐商品和一起购买功能的复选框样式调整 */
-.buy-together-products, .related-product-card {
+.buy-together-products,
+.related-product-card {
   :deep(.el-checkbox) {
     width: 100%;
 

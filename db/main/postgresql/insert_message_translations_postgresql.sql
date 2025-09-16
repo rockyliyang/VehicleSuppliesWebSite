@@ -776,6 +776,12 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'common.delete', 'zh-CN', '删除'),
 (gen_random_uuid(), 'common.confirm.ok', 'en', 'OK'),
 (gen_random_uuid(), 'common.confirm.ok', 'zh-CN', '确定'),
+(gen_random_uuid(), 'common.confirm.cancel', 'en', 'Cancel'),
+(gen_random_uuid(), 'common.confirm.cancel', 'zh-CN', '取消'),
+(gen_random_uuid(), 'common.confirm.title', 'en', 'Confirm'),
+(gen_random_uuid(), 'common.confirm.title', 'zh-CN', '确认'),
+(gen_random_uuid(), 'common.confirm.removeSelected', 'en', 'Remove selected items'),
+(gen_random_uuid(), 'common.confirm.removeSelected', 'zh-CN', '删除选中项'),
 -- ProductDetail.vue中的翻译键
 (gen_random_uuid(), 'productDetail.removeFromFavorites', 'en', 'Remove from favorites'),
 (gen_random_uuid(), 'productDetail.removeFromFavorites', 'zh-CN', '取消收藏'),
@@ -1630,6 +1636,10 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'news.industry', 'en', 'Industry News'),
 (gen_random_uuid(), 'news.company', 'zh-CN', '公司新闻'),
 (gen_random_uuid(), 'news.company', 'en', 'Company News'),
+(gen_random_uuid(), 'news.contentNotFound', 'zh-CN', '内容不存在'),
+(gen_random_uuid(), 'news.contentNotFound', 'en', 'Content Not Found'),
+(gen_random_uuid(), 'news.contentNotFoundDesc', 'zh-CN', '当前内容不存在或已被删除'),
+(gen_random_uuid(), 'news.contentNotFoundDesc', 'en', 'The current content does not exist or has been deleted'),
 (gen_random_uuid(), 'common.error.fetch_nav_failed', 'zh-CN', '获取导航菜单失败'),
 (gen_random_uuid(), 'common.error.fetch_nav_failed', 'en', 'Failed to fetch navigation menu'),
 

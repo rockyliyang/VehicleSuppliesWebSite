@@ -1,0 +1,607 @@
+// 颜色变量
+// 主色调
+$primary-color: #e53e3e; // 红色主色调
+$primary-light: #fc8181; // 浅红色
+$primary-dark: #c53030; // 深红色
+$primary-darker: #9c1c1c; // 更深红色
+
+// 渐变色
+$gradient-primary: linear-gradient(to right, $primary-light, $primary-dark);
+
+// 辅助色
+$secondary-color: #4a5568; // 灰色
+$success-color: #38a169; // 成功绿色
+$success-light: #c6f6d5; // 浅成功绿色
+$success-dark: #2f855a; // 深成功绿色
+$warning-color: #d69e2e; // 警告黄色
+$warning-light: #faf089; // 浅警告黄色
+$warning-dark: #b7791f; // 深警告黄色
+$error-color: #e53e3e; // 错误红色
+$error-light: #fed7d7; // 浅错误红色
+$error-dark: #c53030; // 深错误红色
+$info-color: #3182ce; // 信息蓝色
+$info-light: #bee3f8; // 浅信息蓝色
+$info-dark: #2c5282; // 深信息蓝色
+
+// 中性色
+$white: #ffffff;
+$gray-50: #f7fafc;
+$gray-100: #edf2f7;
+$gray-200: #e2e8f0;
+$gray-300: #cbd5e0;
+$gray-400: #a0aec0;
+$gray-500: #718096;
+$gray-600: #4a5568;
+$gray-700: #2d3748;
+$gray-800: #1a202c;
+$gray-900: #171923;
+$black: #000000;
+
+// 背景色
+$background-light: $gray-50;
+$background-secondary: $gray-100;
+$border-light: $gray-200;
+
+// 边框颜色
+$border-color: $gray-300;
+$border-dark: $gray-400;
+
+// 文本颜色
+$text-primary: $gray-900;
+$text-secondary: $gray-600;
+$text-muted: $gray-500;
+$text-disabled: $gray-400;
+
+// 尺寸变量 (紧凑模式 - 80%缩放)
+// 间距
+$spacing-2xs: 2px; // 2.5px * 0.8
+$spacing-xs: 3px; // 4px * 0.8
+$spacing-sm: 6px; // 8px * 0.8
+$spacing-2md: 11px; // 8px * 0.8
+$spacing-md: 13px; // 16px * 0.8
+$spacing-lg: 19px; // 24px * 0.8
+$spacing-xl: 26px; // 32px * 0.8
+$spacing-2xl: 38px; // 48px * 0.8
+$spacing-3xl: 51px; // 64px * 0.8
+$spacing-4xl: 64px; // 80px * 0.8
+$spacing-5xl: 96px; // 120px * 0.8
+$spacing-6xl: 160px; // 200px * 0.8
+$spacing-7xl: 224px; // 280px * 0.8
+$spacing-8xl: 256px; // 320px * 0.8
+$spacing-9xl: 320px; // 400px * 0.8
+$spacing-10xl: 384px; // 480px * 0.8
+$spacing-11xl: 448px; // 560px * 0.8
+$spacing-12xl: 512px; // 640px * 0.8
+
+// 字体大小 (紧凑模式 - 80%缩放)
+$font-size-xs: 10px; // 12px * 0.8
+$font-size-sm: 11px; // 14px * 0.8
+$font-size-base: 13px; // 16px * 0.8
+$font-size-md: 13px; // 16px * 0.8
+$font-size-lg: 14px; // 18px * 0.8
+$font-size-xl: 16px; // 20px * 0.8
+$font-size-2xl: 19px; // 24px * 0.8
+$font-size-3xl: 24px; // 30px * 0.8
+$font-size-4xl: 29px; // 36px * 0.8
+$font-size-5xl: 38px; // 48px * 0.8
+
+// 字体族
+$font-family-base: 'Microsoft YaHei', Avenir, Helvetica, Arial, sans-serif;
+$font-family-mono: 'Courier New', monospace;
+
+// 字体粗细
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// 行高
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// 圆角 (紧凑模式 - 80%缩放)
+$border-radius-xs: 2px; // 3px * 0.8
+$border-radius-sm: 3px; // 4px * 0.8
+$border-radius-md: 6px; // 8px * 0.8
+$border-radius-lg: 10px; // 12px * 0.8
+$border-radius-xl: 13px; // 16px * 0.8
+$border-radius-full: 50%;
+
+// 边框宽度
+$border-width-sm: 1px;
+$border-width-md: 2px;
+$border-width-lg: 3px;
+
+// Contact页面特定变量
+$contact-title-underline-width: 40px;
+$contact-title-underline-height: 2px;
+$contact-info-icon-width: 36px;
+$contact-info-icon-height: 36px;
+$contact-qrcode-width: 160px;
+$contact-qrcode-height: 160px;
+$contact-qrcode-mobile-width: 100px;
+$contact-qrcode-mobile-height: 100px;
+$contact-qrcode-small-width: 80px;
+$contact-qrcode-small-height: 80px;
+$contact-map-height: 350px;
+$contact-map-mobile-height: 150px;
+$contact-map-small-height: 120px;
+$contact-captcha-height: 48px;
+$contact-captcha-width: 120px;
+$contact-form-button-height: 48px;
+$contact-info-icon-mobile-width: 32px;
+$contact-info-icon-mobile-height: 32px;
+$contact-transform-hover: 3px;
+
+// NewsDetail页面特定变量
+$news-detail-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+$news-header-padding-top: 30px;
+$news-header-padding-horizontal: 30px;
+$news-header-padding-bottom: 20px;
+$news-title-font-size: 28px;
+$news-title-font-weight: 700;
+$news-title-margin-bottom: 20px;
+$news-meta-gap: 20px;
+$news-meta-font-size: 14px;
+$news-meta-icon-gap: 5px;
+$news-image-max-height: 400px;
+$news-content-padding: 30px;
+$news-content-line-height: 1.8;
+$news-content-font-size: 16px;
+$news-content-heading-margin-top: 20px;
+$news-content-heading-margin-bottom: 15px;
+$news-content-p-margin-bottom: 15px;
+$news-content-img-margin: 15px;
+$news-content-blockquote-border-width: 4px;
+$news-content-blockquote-padding: 15px;
+$news-content-blockquote-margin: 20px;
+$news-content-list-padding: 20px;
+$news-content-list-margin: 15px;
+$news-content-li-margin: 5px;
+$news-navigation-padding: 30px;
+$news-navigation-gap: 20px;
+$news-nav-button-min-width: 120px;
+$news-nav-button-gap: 8px;
+$news-nav-button-side-position: 30px;
+$news-no-content-padding-vertical: 60px;
+$news-no-content-padding-horizontal: 30px;
+$news-empty-icon-size: 48px;
+$news-empty-icon-margin: 20px;
+$news-no-content-title-size: 20px;
+$news-no-content-title-margin: 10px;
+$news-no-content-desc-margin: 20px;
+
+// 响应式断点变量
+$news-mobile-container-padding: 20px;
+$news-mobile-container-padding-sm: 15px;
+$news-mobile-header-padding: 20px;
+$news-mobile-header-padding-sm: 15px;
+$news-mobile-title-size: 24px;
+$news-mobile-title-size-sm: 20px;
+$news-mobile-content-padding: 20px;
+$news-mobile-content-padding-sm: 15px;
+$news-mobile-content-font-size: 14px;
+$news-mobile-navigation-padding: 20px;
+$news-mobile-navigation-gap: 15px;
+$news-mobile-meta-gap: 10px;
+$border-width-thin: 1px;
+$border-width-thick: 3px;
+
+// 阴影
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+
+// 过渡动画
+$transition-base: all 0.2s ease;
+$transition-fast: all 0.15s ease;
+$transition-slow: all 0.3s ease;
+
+// Header特定变量 (紧凑模式)
+$header-height: 64px; // 80px * 0.8
+$header-bg: $white;
+$header-shadow: $shadow-md;
+
+// Footer特定变量
+$footer-bg: $gray-800;
+$footer-text-color: $gray-300;
+$footer-text-secondary: $gray-400;
+$footer-heading-color: $white;
+$footer-border-color: $gray-700;
+$footer-link-color: $gray-400;
+$footer-link-hover-color: $white;
+$footer-icon-color: $primary-color;
+$footer-bottom-bg: $gray-900;
+
+// 容器变量 (紧凑模式)
+$container-max-width: 1024px; // 1280px * 0.8
+$container-padding: $spacing-lg;
+
+// 响应式断点
+$breakpoint-mobile: 767px;
+$breakpoint-tablet: 768px;
+$breakpoint-desktop: 1024px;
+$breakpoint-large: 1200px;
+
+// 移动端特定变量 (紧凑模式)
+$mobile-nav-overlay-opacity: 0.5;
+$mobile-footer-max-height: 400px; // 500px * 0.8
+$mobile-icon-margin: 2px;
+$mobile-logo-height: 32px; // 40px * 0.8
+$mobile-cart-badge-size: 14px; // 18px * 0.8
+$mobile-submit-button-height: 32px; // 40px * 0.8
+
+// 导航链接颜色
+$nav-link-color: #6b7280;
+
+// Banner高度变量 (紧凑模式 - 80%缩放)
+$banner-height-mobile: 176px; // 220px * 0.8
+$banner-height-tablet: 224px; // 280px * 0.8
+$banner-height-desktop: 500px; // 500px * 0.8
+$banner-height-large: 480px; // 600px * 0.8
+
+// 轮播图指示器变量 (紧凑模式)
+$carousel-indicator-size: 6px; // 8px * 0.8
+$carousel-indicator-margin: 3px; // 4px * 0.8
+$carousel-indicator-bg: rgba(255, 255, 255, 0.4);
+$carousel-indicator-active-bg: #dc2626;
+$carousel-indicator-hover-bg: rgba(255, 255, 255, 0.7);
+$carousel-indicator-scale-active: 1.3;
+$carousel-indicator-scale-hover: 1.1;
+
+// 轮播图箭头变量
+$carousel-arrow-bg: rgba(0, 0, 0, 0.5);
+$carousel-arrow-hover-bg: rgba(0, 0, 0, 0.7);
+
+// 移动端断点值
+$mobile-breakpoint-sm: 480px;
+$mobile-breakpoint-md: 768px;
+$mobile-breakpoint-lg: 1024px;
+
+// 移动端Banner高度 (紧凑模式)
+$mobile-banner-height-sm: 176px; // 220px * 0.8
+$mobile-banner-height-md: 224px; // 280px * 0.8
+
+// 过渡动画时间
+$transition-duration: 0.3s;
+$transition-carousel: all 0.3s ease;
+
+// z-index层级
+$z-index-mobile-nav: 1000;
+$z-index-mobile-overlay: 999;
+
+// 移动端悬停背景
+$mobile-hover-bg: rgba(0, 0, 0, 0.05);
+
+// 产品详情页相关变量 (紧凑模式 - 80%缩放)
+$product-gallery-width: 384px; // 480px * 0.8
+$product-main-image-height: 384px; // 480px * 0.8
+$product-thumbnail-size: 56px; // 70px * 0.8
+$product-border-left-width: 3px; // 4px * 0.8
+$product-image-size-sm: 48px; // 60px * 0.8
+$product-image-size-md: $spacing-4xl;
+$product-quantity-width: 96px; // 120px * 0.8
+$product-specs-table-width: 160px; // 200px * 0.8
+$product-qrcode-max-width: $spacing-6xl;
+$product-qrcode-min-width: $spacing-6xl;
+
+// 边框宽度变量
+$border-width-thin: 1px;
+$border-width-normal: 2px;
+$border-width-thick: 3px;
+$border-width-extra-thick: 4px;
+
+// 鼠标移动缩放倍数
+$zoom-factor: 2;
+
+// 表格和边框相关
+$table-border-width: 1px;
+$table-header-border-width: 2px;
+$form-border-width: 2px;
+$order-border-width: 2px;
+
+// 悬停变换距离
+$hover-transform-sm: -1px;
+$hover-transform-md: -2px;
+$hover-transform-lg: -4px;
+
+//banner (紧凑模式)
+$banner-height: 500px; // 500px * 0.8
+$banner-bg: $primary-color;
+$banner-text-color: $white;
+
+// 模态框变量
+$modal-max-height: 70vh;
+
+// 颜色别名（兼容旧代码）
+$red-600: #e53e3e;
+$red-700: $primary-dark;
+
+// 新增的尺寸变量 (紧凑模式)
+$divider-width: 77px; // 96px * 0.8
+$divider-height: 3px; // 4px * 0.8
+$quantity-min-width: 48px; // 60px * 0.8
+$related-product-min-width: 144px; // 180px * 0.8
+$product-title-height: 2.8em;
+
+// 字符间距变量
+$letter-spacing-xs: 0.25px;
+$letter-spacing-sm: 0.3px;
+$letter-spacing-md: 0.5px;
+
+// 对话框变量 (紧凑模式 - 80%缩放)
+$dialog-min-width: 240px; // 300px * 0.8
+$dialog-width-md: 400px; // 500px * 0.8
+$form-label-width: 80px; // 100px * 0.8
+$form-input-height: 48px; // 40px * 0.8
+$success-icon-size: 64px; // 80px * 0.8
+
+// 动画时长变量
+$animation-duration-fast: 0.3s;
+$animation-duration-normal: 0.4s;
+
+// 二维码相关变量
+$qrcode-timer-duration: 300; // 5分钟倒计时
+$auto-refresh-delay: 240000; // 4分钟后自动刷新
+
+// 认证页面公共变量 (紧凑模式)
+// 页面布局
+$auth-page-min-height: 100vh;
+$auth-container-min-height: calc(100vh - 160px); // 200px * 0.8
+$auth-container-padding: $spacing-4xl 0;
+$auth-form-max-width: 480px; // 600px * 0.8
+$auth-form-padding: 0 $spacing-lg;
+$auth-card-border: 1px solid $gray-200;
+$auth-header-margin-bottom: $spacing-2xl;
+
+// Logo相关 (紧凑模式)
+$auth-logo-width: 160px; // 200px * 0.8
+$auth-logo-width-large: 240px; // 300px * 0.8
+$auth-logo-max-height: 80px; // 100px * 0.8
+$auth-logo-margin: 0 auto $spacing-lg auto;
+
+// 标题相关
+$auth-title-font-size: $font-size-4xl;
+$auth-title-margin: 0 0 $spacing-sm 0;
+$auth-title-letter-spacing: -0.025em;
+$auth-title-color: #1f2937;
+$auth-subtitle-max-width: 320px; // 400px * 0.8
+
+// 表单相关 (紧凑模式)
+$auth-form-item-margin: 1.2rem; // 1.5rem * 0.8
+$auth-form-input-font-size: 13px; // 16px * 0.8
+$auth-form-label-font-size: $font-size-xl;
+$auth-form-error-font-size: 10px; // 12px * 0.8
+$auth-form-error-margin-top: 4px; // 5px * 0.8
+
+// 验证码相关 (紧凑模式)
+$captcha-container-gap: 10px; // 12px * 0.8
+$captcha-img-height: 38px; // 48px * 0.8
+$captcha-img-width: 120px; // 120px * 0.8
+$captcha-img-border-radius: 0.3rem; // 0.375rem * 0.8
+$captcha-img-border: 1px solid #d1d5db;
+$captcha-img-bg: #ffffff;
+$captcha-img-hover-border: #9ca3af;
+$captcha-img-hover-bg: #f3f4f6;
+
+// 按钮相关 (紧凑模式)
+$auth-button-height: 38px; // 48px * 0.8
+$auth-button-font-weight: 500;
+
+// 页脚相关
+$auth-footer-margin-top: 2rem;
+$auth-footer-padding-top: 1.5rem;
+$auth-footer-border-top: 1px solid #e5e7eb;
+$auth-footer-link-color: #dc2626;
+$auth-footer-link-font-weight: 500;
+
+// 协议相关
+$agreement-checkbox-margin: 0;
+$agreement-checkbox-padding: 0;
+$agreement-link-color: #dc2626;
+
+// 标签页相关 (紧凑模式)
+$auth-tabs-min-height: 160px; // 200px * 0.8
+
+// 响应式相关 (紧凑模式)
+$auth-mobile-card-margin: 0 0.8rem; // 1rem * 0.8
+$auth-mobile-card-padding: 24px 16px; // 30px*0.8 20px*0.8
+$auth-mobile-container-padding: 32px 0; // 40px * 0.8
+
+// ===== 二维码相关变量 ===== (紧凑模式)
+$qr-code-size: 96px; // 120px * 0.8
+$qr-code-border-radius: 6px; // 8px * 0.8
+$qr-code-border: 1px solid #ddd;
+$qr-code-background: #fff;
+$qr-code-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+// ===== About & News 页面公共变量 =====
+// 页面布局
+$content-page-min-height: 100vh;
+$content-page-background: #f8f9fa;
+$content-layout-gap: $spacing-xl;
+$content-layout-padding: $spacing-xl 0;
+$content-layout-min-height: 600px;
+
+// 侧边导航
+$sidebar-nav-width: 280px;
+$sidebar-nav-background: $white;
+$sidebar-nav-border-radius: $border-radius-md;
+$sidebar-nav-shadow: $shadow-lg;
+$sidebar-nav-sticky-top: $spacing-lg;
+
+// 导航标题
+$nav-title-padding: $spacing-lg;
+$nav-title-border-bottom: 1px solid $border-light;
+$nav-title-color: $white;
+$nav-title-border-radius: $border-radius-md $border-radius-md 0 0;
+$nav-title-font-size: $font-size-lg;
+$nav-title-font-weight: $font-weight-semibold;
+$nav-title-margin: 0;
+
+// 导航菜单
+$nav-menu-border-bottom: 1px solid $gray-200;
+$nav-menu-transition: $transition-slow;
+$nav-menu-item-padding: $spacing-md $spacing-lg;
+$nav-menu-item-color: $text-primary;
+$nav-menu-item-font-size: $font-size-sm;
+$nav-menu-hover-padding-left: 25px;
+$nav-menu-hover-font-weight: $font-weight-medium;
+$nav-menu-active-border-left: 4px;
+$nav-menu-active-font-weight: $font-weight-bold;
+
+// 主内容区域
+$main-content-background: $white;
+$main-content-border-radius: $border-radius-md;
+$main-content-shadow: $shadow-lg;
+$main-content-min-height: 500px;
+
+// 加载容器
+$loading-container-padding: $spacing-4xl;
+$loading-container-text-align: center;
+
+// 内容区域
+$content-section-padding: $spacing-xl;
+$content-header-text-align: center;
+$content-header-margin-bottom: $spacing-xl;
+$content-header-title-font-size: $font-size-3xl;
+$content-header-title-color: $text-primary;
+$content-header-title-margin-bottom: $spacing-md;
+$content-header-title-font-weight: $font-weight-semibold;
+
+// 标题下划线
+$title-underline-width: 80px;
+$title-underline-height: 3px;
+$title-underline-border-radius: $border-radius-sm;
+$title-underline-margin: 0 auto;
+
+// 内容主体
+$content-body-line-height: $line-height-relaxed;
+$content-body-color: $text-secondary;
+$content-body-font-size: $font-size-base;
+$content-body-heading-color: $text-primary;
+$content-body-heading-margin: $spacing-lg 0 $spacing-md 0;
+$content-body-heading-font-weight: $font-weight-semibold;
+$content-body-paragraph-margin-bottom: $spacing-md;
+$content-body-image-border-radius: $border-radius-sm;
+$content-body-image-margin: $spacing-md 0;
+$content-body-image-shadow: $shadow-md;
+$content-body-list-padding-left: $spacing-lg;
+$content-body-list-margin-bottom: $spacing-md;
+$content-body-list-item-margin-bottom: $spacing-sm;
+$content-body-blockquote-border-left: 4px;
+$content-body-blockquote-padding-left: $spacing-md;
+$content-body-blockquote-margin: $spacing-lg 0;
+$content-body-blockquote-color: $text-secondary;
+$content-body-blockquote-background: $background-light;
+$content-body-blockquote-padding: $spacing-md;
+$content-body-blockquote-border-radius: 0 $border-radius-sm $border-radius-sm 0;
+
+// 无内容状态
+$no-content-padding: $spacing-4xl;
+$no-content-text-align: center;
+
+// 响应式断点变量
+$content-mobile-breakpoint: 768px;
+$content-small-mobile-breakpoint: 480px;
+$content-tablet-breakpoint: 1024px;
+
+// 移动端布局
+$content-mobile-layout-gap: $spacing-lg;
+$content-mobile-layout-padding: $spacing-lg 0;
+$content-mobile-nav-menu-padding: $spacing-sm $spacing-md;
+$content-mobile-nav-menu-font-size: $font-size-xs;
+$content-mobile-section-padding: $spacing-lg;
+$content-mobile-header-title-font-size: $font-size-2xl;
+
+// 小屏移动端
+$content-small-mobile-container-padding: 0 $spacing-sm;
+$content-small-mobile-layout-padding: $spacing-lg 0;
+$content-small-mobile-section-padding: $spacing-md;
+$content-small-mobile-body-font-size: $font-size-sm;
+
+// ===== News 页面特有变量 =====
+// 新闻主题色系
+$news-primary: #e74c3c;
+$news-primary-light: #ff6b6b;
+$news-primary-dark: #c0392b;
+$news-accent: #ff4757;
+$news-tech-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+
+// 新闻网格
+$news-grid-columns: repeat(auto-fill, minmax(300px, 1fr));
+$news-grid-gap: 25px;
+$news-grid-margin-bottom: $spacing-2xl;
+$news-grid-min-height: 600px;
+
+// 新闻卡片
+$news-card-background: $white;
+$news-card-border: 1px solid $gray-200;
+$news-card-border-radius: $border-radius-xl;
+$news-card-shadow: $shadow-md;
+$news-card-transition: $transition-slow;
+$news-card-hover-transform: translateY(-6px);
+$news-card-hover-shadow: 0 8px 25px rgba($news-primary, 0.15);
+$news-card-hover-border-color: rgba($news-primary, 0.2);
+
+// 新闻图片
+$news-image-height: 200px;
+$news-image-hover-scale: scale(1.05);
+
+// 新闻内容
+$news-content-padding: $spacing-lg;
+$news-title-font-size: $font-size-base;
+$news-title-font-weight: $font-weight-semibold;
+$news-title-color: $text-primary;
+$news-title-line-height: $line-height-tight;
+$news-title-margin-bottom: $spacing-sm;
+$news-title-line-clamp: 2;
+$news-title-hover-color: $news-primary;
+
+// 新闻元信息
+$news-meta-gap: $spacing-md;
+$news-meta-margin-bottom: $spacing-sm;
+$news-meta-font-size: $font-size-sm;
+$news-meta-color: $text-secondary;
+$news-meta-icon-color: $news-primary-light;
+
+// 新闻摘要
+$news-summary-color: $text-secondary;
+$news-summary-line-height: $line-height-relaxed;
+$news-summary-font-size: $font-size-sm;
+$news-summary-margin-bottom: $spacing-lg;
+$news-summary-line-clamp: 3;
+
+// 阅读更多
+$news-read-more-color: $news-primary;
+$news-read-more-font-size: $font-size-sm;
+$news-read-more-font-weight: $font-weight-medium;
+$news-read-more-gap: $spacing-xs;
+$news-read-more-hover-color: $news-primary-dark;
+$news-read-more-icon-transform: translateX(3px);
+
+// 分页
+$pagination-container-margin-top: $spacing-2xl;
+$pagination-background: $white;
+$pagination-padding: $spacing-lg;
+$pagination-border-radius: $border-radius-lg;
+$pagination-shadow: $shadow-lg;
+
+// 新闻页面响应式
+$news-tablet-grid-gap: 20px;
+$news-tablet-layout-gap: 20px;
+$news-tablet-layout-padding: 20px 0;
+$news-mobile-section-padding: $spacing-md;
+$news-mobile-grid-gap: $spacing-md;
+$news-mobile-content-padding: $spacing-lg;
+$news-mobile-title-font-size: $font-size-sm;
+$news-mobile-summary-font-size: $font-size-xs;
+$news-mobile-pagination-margin-top: $spacing-xl;
+$news-mobile-pagination-padding: $spacing-md;
+$news-small-mobile-section-padding: $spacing-sm;
+$news-small-mobile-content-padding: $spacing-md;
+$news-small-mobile-nav-title-padding: $spacing-md;
+$news-small-mobile-nav-title-font-size: $font-size-base;
+$news-small-mobile-no-content-padding: $spacing-2xl $spacing-md;

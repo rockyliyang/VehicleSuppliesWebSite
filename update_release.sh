@@ -1,17 +1,20 @@
 #!/bin/bash
 # Script to deploy the application from a release.tar.gz archive.
-# Usage: sudo ./update_release.sh [--frontend|--backend|--all]
+# Usage: sudo ./update_release.sh [--frontend|--nuxt-frontend|--backend|--all]
 #
 # Features:
 # - Backs up and restores all environment configuration files (.env, .env.development, .env.production, etc.)
 # - Preserves public directory during backend deployment
 # - Provides warnings for missing critical environment files
+# - Supports separate deployment of management frontend and business nuxt frontend
 
 # --- Configuration ---
 DEPLOY_USER="web_deployer"
 USER_HOME="/home/${DEPLOY_USER}"
 FRONTEND_DIR="${USER_HOME}/frontend"
+NUXT_FRONTEND_DIR="${USER_HOME}/nuxt-frontend"
 BACKEND_DIR="${USER_HOME}/backend"
+PM2_RUNNING_DIR="${USER_HOME}/pm2-running"
 RELEASE_ARCHIVE="release.tar.gz"
 
 # --- Helper Functions ---
@@ -51,10 +54,11 @@ fi
 deploy_backend() {
     echo_color "yellow" "--- Deploying Backend ---"
     
-    # Stop backend service
-    echo_color "green" "[BACKEND] Stopping backend service (pm2)..."
+    # Stop all services
+    echo_color "green" "[BACKEND] Stopping all services (pm2)..."
     sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-backend || echo "Backend not running, proceeding..."
     sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-scheduler || echo "Scheduler not running, proceeding..."
+    sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-nuxt-frontend || echo "Nuxt frontend not running, proceeding..."
 
     # Backup environment configuration files if they exist
     echo_color "green" "[BACKEND] Backing up environment configuration files..."
@@ -136,14 +140,25 @@ deploy_backend() {
     chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${BACKEND_DIR}
     chmod -R 750 ${BACKEND_DIR}
 
-    # Restart backend service
-    echo_color "green" "[BACKEND] Restarting backend service (pm2)..."
-    sudo -u ${DEPLOY_USER} bash -c "cd ${BACKEND_DIR} && pm2 start ecosystem.config.js --env production"
+    # Deploy PM2 configuration
+    echo_color "green" "[BACKEND] Deploying PM2 configuration..."
+    if [ -f "release/pm2-running.tar.gz" ]; then
+        mkdir -p ${PM2_RUNNING_DIR}
+        tar -xzvf release/pm2-running.tar.gz -C ${PM2_RUNNING_DIR}
+        chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${PM2_RUNNING_DIR}
+        echo_color "green" "[BACKEND] PM2 configuration deployed"
+    else
+        echo_color "yellow" "[BACKEND] No PM2 configuration found, using existing configuration"
+    fi
+
+    # Restart all services using PM2 configuration
+    echo_color "green" "[BACKEND] Restarting all services (pm2)..."
+    sudo -u ${DEPLOY_USER} bash -c "cd ${PM2_RUNNING_DIR} && pm2 start ecosystem.config.js --env production"
     sudo -u ${DEPLOY_USER} pm2 save
 }
 
 deploy_frontend() {
-    echo_color "yellow" "--- Deploying Frontend ---"
+    echo_color "yellow" "--- Deploying Frontend (Management) ---"
 
     # Unpack frontend files
     echo_color "green" "[FRONTEND] Unpacking frontend files..."
@@ -172,6 +187,91 @@ deploy_frontend() {
     systemctl restart nginx
 }
 
+deploy_nuxt_frontend() {
+    echo_color "yellow" "--- Deploying Nuxt Frontend (Business) ---"
+
+    # Stop nuxt frontend service if running
+    echo_color "green" "[NUXT-FRONTEND] Stopping nuxt frontend service..."
+    sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-nuxt-frontend || echo "Nuxt frontend not running, proceeding..."
+
+    # Backup environment configuration files if they exist
+    echo_color "green" "[NUXT-FRONTEND] Backing up environment configuration files..."
+    ENV_BACKUP_DIR=""
+    ENV_FILES=(".env" ".env.development" ".env.production" ".env.local" ".env.development.local" ".env.production.local")
+    
+    # Check if any env files exist
+    ENV_FILES_EXIST=false
+    for env_file in "${ENV_FILES[@]}"; do
+        if [ -f "${NUXT_FRONTEND_DIR}/${env_file}" ]; then
+            ENV_FILES_EXIST=true
+            break
+        fi
+    done
+    
+    if [ "${ENV_FILES_EXIST}" = true ]; then
+        ENV_BACKUP_DIR=$(mktemp -d)
+        for env_file in "${ENV_FILES[@]}"; do
+            if [ -f "${NUXT_FRONTEND_DIR}/${env_file}" ]; then
+                cp "${NUXT_FRONTEND_DIR}/${env_file}" "${ENV_BACKUP_DIR}/"
+                echo_color "green" "[NUXT-FRONTEND] ${env_file} backed up to ${ENV_BACKUP_DIR}"
+            fi
+        done
+    fi
+
+    # Create nuxt-frontend directory if it doesn't exist
+    if [ ! -d "${NUXT_FRONTEND_DIR}" ]; then
+        echo_color "green" "[NUXT-FRONTEND] Creating nuxt-frontend directory..."
+        mkdir -p ${NUXT_FRONTEND_DIR}
+        chown ${DEPLOY_USER}:${DEPLOY_USER} ${NUXT_FRONTEND_DIR}
+    fi
+
+    # Remove old files
+    echo_color "green" "[NUXT-FRONTEND] Removing old nuxt frontend files..."
+    rm -rf ${NUXT_FRONTEND_DIR}/*
+
+    # Unpack nuxt frontend source code
+    echo_color "green" "[NUXT-FRONTEND] Unpacking nuxt frontend source code..."
+    tar -xzvf release/nuxt-frontend.tar.gz -C ${NUXT_FRONTEND_DIR}
+
+    # Restore environment configuration files if they were backed up
+    if [ -n "${ENV_BACKUP_DIR}" ] && [ -d "${ENV_BACKUP_DIR}" ]; then
+        echo_color "green" "[NUXT-FRONTEND] Restoring existing environment configuration files..."
+        for env_file in "${ENV_FILES[@]}"; do
+            if [ -f "${ENV_BACKUP_DIR}/${env_file}" ]; then
+                cp "${ENV_BACKUP_DIR}/${env_file}" "${NUXT_FRONTEND_DIR}/"
+                echo_color "green" "[NUXT-FRONTEND] ${env_file} restored"
+            fi
+        done
+        rm -rf ${ENV_BACKUP_DIR}
+        echo_color "green" "[NUXT-FRONTEND] Environment configuration files restored"
+    else
+        echo_color "yellow" "[NUXT-FRONTEND] No existing environment files found. Using files from release if available."
+    fi
+
+    # Install dependencies
+    echo_color "green" "[NUXT-FRONTEND] Installing npm dependencies..."
+    sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npm install --production"
+
+    # Build the application
+    echo_color "green" "[NUXT-FRONTEND] Building nuxt frontend..."
+    sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npm run build:prod"
+
+    # Generate sitemap
+    echo_color "green" "[NUXT-FRONTEND] Generating sitemap..."
+    sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && node app/utils/sitemapGenerator.js" || echo_color "yellow" "[NUXT-FRONTEND] Sitemap generation failed, continuing..."
+
+    # Execute warmup (optional, only in production)
+    echo_color "green" "[NUXT-FRONTEND] Executing page warmup..."
+    sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && node app/utils/warmup.js -c 2" || echo_color "yellow" "[NUXT-FRONTEND] Page warmup failed, continuing..."
+
+    # Set permissions
+    echo_color "green" "[NUXT-FRONTEND] Setting permissions..."
+    chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${NUXT_FRONTEND_DIR}
+    chmod -R 750 ${NUXT_FRONTEND_DIR}
+
+    echo_color "green" "[NUXT-FRONTEND] Nuxt frontend deployment completed"
+}
+
 # --- Main Script ---
 
 # Check and remove existing release directory
@@ -187,17 +287,21 @@ mkdir -p release
 tar -xzvf ${RELEASE_ARCHIVE} -C release
 
 RESTART_FRONTEND=false
+RESTART_NUXT_FRONTEND=false
 RESTART_BACKEND=false
 
 if [ "$1" == "--frontend" ]; then
     RESTART_FRONTEND=true
+elif [ "$1" == "--nuxt-frontend" ]; then
+    RESTART_NUXT_FRONTEND=true
 elif [ "$1" == "--backend" ]; then
     RESTART_BACKEND=true
 elif [ "$1" == "--all" ] || [ -z "$1" ]; then
     RESTART_FRONTEND=true
+    RESTART_NUXT_FRONTEND=true
     RESTART_BACKEND=true
 else
-    echo_color "red" "Invalid argument. Use --frontend, --backend, or --all."
+    echo_color "red" "Invalid argument. Use --frontend, --nuxt-frontend, --backend, or --all."
     rm -rf ${TEMP_DIR}
     exit 1
 fi
@@ -208,6 +312,10 @@ fi
 
 if [ "${RESTART_FRONTEND}" = true ]; then
     deploy_frontend
+fi
+
+if [ "${RESTART_NUXT_FRONTEND}" = true ]; then
+    deploy_nuxt_frontend
 fi
 
 # Execute database update script if it exists

@@ -1,0 +1,611 @@
+@use './variables' as *;
+@use './mixins' as *;
+
+/* 错误消息样式 */
+.elegant-error-message {
+  background: $white !important;
+  border: none !important;
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-xl !important;
+  color: $text-primary !important;
+  font-weight: $font-weight-medium !important;
+  backdrop-filter: blur(10px);
+  animation: slideInDown 0.3s ease-out;
+  min-width: 400px !important;
+  max-width: 480px !important;
+  padding: $spacing-xl !important;
+  border-left: 4px solid #ff4757 !important;
+
+  .el-message__content {
+    color: $text-secondary !important;
+    font-size: $font-size-lg !important;
+    line-height: $line-height-relaxed !important;
+    margin-left: $spacing-lg !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .error-title {
+    font-size: $font-size-2xl !important;
+    font-weight: $font-weight-bold !important;
+    color: $text-primary !important;
+    margin-bottom: $spacing-sm !important;
+    line-height: $line-height-tight !important;
+  }
+
+  .el-message__closeBtn {
+    color: $gray-500 !important;
+    font-size: $font-size-lg !important;
+    transition: $transition-base;
+    top: $spacing-sm !important;
+    right: $spacing-sm !important;
+    position: absolute !important;
+    z-index: 10 !important;
+
+    &:hover {
+      color: $gray-700 !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .el-message__icon {
+    color: #ff4757 !important;
+    font-size: $font-size-2xl !important;
+    margin-right: $spacing-md !important;
+    margin-top: 2px !important;
+  }
+}
+
+/* 成功消息样式 - 优雅对话框风格 */
+.elegant-success-message {
+  background: $white !important;
+  border: none !important;
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-xl !important;
+  color: $text-primary !important;
+  font-weight: $font-weight-medium !important;
+  backdrop-filter: blur(10px);
+  animation: slideInDown 0.3s ease-out;
+  min-width: 400px !important;
+  max-width: 480px !important;
+  padding: $spacing-xl !important;
+  border-left: 4px solid $primary-color !important;
+
+  .el-message__content {
+    color: $text-secondary !important;
+    font-size: $font-size-lg !important;
+    line-height: $line-height-relaxed !important;
+    margin-left: $spacing-lg !important;
+    display: flex !important;
+    flex-direction: column !important;
+
+    /* 标题文本应该通过JavaScript国际化设置，而不是在CSS中硬编码 */
+  }
+
+  .el-message__closeBtn {
+    color: $gray-500 !important;
+    font-size: $font-size-lg !important;
+    transition: $transition-base;
+    top: $spacing-sm !important;
+    right: $spacing-sm !important;
+    position: absolute !important;
+    z-index: 10 !important;
+
+    &:hover {
+      color: $gray-700 !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .el-message__icon {
+    color: $primary-color !important;
+    font-size: $font-size-2xl !important;
+    margin-right: $spacing-md !important;
+    margin-top: 2px !important;
+  }
+}
+
+/* 警告消息样式 - 优雅对话框风格 */
+.elegant-warning-message {
+  background: $white !important;
+  border: none !important;
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-xl !important;
+  color: $text-primary !important;
+  font-weight: $font-weight-medium !important;
+  backdrop-filter: blur(10px);
+  animation: slideInDown 0.3s ease-out;
+  min-width: 400px !important;
+  max-width: 480px !important;
+  padding: $spacing-xl !important;
+  border-left: 4px solid #ffd43b !important;
+
+  .el-message__content {
+    color: $text-secondary !important;
+    font-size: $font-size-lg !important;
+    line-height: $line-height-relaxed !important;
+    margin-left: $spacing-lg !important;
+    display: flex !important;
+    flex-direction: column !important;
+
+    /* 标题文本应该通过JavaScript国际化设置，而不是在CSS中硬编码 */
+  }
+
+  .el-message__closeBtn {
+    color: $gray-500 !important;
+    font-size: $font-size-xl !important;
+    transition: $transition-base;
+    top: $spacing-sm !important;
+    right: $spacing-sm !important;
+    position: absolute !important;
+    z-index: 10 !important;
+
+    &:hover {
+      color: $gray-700 !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .el-message__icon {
+    color: #ffd43b !important;
+    font-size: $font-size-2xl !important;
+    margin-right: $spacing-md !important;
+    margin-top: 2px !important;
+  }
+}
+
+/* 信息消息样式 - 优雅对话框风格 */
+.elegant-info-message {
+  background: $white !important;
+  border: none !important;
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-xl !important;
+  color: $text-primary !important;
+  font-weight: $font-weight-medium !important;
+  backdrop-filter: blur(10px);
+  animation: slideInDown 0.3s ease-out;
+  min-width: 400px !important;
+  max-width: 480px !important;
+  padding: $spacing-xl !important;
+  border-left: 4px solid #74c0fc !important;
+
+  .el-message__content {
+    color: $text-secondary !important;
+    font-size: $font-size-lg !important;
+    line-height: $line-height-relaxed !important;
+    margin-left: $spacing-lg !important;
+    display: flex !important;
+    flex-direction: column !important;
+
+    /* 标题文本应该通过JavaScript国际化设置，而不是在CSS中硬编码 */
+  }
+
+  .el-message__closeBtn {
+    color: $gray-500 !important;
+    font-size: $font-size-xl !important;
+    transition: $transition-base;
+    top: $spacing-sm !important;
+    right: $spacing-sm !important;
+    position: absolute !important;
+    z-index: 10 !important;
+
+    &:hover {
+      color: $gray-700 !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .el-message__icon {
+    color: #74c0fc !important;
+    font-size: $font-size-2xl !important;
+    margin-right: $spacing-md !important;
+    margin-top: 2px !important;
+  }
+}
+
+/* 优雅的确认对话框样式 - 使用Home.vue的样式变量 */
+.elegant-confirm-dialog {
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-xl !important;
+  min-width: 480px !important;
+  max-width: 520px !important;
+  overflow: hidden !important;
+
+  .el-message-box__header {
+    padding: $spacing-xl $spacing-xl $spacing-md !important;
+    border-bottom: 1px solid $gray-200 !important;
+    background: $white !important;
+  }
+
+  // 标题样式 - 与Home.vue About Us标题一样
+  .el-message-box__title {
+    font-size: $font-size-3xl !important;
+    font-weight: $font-weight-bold !important;
+    color: $text-primary !important;
+    line-height: $line-height-tight !important;
+  }
+
+  .el-message-box__headerbtn {
+    top: $spacing-lg !important;
+    right: $spacing-lg !important;
+    font-size: $font-size-xl !important;
+    color: $gray-500 !important;
+    transition: $transition-base !important;
+
+    &:hover {
+      color: $gray-700 !important;
+      transform: scale(1.1) !important;
+    }
+  }
+
+  .el-message-box__content {
+    padding: $spacing-xl $spacing-xl $spacing-2xl !important;
+    background: $white !important;
+    min-height: 100px !important;
+  }
+
+  // 描述文字样式 - 与Home.vue About描述文字一样
+  .el-message-box__message {
+    color: $text-secondary !important;
+    font-size: $font-size-lg !important;
+    line-height: $line-height-relaxed !important;
+    margin: 0 !important;
+  }
+
+  .el-message-box__icon {
+    font-size: $font-size-2xl !important;
+    margin-right: $spacing-md !important;
+  }
+
+  .el-message-box__btns {
+    padding: $spacing-lg $spacing-xl $spacing-xl !important;
+    text-align: center !important;
+    border-top: 1px solid $gray-200 !important;
+    gap: $spacing-xl !important;
+    display: flex !important;
+    justify-content: center !important;
+    background: $white !important;
+  }
+
+  // 覆盖Element UI默认按钮高度
+  .el-button {
+    height: auto !important;
+    line-height: normal !important;
+  }
+
+  // 确认按钮样式 - 与Home.vue Category button active状态一样
+  .el-button--primary {
+    @include button-primary;
+    padding: $spacing-md $spacing-xl !important;
+    font-size: $font-size-lg !important;
+    font-weight: $font-weight-semibold !important;
+    border-radius: $border-radius-md !important;
+    min-width: 120px !important;
+    height: auto !important;
+    line-height: normal !important;
+    transition: $transition-base !important;
+
+    &:hover {
+      background-color: $primary-dark !important;
+      border-color: $primary-dark !important;
+    }
+  }
+
+  // 取消按钮样式 - 与Home.vue More button一样
+  .el-message-box__btns .el-button:not(.el-button--primary) {
+    @include button-base;
+    background-color: $gray-200 !important;
+    color: $gray-700 !important;
+    border-color: $gray-200 !important;
+    padding: $spacing-md $spacing-xl !important;
+    font-size: $font-size-lg !important;
+    font-weight: $font-weight-semibold !important;
+    border-radius: $border-radius-md !important;
+    min-width: 120px !important;
+    height: auto !important;
+    line-height: normal !important;
+    transition: $transition-base !important;
+
+    &:hover:not(:disabled) {
+      background-color: $gray-300 !important;
+      border-color: $gray-300 !important;
+      color: $gray-700 !important;
+    }
+  }
+
+  // 额外的取消按钮选择器
+  .el-button--default,
+  .el-button--info {
+    @include button-base;
+    background-color: $gray-200 !important;
+    color: $gray-700 !important;
+    border-color: $gray-200 !important;
+    padding: $spacing-md $spacing-xl !important;
+    font-size: $font-size-lg !important;
+    font-weight: $font-weight-semibold !important;
+    border-radius: $border-radius-md !important;
+    min-width: 120px !important;
+    height: auto !important;
+    line-height: normal !important;
+    transition: $transition-base !important;
+
+    &:hover:not(:disabled) {
+      background-color: $gray-300 !important;
+      border-color: $gray-300 !important;
+      color: $gray-700 !important;
+    }
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: $breakpoint-tablet) {
+  .elegant-confirm-dialog {
+    min-width: 90vw !important;
+    margin: $spacing-lg !important;
+
+    .el-message-box__btns {
+      flex-direction: column !important;
+
+      .el-button {
+        width: 100% !important;
+        margin-bottom: $spacing-sm !important;
+
+        &:last-child {
+          margin-bottom: 0 !important;
+        }
+      }
+    }
+  }
+}
+
+/* 动画效果 */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* 成功Alert对话框样式 */
+.elegant-success-alert-dialog {
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-xl !important;
+  min-width: 480px !important;
+  max-width: 520px !important;
+  overflow: hidden !important;
+
+  .el-message-box__header {
+    padding: $spacing-xl $spacing-xl $spacing-md !important;
+    border-bottom: 1px solid $gray-200 !important;
+    background: $white !important;
+  }
+
+  .el-message-box__title {
+    font-size: $font-size-4xl !important;
+    font-weight: $font-weight-bold !important;
+    color: $text-primary !important;
+    line-height: $line-height-tight !important;
+  }
+
+  .el-message-box__headerbtn {
+    top: $spacing-lg !important;
+    right: $spacing-lg !important;
+    font-size: $font-size-xl !important;
+    color: $gray-500 !important;
+    transition: $transition-base !important;
+
+    &:hover {
+      color: $gray-700 !important;
+      transform: scale(1.1) !important;
+    }
+  }
+
+  .el-message-box__content {
+    padding: $spacing-xl $spacing-xl $spacing-2xl !important;
+    background: $white !important;
+    min-height: 100px !important;
+  }
+
+  .el-message-box__message {
+    color: $text-secondary !important;
+    font-size: $font-size-lg !important;
+    line-height: $line-height-relaxed !important;
+    margin: 0 !important;
+  }
+
+  .el-message-box__icon {
+    font-size: $font-size-2xl !important;
+    color: $primary-color !important;
+    margin-right: $spacing-md !important;
+    margin-top: 2px !important;
+  }
+
+  .el-message-box__btns {
+    padding: 0 $spacing-xl $spacing-xl !important;
+    background: $white !important;
+    text-align: right !important;
+  }
+
+  .el-button--primary {
+    background: $primary-color !important;
+    border-color: $primary-color !important;
+    color: $white !important;
+    padding: $spacing-md $spacing-xl !important;
+    font-size: $font-size-md !important;
+    font-weight: $font-weight-semibold !important;
+    border-radius: $border-radius-md !important;
+    min-width: 100px !important;
+    height: 44px !important;
+    line-height: 1 !important;
+    transition: $transition-base !important;
+
+    &:hover {
+      background: $primary-dark !important;
+      border-color: $primary-dark !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 8px rgba($primary-color, 0.3) !important;
+    }
+
+    &:active {
+      transform: translateY(0) !important;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  70% {
+    transform: scale(0.9);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rotateIn {
+  from {
+    opacity: 0;
+    transform: rotate(-200deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: rotate(0);
+  }
+}
+
+@keyframes flipInX {
+  from {
+    opacity: 0;
+    transform: perspective(400px) rotateX(90deg);
+  }
+
+  40% {
+    transform: perspective(400px) rotateX(-20deg);
+  }
+
+  60% {
+    transform: perspective(400px) rotateX(10deg);
+  }
+
+  80% {
+    transform: perspective(400px) rotateX(-5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: perspective(400px) rotateX(0deg);
+  }
+}
+
+@keyframes flipInY {
+  from {
+    opacity: 0;
+    transform: perspective(400px) rotateY(90deg);
+  }
+
+  40% {
+    transform: perspective(400px) rotateY(-20deg);
+  }
+
+  60% {
+    transform: perspective(400px) rotateY(10deg);
+  }
+
+  80% {
+    transform: perspective(400px) rotateY(-5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: perspective(400px) rotateY(0deg);
+  }
+}

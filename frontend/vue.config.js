@@ -3,7 +3,7 @@ const path = require('path')
 
 module.exports = defineConfig({
   // 设置公共路径，确保生产环境中静态资源能正确加载
-  //publicPath: process.env.NODE_ENV === 'production' ? '/public' : '//',
+  publicPath: '/vue-app/',
   // 动态设置输出目录，支持构建时指定
   outputDir: process.env.VUE_OUTPUT_DIR || 'dist',
   devServer: {
@@ -19,10 +19,6 @@ module.exports = defineConfig({
         changeOrigin: true
       },
       '/static': {
-        target: 'http://localhost:3000',
-        changeOrigin: true
-      },
-      '/uploads': {
         target: 'http://localhost:3000',
         changeOrigin: true
       },

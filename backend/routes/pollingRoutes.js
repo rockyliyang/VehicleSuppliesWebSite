@@ -376,17 +376,17 @@ router.get('/:inquiryId/messages/poll', verifyToken, async (req, res) => {
         }
       };
       
-      // log('INFO', `Sending response`, {
-      //   requestId,
-      //   inquiryId,
-      //   responsePreparationDuration: `${Date.now() - responseStart}ms`,
-      //   totalRequestDuration: `${Date.now() - requestStartTime}ms`,
-      //   hasNewMessages: responseData.data.hasNewMessages,
-      //   newMessagesCount: responseData.data.newMessages.length,
-      //   totalCount: responseData.data.totalCount,
-      //   unreadCount: responseData.data.unreadCount,
-      //   lastMessageId: responseData.data.lastMessageId
-      // });
+      log('INFO', `Sending response`, {
+         requestId,
+         inquiryId,
+         responsePreparationDuration: `${Date.now() - responseStart}ms`,
+         totalRequestDuration: `${Date.now() - requestStartTime}ms`,
+         hasNewMessages: responseData.data.hasNewMessages,
+         newMessagesCount: responseData.data.newMessages.length,
+         totalCount: responseData.data.totalCount,
+         unreadCount: responseData.data.unreadCount,
+         lastMessageId: responseData.data.lastMessageId
+      });
       
       return res.json(responseData);
     }
