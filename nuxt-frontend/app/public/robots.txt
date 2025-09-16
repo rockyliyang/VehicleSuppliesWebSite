@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Allow: /products
+Allow: /product/
+Allow: /about
+Allow: /news
+Allow: /contact
+Allow: /login
+Allow: /register
+Disallow: /admin/
+Disallow: /business/
+Disallow: /user/
+Disallow: /order-payment/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account
+Disallow: /favorites
+Disallow: /browsing-history
+
+Sitemap: https://autoeasetechx.com/sitemap.xml
