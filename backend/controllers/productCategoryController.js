@@ -9,7 +9,7 @@ exports.createCategory = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { name, code, sort_order = 0, status = 'on_shelf', description = '' } = req.body;
+    const { name, code, parent_id = null, sort_order = 0, status = 'on_shelf', description = '' } = req.body;
 
     // 检查编码是否已存在
     const existing = await connection.query(
@@ -26,8 +26,8 @@ exports.createCategory = async (req, res) => {
 
     const currentUserId = req.userId; // 从JWT中获取当前用户ID
     const result = await connection.query(
-      'INSERT INTO product_categories (name, code, sort_order, status, description, deleted, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, false, $6, $7) RETURNING id, guid',
-      [name, code, sort_order, status, description, currentUserId, currentUserId]
+      'INSERT INTO product_categories (name, code, parent_id, sort_order, status, description, deleted, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8) RETURNING id, guid',
+      [name, code, parent_id, sort_order, status, description, currentUserId, currentUserId]
     );
 
     await connection.commit();
@@ -61,7 +61,7 @@ exports.createCategory = async (req, res) => {
 exports.getAllCategories = async (req, res) => {
   try {
     const rows = await query(
-      'SELECT id, name, code, sort_order, status, description, guid FROM product_categories WHERE deleted = false ORDER BY sort_order ASC'
+      'SELECT id, name, code, parent_id, sort_order, status, description, guid FROM product_categories WHERE deleted = false ORDER BY sort_order ASC'
     );
     
     // PostgreSQL 返回的 guid 已经是字符串格式
@@ -84,7 +84,7 @@ exports.getAllCategories = async (req, res) => {
 exports.getCategoryById = async (req, res) => {
   try {
     const rows = await query(
-      'SELECT id, name, code, sort_order, status, description, guid FROM product_categories WHERE id = $1 AND deleted = false',
+      'SELECT id, name, code, parent_id, sort_order, status, description, guid FROM product_categories WHERE id = $1 AND deleted = false',
       [req.params.id]
     );
 
@@ -118,7 +118,7 @@ exports.updateCategory = async (req, res) => {
     await connection.beginTransaction();
 
     const { id } = req.params;
-    const { name, code, sort_order, status, description } = req.body;
+    const { name, code, parent_id, sort_order, status, description } = req.body;
 
     // 检查分类是否存在
     const existing = await connection.query(
@@ -147,8 +147,8 @@ exports.updateCategory = async (req, res) => {
     }
 
     await connection.query(
-      'UPDATE product_categories SET name = $1, code = $2, sort_order = $3, status = $4, description = $5, updated_by = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7',
-      [name, code, sort_order, status, description, req.userId, id]
+      'UPDATE product_categories SET name = $1, code = $2, parent_id = $3, sort_order = $4, status = $5, description = $6, updated_by = $7, updated_at = CURRENT_TIMESTAMP WHERE id = $8',
+      [name, code, parent_id, sort_order, status, description, req.userId, id]
     );
 
     await connection.commit();
@@ -160,6 +160,7 @@ exports.updateCategory = async (req, res) => {
         id,
         name,
         code,
+        parent_id,
         sort_order,
         status,
         description

@@ -21,6 +21,8 @@
 
         <!-- Product Categories Tabs -->
         <div class="category-tabs-container">
+          <!-- Debug info removed to fix SSR error -->
+
           <div class="category-buttons-wrapper">
             <button v-for="category in categories" :key="category.id"
               :class="['category-button', { active: activeCategory === category.id.toString() }]"
@@ -124,8 +126,31 @@ const banners = computed(() => {
   ]
 })
 
+// 递归获取分类及其所有子分类的ID
+const getCategoryWithChildren = (categoryId) => {
+  const categoryIds = [categoryId]
+  
+  const getChildren = (parentId) => {
+    const children = companyStore.categories.filter(cat => cat.parent_id === parentId)
+    children.forEach(child => {
+      categoryIds.push(child.id)
+      getChildren(child.id) // 递归获取子分类的子分类
+    })
+  }
+  
+  getChildren(categoryId)
+  return categoryIds
+}
+
 const displayProducts = computed(() => {
-  return products.value.filter(product => product.category_id && product.category_id.toString() === activeCategory.value)
+  if (!activeCategory.value) return products.value
+  
+  // 获取当前分类及其所有子分类的ID
+  const categoryIds = getCategoryWithChildren(activeCategory.value)
+  console.log('categoryIds in ',categoryIds);
+  return products.value.filter(product => 
+    product.category_id && categoryIds.includes(product.category_id)
+  )
 })
 
 const lang = computed(() => {
@@ -133,9 +158,22 @@ const lang = computed(() => {
 })
 
 const categories = computed(() => {
-if (companyStore.categories.length > 0)
-  activeCategory.value = companyStore.categories[0].id
-  return companyStore.categories;
+  console.log('[DEBUG] Categories computed - companyStore.categories:', companyStore.categories)
+  console.log('[DEBUG] Categories computed - categories length:', companyStore.categories.length)
+  
+  // 只显示顶层分类（parent_id为null的分类）
+  const topLevelCategories = companyStore.categories.filter(category => category.parent_id === null)
+  
+  if (topLevelCategories.length > 0) {
+    // 只在activeCategory为空时设置默认值
+    if (!activeCategory.value) {
+      activeCategory.value = topLevelCategories[0].id.toString()
+      console.log('[DEBUG] Set default activeCategory:', activeCategory.value)
+    }
+  }
+  
+  console.log('[DEBUG] Returning top level categories:', topLevelCategories)
+  return topLevelCategories
 })
 
 
@@ -185,7 +223,7 @@ const onLanguageChange = async () => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   updateBannerHeight()
   
   if (process.client) {
@@ -194,26 +232,32 @@ onMounted(() => {
     // 监听语言切换事件
     const { $bus } = useNuxtApp()
     $bus?.on('language-changed', onLanguageChange)
-    
-
-  }
-  async () => {
-    console.log('cateogories is',companyStore.categories);
-    if (!companyStore.banners || companyStore.banners.length === 0) {
-       console.log('companyStore.banners',companyStore.banners);
-       await companyStore.fetchBanners()
-    }
-    if (!companyStore.categories || companyStore.categories.length === 0) {
-       await companyStore.fetchCategories()
-    }
-    categories.value = companyStore.categories
-        // 确保activeCategory有值
-    if (!activeCategory.value && categories.value.length > 0) {
-      activeCategory.value = categories.value[0].id.toString()
-    }
-    console.log('cateogories is',categories.value);
   }
   
+  console.log('[DEBUG] onMounted - Initial companyStore.categories:', companyStore.categories)
+  console.log('[DEBUG] onMounted - Initial activeCategory:', activeCategory.value)
+  
+  if (!companyStore.banners || companyStore.banners.length === 0) {
+     console.log('[DEBUG] Fetching banners...')
+     await companyStore.fetchBanners()
+  }
+  
+  if (!companyStore.categories || companyStore.categories.length === 0) {
+     console.log('[DEBUG] Fetching categories...')
+     await companyStore.fetchCategories()
+     console.log('[DEBUG] After fetchCategories - companyStore.categories:', companyStore.categories)
+  }
+  
+  // 确保activeCategory有值，使用顶层分类
+  const topLevelCategories = companyStore.categories.filter(category => category.parent_id === null)
+  if (!activeCategory.value && topLevelCategories.length > 0) {
+    activeCategory.value = topLevelCategories[0].id.toString()
+    console.log('[DEBUG] onMounted - Set activeCategory from top level categories:', activeCategory.value)
+  }
+  
+  console.log('[DEBUG] onMounted completed - Final state:')
+  console.log('[DEBUG] - companyStore.categories:', companyStore.categories)
+  console.log('[DEBUG] - activeCategory:', activeCategory.value)
 })
 
 onUnmounted(() => {

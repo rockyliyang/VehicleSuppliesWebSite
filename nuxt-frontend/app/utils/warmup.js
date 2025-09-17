@@ -15,6 +15,7 @@ function parseArgs() {
   const options = {
     concurrency: 3,
     skipProducts: false,
+    port: 3000,
     help: false
   };
 
@@ -29,6 +30,11 @@ function parseArgs() {
       case '--skip-products':
       case '-s':
         options.skipProducts = true;
+        break;
+      case '--port':
+      case '-p':
+        options.port = parseInt(args[i + 1]) || 3000;
+        i++;
         break;
       case '--help':
       case '-h':
@@ -52,13 +58,15 @@ function showHelp() {
 选项:
   -c, --concurrency <数量>    并发请求数量 (默认: 3)
   -s, --skip-products         跳过产品页面预热
+  -p, --port <端口号>         localhost端口号 (默认: 3000)
   -h, --help                  显示此帮助信息
 
 示例:
   node warmup.js                    # 使用默认设置预热所有页面
   node warmup.js -c 5              # 使用5个并发预热
   node warmup.js -s                # 跳过产品页面预热
-  node warmup.js -c 2 -s           # 使用2个并发且跳过产品页面
+  node warmup.js -p 5000           # 使用端口5000进行预热
+  node warmup.js -c 2 -s -p 5000   # 使用2个并发、跳过产品页面、端口5000
 `);
 }
 
@@ -76,7 +84,7 @@ async function main() {
   console.log('='.repeat(50));
   console.log('🔥 网站页面预热工具');
   console.log('='.repeat(50));
-  console.log(`配置: 并发数=${options.concurrency}, 跳过产品=${options.skipProducts}`);
+  console.log(`配置: 并发数=${options.concurrency}, 跳过产品=${options.skipProducts}, 端口=${options.port}`);
   console.log('');
 
   try {

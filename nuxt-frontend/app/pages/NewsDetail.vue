@@ -125,79 +125,70 @@ export default {
     Document
   },
   async setup() {
-    const route = useRoute();
-    const { $api } = useNuxtApp();
-    
     try {
-      // SSR data fetching using useAsyncData
-      const { data: ssrData } = await useAsyncData(`news-detail-${route.query.contentId}`, async () => {
-        const contentId = route.query.contentId;
-        const navId = route.query.navId;
-        console.log('contentId:',contentId);
-        console.log('navId:',navId);
-        // Get navigation list first
-        const navResponse = await $api.get('common-content/nav/news?lang=en');
-        const navList = navResponse.data.navList || [];
-        
-        let currentContent = null;
-        let contentList = [];
-        let currentNavId = navId ? parseInt(navId) : null;
-        
-        if (currentNavId) {
-          // If navId is provided, get content list for that navigation
-          const selectedNav = navList.find(nav => nav.id === currentNavId);
-          if (selectedNav) {
-            const response = await $api.get(`common-content/content/${selectedNav.name_key}/en`);
-            contentList = response.data.contentList || [];
-            currentContent = contentList.find(item => item.id === parseInt(contentId));
-          }
-        } else {
-          // If no navId, search through all navigations
-          for (const nav of navList) {
-            try {
-              const response = await $api.get(`common-content/content/${nav.name_key}/en`);
-              const navContentList = response.data.contentList || [];
-              const content = navContentList.find(item => item.id === parseInt(contentId));
-              if (content) {
-                currentNavId = nav.id;
-                contentList = navContentList;
-                currentContent = content;
-                break;
-              }
-            } catch (error) {
-              console.error(`Error fetching content for ${nav.name_key}:`, error);
+      const route = useRoute();
+      const { $api } = useNuxtApp();
+      
+      // 获取导航列表
+      const navResponse = await $api.get(`common-content/nav/news?lang=en`);
+      const navList = navResponse.data.navList || [];
+      
+      let currentContent = null;
+      let contentList = [];
+      let currentNavId = route.query.navId ? parseInt(route.query.navId) : null;
+      
+      if (currentNavId) {
+        // 如果有navId，获取对应导航的内容列表
+        const selectedNav = navList.find(nav => nav.id === currentNavId);
+        if (selectedNav) {
+          const response = await $api.get(`common-content/content/${selectedNav.name_key}/en`);
+          contentList = response.data.contentList || [];
+          currentContent = contentList.find(item => item.id === parseInt(route.query.contentId));
+        }
+      } else {
+        // 如果没有navId，遍历所有导航查找内容
+        for (const nav of navList) {
+          try {
+            const response = await $api.get(`common-content/content/${nav.name_key}/en`);
+            const navContentList = response.data.contentList || [];
+            const content = navContentList.find(item => item.id === parseInt(route.query.contentId));
+            if (content) {
+              currentNavId = nav.id;
+              contentList = navContentList;
+              currentContent = content;
+              break;
             }
+          } catch (error) {
+            console.error(`Error fetching content for ${nav.name_key}:`, error);
           }
         }
-        
-        return {
-          navList,
-          currentContent,
-          contentList,
-          currentNavId
-        };
-      });
-      console.log('ssrData.value',ssrData.value);
+      }
+      
+      const ssrData = {
+        navList,
+        currentContent,
+        contentList,
+        currentNavId
+      };
       
       // 设置页面SEO元数据
-      const currentContent = ssrData.value?.currentContent;
-      if (currentContent) {
+      if (ssrData?.currentContent) {
         useHead({
-          title: `${currentContent.title} - Auto Ease TechX` || 'News Detail',
+          title: `${ssrData.currentContent.title} - Auto Ease TechX` || 'News Detail',
           meta: [
-            { name: 'description', content: currentContent.content ? currentContent.content.substring(0, 160).replace(/<[^>]*>/g, '') : currentContent.title },
-            { name: 'keywords', content: currentContent.title },
-            { property: 'og:title', content: currentContent.title },
-            { property: 'og:description', content: currentContent.content ? currentContent.content.substring(0, 160).replace(/<[^>]*>/g, '') : currentContent.title },
-            { property: 'og:image', content: currentContent.main_image_url || '/images/news1.jpg' },
+            { name: 'description', content: ssrData.currentContent.content ? ssrData.currentContent.content.substring(0, 160).replace(/<[^>]*>/g, '') : ssrData.currentContent.title },
+            { name: 'keywords', content: ssrData.currentContent.title },
+            { property: 'og:title', content: ssrData.currentContent.title },
+            { property: 'og:description', content: ssrData.currentContent.content ? ssrData.currentContent.content.substring(0, 160).replace(/<[^>]*>/g, '') : ssrData.currentContent.title },
+            { property: 'og:image', content: ssrData.currentContent.main_image_url || '/images/news1.jpg' },
             { property: 'og:type', content: 'article' },
-            { property: 'article:published_time', content: currentContent.created_at }
+            { property: 'article:published_time', content: ssrData.currentContent.created_at }
           ]
         });
       }
       
       return {
-        ...ssrData.value
+        ssrData
       };
     } catch (error) {
       console.error('Error fetching news detail data:', error);
@@ -212,9 +203,14 @@ export default {
   data() {
     return {
       loading: false,
-      currentLanguage: 'zh-CN',
+      currentLanguage: 'en',
       defaultImage: '/images/news1.jpg',
-      imageErrorMap: new Map() // 记录图片加载错误状态
+      imageErrorMap: new Map(), // 记录图片加载错误状态
+      // 使用SSR数据作为初始值，如果SSR数据不存在则使用默认值
+      navList: this.ssrData?.navList || [],
+      currentContent: this.ssrData?.currentContent || null,
+      contentList: this.ssrData?.contentList || [],
+      currentNavId: this.ssrData?.currentNavId || null
     }
   },
   computed: {
@@ -245,8 +241,11 @@ export default {
 
     // 获取当前内容在列表中的索引
     currentIndex() {
-      if (!this.currentContent || !this.contentList.length) return -1;
-      return this.contentList.findIndex(item => item.id === this.currentContent.id);
+     if (!this.currentContent || !this.contentList.length) {
+        return -1;
+      }
+      const index = this.contentList.findIndex(item => item.id === this.currentContent.id);
+      return index;
     },
 
     // 上一篇文章
@@ -257,8 +256,11 @@ export default {
 
     // 下一篇文章
     nextContent() {
-      if (this.currentIndex < 0 || this.currentIndex >= this.contentList.length - 1) return null;
-      return this.contentList[this.currentIndex + 1];
+     if (this.currentIndex < 0 || this.currentIndex >= this.contentList.length - 1) {
+        return null;
+      }
+      const next = this.contentList[this.currentIndex + 1];
+      return next;
     }
   },
   methods: {
@@ -295,6 +297,16 @@ export default {
         
         if (navId) {
           this.currentNavId = parseInt(navId);
+        }
+
+        // 如果已有内容列表且导航ID匹配，直接从现有列表中查找
+        if (this.contentList && this.contentList.length > 0 && this.currentNavId) {
+          const content = this.contentList.find(item => item.id === parseInt(contentId));
+          if (content) {
+            this.currentContent = content;
+            console.log('Found content in existing list:', content.id);
+            return;
+          }
         }
 
         // 获取导航列表
@@ -378,11 +390,12 @@ export default {
     // 跳转到上一篇
     goToPrevious() {
       if (this.prevContent) {
-        navigateTo({
-          path: `/NewsDetail/${this.prevContent.id}`,
+        this.$router.push({
+          path: `/NewsDetail`,
           query: {
             navId: this.currentNavId,
-            navName: this.getCurrentNavName()
+            navName: this.getCurrentNavName(),
+            contentId: this.prevContent.id
           }
         });
       }
@@ -390,14 +403,23 @@ export default {
 
     // 跳转到下一篇
     goToNext() {
-      if (this.nextContent) {
-        navigateTo({
-          path: `/NewsDetail/${this.nextContent.id}`,
+      
+      // 强制重新计算nextContent
+      const nextContent = this.nextContent;
+      
+      if (nextContent) {
+        console.log('go to currentIndex is', this.currentIndex);
+        const newContentId = nextContent.id;
+        this.$router.push({
+          path: `/NewsDetail`,
           query: {
             navId: this.currentNavId,
-            navName: this.getCurrentNavName()
+            navName: this.getCurrentNavName(),
+            contentId: newContentId
           }
         });
+      } else {
+        console.log('goToNext - no nextContent available');
       }
     },
 
@@ -416,16 +438,17 @@ export default {
     }
   },
   async created() {
-    const contentId = this.$route.query.contentId;
+    /*const contentId = this.$route.query.contentId;
     if (contentId) {
       await this.fetchContentById(contentId);
-    }
+    }*/
     if(process.client)
     // 监听全局语言切换事件
     this.$bus.on('language-changed', this.onLanguageChange);
   },
   
   async mounted() {
+    
     // 检查SSR数据是否存在，如果不存在则重新加载
     if (process.client) {
       const contentId = this.$route.query.contentId;
@@ -450,9 +473,12 @@ export default {
   
   watch: {
     // 监听路由参数变化
-    '$route.query.contentId'(newId, oldId) {
+    async '$route.query.contentId'(newId, oldId) {
       if (newId !== oldId && newId) {
-        this.fetchContentById(newId);
+
+        await this.fetchContentById(newId);
+        // 强制触发响应式更新
+        this.$forceUpdate();
       }
     },
     

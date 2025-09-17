@@ -3,6 +3,11 @@ import store from '../store';
 import MessageHandler from './messageHandler'
 //import router from '../router';
 
+// 生成唯一的Request ID
+function generateRequestId() {
+  return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
 // 创建axios实例
 const api = axios.create({
   baseURL: process.env.VUE_APP_API_URL || '/api',
@@ -27,9 +32,13 @@ export function getAuthToken(isAdminRequest = false) {
   }
 }
 
-// 请求拦截器 - 添加token到请求头
+// 请求拦截器 - 添加token和Request ID到请求头
 api.interceptors.request.use(
   config => {
+    // 生成并添加Request ID到请求头
+    const requestId = generateRequestId();
+    config.headers['X-Request-ID'] = requestId;
+    
     // 使用封装的函数获取token
     const isAdminRequest = config.url && config.url.startsWith('/admin');
     const token = getAuthToken(isAdminRequest);
@@ -94,8 +103,8 @@ api.interceptors.response.use(
   },
   error => {
     // 处理HTTP错误
-    let showError = true;
-    let message = '请求失败';
+    let showError = false;
+    let message = 'Unknown network error';
     let fallbackKey;
     
     if (error.response) {
@@ -133,6 +142,7 @@ api.interceptors.response.use(
       if (error.response.data && error.response.data.message) {
         message = null;
         fallbackKey = error.response.data.message; //backend return the message code for thranslation
+        showError = true; //显示后端的错误信息
       }
     } else if (error.request) {
       // 请求已发送但没有收到响应

@@ -782,6 +782,9 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'common.confirm.title', 'zh-CN', '确认'),
 (gen_random_uuid(), 'common.confirm.removeSelected', 'en', 'Remove selected items'),
 (gen_random_uuid(), 'common.confirm.removeSelected', 'zh-CN', '删除选中项'),
+(gen_random_uuid(), 'common.error.title', 'en', 'Error'),
+(gen_random_uuid(), 'common.error.title', 'zh-CN', '错误'),
+
 -- ProductDetail.vue中的翻译键
 (gen_random_uuid(), 'productDetail.removeFromFavorites', 'en', 'Remove from favorites'),
 (gen_random_uuid(), 'productDetail.removeFromFavorites', 'zh-CN', '取消收藏'),
@@ -1286,7 +1289,10 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'checkout.addressPlaceholder', 'zh-CN', '请输入地址'),
 (gen_random_uuid(), 'checkout.submitOrder', 'en', 'Submit Order'),
 (gen_random_uuid(), 'checkout.submitOrder', 'zh-CN', '提交订单'),
-
+(gen_random_uuid(), 'checkout.warning.shippingInfoInvalid', 'en', 'Shipping information is invalid'),
+(gen_random_uuid(), 'checkout.warning.shippingInfoInvalid', 'zh-CN', '配送信息无效'),
+(gen_random_uuid(), 'checkout.error.fetchLogisticsFailed', 'en', 'Failed to fetch logistics information'),
+(gen_random_uuid(), 'checkout.error.fetchLogisticsFailed', 'zh-CN', '获取物流信息失败'),
 -- 订单相关通用
 (gen_random_uuid(), 'order.status', 'en', 'Order Status'),
 (gen_random_uuid(), 'order.status', 'zh-CN', '订单状态'),
@@ -3641,7 +3647,55 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'orders.paidDate', 'zh-CN', '支付日期'),
 -- orders.status.payTimeout
 (gen_random_uuid(), 'orders.status.payTimeout', 'en', 'Payment Timeout'),
-(gen_random_uuid(), 'orders.status.payTimeout', 'zh-CN', '支付超时');
+(gen_random_uuid(), 'orders.status.payTimeout', 'zh-CN', '支付超时'),
+
+-- Payment error messages
+(gen_random_uuid(), 'payment.error.fetchOrderFailed', 'en', 'Failed to fetch order details'),
+(gen_random_uuid(), 'payment.error.fetchOrderFailed', 'zh-CN', '获取订单详情失败'),
+(gen_random_uuid(), 'payment.error.formFormatError', 'en', 'Payment form format error'),
+(gen_random_uuid(), 'payment.error.formFormatError', 'zh-CN', '支付表单格式错误'),
+(gen_random_uuid(), 'payment.error.formGenerateFailed', 'en', 'Failed to generate payment form'),
+(gen_random_uuid(), 'payment.error.formGenerateFailed', 'zh-CN', '生成支付表单失败'),
+(gen_random_uuid(), 'payment.error.formRefreshFailed', 'en', 'Failed to refresh payment form'),
+(gen_random_uuid(), 'payment.error.formRefreshFailed', 'zh-CN', '刷新支付表单失败'),
+(gen_random_uuid(), 'payment.error.formSubmitFailed', 'en', 'Failed to submit payment form'),
+(gen_random_uuid(), 'payment.error.formSubmitFailed', 'zh-CN', '提交支付表单失败'),
+(gen_random_uuid(), 'payment.error.orderIdRequired', 'en', 'Order ID is required'),
+(gen_random_uuid(), 'payment.error.orderIdRequired', 'zh-CN', '订单ID为必填项'),
+(gen_random_uuid(), 'payment.error.paymentError', 'en', 'Payment error occurred'),
+(gen_random_uuid(), 'payment.error.paymentError', 'zh-CN', '支付过程中发生错误'),
+(gen_random_uuid(), 'payment.error.paypalButtonLoadFailed', 'en', 'Failed to load PayPal button'),
+(gen_random_uuid(), 'payment.error.paypalButtonLoadFailed', 'zh-CN', '加载PayPal按钮失败'),
+(gen_random_uuid(), 'payment.error.paypalSDKLoadFailed', 'en', 'Failed to load PayPal SDK'),
+(gen_random_uuid(), 'payment.error.paypalSDKLoadFailed', 'zh-CN', '加载PayPal SDK失败'),
+(gen_random_uuid(), 'payment.error.qrcodeRefreshFailed', 'en', 'Failed to refresh QR code'),
+(gen_random_uuid(), 'payment.error.qrcodeRefreshFailed', 'zh-CN', '刷新二维码失败'),
+
+-- Payment form and status messages
+(gen_random_uuid(), 'payment.formExpired', 'en', 'Payment form has expired'),
+(gen_random_uuid(), 'payment.formExpired', 'zh-CN', '支付表单已过期'),
+(gen_random_uuid(), 'payment.formGenerateFailed', 'en', 'Failed to generate payment form'),
+(gen_random_uuid(), 'payment.formGenerateFailed', 'zh-CN', '生成支付表单失败'),
+(gen_random_uuid(), 'payment.formRefreshFailed', 'en', 'Failed to refresh payment form'),
+(gen_random_uuid(), 'payment.formRefreshFailed', 'zh-CN', '刷新支付表单失败'),
+(gen_random_uuid(), 'payment.info.paymentCancelled', 'en', 'Payment has been cancelled'),
+(gen_random_uuid(), 'payment.info.paymentCancelled', 'zh-CN', '支付已取消'),
+(gen_random_uuid(), 'payment.orderIdRequired', 'en', 'Order ID is required'),
+(gen_random_uuid(), 'payment.orderIdRequired', 'zh-CN', '订单ID为必填项'),
+(gen_random_uuid(), 'payment.paymentCancelled', 'en', 'Payment cancelled'),
+(gen_random_uuid(), 'payment.paymentCancelled', 'zh-CN', '支付已取消'),
+(gen_random_uuid(), 'payment.paypalSDKLoadFailed', 'en', 'PayPal SDK load failed'),
+(gen_random_uuid(), 'payment.paypalSDKLoadFailed', 'zh-CN', 'PayPal SDK加载失败'),
+(gen_random_uuid(), 'payment.qrcodeExpired', 'en', 'QR code has expired'),
+(gen_random_uuid(), 'payment.qrcodeExpired', 'zh-CN', '二维码已过期'),
+(gen_random_uuid(), 'payment.qrcodeRefreshFailed', 'en', 'Failed to refresh QR code'),
+(gen_random_uuid(), 'payment.qrcodeRefreshFailed', 'zh-CN', '刷新二维码失败'),
+
+-- Payment warning messages
+(gen_random_uuid(), 'payment.warning.formExpired', 'en', 'Warning: Payment form will expire soon'),
+(gen_random_uuid(), 'payment.warning.formExpired', 'zh-CN', '警告：支付表单即将过期'),
+(gen_random_uuid(), 'payment.warning.qrcodeExpired', 'en', 'Warning: QR code will expire soon'),
+(gen_random_uuid(), 'payment.warning.qrcodeExpired', 'zh-CN', '警告：二维码即将过期');
 
 -- 为 frontend/src/views/UserSettings.vue 文件添加缺失的翻译键
 INSERT INTO language_translations (guid, code, lang, value) VALUES
@@ -3779,4 +3833,31 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- userAgreement.error.fetchContentFailed
 (gen_random_uuid(), 'userAgreement.error.fetchContentFailed', 'en', 'Failed to fetch user agreement content'),
 (gen_random_uuid(), 'userAgreement.error.fetchContentFailed', 'zh-CN', '获取用户协议内容失败');
+
+-- 新增UnifiedCheckout.vue相关翻译
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- address.addNewAddress
+(gen_random_uuid(), 'address.addNewAddress', 'en', 'Add New Address'),
+(gen_random_uuid(), 'address.addNewAddress', 'zh-CN', '添加新地址'),
+-- address.noAddresses
+(gen_random_uuid(), 'address.noAddresses', 'en', 'No addresses'),
+(gen_random_uuid(), 'address.noAddresses', 'zh-CN', '暂无地址'),
+-- checkout.error.fetchRangesFailed
+(gen_random_uuid(), 'checkout.error.fetchRangesFailed', 'en', 'Failed to fetch shipping ranges'),
+(gen_random_uuid(), 'checkout.error.fetchRangesFailed', 'zh-CN', '获取运费范围失败'),
+-- checkout.error.shippingInfoInvalid
+(gen_random_uuid(), 'checkout.error.shippingInfoInvalid', 'en', 'Shipping information is invalid'),
+(gen_random_uuid(), 'checkout.error.shippingInfoInvalid', 'zh-CN', '收货信息无效'),
+-- checkout.orderUpdated
+(gen_random_uuid(), 'checkout.orderUpdated', 'en', 'Order updated'),
+(gen_random_uuid(), 'checkout.orderUpdated', 'zh-CN', '订单已更新'),
+-- checkout.success.orderUpdated
+(gen_random_uuid(), 'checkout.success.orderUpdated', 'en', 'Order updated successfully'),
+(gen_random_uuid(), 'checkout.success.orderUpdated', 'zh-CN', '订单信息已更新'),
+-- inquiry.error.loadFailed
+(gen_random_uuid(), 'inquiry.error.loadFailed', 'en', 'Failed to load inquiry data'),
+(gen_random_uuid(), 'inquiry.error.loadFailed', 'zh-CN', '加载咨询数据失败'),
+-- order.paymentTime
+(gen_random_uuid(), 'order.paymentTime', 'en', 'Payment Time'),
+(gen_random_uuid(), 'order.paymentTime', 'zh-CN', '支付时间');
 

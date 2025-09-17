@@ -1,3 +1,11 @@
+// 构建API URL，避免重复的斜杠
+function buildApiUrl(baseUrl, endpoint) {
+  if (!baseUrl || !endpoint) return '';
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  return cleanBaseUrl + cleanEndpoint;
+}
+
 // 判断是否为视频URL
 function isVideoUrl(url) {
   if (!url) return false;
@@ -518,7 +526,7 @@ async function uploadImages(imageUrls, imageType = 0, sessionId) {
       formData.append('session_id', sessionId);
       
       // 3. 上传到后端服务器
-      const uploadResponse = await fetch(`${config.apiUrl}/api/product-images/upload?image_type=${imageType}`, {
+      const uploadResponse = await fetch(`${buildApiUrl(config.apiUrl, '/api/product-images/upload')}?image_type=${imageType}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${config.apiToken}`
@@ -553,7 +561,7 @@ async function loadCategories() {
       return [];
     }
     
-    const response = await fetch(`${config.apiUrl}/api/categories`, {
+    const response = await fetch(buildApiUrl(config.apiUrl, '/api/categories'), {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${config.apiToken}`
@@ -574,27 +582,137 @@ async function loadCategories() {
   }
 }
 
-// 填充分类选择框
-async function populateCategorySelect() {
-  const categorySelect = document.getElementById('category-select');
-  if (!categorySelect) return;
+// 构建分类树结构
+function buildCategoryTree(categories) {
+  const categoryMap = new Map();
+  const rootCategories = [];
   
-  // 清空现有选项
-  categorySelect.innerHTML = '<option value="">请选择分类</option>';
+  // 创建分类映射
+  categories.forEach(category => {
+    categoryMap.set(category.id, {
+      ...category,
+      children: []
+    });
+  });
+  
+  // 构建树结构
+  categories.forEach(category => {
+    if (category.parent_id && categoryMap.has(category.parent_id)) {
+      categoryMap.get(category.parent_id).children.push(categoryMap.get(category.id));
+    } else {
+      rootCategories.push(categoryMap.get(category.id));
+    }
+  });
+  
+  return rootCategories;
+}
+
+// 渲染树节点
+function renderTreeNode(category, level = 0) {
+  const hasChildren = category.children && category.children.length > 0;
+  
+  const nodeHtml = `
+    <div class="tree-node" data-category-id="${category.id}">
+      <div class="tree-item" data-category-id="${category.id}">
+        <span class="tree-toggle ${hasChildren ? '' : 'leaf'}" data-category-id="${category.id}"></span>
+        <span class="tree-label">${category.name}</span>
+      </div>
+      ${hasChildren ? `<div class="tree-children expanded" data-parent-id="${category.id}"></div>` : ''}
+    </div>
+  `;
+  
+  return nodeHtml;
+}
+
+// 渲染完整的分类树
+function renderCategoryTree(categories, container) {
+  const tree = buildCategoryTree(categories);
+  let html = '';
+  
+  function renderLevel(nodes) {
+    return nodes.map(node => {
+      const nodeHtml = renderTreeNode(node);
+      const childrenHtml = node.children && node.children.length > 0 ? 
+        renderLevel(node.children) : '';
+      
+      return nodeHtml.replace(
+        `<div class="tree-children expanded" data-parent-id="${node.id}"></div>`,
+        `<div class="tree-children expanded" data-parent-id="${node.id}">${childrenHtml}</div>`
+      );
+    }).join('');
+  }
+  
+  html = renderLevel(tree);
+  container.innerHTML = html;
+  
+  // 添加事件监听器
+  addTreeEventListeners(container);
+}
+
+// 添加树形控件事件监听器
+function addTreeEventListeners(container) {
+  // 切换展开/折叠
+  container.addEventListener('click', (e) => {
+    if (e.target.classList.contains('tree-toggle') && !e.target.classList.contains('leaf')) {
+      const categoryId = e.target.getAttribute('data-category-id');
+      const childrenContainer = container.querySelector(`[data-parent-id="${categoryId}"]`);
+      
+      if (childrenContainer) {
+        childrenContainer.classList.toggle('expanded');
+        e.target.classList.toggle('expanded');
+      }
+    }
+    
+    // 选择分类
+    if (e.target.classList.contains('tree-label') || e.target.classList.contains('tree-item')) {
+      const categoryId = e.target.getAttribute('data-category-id') || 
+                        e.target.closest('[data-category-id]').getAttribute('data-category-id');
+      
+      // 移除之前的选中状态
+      container.querySelectorAll('.tree-item.selected').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // 添加新的选中状态
+      const treeItem = e.target.classList.contains('tree-item') ? e.target : 
+                      e.target.closest('.tree-item');
+      treeItem.classList.add('selected');
+      
+      // 存储选中的分类ID
+      container.setAttribute('data-selected-category', categoryId);
+    }
+  });
+}
+
+// 获取选中的分类ID
+function getSelectedCategoryId() {
+  const categoryTree = document.getElementById('category-tree');
+  return categoryTree ? categoryTree.getAttribute('data-selected-category') : null;
+}
+
+// 填充分类树
+async function populateCategoryTree() {
+  const categoryTree = document.getElementById('category-tree');
+  if (!categoryTree) return;
+  
+  // 显示加载状态
+  categoryTree.innerHTML = '<div class="tree-loading">正在加载分类...</div>';
   
   try {
     const categories = await loadCategories();
     
-    categories.forEach(category => {
-      const option = document.createElement('option');
-      option.value = category.id;
-      option.textContent = category.name;
-      categorySelect.appendChild(option);
-    });
+    if (categories.length === 0) {
+      categoryTree.innerHTML = '<div class="tree-loading">暂无分类数据</div>';
+      return;
+    }
+    
+    // 渲染分类树
+    renderCategoryTree(categories, categoryTree);
     
     showMessage('分类列表已更新', 'success');
   } catch (error) {
-    console.error('填充分类选择框失败:', error);
+    console.error('填充分类树失败:', error);
+    categoryTree.innerHTML = '<div class="tree-loading">加载分类失败</div>';
     showMessage('获取分类列表失败', 'error');
   }
 }
@@ -615,8 +733,7 @@ async function uploadProduct(productData, selectedImages) {
     }
     
     // 获取选中的分类
-    const categorySelect = document.getElementById('category-select');
-    const selectedCategoryId = categorySelect ? categorySelect.value : null;
+    const selectedCategoryId = getSelectedCategoryId();
     
     console.log('正在上传图片...');
     
@@ -699,7 +816,7 @@ async function uploadProduct(productData, selectedImages) {
     
     console.log('正在上传产品...');
     
-    const response = await fetch(`${config.apiUrl}/api/products/import-from-1688`, {
+    const response = await fetch(buildApiUrl(config.apiUrl, '/api/products/import-from-1688'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -713,7 +830,7 @@ async function uploadProduct(productData, selectedImages) {
     if (response.ok && result.success) {
       // 关联图片到产品
       try {
-        const assignResponse = await fetch(`${config.apiUrl}/api/product-images/assign`, {
+        const assignResponse = await fetch(buildApiUrl(config.apiUrl, '/api/product-images/assign'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -883,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 绑定刷新分类按钮事件
   const refreshCategoriesBtn = document.getElementById('refresh-categories');
   if (refreshCategoriesBtn) {
-    refreshCategoriesBtn.addEventListener('click', populateCategorySelect);
+    refreshCategoriesBtn.addEventListener('click', populateCategoryTree);
   }
 
   // 绑定模态框关闭事件
@@ -913,8 +1030,8 @@ document.addEventListener('DOMContentLoaded', function() {
       dynamicContent.innerHTML = generatePreviewContent(productData);
     }
     
-    // 初始化分类选择框
-    populateCategorySelect();
+    // 初始化分类树
+    populateCategoryTree();
     
     // 绑定图片/视频项点击事件（切换选中状态）
     if (dynamicContent) {

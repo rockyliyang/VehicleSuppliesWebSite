@@ -4,12 +4,12 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "build:prod": "NODE_ENV=production nuxt build",
+    "build:prod": "npx cross-env NODE_ENV=production nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
-    "generate:prod": "NODE_ENV=production nuxt generate",
-    "preview": "nuxt preview --port 3001",
-    "start": "nuxt preview --port 3001",
+    "generate:prod": "npx cross-env NODE_ENV=production nuxt generate",
+    "preview": "nuxt preview --port 5000",
+    "start": "nuxt preview --port 5000",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
@@ -30,6 +30,7 @@
   "devDependencies": {
     "@nuxt/devtools": "^1.5.2",
     "@types/node": "^24.3.1",
+    "cross-env": "^7.0.3",
     "sass": "^1.92.1"
   }
 }

@@ -5,9 +5,9 @@ module.exports = {
     cwd: '../backend',
     instances: 2,
     // 日志配置
-    log_file: './logs/combined.log',
-    out_file: './logs/out.log',
-    error_file: './logs/error.log',
+    log_file: '../logs/backend/combined.log',
+    out_file: '../logs/backend/out.log',
+    error_file: '../logs/backend/error.log',
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     merge_logs: true,
     env: {
@@ -24,9 +24,9 @@ module.exports = {
     cwd: '../backend',
     instances: 1,
     // 日志配置
-    log_file: './logs/scheduler-combined.log',
-    out_file: './logs/scheduler-out.log',
-    error_file: './logs/scheduler-error.log',
+    log_file: '../logs/backend/scheduler-combined.log',
+    out_file: '../logs/backend/scheduler-out.log',
+    error_file: '../logs/backend/scheduler-error.log',
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     merge_logs: true,
     env: {
@@ -42,22 +42,22 @@ module.exports = {
     cwd: '../nuxt-frontend',
     instances: 1,
     // 日志配置
-    log_file: './logs/nuxt-combined.log',
-    out_file: './logs/nuxt-out.log',
-    error_file: './logs/nuxt-error.log',
+    log_file: '../logs/nuxt-frontend/nuxt-combined.log',
+    out_file: '../logs/nuxt-frontend/nuxt-out.log',
+    error_file: '../logs/nuxt-frontend/nuxt-error.log',
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     merge_logs: true,
     env: {
-      PORT: 3001, // Nuxt frontend 端口
+      PORT: 5000, // Nuxt frontend 端口
       NODE_ENV: 'development',
       NITRO_HOST: '0.0.0.0',
-      NITRO_PORT: 3001
+      NITRO_PORT: 5000
     },
     env_production: {
-      PORT: 3001, // Nuxt frontend 端口
+      PORT: 5000, // Nuxt frontend 端口
       NODE_ENV: 'production',
       NITRO_HOST: '0.0.0.0',
-      NITRO_PORT: 3001
+      NITRO_PORT: 5000
     }
   }]
 }

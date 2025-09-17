@@ -128,7 +128,7 @@ export async function loadInquiryMessages(inquiryId, context) {
  */
 export async function handleChatNow(product, context, showLoginDialog, showInquiryDialog) {
   // 检查用户是否已登录
-  const isLoggedIn = context.isLoggedIn !== undefined ? context.isLoggedIn : (context.$store?.auth?.isLoggedIn || false);
+  const isLoggedIn = context.isLoggedIn !== undefined ? context.isLoggedIn : false;
   if (!isLoggedIn) {
     // 显示登录对话框
     showLoginDialog('inquiry');

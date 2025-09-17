@@ -176,7 +176,7 @@ echo ==================================================
 echo [DEPLOY] Uploading release to server...
 echo Uploading release.tar.gz to 43.139.94.61:/release/
 scp -i "C:\Code\keys\tencent_ind_web_sever.pem" release.tar.gz root@43.139.94.61:/release/
-:: scp -i "C:\Code\keys\aliyun-ecs-keypair.pem" release.tar.gz root@47.106.255.240:/release/
+scp -i "C:\Code\keys\aliyun-ecs-keypair.pem" release.tar.gz root@47.106.255.240:/release/
 
 rmdir /s /q "%RELEASE_DIR%"
 

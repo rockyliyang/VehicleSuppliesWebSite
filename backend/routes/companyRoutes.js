@@ -4,25 +4,6 @@ const companyController = require('../controllers/companyController');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-// 性能监控中间件
-const performanceLogger = (req, res, next) => {
-  const startTime = Date.now();
-  const originalSend = res.send;
-  
-  res.send = function(data) {
-    const endTime = Date.now();
-    const duration = endTime - startTime;
-    console.log(`[PERF] ${req.method} ${req.originalUrl} - ${duration}ms - ${new Date().toISOString()}`);
-    originalSend.call(this, data);
-  };
-  
-  console.log(`[REQ START] ${req.method} ${req.originalUrl} - ${new Date().toISOString()}`);
-  next();
-};
-
-// 应用性能监控中间件到所有路由
-router.use(performanceLogger);
-
 // 获取公司信息
 router.get('/', companyController.getCompanyInfo);
 

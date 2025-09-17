@@ -29,6 +29,7 @@ export default defineNuxtConfig({
         file: '~/pages/product/[id].vue'
       });
     },
+/*
     'build:done': async () => {
       console.log('🗺️  开始生成sitemap...');
       try {
@@ -51,7 +52,7 @@ export default defineNuxtConfig({
           console.error('❌ 页面预热失败:', error.message);
         }
       }
-    }
+    }*/
   },
   // CSS 配置 - 优化CSS加载
   css: [

@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS product_categories (
   guid UUID DEFAULT gen_random_uuid() NOT NULL,
   name VARCHAR(255) NOT NULL,
   code VARCHAR(32) NOT NULL,
+  parent_id BIGINT DEFAULT NULL,
   sort_order INT NOT NULL DEFAULT 0,
   status VARCHAR(16) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
   description TEXT,
@@ -102,6 +103,7 @@ CREATE TABLE IF NOT EXISTS product_categories (
 );
 
 -- 添加注释
+COMMENT ON COLUMN product_categories.parent_id IS '父级分类ID，NULL表示顶级分类';
 COMMENT ON COLUMN product_categories.created_by IS '创建者用户ID';
 COMMENT ON COLUMN product_categories.updated_by IS '最后更新者用户ID';
 
@@ -109,10 +111,12 @@ COMMENT ON COLUMN product_categories.updated_by IS '最后更新者用户ID';
 CREATE UNIQUE INDEX unique_active_code ON product_categories (code) WHERE deleted = FALSE;
 
 -- 创建普通索引
+CREATE INDEX idx_product_categories_parent_id ON product_categories (parent_id);
 CREATE INDEX idx_product_categories_created_by ON product_categories (created_by);
 CREATE INDEX idx_product_categories_updated_by ON product_categories (updated_by);
 
 -- 添加外键约束
+ALTER TABLE product_categories ADD CONSTRAINT fk_product_categories_parent_id FOREIGN KEY (parent_id) REFERENCES product_categories(id);
 ALTER TABLE product_categories ADD CONSTRAINT fk_product_categories_created_by FOREIGN KEY (created_by) REFERENCES users(id);
 ALTER TABLE product_categories ADD CONSTRAINT fk_product_categories_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
 

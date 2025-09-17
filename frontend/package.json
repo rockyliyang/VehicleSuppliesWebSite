@@ -35,7 +35,7 @@
     "@vue/cli-plugin-router": "^5.0.8",
     "@vue/cli-plugin-unit-jest": "^5.0.8",
     "@vue/cli-plugin-vuex": "^5.0.8",
-    "@vue/cli-service": "^5.0.8",
+    "@vue/cli-service": "^5.0.9",
     "@vue/compiler-sfc": "^3.4.19",
     "@vue/test-utils": "^2.4.6",
     "cross-env": "^7.0.3",

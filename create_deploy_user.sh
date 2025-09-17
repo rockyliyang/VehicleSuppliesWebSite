@@ -12,6 +12,7 @@ fi
 USERNAME="$1"
 WEB_ROOT="/home/$USERNAME/frontend"  # 前端默认目录：~/frontend
 BACKEND_ROOT="/home/$USERNAME/backend"  # 后端默认目录：~/backend
+LOGS_ROOT="/home/$USERNAME/logs"  # 日志目录：~/logs
 
 # 检查用户是否存在
 if id "$USERNAME" &>/dev/null; then
@@ -29,6 +30,11 @@ echo "📁 网站目录初始化：$WEB_ROOT"
 # 创建后端根目录
 sudo mkdir -p "$BACKEND_ROOT"
 echo "📁 后端目录初始化：$BACKEND_ROOT"
+# 创建日志目录结构
+sudo mkdir -p "$LOGS_ROOT/backend"
+sudo mkdir -p "$LOGS_ROOT/frontend"
+sudo mkdir -p "$LOGS_ROOT/nuxt-frontend"
+echo "📁 日志目录初始化：$LOGS_ROOT"
 
 # 设置目录所有权
 sudo chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
@@ -36,6 +42,7 @@ sudo chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
 # 设置安全权限（用户读写执行，组只读，其他无权限）
 sudo chmod -R 750 "$WEB_ROOT"  # [6,7](@ref)
 sudo chmod -R 750 "$BACKEND_ROOT"  # [6,7](@ref)
+sudo chmod -R 750 "$LOGS_ROOT"  # [6,7](@ref)
 
 sudo chmod 750 "/home/$USERNAME"
 
@@ -43,7 +50,7 @@ sudo chmod 750 "/home/$USERNAME"
 #sudo cp -r /etc/skel/. "/home/$USERNAME/" 2>/dev/null  # [4,8](@ref)
 
 echo "🔒 权限设置完成："
-ls -ld "/home/$USERNAME" "$WEB_ROOT" "$BACKEND_ROOT" 
+ls -ld "/home/$USERNAME" "$WEB_ROOT" "$BACKEND_ROOT" "$LOGS_ROOT" 
 
 # 将nginx用户添加到部署用户组
 sudo usermod -aG $USERNAME nginx
@@ -52,6 +59,8 @@ cat <<EOF
 --------------------------------------------------
 ✨ 用户 $USERNAME 部署完成！
 - 网站目录：$WEB_ROOT
+- 后端目录：$BACKEND_ROOT
+- 日志目录：$LOGS_ROOT
 - 文件所有权：$USERNAME:$USERNAME
 - 安全权限：750（用户可读写执行，组可读执行）
 - 登录限制：已启用 Shell 访问 (`/bin/bash`)

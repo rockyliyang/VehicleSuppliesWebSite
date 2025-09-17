@@ -6,12 +6,26 @@
     </div>
 
     <!-- 分类表格 -->
-    <el-table v-loading="loading" :data="categoryList" border style="width: 100%" row-key="id" default-expand-all>
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="name" label="分类名称" min-width="200" />
-      <el-table-column prop="code" label="分类编码" width="150" />
-      <el-table-column prop="sort_order" label="排序" width="100" />
-      <el-table-column prop="status" label="状态" width="100">
+    <el-table v-loading="loading" :data="paginatedCategoryList" border style="width: 100%" row-key="id" default-expand-all
+      :default-sort="{prop: 'sort_order', order: 'ascending'}" @sort-change="handleSortChange">
+      <el-table-column prop="id" label="ID" width="80" sortable="custom" />
+      <el-table-column prop="name" label="分类名称" min-width="200" sortable="custom">
+        <template #default="{row}">
+          <span :style="{ paddingLeft: (row._level || 0) * 20 + 'px' }" class="category-name">
+            <span v-if="row._level > 0" class="tree-indent">└─</span>
+            {{ row.name }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="code" label="分类编码" width="150" sortable="custom" />
+      <el-table-column prop="parent_id" label="父级分类" width="150">
+        <template #default="{row}">
+          <span v-if="row.parent_id">{{ getParentCategoryName(row.parent_id) }}</span>
+          <span v-else class="text-muted">顶级分类</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="sort_order" label="排序" width="100" sortable="custom" />
+      <el-table-column prop="status" label="状态" width="100" sortable="custom">
         <template #default="{row}">
           <el-tag :type="row.status === 'on_shelf' ? 'success' : 'info'">
             {{ row.status === 'on_shelf' ? '启用' : '禁用' }}
@@ -26,6 +40,19 @@
       </el-table-column>
     </el-table>
 
+    <!-- 分页组件 -->
+    <div class="pagination-wrapper">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="totalCategories"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
+
     <!-- 分类表单对话框 -->
     <el-dialog :title="dialogStatus === 'create' ? '添加分类' : '编辑分类'" v-model="dialogVisible" width="500px">
       <el-form :model="categoryForm" :rules="rules" ref="categoryForm" label-width="100px">
@@ -36,11 +63,17 @@
           <el-input v-model="categoryForm.code" placeholder="请输入分类编码" maxlength="32" show-word-limit />
         </el-form-item>
         <el-form-item label="父级分类" prop="parent_id">
-          <el-select v-model="categoryForm.parent_id" placeholder="请选择父级分类" style="width: 100%" clearable>
-            <el-option label="无父级分类" :value="0" />
-            <el-option v-for="item in parentOptions" :key="item.id" :label="item.name" :value="item.id"
-              :disabled="item.id === categoryForm.id" />
-          </el-select>
+          <el-tree-select
+             v-model="categoryForm.parent_id"
+             :data="treeSelectOptions"
+             :props="{ value: 'id', label: 'name', children: 'children' }"
+             placeholder="请选择父级分类"
+             style="width: 100%"
+             clearable
+             check-strictly
+             node-key="id"
+             default-expand-all
+           />
         </el-form-item>
         <el-form-item label="排序" prop="sort_order">
           <el-input-number v-model="categoryForm.sort_order" :min="0" :max="999" />
@@ -76,6 +109,13 @@ export default {
       dialogStatus: 'create',
       categoryList: [],
       parentOptions: [],
+      // 分页相关
+      currentPage: 1,
+      pageSize: 20,
+      totalCategories: 0,
+      // 排序相关
+      sortProp: 'sort_order',
+      sortOrder: 'ascending',
       categoryForm: {
         id: undefined,
         name: '',
@@ -93,6 +133,76 @@ export default {
         ],
         sort_order: [{ required: true, message: '请输入排序值', trigger: 'blur' }]
       }
+    }
+  },
+  computed: {
+    // 构建树形结构的分类列表
+    treeStructuredList() {
+      const buildTree = (parentId = null, level = 0) => {
+        return this.categoryList
+          .filter(item => item.parent_id === parentId)
+          .sort((a, b) => {
+            if (this.sortProp) {
+              let aVal = a[this.sortProp]
+              let bVal = b[this.sortProp]
+              
+              if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase()
+                bVal = bVal.toLowerCase()
+              }
+              
+              if (this.sortOrder === 'ascending') {
+                return aVal > bVal ? 1 : aVal < bVal ? -1 : 0
+              } else {
+                return aVal < bVal ? 1 : aVal > bVal ? -1 : 0
+              }
+            }
+            return 0
+          })
+          .reduce((acc, item) => {
+            // 添加当前项目，包含层级信息
+            acc.push({ ...item, _level: level })
+            // 递归添加子项目
+            const children = buildTree(item.id, level + 1)
+            acc.push(...children)
+            return acc
+          }, [])
+      }
+      
+      return buildTree()
+    },
+    // 分页后的分类列表
+    paginatedCategoryList() {
+      const start = (this.currentPage - 1) * this.pageSize
+      const end = start + this.pageSize
+      return this.treeStructuredList.slice(start, end)
+    },
+    // 更新总数为树形列表的长度
+    totalCategoriesComputed() {
+      return this.treeStructuredList.length
+    },
+    // 树形选择器选项
+    treeSelectOptions() {
+      // 添加"无父级分类"选项
+      const options = [{
+        id: null,
+        name: '无父级分类',
+        children: []
+      }]
+      
+      // 构建树形结构
+      const buildTree = (parentId = null) => {
+        return this.categoryList
+          .filter(item => item.parent_id === parentId && item.id !== this.categoryForm.id)
+          .map(item => ({
+            id: item.id,
+            name: item.name,
+            children: buildTree(item.id)
+          }))
+      }
+      
+      options.push(...buildTree())
+      return options
     }
   },
   created() {
@@ -113,6 +223,9 @@ export default {
       try {
         const response = await this.$api.get('categories')
         this.categoryList = response.data
+        this.$nextTick(() => {
+          this.totalCategories = this.totalCategoriesComputed
+        })
         this.parentOptions = this.categoryList.filter(item => !item.parent_id)
       } catch (error) {
         console.error('获取分类列表失败:', error)
@@ -120,6 +233,31 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    
+    // 获取父级分类名称
+    getParentCategoryName(parentId) {
+      if (!parentId) return ''
+      const parent = this.categoryList.find(item => item.id === parentId)
+      return parent ? parent.name : '未知分类'
+    },
+    
+    // 处理排序变化
+    handleSortChange({ prop, order }) {
+      this.sortProp = prop
+      this.sortOrder = order
+      this.currentPage = 1 // 排序后回到第一页
+    },
+    
+    // 处理页面大小变化
+    handleSizeChange(newSize) {
+      this.pageSize = newSize
+      this.currentPage = 1
+    },
+    
+    // 处理当前页变化
+    handleCurrentChange(newPage) {
+      this.currentPage = newPage
     },
     
     // 添加分类
@@ -216,5 +354,47 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.text-muted {
+  color: #909399;
+  font-style: italic;
+}
+
+.category-name {
+  display: inline-block;
+  width: 100%;
+}
+
+.tree-indent {
+  color: #909399;
+  margin-right: 5px;
+  font-family: monospace;
+}
+
+:deep(.el-table) {
+  .el-table__header-wrapper {
+    .el-table__header {
+      th {
+        background-color: #f5f7fa;
+      }
+    }
+  }
+}
+
+:deep(.el-pagination) {
+  .btn-prev,
+  .btn-next,
+  .el-pager li {
+    min-width: 32px;
+    height: 32px;
+    line-height: 30px;
+  }
 }
 </style>

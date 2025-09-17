@@ -73,34 +73,12 @@ module.exports = defineConfig({
     // 生产环境特定配置
     if (process.env.NODE_ENV === 'production') {
       const webpack = require('webpack');
-      // 添加环境变量，确保sitemap生成器知道当前是生产环境
+      // 添加环境变量
       config.plugins.push(
         new webpack.DefinePlugin({
-          'process.env.GENERATE_SITEMAP': JSON.stringify(true),
           'process.env.NODE_ENV': JSON.stringify('production')
         })
       );
-      
-      // 在构建完成后执行sitemap生成
-      config.plugins.push({
-        apply: compiler => {
-          compiler.hooks.afterEmit.tapAsync('GenerateSitemap', (compilation, callback) => {
-            // 确保NODE_ENV为production
-            process.env.NODE_ENV = 'production';
-            const { generateSitemap } = require('./src/utils/sitemapGenerator');
-            console.log('开始生成sitemap.xml...');
-            generateSitemap()
-              .then(() => {
-                console.log('sitemap.xml生成成功！');
-                callback();
-              })
-              .catch(error => {
-                console.error('sitemap.xml生成失败:', error);
-                callback();
-              });
-          });
-        }
-      });
     }
     
     // 不返回config，直接修改传入的config对象

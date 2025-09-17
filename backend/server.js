@@ -17,6 +17,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const path = require('path');
+const morgan = require('morgan');
 
 // 路由导入
 const productRoutes = require('./routes/productRoutes');
@@ -53,10 +54,25 @@ const PORT = process.env.PORT || 3000;
 
 // 在开发环境中不信任代理，避免rate limit警告
 // 生产环境中如果使用反向代理（如nginx）则需要设置为true
+// 设置信任代理
 app.set('trust proxy', process.env.NODE_ENV === 'production');
 
-// 中间件
+// 中间件配置
 app.use(cors());
+
+// Morgan HTTP请求日志记录
+// 自定义日志格式，包含响应时间、时间戳和Request ID
+morgan.token('timestamp', () => {
+  return new Date().toISOString();
+});
+
+morgan.token('request-id', (req) => {
+  return req.headers['x-request-id'] || 'no-request-id';
+});
+
+const morganFormat = ':timestamp [:request-id] :method :url :status :res[content-length] - :response-time ms';
+app.use(morgan(morganFormat));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -281,3 +297,4 @@ process.on('exit', (code) => {
 // 添加进程启动完成日志
 console.log(`[Process] Server process started - PID: ${process.pid}, Time: ${new Date().toISOString()}`);
 console.log(`[Process] All event listeners registered successfully`);
+console.log(`[Morgan] HTTP request logging enabled with custom format`);

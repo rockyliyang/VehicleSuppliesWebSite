@@ -144,6 +144,7 @@ import logoImage from '~/assets/images/logo.png'
 import { User, Lock } from '@element-plus/icons-vue'
 import { handleImageError } from '~/utils/imageUtils'
 import LanguageSwitcher from './LanguageSwitcher.vue'
+import { getRouteAuthConfig } from '~/utils/routeConfig'
 
 export default {
   name: 'SiteHeader',
@@ -379,10 +380,11 @@ export default {
         this.$store.auth.setUser(null)
         //this.messageHandler.showError(null, 'common.error.tokenExpired')
         
-        // 只有当前页面需要认证时才跳转到登录页面
-        const currentRoute = route
-        const requiresAuth = currentRoute.meta?.requiresAuth ?? true
+        // 获取路由的认证配置
+        const routeConfig = getRouteAuthConfig(route.path)
+        const requiresAuth = route.meta?.requiresAuth ?? routeConfig.requiresAuth ?? true
         
+        // 只有当前页面需要认证时才跳转到登录页面
         if (requiresAuth) {
           router.push('/login')
         }

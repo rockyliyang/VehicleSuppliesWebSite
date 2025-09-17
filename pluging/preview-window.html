@@ -103,6 +103,78 @@
       word-break: break-word;
     }
 
+    /* 树形结构样式 */
+    .category-tree {
+      font-family: inherit;
+    }
+
+    .tree-node {
+      margin: 2px 0;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    .tree-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .tree-item.selected {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .tree-toggle {
+      width: 16px;
+      height: 16px;
+      margin-right: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .tree-toggle:before {
+      content: '▶';
+      transition: transform 0.2s;
+    }
+
+    .tree-toggle.expanded:before {
+      transform: rotate(90deg);
+    }
+
+    .tree-toggle.leaf {
+      visibility: hidden;
+    }
+
+    .tree-label {
+      flex: 1;
+      font-size: 14px;
+    }
+
+    .tree-children {
+      margin-left: 20px;
+      display: none;
+    }
+
+    .tree-children.expanded {
+      display: block;
+    }
+
+    .tree-loading {
+      text-align: center;
+      color: #666;
+      padding: 20px;
+    }
+
     .image-gallery,
     .image-grid {
       display: grid;
@@ -391,9 +463,9 @@
           <div class="preview-field">
             <label>选择分类:</label>
             <div class="value">
-              <select id="category-select" style="width: 200px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="">请选择分类</option>
-              </select>
+              <div id="category-tree" style="width: 300px; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: white;">
+                <div class="tree-loading">正在加载分类...</div>
+              </div>
               <button id="refresh-categories" style="margin-left: 10px; padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">刷新分类</button>
             </div>
           </div>

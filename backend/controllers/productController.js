@@ -3,6 +3,37 @@ const { query, getConnection } = require('../db/db');
 // 移除 uuidToBinary 和 binaryToUuid 的引用，PostgreSQL 使用原生 UUID
 const { getMessage } = require('../config/messages');
 
+// 递归获取分类及其所有子分类的ID
+const getCategoryWithChildren = async (categoryId) => {
+  const categoryIds = [parseInt(categoryId)];
+  
+  // 一次性获取所有分类数据
+  const allCategories = await query(
+    'SELECT id, parent_id FROM product_categories WHERE deleted = false'
+  );
+  console.log()
+  const categoriesMap = new Map();
+  allCategories.getRows().forEach(cat => {
+    if (!categoriesMap.has(cat.parent_id)) {
+      categoriesMap.set(cat.parent_id, []);
+    }
+    categoriesMap.get(cat.parent_id).push(cat.id);
+  });
+  //console.log('递归查询到的分类ID:', categoriesMap);
+  
+  // 在内存中递归处理层级关系
+  const getChildren = (parentId) => {
+    const children = categoriesMap.get(parentId) || [];
+    children.forEach(childId => {
+      categoryIds.push(childId);
+      getChildren(childId); // 递归获取子分类的子分类
+    });
+  };
+  
+  getChildren(categoryId);
+  return categoryIds;
+};
+
 // 验证阶梯价格范围的辅助函数
 const validatePriceRanges = (priceRanges) => {
   if (!Array.isArray(priceRanges) || priceRanges.length === 0) {
@@ -417,9 +448,14 @@ exports.getAllProducts = async (req, res) => {
     }
 
     if (category_id) {
-      querystr += ` AND p.category_id = $${paramIndex}`;
-      params.push(category_id);
-      paramIndex += 1;
+      // 递归查询该分类及其所有子分类的ID
+      const categoryIds = await getCategoryWithChildren(category_id);
+      console.log('递归查询到的分类ID:', categoryIds);
+      if (categoryIds.length > 0) {
+        querystr += ` AND p.category_id = ANY($${paramIndex})`;
+        params.push(categoryIds);
+        paramIndex += 1;
+      }
     }
 
     // 如果是管理员或业务员，可以通过status参数过滤

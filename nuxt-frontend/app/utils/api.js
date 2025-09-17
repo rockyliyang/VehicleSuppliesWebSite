@@ -1,6 +1,10 @@
 import axios from 'axios';
 import MessageHandler from './messageHandler.js';
 
+function generateRequestId() {
+  return 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
 // 获取API基础URL
 function getApiBaseURL() {
   
@@ -9,7 +13,7 @@ function getApiBaseURL() {
     return window.__API_BASE_URL__ || '/api';
   } else {
     // 服务端使用环境变量
-    return process.env.NUXT_PUBLIC_API_BASE || 'http://localhost/api';
+    return process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000/api';
   }
 }
 
@@ -42,6 +46,9 @@ export function getAuthToken(isAdminRequest = false) {
 // 请求拦截器 - 添加token到请求头
 api.interceptors.request.use(
   config => {
+        // 生成并添加Request ID到请求头
+    const requestId = generateRequestId();
+    config.headers['X-Request-ID'] = requestId;
     // 使用封装的函数获取token
     const isAdminRequest = config.url && config.url.startsWith('/admin');
     const token = getAuthToken(isAdminRequest);
@@ -111,7 +118,7 @@ api.interceptors.response.use(
   },
   async error => {
     // 处理HTTP错误
-    let showError = true;
+    let showError = false;
     let message = '请求失败';
     let fallbackKey;
     

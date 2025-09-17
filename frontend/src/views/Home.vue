@@ -113,7 +113,8 @@ export default {
         { image_url: require('../assets/images/banner2.jpg') },
         { image_url: require('../assets/images/banner3.jpg') }
       ],
-      categories: [],
+      categories: [], // 只存储顶层分类用于显示
+      allCategories: [], // 存储所有分类（包括子分类）用于过滤
       products: [],
       aboutContent: null,
       aboutImageUrl: null,
@@ -128,7 +129,14 @@ export default {
       return storeBanners && storeBanners.length > 0 ? storeBanners : this.defaultBanners
     },
     displayProducts() {
-      return this.products.filter(product => product.category_id && product.category_id.toString() === this.activeCategory)
+      if (!this.activeCategory) return this.products
+      
+      // 获取当前分类及其所有子分类的ID
+      const categoryIds = this.getCategoryWithChildren(parseInt(this.activeCategory))
+      
+      return this.products.filter(product => 
+        product.category_id && categoryIds.includes(product.category_id)
+      )
     },
     lang() {
       return this.$store.getters['language/currentLanguage'];
@@ -153,6 +161,22 @@ export default {
   },
   methods: {
     handleImageError,
+    
+    // 递归获取分类及其所有子分类的ID
+    getCategoryWithChildren(categoryId) {
+      const categoryIds = [categoryId]
+      
+      const getChildren = (parentId) => {
+        const children = this.allCategories.filter(cat => cat.parent_id === parentId)
+        children.forEach(child => {
+          categoryIds.push(child.id)
+          getChildren(child.id) // 递归获取子分类的子分类
+        })
+      }
+      
+      getChildren(categoryId)
+      return categoryIds
+    },
     handleProductClick(product) {
       // 产品点击事件处理，可以在这里添加额外的逻辑
       console.log('Product clicked:', product);
@@ -160,12 +184,15 @@ export default {
     async fetchCategories() {
       try {
         const res = await this.$api.get('categories')
-        this.categories = res.data || []
+        this.allCategories = res.data || [] // 存储所有分类
+        // 只显示顶层分类（parent_id为null的分类）
+        this.categories = this.allCategories.filter(category => category.parent_id === null)
         if (this.categories.length > 0) {
           this.activeCategory = this.categories[0].id.toString()
         }
       } catch (e) {
         this.categories = []
+        this.allCategories = []
       }
     },
     async fetchProducts() {

@@ -19,6 +19,28 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// 手动加载环境变量
+if (process.env.NODE_ENV === 'production') {
+  try {
+    const envPath = path.resolve(__dirname, '../../.env.production');
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      envContent.split('\n').forEach(line => {
+        const [key, ...valueParts] = line.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=').trim();
+          if (!process.env[key]) {
+            process.env[key] = value;
+          }
+        }
+      });
+      console.log('✅ 已加载生产环境变量文件');
+    }
+  } catch (error) {
+    console.warn('⚠️  加载环境变量文件失败:', error.message);
+  }
+}
+
 // 根据环境动态导入模块
 let api;
 
@@ -44,12 +66,14 @@ async function initApi() {
   return api;
 }
 
+console.log('环境变量 NUXT_PUBLIC_API_BASE:', process.env.NUXT_PUBLIC_API_BASE);
+console.log('环境变量 NUXT_PUBLIC_BASE_URL:', process.env.NUXT_PUBLIC_BASE_URL);
 // 基础URL
-const BASE_URL = 'https://v.autoeasetechx.com';
+const BASE_URL = process.env.NUXT_PUBLIC_BASE_URL || 'https://v.autoeasetechx.com';
 // API基础URL
-const API_BASE_URL = 'https://v.autoeasetechx.com';
+const API_BASE_URL = process.env.NUXT_PUBLIC_API_BASE || 'https://v.autoeasetechx.com';
 // API路径前缀
-const API_PREFIX = '/api';
+const API_PREFIX = process.env.NUXT_PUBLIC_API_PREFIX || '/api';
 
 // 静态页面配置
 const STATIC_PAGES = [
@@ -98,8 +122,8 @@ async function fetchProductIds() {
     // 判断是否使用axios实例（构建环境）或api模块
     const isAxiosInstance = apiClient.defaults && apiClient.defaults.baseURL;
     // 使用新的basic API端点获取所有产品的基本信息
-    const url = isAxiosInstance ? `${API_BASE_URL}${API_PREFIX}/products/basic` : '/products/basic';
-    console.log(`请求产品数据URL: ${url}`);
+    const url = isAxiosInstance ? '/products/basic' : '/products/basic';
+    console.log(`请求产品数据URL: ${isAxiosInstance ? API_BASE_URL + url : url}`);
     const response = await apiClient.get(url);
     
     // 检查响应数据格式
@@ -135,13 +159,22 @@ async function fetchNewsIds() {
     // 判断是否使用axios实例（构建环境）或api模块
     const isAxiosInstance = apiClient.defaults && apiClient.defaults.baseURL;
     // 首先获取新闻导航列表
-    const navUrl = isAxiosInstance ? `${API_BASE_URL}${API_PREFIX}/common-content/nav/news?lang=en` : '/common-content/nav/news?lang=en';
-    console.log(`请求新闻导航数据URL: ${navUrl}`);
+    const navUrl = isAxiosInstance ? '/common-content/nav/news?lang=en' : '/common-content/nav/news?lang=en';
+    console.log(`请求新闻导航数据URL: ${isAxiosInstance ? API_BASE_URL + navUrl : navUrl}`);
     const navResponse = await apiClient.get(navUrl);
     
+    let navData;
+    if (isAxiosInstance)
+    {
+      navData = navResponse.data;
+    }
+    else
+    {
+      navData = navResponse.data?.data;
+    }
     // 检查导航响应数据格式
-    if (navResponse.data && navResponse.data.data && navResponse.data.data.navList && Array.isArray(navResponse.data.data.navList)) {
-      const navList = navResponse.data.data.navList;
+    if (navData && navData.navList && Array.isArray(navData.navList)) {
+      const navList = navData.navList;
       console.log(`成功获取${navList.length}个新闻导航`);
       
       // 存储所有新闻内容项
@@ -151,9 +184,9 @@ async function fetchNewsIds() {
       for (const nav of navList) {
         try {
           const contentUrl = isAxiosInstance ? 
-            `${API_BASE_URL}${API_PREFIX}/common-content/content/${nav.name_key}/en` : 
+            `/common-content/content/${nav.name_key}/en` : 
             `/common-content/content/${nav.name_key}/en`;
-          console.log(`请求新闻内容数据URL: ${contentUrl}`);
+          console.log(`请求新闻内容数据URL: ${isAxiosInstance ? API_BASE_URL + contentUrl : contentUrl}`);
           const contentResponse = await apiClient.get(contentUrl);
           
           // 检查不同的可能的响应格式
@@ -222,7 +255,7 @@ async function generateDynamicUrls() {
     const newsItems = await fetchNewsIds();
     newsItems.forEach(item => {
       dynamicUrls += '\n' + generateUrlXml(
-        `${BASE_URL}/news/${item.contentId}?navId=${item.navId}`,
+        `${BASE_URL}/NewsDetail?navId=${item.navId}&contentId=${item.contentId}`,
         currentDate,
         'weekly',
         0.7
@@ -355,26 +388,68 @@ async function warmupPages(urls, concurrency = 3) {
 }
 
 /**
- * 获取需要预热的页面URL列表
- * @returns {Promise<Array<string>>} 预热页面URL列表
+ * 从sitemap.xml文件读取URL列表并转换为localhost
+ * @param {number} port localhost端口号，默认为3000
+ * @returns {Promise<Array<string>>} 从sitemap读取的URL列表
  */
-async function getWarmupUrls() {
+async function getUrlsFromSitemap(port = 3000) {
+  try {
+    const sitemapPath = path.resolve(__dirname, '../public/sitemap.xml');
+    
+    if (!fs.existsSync(sitemapPath)) {
+      console.warn('sitemap.xml文件不存在，将使用默认URL列表');
+      return getDefaultWarmupUrls(port);
+    }
+
+    const sitemapContent = fs.readFileSync(sitemapPath, 'utf8');
+    const urls = [];
+    
+    // 使用正则表达式提取所有<loc>标签中的URL
+    const locRegex = /<loc>([^<]+)<\/loc>/g;
+    let match;
+    
+    while ((match = locRegex.exec(sitemapContent)) !== null) {
+      let url = match[1];
+      
+      // 将URL中的域名替换为指定的localhost端口
+      // 支持各种域名格式的替换
+      url = url.replace(/https?:\/\/[^/]+/, `http://localhost:${port}`);
+      
+      urls.push(url);
+    }
+    
+    console.log(`从sitemap.xml读取到${urls.length}个URL，目标端口: ${port}`);
+    return urls;
+  } catch (error) {
+    console.warn('读取sitemap.xml失败:', error.message);
+    console.log('将使用默认URL列表');
+    return getDefaultWarmupUrls(port);
+  }
+}
+
+/**
+ * 获取默认的预热URL列表（备用方案）
+ * @param {number} port localhost端口号，默认为3000
+ * @returns {Promise<Array<string>>} 默认预热页面URL列表
+ */
+async function getDefaultWarmupUrls(port = 3000) {
   const urls = [];
+  const localhostBase = `http://localhost:${port}`;
 
   // 1. 主页 - 最高优先级
-  urls.push(`${BASE_URL}/`);
+  urls.push(`${localhostBase}/`);
 
   // 2. 重要静态页面
   const importantPages = ['/products', '/about', '/news', '/contact'];
   importantPages.forEach(page => {
-    urls.push(`${BASE_URL}${page}`);
+    urls.push(`${localhostBase}${page}`);
   });
 
   // 3. Header/Footer相关的API端点（如果有独立的API）
   // 这些通常在页面加载时会被调用，预热可以提升用户体验
   try {
     // 预热公司信息API（通常用于Header/Footer）
-    urls.push(`${API_BASE_URL}${API_PREFIX}/company-info`);
+    urls.push(`${API_BASE_URL}${API_PREFIX}/company`);
     
     // 预热导航菜单API
     urls.push(`${API_BASE_URL}${API_PREFIX}/common-content/nav/news?lang=en`);
@@ -387,7 +462,7 @@ async function getWarmupUrls() {
     const productIds = await fetchProductIds();
     const topProducts = productIds.slice(0, 10); // 只预热前10个产品
     topProducts.forEach(id => {
-      urls.push(`${BASE_URL}/product/${id}`);
+      urls.push(`${localhostBase}/product/${id}`);
     });
     console.log(`添加${topProducts.length}个产品页面到预热列表`);
   } catch (error) {
@@ -399,19 +474,30 @@ async function getWarmupUrls() {
 }
 
 /**
+ * 获取需要预热的页面URL列表
+ * @param {number} port localhost端口号，默认为3000
+ * @returns {Promise<Array<string>>} 预热页面URL列表
+ */
+async function getWarmupUrls(port = 3000) {
+  // 优先从sitemap.xml读取URL列表
+  return await getUrlsFromSitemap(port);
+}
+
+/**
  * 执行完整的预热流程
  * @param {Object} options 预热选项
  * @param {number} options.concurrency 并发数量，默认为3
  * @param {boolean} options.skipProducts 是否跳过产品页面预热，默认为false
+ * @param {number} options.port localhost端口号，默认为3000
  * @returns {Promise<Object>} 预热结果
  */
 async function performWarmup(options = {}) {
-  const { concurrency = 3, skipProducts = false } = options;
+  const { concurrency = 3, skipProducts = false, port = 3000 } = options;
   
   console.log('开始执行页面预热...');
   
   try {
-    let urls = await getWarmupUrls();
+    let urls = await getWarmupUrls(port);
     
     // 如果选择跳过产品页面
     if (skipProducts) {
@@ -435,5 +521,7 @@ export {
   generateSitemap,
   performWarmup,
   warmupPages,
-  getWarmupUrls
+  getWarmupUrls,
+  getUrlsFromSitemap,
+  getDefaultWarmupUrls
 };

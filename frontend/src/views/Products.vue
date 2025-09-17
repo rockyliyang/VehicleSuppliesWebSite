@@ -157,7 +157,8 @@ export default {
       try {
         this.loading = true
         const response = await this.$api.get('categories')
-        this.categories = response.data || []
+        // 只显示顶层分类（parent_id为null的分类）
+        this.categories = (response.data || []).filter(category => category.parent_id === null)
       } catch (error) {
         console.error('获取分类失败:', error)
         this.$messageHandler.showError(error, 'category.error.fetchFailed')

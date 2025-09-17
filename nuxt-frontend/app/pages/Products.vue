@@ -33,7 +33,9 @@
 
         <!-- No Products Message -->
         <div v-if="products.length === 0" class="no-products">
-          <i class="fas fa-search text-6xl text-gray-400 mb-4"></i>
+          <el-icon class="no-products-icon">
+            <Search />
+          </el-icon>
           <p class="text-xl text-gray-500">{{ $t('products.noProducts') || '暂无相关产品' }}</p>
         </div>
 
@@ -86,12 +88,13 @@
 <script>
 import { handleImageError } from '~/utils/imageUtils';
 import { handleChatNow, addProductToCart, handleLoginSuccess, getMinQuantityFromPriceRanges } from '~/utils/productUtils';
+import { useMainStore } from '~/stores/index';
 import ProductCard from '~/components/common/ProductCard.vue';
 import PageBanner from '~/components/common/PageBanner.vue';
 import NavigationMenu from '~/components/common/NavigationMenu.vue';
 import InquiryDetailPanel from '~/components/common/InquiryDetailPanel.vue';
 import LoginDialog from '~/components/common/LoginDialog.vue';
-import { FullScreen, Close } from '@element-plus/icons-vue';
+import { FullScreen, Close, Search } from '@element-plus/icons-vue';
 
 export default {
   name: 'ProductsPage',
@@ -102,79 +105,83 @@ export default {
     InquiryDetailPanel,
     LoginDialog,
     FullScreen,
-    Close
+    Close,
+    Search
   },
   async setup() {
     const route = useRoute();
     const { $api } = useNuxtApp();
     
-    try {
-      console.log('setup SSR data fetching for products page');
-      
-      // 使用useAsyncData进行SSR数据获取
-      const { data: ssrData } = await useAsyncData('products-page', async () => {
-        // 并行获取分类和产品数据
-        const [categoriesResponse, productsResponse] = await Promise.all([
-          $api.get('/categories'),
-          $api.get('/products', {
-            params: {
-              page: 1,
-              limit: 10,
-              sort_by: 'sort_order',
-              sort_order: 'desc',
-              ...(route.query.category && { category_id: route.query.category })
-            }
-          })
-        ]);
-        
-        const categories = categoriesResponse.data || [];
-        const products = productsResponse.data?.items || [];
-        const totalProducts = productsResponse.data?.total || 0;
-        
-        console.log('setup SSR data fetched');
-        return {
-          categories,
-          products,
-          totalProducts,
-          selectedCategory: route.query.category ? route.query.category.toString() : null
+    // 设置页面SEO元数据
+    useHead({
+      title: 'Products - Auto Ease TechX',
+      meta: [
+        { name: 'description', content: 'Browse our comprehensive range of automotive products and accessories.' },
+        { name: 'keywords', content: 'automotive, products, accessories, auto parts' },
+        { property: 'og:title', content: 'Products - Auto Ease TechX' },
+        { property: 'og:description', content: 'Browse our comprehensive range of automotive products and accessories.' },
+        { property: 'og:type', content: 'website' }
+      ]
+    });
+    
+    // SSR数据获取 - 获取分类数据
+    const { data: categoriesData } = await useAsyncData('categories', async () => {
+      try {
+        const response = await $api.get('categories');
+        return (response.data || []).filter(category => category.parent_id === null);
+      } catch (error) {
+        console.error('SSR获取分类失败:', error);
+        return [];
+      }
+    });
+    
+    // SSR数据获取 - 获取产品数据
+    const { data: productsData } = await useAsyncData('products', async () => {
+      try {
+        const params = {
+          page: 1,
+          limit: 10,
+          sort_by: 'sort_order',
+          sort_order: 'desc'
         };
-      });
-      
-      // 设置页面SEO元数据
-      useHead({
-        title: 'Products - Auto Ease TechX',
-        meta: [
-          { name: 'description', content: 'Browse our comprehensive range of automotive products and accessories.' },
-          { name: 'keywords', content: 'automotive, products, accessories, auto parts' },
-          { property: 'og:title', content: 'Products - Auto Ease TechX' },
-          { property: 'og:description', content: 'Browse our comprehensive range of automotive products and accessories.' },
-          { property: 'og:type', content: 'website' }
-        ]
-      });
-      
-      // 返回响应式数据给模板使用
-      return {
-        ...ssrData.value
-      };
-    } catch (err) {
-      console.error('Error fetching products page data:', err);
-      // 如果SSR失败，返回空数据，在mounted中重新获取
-      return {
-        categories: [],
-        products: [],
-        totalProducts: 0,
-        selectedCategory: null
-      };
-    }
+        
+        // 检查URL中的分类参数
+        const categoryId = route.query.category;
+        if (categoryId) {
+          params.category_id = categoryId;
+        }
+        
+        const response = await $api.get('products', { params });
+        return {
+          items: response.data?.items || [],
+          total: response.data?.total || 0,
+          selectedCategory: categoryId || null
+        };
+      } catch (error) {
+        console.error('SSR获取产品失败:', error);
+        return {
+          items: [],
+          total: 0,
+          selectedCategory: null
+        };
+      }
+    });
+    
+    // 返回SSR获取的数据，供组件使用
+    return {
+      ssrCategories: categoriesData,
+      ssrProducts: productsData
+    };
   },
   data() {
     return {
-      //products: [],
-      //categories: [],
-      //selectedCategory: null,
+      // 使用SSR数据作为初始值，如果SSR数据不存在则使用空数组
+      products: this.ssrProducts?.items || [],
+      categories: this.ssrCategories || [],
+      selectedCategory: this.ssrProducts?.selectedCategory || null,
       currentPage: 1,
       loading: false,
-      //totalProducts: 0,
+      totalProducts: this.ssrProducts?.total || 0,
       pageSize: 10,
       // 询价相关状态
       showInquiryDialog: false,
@@ -198,26 +205,51 @@ export default {
     isMobile() {
       return process.client ? window.innerWidth <= 768 : false;
     },
+
+    isLoggedIn() {
+      return this.$store.auth.isLoggedIn;
+    }
     // 移除currentInquiry计算属性，现在直接传递inquiryId
   },
-  mounted() {
-    // 如果SSR没有获取到数据，在客户端重新获取
-    if (!this.categories || this.categories.length === 0) {
-      console.log('SSR data not available, fetching on client side');
-      this.fetchCategories();
+  watch: {
+    // 监听路由查询参数变化
+    '$route.query.category': {
+      handler(newCategory, oldCategory) {
+        console.log('Route category changed from', oldCategory, 'to', newCategory);
+        
+        // 如果分类参数发生变化，更新组件状态
+        if (newCategory !== oldCategory) {
+          this.selectedCategory = newCategory || null;
+          this.currentPage = 1;
+          this.fetchProducts();
+        }
+      },
+      immediate: false // 不在初始化时立即执行，因为mounted已经处理了初始化
     }
+  },
+  mounted() {
+    console.log('Products page mounted, checking SSR data...');
+    console.log('SSR Categories:', this.ssrCategories);
+    console.log('SSR Products:', this.ssrProducts);
     
-    if (!this.products || this.products.length === 0) {
+    // 检查URL中的分类参数
+    const categoryId = this.$route.query.category;
+    if (categoryId && categoryId !== this.selectedCategory) {
+      this.selectedCategory = categoryId.toString();
+      console.log('Selected category from URL changed:', this.selectedCategory);
+      // 如果URL参数与SSR数据不匹配，需要重新获取产品数据
       this.fetchProducts();
     }
     
-    // 检查URL中是否有分类参数（如果SSR没有处理）
-    if (!this.selectedCategory) {
-      const categoryId = this.$route.query.category;
-      if (categoryId) {
-        this.selectedCategory = categoryId.toString();
-        this.fetchProducts();
-      }
+    // 如果没有SSR数据，则获取数据
+    if (!this.ssrCategories || this.ssrCategories.length === 0) {
+      console.log('No SSR categories data, fetching...');
+      this.fetchCategories();
+    }
+    
+    if (!this.ssrProducts || this.ssrProducts.items.length === 0) {
+      console.log('No SSR products data, fetching...');
+      this.fetchProducts();
     }
   },
   methods: {
@@ -230,7 +262,8 @@ export default {
       try {
         this.loading = true
         const response = await this.$api.get('categories')
-        this.categories = response.data || []
+        // 只显示顶层分类（parent_id为null的分类）
+        this.categories = (response.data || []).filter(category => category.parent_id === null)
       } catch (error) {
         console.error('获取分类失败:', error)
         this.$messageHandler.showError(error, 'category.error.fetchFailed')
@@ -248,14 +281,24 @@ export default {
           sort_order: 'desc'
         }
         
-        // 添加分类筛选
-        if (this.selectedCategory) {
+        // 添加分类筛选 - 只有当selectedCategory不为null时才添加category_id参数
+        if (this.selectedCategory !== null && this.selectedCategory !== '') {
           params.category_id = this.selectedCategory
         }
+        
+        console.log('Fetching products with params:', params);
         
         const response = await this.$api.get('products', { params })
         this.products = response.data?.items || []
         this.totalProducts = response.data?.total || 0
+        
+        console.log('Products fetched:', {
+          count: this.products.length,
+          total: this.totalProducts,
+          selectedCategory: this.selectedCategory,
+          params: params
+        });
+        
         //this.$messageHandler.showSuccess(response.message || '获取产品成功', 'product.success.fetchSuccess')
       } catch (error) {
         console.error('获取产品失败:', error)
@@ -265,14 +308,24 @@ export default {
       }
     },
     selectCategory(categoryId) {
+      console.log('Selecting category:', categoryId);
+      
       this.selectedCategory = categoryId
       this.currentPage = 1
       
-      // 更新URL参数
-      if (categoryId === null) {
-        navigateTo({ query: {} })
-      } else {
-        navigateTo({ query: { category: categoryId } })
+      // 更新URL参数 - 使用router.push避免SSR重新执行
+      const newQuery = categoryId === null || categoryId === '' ? {} : { category: categoryId };
+      
+      // 只有当查询参数真的发生变化时才更新URL
+      const currentCategory = this.$route.query.category;
+      const targetCategory = newQuery.category;
+      
+      if (currentCategory !== targetCategory) {
+        console.log('Updating URL from', currentCategory, 'to', targetCategory);
+        this.$router.push({ 
+          path: this.$route.path, 
+          query: newQuery 
+        });
       }
       
       // 重新获取产品数据
@@ -295,10 +348,10 @@ export default {
       const success = await handleChatNow(
         product, 
         {
-          $messageHandler,
-          $api,
-          isLoggedIn: isLoggedIn.value,
-          $t
+          $messageHandler: this.$messageHandler,
+          $api: this.$api,
+          isLoggedIn: this.isLoggedIn,
+          $t: this.$t
         }, 
         this.showLoginDialog, 
         this.showInquiryDialogWithData
@@ -316,14 +369,14 @@ export default {
       const { product } = data;
       
       const minQuantity = getMinQuantityFromPriceRanges(product);
-      const success = await handleAddToCart(
+      const success = await addProductToCart(
         product, 
         {
-          $messageHandler,
-          $api,
-          isLoggedIn: isLoggedIn.value,
-          $bus,
-          $t
+          $messageHandler: this.$messageHandler,
+          $api: this.$api,
+          isLoggedIn: this.isLoggedIn,
+          $bus: this.$bus,
+          $t: this.$t
         }, 
         this.showLoginDialog, 
         () => {
@@ -366,14 +419,15 @@ export default {
       this.loginDialogVisible = false;
       
       if (this.pendingAction && this.pendingProduct) {
+       
         await handleLoginSuccess(
           this.pendingAction,
           this.pendingProduct,
           {
-            $messageHandler,
-            $api,
-            isLoggedIn: isLoggedIn.value,
-            $t
+            $messageHandler: this.$messageHandler,
+            $api: this.$api,
+            isLoggedIn: this.isLoggedIn,
+            $t: this.$t
           }, 
           this.showInquiryDialogWithData,
           () => {
@@ -542,6 +596,7 @@ export default {
   transition: $transition-base;
   background: $white !important;
   background-color: $white !important;
+  cursor: pointer;
 }
 
 .category-tab:hover {
@@ -587,6 +642,12 @@ export default {
   text-align: center;
   padding: $spacing-4xl 0;
   color: $text-muted;
+}
+
+.no-products-icon {
+  font-size: 4rem;
+  color: #9ca3af;
+  margin-bottom: 1rem;
 }
 
 /* Modern Pagination */
