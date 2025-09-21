@@ -4,6 +4,8 @@ class PopupManager {
   constructor() {
     this.apiUrl = '';
     this.apiToken = '';
+    this.geminiApiKey = '';
+    this.geminiProcessImage = false;
     this.productData = null;
     this.supportedSites = [
       {
@@ -64,12 +66,16 @@ class PopupManager {
   // 加载保存的配置
   async loadConfig() {
     try {
-      const result = await chrome.storage.sync.get(['apiUrl', 'apiToken']);
+      const result = await chrome.storage.sync.get(['apiUrl', 'apiToken', 'geminiApiKey', 'geminiProcessImage']);
       this.apiUrl = result.apiUrl || 'http://localhost:3000';
       this.apiToken = result.apiToken || '';
+      this.geminiApiKey = result.geminiApiKey || '';
+      this.geminiProcessImage = result.geminiProcessImage || false;
       
       document.getElementById('api-url').value = this.apiUrl;
       document.getElementById('api-token').value = this.apiToken;
+      document.getElementById('gemini-api-key').value = this.geminiApiKey;
+      document.getElementById('gemini-process-image').checked = this.geminiProcessImage;
     } catch (error) {
       console.error('加载配置失败:', error);
     }
@@ -120,6 +126,8 @@ class PopupManager {
     try {
       this.apiUrl = document.getElementById('api-url').value.trim();
       this.apiToken = document.getElementById('api-token').value.trim();
+      this.geminiApiKey = document.getElementById('gemini-api-key').value.trim();
+      this.geminiProcessImage = document.getElementById('gemini-process-image').checked;
       
       if (!this.apiUrl) {
         this.showStatus('请输入API地址', 'error');
@@ -128,7 +136,9 @@ class PopupManager {
       
       await chrome.storage.sync.set({
         apiUrl: this.apiUrl,
-        apiToken: this.apiToken
+        apiToken: this.apiToken,
+        geminiApiKey: this.geminiApiKey,
+        geminiProcessImage: this.geminiProcessImage
       });
       
       this.showStatus('配置保存成功', 'success');

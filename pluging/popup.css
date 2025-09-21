@@ -79,6 +79,21 @@ body {
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
+/* 复选框标签样式 */
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 0 !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto !important;
+  margin-right: 8px;
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
 /* 按钮样式 */
 .btn {
   display: inline-block;

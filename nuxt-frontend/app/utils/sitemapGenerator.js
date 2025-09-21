@@ -87,6 +87,23 @@ const STATIC_PAGES = [
 ];
 
 /**
+ * XML编码函数，将特殊字符转换为XML实体
+ * @param {string} str 需要编码的字符串
+ * @returns {string} 编码后的字符串
+ */
+function xmlEncode(str) {
+  if (typeof str !== 'string') {
+    return str;
+  }
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
  * 生成XML格式的URL条目
  * @param {string} loc URL地址
  * @param {string} lastmod 最后修改日期 (YYYY-MM-DD)
@@ -96,9 +113,9 @@ const STATIC_PAGES = [
  */
 function generateUrlXml(loc, lastmod, changefreq, priority) {
   return `  <url>
-    <loc>${loc}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>${changefreq}</changefreq>
+    <loc>${xmlEncode(loc)}</loc>
+    <lastmod>${xmlEncode(lastmod)}</lastmod>
+    <changefreq>${xmlEncode(changefreq)}</changefreq>
     <priority>${priority}</priority>
   </url>`;
 }

@@ -152,7 +152,9 @@ deploy_backend() {
         echo_color "yellow" "[BACKEND] No PM2 configuration found, using existing configuration"
     fi
 
-    # PM2 services will be restarted after all deployments are complete
+    # PM2 services start vehicle-supplies-backend
+    sudo -u ${DEPLOY_USER} pm2 start vehicle-supplies-backend || echo "Nuxt backend startinng..."
+
 }
 
 deploy_frontend() {
@@ -250,6 +252,11 @@ deploy_nuxt_frontend() {
     echo_color "green" "[NUXT-FRONTEND] Installing npm dependencies..."
     sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npm install --production"
 
+   
+    # Generate sitemap after services are running
+    echo_color "green" "[NUXT-FRONTEND] Generating sitemap..."
+    sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npx cross-env NODE_ENV=production node app/utils/sitemapGenerator.js" || echo_color "yellow" "[NUXT-FRONTEND] Sitemap generation failed, continuing..."
+    
     # Build the application
     echo_color "green" "[NUXT-FRONTEND] Building nuxt frontend..."
     sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npm run build:prod"
@@ -297,6 +304,22 @@ else
     rm -rf ${TEMP_DIR}
     exit 1
 fi
+# Execute database update script if it exists
+echo_color "yellow" "--- Updating Database ---"
+if [ -f "release/update_database.sh" ]; then
+    echo_color "green" "[DATABASE] Found database update script, executing..."
+    chmod +x release/update_database.sh
+    cd release
+    ./update_database.sh
+    cd ..
+    if [ $? -eq 0 ]; then
+        echo_color "green" "[DATABASE] Database update completed successfully"
+    else
+        echo_color "red" "[DATABASE] Database update failed with error code $?"
+    fi
+else
+    echo_color "yellow" "[DATABASE] No database update script found, skipping database update"
+fi
 
 if [ "${RESTART_BACKEND}" = true ]; then
     deploy_backend
@@ -314,41 +337,24 @@ fi
 if [ "${RESTART_BACKEND}" = true ] || [ "${RESTART_NUXT_FRONTEND}" = true ]; then
     echo_color "yellow" "--- Restarting PM2 Services ---"
     echo_color "green" "[PM2] Restarting all services..."
-    sudo -u ${DEPLOY_USER} bash -c "cd ${PM2_RUNNING_DIR} && pm2 start ecosystem.config.js --env production"
+    sudo -u ${DEPLOY_USER} bash -c "cd ${PM2_RUNNING_DIR} && pm2 restart ecosystem.config.js --env production"
     sudo -u ${DEPLOY_USER} pm2 save
     echo_color "green" "[PM2] All services restarted successfully"
     
     # Wait a moment for services to fully start
     echo_color "green" "[PM2] Waiting for services to fully start..."
-    sleep 5
-    
-    # Generate sitemap after services are running
-    if [ "${RESTART_NUXT_FRONTEND}" = true ]; then
-        echo_color "green" "[NUXT-FRONTEND] Generating sitemap..."
-        sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npx cross-env NODE_ENV=production node app/utils/sitemapGenerator.js" || echo_color "yellow" "[NUXT-FRONTEND] Sitemap generation failed, continuing..."
-        
+
+    if [ "${RESTART_NUXT_FRONTEND}" = true ]; then        
         # Execute warmup (optional, only in production)
         echo_color "green" "[NUXT-FRONTEND] Executing page warmup..."
-        sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npx cross-env NODE_ENV=production node app/utils/warmup.js -c 2 -p 80" || echo_color "yellow" "[NUXT-FRONTEND] Page warmup failed, continuing..."
+        sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npx cross-env NODE_ENV=production node app/utils/warmup.js -c 2 -p 5000" || echo_color "yellow" "[NUXT-FRONTEND] Page warmup failed, continuing..."
     fi
+
+    sleep 5
+
 fi
 
-# Execute database update script if it exists
-echo_color "yellow" "--- Updating Database ---"
-if [ -f "release/update_database.sh" ]; then
-    echo_color "green" "[DATABASE] Found database update script, executing..."
-    chmod +x release/update_database.sh
-    cd release
-    ./update_database.sh
-    cd ..
-    if [ $? -eq 0 ]; then
-        echo_color "green" "[DATABASE] Database update completed successfully"
-    else
-        echo_color "red" "[DATABASE] Database update failed with error code $?"
-    fi
-else
-    echo_color "yellow" "[DATABASE] No database update script found, skipping database update"
-fi
+
 
 echo_color "yellow" "=================================================="
 echo_color "green" "Deployment completed successfully!"

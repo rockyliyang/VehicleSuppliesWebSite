@@ -74,7 +74,320 @@ function isWebPConversionEnabled() {
   return checkbox ? checkbox.checked : true; // 默认启用
 }
 
-// 从URL参数获取产品数据
+// 保存图片到临时目录
+async function saveImageToTemp(uint8Array, fileName) {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([uint8Array], { type: 'image/jpeg' });
+    const url = URL.createObjectURL(blob);
+    
+    chrome.downloads.download({
+      url: url,
+      filename: `temp/${fileName}`,
+      saveAs: false
+    }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+      
+      // 获取下载文件的完整路径
+      chrome.downloads.search({ id: downloadId }, (items) => {
+        if (items && items[0]) {
+          resolve(items[0].filename);
+        } else {
+          reject(new Error('无法获取下载文件路径'));
+        }
+      });
+    });
+  });
+}
+
+// 调用本地图片处理工具
+async function callImageProcessingTool(inputPath, outputPath, apiKey) {
+  try {
+    // 使用Native Messaging或其他方式调用本地工具
+    // 这里需要根据实际情况实现与本地工具的通信
+    const response = await fetch('http://localhost:3001/process-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        inputPath: inputPath,
+        outputPath: outputPath,
+        apiKey: apiKey
+      })
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error('调用本地工具失败:', error);
+    return false;
+  }
+}
+
+// 从临时目录读取处理后的图片
+async function loadImageFromTemp(filePath) {
+  try {
+    const response = await fetch(`file://${filePath}`);
+    if (response.ok) {
+      return await response.blob();
+    }
+    return null;
+  } catch (error) {
+    console.error('读取处理后的图片失败:', error);
+    return null;
+  }
+}
+
+// 清理临时文件
+async function cleanupTempFiles(filePaths) {
+  for (const filePath of filePaths) {
+    try {
+      // 使用Chrome API删除文件
+      await new Promise((resolve) => {
+        chrome.downloads.search({ filename: filePath }, (items) => {
+          if (items && items[0]) {
+            chrome.downloads.removeFile(items[0].id, resolve);
+          } else {
+            resolve();
+          }
+        });
+      });
+    } catch (error) {
+      console.error('清理临时文件失败:', filePath, error);
+    }
+  }
+}
+
+// 使用Gemini API处理图片中的汉字转英文
+async function processImageWithGemini(blob) {
+  try {
+    // 获取Gemini API配置
+    const config = await chrome.storage.sync.get(['geminiApiKey', 'geminiProcessImage']);
+
+    // 检查是否启用Gemini处理
+    if (!config.geminiProcessImage) {
+      return blob;
+    }
+    
+    if (!config.geminiApiKey) {
+      console.warn('Gemini API Key未配置，跳过图片文字处理');
+      return blob;
+    }
+
+    // 检查是否为图片类型
+    if (!blob.type.startsWith('image/')) {
+      return blob;
+    }
+
+    console.log('开始使用本地工具处理图片文字...');
+    
+    // 生成临时文件名
+    const timestamp = Date.now();
+    const inputFileName = `temp_input_${timestamp}.jpg`;
+    const outputFileName = `temp_output_${timestamp}.png`;
+    
+    try {
+      // 将blob保存为临时文件
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // 使用Chrome的downloads API保存文件到临时目录
+      const inputFilePath = await saveImageToTemp(uint8Array, inputFileName);
+      const outputFilePath = inputFilePath.replace(inputFileName, outputFileName);
+      
+      console.log('临时文件路径:', inputFilePath);
+      
+      // 调用本地工具处理图片
+      const success = await callImageProcessingTool(inputFilePath, outputFilePath, config.geminiApiKey);
+      
+      if (success) {
+        // 读取处理后的图片
+        const processedBlob = await loadImageFromTemp(outputFilePath);
+        
+        // 清理临时文件
+        await cleanupTempFiles([inputFilePath, outputFilePath]);
+        
+        if (processedBlob) {
+          console.log('图片文字处理完成');
+          return processedBlob;
+        }
+      }
+      
+      // 如果处理失败，清理临时文件并返回原图片
+      await cleanupTempFiles([inputFilePath, outputFilePath]);
+      console.log('图片文字处理失败，使用原图片');
+      return blob;
+      
+    } catch (error) {
+      console.error('图片处理过程中出错:', error);
+      return blob;
+    }
+    
+  } catch (error) {
+    console.error('图片文字处理失败:', error);
+    return blob;
+  }
+}
+
+// 在图片中替换文字
+async function replaceTextInImage(blob, geminiResponse) {
+  try {
+    console.log('开始在图片中替换文字...');
+    // 解析Gemini响应，提取文字替换信息
+    const textReplacements = parseGeminiResponse(geminiResponse);
+    
+    if (!textReplacements || textReplacements.length === 0) {
+      console.log('没有找到需要替换的文字，返回原图片');
+      return blob;
+    }
+
+    // 创建图片对象
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    return new Promise((resolve) => {
+       // 创建图片URL
+       const url = URL.createObjectURL(blob);
+       
+       img.onload = function() {
+         // 清理URL
+         URL.revokeObjectURL(url);
+         
+         canvas.width = img.width;
+         canvas.height = img.height;
+         
+         // 绘制原始图片
+         ctx.drawImage(img, 0, 0);
+         console.log('原图片已绘制到Canvas');
+         
+         // 设置字体样式
+         ctx.font = '16px Arial, sans-serif';
+         ctx.fillStyle = '#000000';
+         ctx.strokeStyle = '#ffffff';
+         ctx.lineWidth = 2;
+         
+         // 替换文字
+         console.log(`开始替换 ${textReplacements.length} 个文字项...`);
+         textReplacements.forEach((replacement, index) => {
+           if (replacement.chineseText && replacement.englishText) {
+             console.log(`[${index + 1}/${textReplacements.length}] 替换文字: ${replacement.chineseText} -> ${replacement.englishText}`);
+             // 简单的文字覆盖策略：在图片底部添加英文翻译
+             const textY = canvas.height - 30 - (textReplacements.indexOf(replacement) * 25);
+             
+             // 绘制白色背景
+             const textWidth = ctx.measureText(replacement.englishText).width;
+             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+             ctx.fillRect(10, textY - 20, textWidth + 20, 25);
+             
+             // 绘制英文文字
+             ctx.fillStyle = '#000000';
+             ctx.fillText(replacement.englishText, 20, textY);
+           }
+         });
+         console.log('文字替换处理完成');
+         
+         // 转换为Blob
+         console.log('开始将Canvas转换为Blob...');
+         canvas.toBlob((processedBlob) => {
+           if (processedBlob) {
+             console.log('Canvas转换为Blob成功，大小:', processedBlob.size, 'bytes');
+           } else {
+             console.error('Canvas转换为Blob失败');
+           }
+           resolve(processedBlob);
+         }, blob.type, 0.9);
+       };
+       
+       img.onerror = function() {
+         console.error('图片加载失败');
+         URL.revokeObjectURL(url);
+         resolve(blob);
+       };
+       
+       img.src = url;
+     });
+  } catch (error) {
+    console.error('图片文字替换失败:', error);
+    return blob;
+  }
+}
+
+// 解析Gemini响应，提取文字替换信息
+ function parseGeminiResponse(response) {
+   try {
+     const textReplacements = [];
+     console.log('开始解析Gemini响应，提取文字替换信息...');
+     console.log('原始响应内容:', response);
+     
+     // 使用正则表达式匹配中文和对应的英文翻译
+     const lines = response.split('\n');
+     console.log('响应行数:', lines.length);
+    
+    let currentChinese = null;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      console.log(`处理第${i+1}行:`, line);
+      
+      // 匹配 "Chinese: [中文文字]" 格式
+      const chineseMatch = line.match(/Chinese:\s*(.+)/i);
+      if (chineseMatch) {
+        currentChinese = chineseMatch[1].trim();
+        console.log('找到中文文字:', currentChinese);
+        continue;
+      }
+      
+      // 匹配 "English: [英文翻译]" 格式
+      const englishMatch = line.match(/English:\s*(.+)/i);
+      if (englishMatch && currentChinese) {
+        const englishText = englishMatch[1].trim();
+        const replacement = {
+          chineseText: currentChinese,
+          englishText: englishText
+        };
+        textReplacements.push(replacement);
+        console.log('匹配到文字替换对:', replacement);
+        currentChinese = null; // 重置
+        continue;
+      }
+      
+      // 备用匹配格式："中文文字" -> "English text"
+      const arrowMatch = line.match(/["']?([^"']*[\u4e00-\u9fff][^"']*)["']?\s*->\s*["']?([^"']*)["']?/i);
+      if (arrowMatch) {
+         const replacement = {
+           chineseText: arrowMatch[1].trim(),
+           englishText: arrowMatch[2].trim()
+         };
+         textReplacements.push(replacement);
+         console.log('匹配到文字替换(箭头格式):', replacement);
+      }
+      
+      // 备用匹配格式：中文: 英文 (同一行)
+      const colonMatch = line.match(/([^:]*[\u4e00-\u9fff][^:]*):?\s*([A-Za-z][^\n]*)/i);
+      if (colonMatch && !chineseMatch && !englishMatch) {
+         const replacement = {
+           chineseText: colonMatch[1].trim(),
+           englishText: colonMatch[2].trim()
+         };
+         textReplacements.push(replacement);
+         console.log('匹配到文字替换(冒号格式):', replacement);
+      }
+    }
+     
+     console.log(`解析完成，共找到 ${textReplacements.length} 个文字替换项:`, textReplacements);
+     return textReplacements;
+   } catch (error) {
+     console.error('解析Gemini响应失败:', error);
+     return [];
+   }
+ }
+
+// Gemini API配置现在统一在popup.html中管理
+  
+  // 从URL参数获取产品数据
 function getProductDataFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
   const productData = urlParams.get('data');
@@ -498,6 +811,13 @@ async function uploadImages(imageUrls, imageType = 0, sessionId) {
       }
       
       let blob = await imageResponse.blob();
+      
+      // 使用Gemini API处理图片中的汉字转英文
+      try {
+        blob = await processImageWithGemini(blob);
+      } catch (error) {
+        console.warn('Gemini图片处理失败，使用原图片:', error);
+      }
       
       // 检查是否需要转换为WebP格式
       if (isWebPConversionEnabled()) {
