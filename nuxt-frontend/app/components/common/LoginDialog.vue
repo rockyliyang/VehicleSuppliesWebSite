@@ -74,6 +74,11 @@ import FormInput from '~/components/common/FormInput.vue'
 import AppleIcon from '~/components/icons/AppleIcon.vue'
 import GoogleIcon from '~/components/icons/GoogleIcon.vue'
 import FacebookIcon from '~/components/icons/FacebookIcon.vue'
+import { 
+  loadAppleSignIn, 
+  loadGoogleSignIn, 
+  loadFacebookSDK 
+} from '~/utils/thirdPartyAuth.js'
 
 /* eslint-enable no-unused-vars */
 
@@ -210,7 +215,7 @@ export default {
   },
   mounted() {
     // 登录状态现在通过store初始化时自动恢复
-    this.initThirdPartySDKs();
+    // 第三方登录脚本现在按需加载，不在页面加载时初始化
   },
   methods: {
     closeDialog() {
@@ -226,96 +231,7 @@ export default {
         // 保持默认logo
       }
     },
-    initThirdPartySDKs() {
-      // 初始化Apple Sign In
-        if (typeof AppleID !== 'undefined') {
-          const config = useRuntimeConfig()
-          AppleID.auth.init({
-            clientId: config.public.appleClientId || 'your_apple_client_id',
-          scope: 'name email',
-          redirectURI: window.location.origin + '/login',
-          state: 'login',
-          usePopup: true
-        });
-      }
-      
-      // 初始化Google API
-      this.initGoogleAPI();
-      
-      // 初始化Facebook SDK
-      //this.initFacebookSDK();
-    },
-    
-    initGoogleAPI() {
-      // 检查Google Identity Services是否已加载
-      if (typeof google !== 'undefined' && google.accounts) {
-        console.log('Google Identity Services loaded successfully');
-      } else {
-        // 如果Google Identity Services还未加载，等待一段时间后重试
-        setTimeout(() => {
-          this.initGoogleAPI();
-        }, 500);
-      }
-    },
-    
-    initFacebookSDK() {
-      // 检查Facebook SDK是否已加载
-        if (typeof FB !== 'undefined') {
-          const config = useRuntimeConfig()
-          const appId = config.public.facebookAppId;
-        console.log('Facebook SDK loaded, initializing with App ID:', appId);
-        
-        if (!appId || appId === 'your_facebook_app_id' || appId === 'your_facebook_app_id_here') {
-          console.error('Facebook App ID not configured properly. Please set VUE_APP_FACEBOOK_APP_ID in .env file');
-          console.warn('Facebook login will be disabled until a valid App ID is configured');
-          return;
-        }
-        
-        try {
-          // 使用稳定的API版本
-          const apiVersion = 'v18.0';
-          console.log(`Initializing Facebook SDK with version ${apiVersion}`);
-          
-          FB.init({
-            appId: appId,
-            cookie: true,
-            xfbml: true,
-            version: apiVersion,
-            status: true // 启用状态检查
-          });
-          
-          console.log('Facebook SDK initialized successfully');
-          
-          // 等待SDK完全初始化后再检查登录状态
-          setTimeout(() => {
-            if (typeof FB.getLoginStatus === 'function') {
-              FB.getLoginStatus((response) => {
-                console.log('Facebook login status:', response);
-                if (response.status === 'connected') {
-                  console.log('User is already logged in to Facebook');
-                } else if (response.status === 'not_authorized') {
-                  console.log('User is logged in to Facebook but not authorized for this app');
-                } else {
-                  console.log('User is not logged in to Facebook');
-                }
-              });
-            } else {
-              console.warn('FB.getLoginStatus is not available');
-            }
-          }, 100);
-          
-        } catch (error) {
-          console.error('Facebook SDK initialization failed:', error);
-          console.error('This may be due to an invalid App ID or network issues');
-        }
-      } else {
-        console.log('Facebook SDK not loaded yet, retrying...');
-        // 如果Facebook SDK还未加载，等待一段时间后重试
-        setTimeout(() => {
-          this.initFacebookSDK();
-        }, 500);
-      }
-    },
+    // 第三方登录SDK初始化方法已移除，现在使用按需加载
     async submitLogin() {
       this.$refs.loginFormRef.validate(async (valid, fields) => {
         if (valid) {
@@ -408,9 +324,31 @@ export default {
       try {
         this.socialLoading.apple = true;
         
-        // 检查Apple Sign In是否可用
+        // 按需加载Apple Sign In脚本
         if (typeof AppleID === 'undefined') {
-          throw new Error(this.$t('login.error.appleNotAvailable') || 'Apple Sign In not available');
+          console.log('Loading Apple Sign In script...');
+          await loadAppleSignIn();
+          
+          // 等待脚本完全加载
+          let retries = 0;
+          while (typeof AppleID === 'undefined' && retries < 10) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            retries++;
+          }
+          
+          if (typeof AppleID === 'undefined') {
+            throw new Error(this.$t('login.error.appleNotAvailable') || 'Apple Sign In failed to load');
+          }
+          
+          // 初始化Apple Sign In
+          const config = useRuntimeConfig();
+          AppleID.auth.init({
+            clientId: config.public.appleClientId || 'your_apple_client_id',
+            scope: 'name email',
+            redirectURI: window.location.origin + '/login',
+            state: 'login',
+            usePopup: true
+          });
         }
         
         const response = await AppleID.auth.signIn();
@@ -437,14 +375,29 @@ export default {
       try {
         this.socialLoading.google = true;
         
-        // 检查Google Identity Services是否可用
+        // 按需加载Google Identity Services脚本
         if (typeof google === 'undefined' || !google.accounts) {
-          throw new Error(this.$t('login.error.googleNotAvailable') || 'Google Identity Services not loaded');
+          console.log('Loading Google Identity Services script...');
+          await loadGoogleSignIn();
+          
+          // 等待脚本完全加载
+          let retries = 0;
+          while ((typeof google === 'undefined' || !google.accounts) && retries < 10) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            retries++;
+          }
+          
+          if (typeof google === 'undefined' || !google.accounts) {
+            throw new Error(this.$t('login.error.googleNotAvailable') || 'Google Identity Services failed to load');
+          }
         }
-        
+        const config = useRuntimeConfig()
+        console.log('Full runtime config:', config);
+        console.log('config.public:', config.public);
+        console.log('config.public.googleClientId is',config.public.googleClientId);
+        console.log('Environment variable NUXT_PUBLIC_GOOGLE_CLIENT_ID:', process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID);
         // 直接使用OAuth2弹窗登录，避免One Tap造成的双重弹窗问题
           const tokenResponse = await new Promise((resolve, reject) => {
-            const config = useRuntimeConfig()
             const popup = google.accounts.oauth2.initTokenClient({
               client_id: config.public.googleClientId || 'your_google_client_id',
             scope: 'email profile openid',
@@ -491,16 +444,40 @@ export default {
         this.socialLoading.facebook = true;
         console.log('Facebook login initiated...');
         
-        // 检查Facebook SDK是否可用
+        // 按需加载Facebook SDK脚本
         if (typeof FB === 'undefined') {
-          console.error('Facebook SDK not available');
-          throw new Error(this.$t('login.error.facebookNotAvailable') || 'Facebook SDK not loaded. Please refresh the page and try again.');
-        }
-        
-        // 检查Facebook SDK是否已初始化
-        if (!window.fbAsyncInit || !FB.getAccessToken) {
-          console.error('Facebook SDK not properly initialized');
-          throw new Error('Facebook SDK not properly initialized. Please refresh the page and try again.');
+          console.log('Loading Facebook SDK script...');
+          await loadFacebookSDK();
+          
+          // 等待脚本完全加载
+          let retries = 0;
+          while (typeof FB === 'undefined' && retries < 10) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            retries++;
+          }
+          
+          if (typeof FB === 'undefined') {
+            throw new Error(this.$t('login.error.facebookNotAvailable') || 'Facebook SDK failed to load');
+          }
+          
+          // 初始化Facebook SDK
+          const config = useRuntimeConfig();
+          const appId = config.public.facebookAppId;
+          
+          if (!appId || appId === 'your_facebook_app_id' || appId === 'your_facebook_app_id_here') {
+            throw new Error('Facebook App ID not configured properly');
+          }
+          
+          FB.init({
+            appId: appId,
+            cookie: true,
+            xfbml: true,
+            version: 'v18.0',
+            status: true
+          });
+          
+          // 等待SDK初始化完成
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
         console.log('Facebook SDK available, calling FB.login...');

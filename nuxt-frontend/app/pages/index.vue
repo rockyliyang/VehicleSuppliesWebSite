@@ -4,7 +4,11 @@
     <div class="banner-container">
       <el-carousel :height="bannerHeight" indicator-position="outside">
         <el-carousel-item v-for="(item, index) in banners" :key="index">
-          <div class="banner-item" :style="{ backgroundImage: `url(${item.image_url})` }">
+          <!--div class="banner-item" :style="{ backgroundImage: `url(${item.image_url})` }"></div-->
+          <div class="banner-item">
+            <NuxtImg :src="item.image_url" :alt="`Banner ${index + 1}`" preset="banner"
+              :sizes="`xs:100vw sm:100vw md:100vw lg:100vw xl:100vw`" loading="eager" class="banner-image"
+              @error="handleImageError" />
           </div>
         </el-carousel-item>
       </el-carousel>
@@ -78,7 +82,9 @@
             </div>
           </div>
           <div class="about-image">
-            <img :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" @error="handleImageError" />
+            <!--img :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" @error="handleImageError" /-->
+            <NuxtImg :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" preset="thumbnail"
+              :sizes="`xs:100vw sm:100vw md:50vw lg:50vw xl:50vw`" loading="lazy" @error="handleImageError" />
           </div>
         </div>
         <!-- 移动端More按钮 - 独立行 -->
@@ -344,9 +350,16 @@ onUnmounted(() => {
 .banner-item {
   width: 100%;
   height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+  transition: $transition-base;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
   transition: $transition-base;
 }
 

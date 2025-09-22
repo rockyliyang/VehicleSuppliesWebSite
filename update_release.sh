@@ -248,9 +248,61 @@ deploy_nuxt_frontend() {
         echo_color "yellow" "[NUXT-FRONTEND] No existing environment files found. Using files from release if available."
     fi
 
+    # Prepare libvips for sharp installation
+    echo_color "green" "[NUXT-FRONTEND] Preparing libvips for sharp installation..."
+    sudo -u ${DEPLOY_USER} bash -c "
+        # Get sharp version from @nuxt/image dependency
+        NUXT_IMAGE_VERSION=\$(cd ${NUXT_FRONTEND_DIR} && node -p \"require('./package.json').dependencies['@nuxt/image']\" | sed 's/[^0-9.]//g')
+        echo \"Detected @nuxt/image version: \$NUXT_IMAGE_VERSION\"
+        
+        # Determine libvips version based on @nuxt/image version
+        # For @nuxt/image 1.11.x, use libvips 8.14.5
+        # For @nuxt/image 1.8.x-1.10.x, use libvips 8.13.3
+        # For older versions, use libvips 8.12.2
+        if [[ \$NUXT_IMAGE_VERSION =~ ^1\.1[1-9]\. ]]; then
+            LIBVIPS_VERSION=\"8.14.5\"
+        elif [[ \$NUXT_IMAGE_VERSION =~ ^1\.(8|9|10)\. ]]; then
+            LIBVIPS_VERSION=\"8.13.3\"
+        else
+            LIBVIPS_VERSION=\"8.12.2\"
+        fi
+        
+        echo \"Using libvips version: \$LIBVIPS_VERSION\"
+        
+        # Create libvips directory
+        mkdir -p ~/.npm/_libvips
+        cd ~/.npm/_libvips
+        
+        # Download libvips if not already present
+        LIBVIPS_FILE=\"libvips-\${LIBVIPS_VERSION}-linux-x64.tar.br\"
+        if [ ! -f \"\$LIBVIPS_FILE\" ]; then
+            echo \"Downloading libvips \$LIBVIPS_VERSION...\"
+            LIBVIPS_URL=\"https://npmmirror.com/mirrors/sharp-libvips/v\${LIBVIPS_VERSION}/\${LIBVIPS_FILE}\"
+            curl -f -L -o \"\$LIBVIPS_FILE\" \"\$LIBVIPS_URL\"
+            if [ \$? -eq 0 ]; then
+                echo \"Successfully downloaded \$LIBVIPS_FILE\"
+            else
+                echo \"Failed to download \$LIBVIPS_FILE, trying fallback URL...\"
+                # Fallback to GitHub releases
+                LIBVIPS_URL=\"https://github.com/lovell/sharp-libvips/releases/download/v\${LIBVIPS_VERSION}/\${LIBVIPS_FILE}\"
+                curl -f -L -o \"\$LIBVIPS_FILE\" \"\$LIBVIPS_URL\"
+            fi
+        else
+            echo \"libvips \$LIBVIPS_VERSION already downloaded\"
+        fi
+        
+        # Set environment variable for sharp
+        export SHARP_LOCAL_PATH=~/.npm/_libvips
+        echo \"SHARP_LOCAL_PATH set to: \$SHARP_LOCAL_PATH\"
+    "
+
     # Install dependencies
     echo_color "green" "[NUXT-FRONTEND] Installing npm dependencies..."
-    sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npm install --production"
+    sudo -u ${DEPLOY_USER} bash -c "
+        cd ${NUXT_FRONTEND_DIR}
+        export SHARP_LOCAL_PATH=~/.npm/_libvips
+        sharp_binary_host=\"https://npmmirror.com/mirrors/sharp\" sharp_libvips_binary_host=\"https://npmmirror.com/mirrors/sharp-libvips\" npm install --production
+    "
 
    
     # Generate sitemap after services are running
@@ -262,6 +314,18 @@ deploy_nuxt_frontend() {
     sudo -u ${DEPLOY_USER} bash -c "cd ${NUXT_FRONTEND_DIR} && npm run build:prod"
 
     # Sitemap generation and page warmup will be executed after PM2 services are started
+
+    # Create symbolic link from nuxt-frontend/app/public to backend/public/static
+    echo_color "green" "[NUXT-FRONTEND] Creating symbolic link to backend static files..."
+    sudo -u ${DEPLOY_USER} bash -c "
+        # Remove existing static link/directory if it exists
+        if [ -L '${NUXT_FRONTEND_DIR}/app/public/static' ] || [ -d '${NUXT_FRONTEND_DIR}/app/public/static' ]; then
+            rm -rf '${NUXT_FRONTEND_DIR}/app/public/static'
+        fi
+        # Create symbolic link
+        ln -s '${BACKEND_DIR}/public/static' '${NUXT_FRONTEND_DIR}/app/public/static'
+        echo 'Symbolic link created: ${NUXT_FRONTEND_DIR}/app/public/static -> ${BACKEND_DIR}/public/static'
+    "
 
     # Set permissions
     echo_color "green" "[NUXT-FRONTEND] Setting permissions..."

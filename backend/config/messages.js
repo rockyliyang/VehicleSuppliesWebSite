@@ -618,6 +618,27 @@ const MESSAGES = {
     INVALID_DURATION: 'Duration must be a positive number',
     INVALID_BOUNCE_RATE: 'Bounce rate must be a boolean value',
     INVALID_NEW_VISITOR: 'New visitor flag must be a boolean value'
+  },
+
+  // 翻译相关
+  TRANSLATION: {
+    SUCCESS: 'Translation completed successfully',
+    FAILED: 'Translation failed',
+    MISSING_PARAMS: 'Missing required parameters: text, sourceLang, and targetLang are required',
+    MISSING_TEXT: 'Text is required for language detection',
+    TEXT_TOO_LONG: 'Text is too long, maximum 5000 characters allowed',
+    BATCH_SUCCESS: 'Batch translation completed successfully',
+    BATCH_LIMIT_EXCEEDED: 'Batch translation limit exceeded, maximum 100 texts allowed',
+    LANGUAGES_SUCCESS: 'Supported languages retrieved successfully',
+    DETECT_SUCCESS: 'Language detection completed successfully',
+    API_ERROR: 'Translation API error',
+    INTERNAL_ERROR: 'Internal translation service error',
+    API_KEY_MISSING: 'Translation API key not configured',
+    API_KEY_INVALID: 'Invalid translation API key',
+    RATE_LIMIT_EXCEEDED: 'Translation API rate limit exceeded',
+    SERVER_ERROR: 'Translation API server error',
+    TIMEOUT: 'Translation request timeout',
+    UNSUPPORTED_LANGUAGE: 'Unsupported language pair'
   }
 };
 

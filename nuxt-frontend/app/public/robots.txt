@@ -17,4 +17,4 @@ Disallow: /account
 Disallow: /favorites
 Disallow: /browsing-history
 
-Sitemap: https://autoeasetechx.com/sitemap.xml
+Sitemap: https://v.autoeasetechx.com/sitemap.xml

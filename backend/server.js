@@ -48,6 +48,7 @@ const productReviewRoutes = require('./routes/productReviewRoutes');
 const productReviewImageRoutes = require('./routes/productReviewImageRoutes');
 const tagRoutes = require('./routes/tagRoutes');
 const visitorLogRoutes = require('./routes/visitorLogRoutes');
+const translationRoutes = require('./routes/translationRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -157,6 +158,7 @@ app.use('/api/product-reviews', productReviewRoutes);
 app.use('/api/product-review-images', productReviewImageRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/visitor-logs', visitorLogRoutes);
+app.use('/api/translation', translationRoutes);
 
 // 国家省份数据路由
 app.use('/api', userRoutes);

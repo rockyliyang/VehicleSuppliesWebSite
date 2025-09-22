@@ -113,7 +113,7 @@
               <span class="stock-number">{{ $t('productDetail.stock') }}: {{ product.stock }}</span>
             </div>
             <div class="product-short-desc">
-              <p>{{ product.short_description }}</p>
+              <p style="white-space: pre-wrap;">{{ product.short_description?.replace(/\\n/g, '\n') }}</p>
             </div>
             <div class="product-actions">
               <!-- 按钮组 -->

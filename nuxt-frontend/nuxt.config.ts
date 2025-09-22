@@ -78,14 +78,11 @@ export default defineNuxtConfig({
           target: 'http://localhost:3000',
           changeOrigin: true
         },
-        '/static': {
-          target: 'http://localhost:3000',
-          changeOrigin: true
-        },
+
         '/public/static': {
           target: 'http://localhost:3000',
           changeOrigin: true
-        },
+        }
       }
     }
   },
@@ -98,8 +95,52 @@ export default defineNuxtConfig({
   // 模块配置
   modules: [
     '@element-plus/nuxt',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxt/image'
   ],
+  
+  // 图片优化配置
+  image: {
+    // IPX 提供者配置
+    provider: 'ipx',
+    // 静态文件目录
+    dir: 'public',
+
+    // 域名配置
+    domains: ['localhost:3000', 'localhost:5000'],
+
+    // 图片质量设置
+    quality: 80,
+    // 图片格式优化
+    format: ['webp', 'avif', 'jpeg'],
+    // 响应式图片尺寸
+    screens: {
+      xs: 320,
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+      xxl: 1536
+    },
+    // 预设尺寸
+    presets: {
+      banner: {
+        modifiers: {
+          format: 'webp',
+          quality: 85,
+          fit: 'cover'
+        }
+      },
+      thumbnail: {
+        modifiers: {
+          format: 'webp',
+          quality: 75,
+          width: 300,
+          fit: 'inside'
+        }
+      }
+    }
+  },
   
   
   // 性能优化配置
@@ -117,9 +158,9 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000/api',
       // 第三方登录配置
-      googleClientId: process.env.VUE_APP_GOOGLE_CLIENT_ID || '',
-      facebookAppId: process.env.VUE_APP_FACEBOOK_APP_ID || '',
-      appleClientId: process.env.VUE_APP_APPLE_CLIENT_ID || ''
+      googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+      facebookAppId: process.env.NUXT_PUBLIC_FACEBOOK_APP_ID || '',
+      appleClientId: process.env.NUXT_PUBLIC_APPLE_CLIENT_ID || ''
     }
   },
   
@@ -142,12 +183,8 @@ export default defineNuxtConfig({
         //{ rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' }
       ],
       script: [
-        // Apple Sign In
-        { type: 'text/javascript', src: 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js' },
-        // Google Identity Services
-        { src: 'https://accounts.google.com/gsi/client', async: true, defer: true },
-        // Facebook SDK
-        { async: true, defer: true, crossorigin: 'anonymous', src: 'https://connect.facebook.net/en_US/sdk.js' }
+        // 第三方登录脚本已移至按需加载，在需要登录的页面中动态加载
+        // 这样可以提高首页加载性能
       ]
     }
   },
