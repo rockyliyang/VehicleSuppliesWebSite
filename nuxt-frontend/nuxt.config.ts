@@ -56,14 +56,56 @@ export default defineNuxtConfig({
   },
   // CSS 配置 - 优化CSS加载
   css: [
+    // 关键CSS - 首屏渲染优化（将被内联）
+    '~/assets/styles/critical.css',
+    // 字体性能优化 - 必须在其他字体文件之前加载
+    '~/assets/styles/font-optimization.css',
     // Element Plus CSS将通过模块自动处理
     '@fortawesome/fontawesome-free/css/all.css',
-    'material-icons/iconfont/material-icons.css',
+    // Material Icons 已改为按需加载，不再全局加载
+    // 'material-icons/iconfont/material-icons.css',
     // 全局样式文件
     '~/assets/styles/global.css'
   ],
+  
+  // PostCSS配置 - CSS优化
+  postcss: {
+    plugins: {
+      'postcss-import': {},
+      'tailwindcss/nesting': {},
+      'autoprefixer': {},
+      'cssnano': {
+        preset: [
+          'default',
+          {
+            discardComments: {
+              removeAll: true
+            },
+            normalizeWhitespace: true,
+            discardUnused: true,
+            mergeRules: true
+          }
+        ]
+      }
+    }
+  },
+  
+  // 实验性功能配置 - 启用性能优化
+  experimental: {
+    payloadExtraction: false
+  },
+  
+  // 优化配置 - 减少未使用的JavaScript
+  optimization: {
+    keyedComposables: [
+      {
+        name: 'useState',
+        argumentLength: 2
+      }
+    ]
+  },
 
-  // Vite 配置
+  // Vite 配置 - 包含性能优化
   vite: {
     css: {
       preprocessorOptions: {
@@ -72,13 +114,13 @@ export default defineNuxtConfig({
         }
       }
     },
+
     server: {
       proxy: {
         '/api': {
           target: 'http://localhost:3000',
           changeOrigin: true
         },
-
         '/public/static': {
           target: 'http://localhost:3000',
           changeOrigin: true
@@ -87,7 +129,7 @@ export default defineNuxtConfig({
     }
   },
   
-  // 构建配置 - 优化构建性能
+  // 构建配置 - 优化构建性能和FCP
   build: {
     transpile: ['element-plus']
   },
@@ -99,7 +141,7 @@ export default defineNuxtConfig({
     '@nuxt/image'
   ],
   
-  // 图片优化配置
+  // 图片优化配置 - LCP性能优化
   image: {
     // IPX 提供者配置
     provider: 'ipx',
@@ -109,10 +151,10 @@ export default defineNuxtConfig({
     // 域名配置
     domains: ['localhost:3000', 'localhost:5000'],
 
-    // 图片质量设置
-    quality: 80,
-    // 图片格式优化
-    format: ['webp', 'avif', 'jpeg'],
+    // 图片质量设置 - 针对LCP优化
+    quality: 85,
+    // 图片格式优化 - 优先使用现代格式
+    format: ['avif', 'webp', 'jpeg'],
     // 响应式图片尺寸
     screens: {
       xs: 320,
@@ -122,13 +164,15 @@ export default defineNuxtConfig({
       xl: 1280,
       xxl: 1536
     },
-    // 预设尺寸
+    // 预设尺寸 - LCP优化
     presets: {
       banner: {
         modifiers: {
-          format: 'webp',
-          quality: 85,
-          fit: 'cover'
+          format: 'avif,webp,jpeg',
+          quality: 90, // LCP图片使用更高质量
+          fit: 'cover',
+          width: 1920,
+          height: 600
         }
       },
       thumbnail: {
@@ -143,10 +187,7 @@ export default defineNuxtConfig({
   },
   
   
-  // 性能优化配置
-  experimental: {
-    payloadExtraction: false
-  },
+
   
 
   
@@ -167,6 +208,9 @@ export default defineNuxtConfig({
   // 头部配置
  app: {
     head: {
+      htmlAttrs: {
+        lang: 'en'
+      },
       title: 'Auto Ease TechX',
       meta: [
         { charset: 'utf-8' },
@@ -177,10 +221,10 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', href: '/favicon.ico' },
-        // Material Icons
-       // { href: 'https://fonts.googleapis.com/icon?family=Material+Icons', rel: 'stylesheet' },
-        // Font Awesome
-        //{ rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' }
+        // 字体预加载已通过font-optimization.css处理
+        // DNS预解析
+        { rel: 'dns-prefetch', href: '//localhost:3000' }
+        // CSS预加载在生产环境中由Nuxt自动处理，开发环境中手动预加载会导致MIME类型错误
       ],
       script: [
         // 第三方登录脚本已移至按需加载，在需要登录的页面中动态加载
@@ -209,22 +253,22 @@ export default defineNuxtConfig({
         proxy: 'http://localhost:3000/static/**',
       },
       // 客户端渲染页面配置 - 这些页面不需要SSR
-      '/login': { ssr: false } as any,
-      '/activate': { ssr: false } as any,
-      '/addresslist': { ssr: false } as any,
-      '/browsinghistory': { ssr: false } as any,
-      '/cart': { ssr: false } as any,
-      '/forgotpassword': { ssr: false } as any,
-      '/inquiries': { ssr: false } as any,
-      '/orderpayment': { ssr: false } as any,
+      '/Login': { ssr: false } as any,
+      '/Activate': { ssr: false } as any,
+      '/Addresslist': { ssr: false } as any,
+      '/Browsinghistory': { ssr: false } as any,
+      '/Cart': { ssr: false } as any,
+      '/Forgotpassword': { ssr: false } as any,
+      '/Inquiries': { ssr: false } as any,
+      '/Orderpayment': { ssr: false } as any,
       '/Register': { ssr: false } as any,
       '/Header': { ssr: false } as any,
       '/Footer': { ssr: false } as any,
-      '/resetpassword': { ssr: false } as any,
-      '/unifiedcheckout': { ssr: false } as any,
-      '/useragreement': { ssr: false } as any,
-      '/userorders': { ssr: false } as any,
-      '/usersettings': { ssr: false } as any
+      '/Resetpassword': { ssr: false } as any,
+      '/Unifiedcheckout': { ssr: false } as any,
+      '/Useragreement': { ssr: false } as any,
+      '/Userorders': { ssr: false } as any,
+      '/Usersettings': { ssr: false } as any
     } as any,
     // 优化Nitro性能
     minify: true,

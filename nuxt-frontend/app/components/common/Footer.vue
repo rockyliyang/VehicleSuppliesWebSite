@@ -4,26 +4,31 @@
       <!-- 桌面端布局 -->
       <div class="footer-grid desktop-footer">
         <div>
-          <img class="footer-logo h-8 w-auto mb-6" :src="companyInfo.logo_url || '/images/logo.png'"
+          <img class="footer-logo h-8 w-auto mb-6" :src="companyInfo.logo_url"
             :alt="companyInfo.company_name || 'Auto Ease Tech X Logo'" />
           <p class="footer-intro mb-6">
             {{ companyInfo.description || defaultCompanyIntro }}
           </p>
           <div class="social-links">
-            <a href="#" class="social-link">
-              <i class="fab fa-facebook-f"></i>
+            <a href="#" class="social-link" aria-label="Follow us on Facebook">
+              <i class="fab fa-facebook-f" aria-hidden="true"></i>
+              <span class="sr-only">Facebook</span>
             </a>
-            <a href="#" class="social-link">
-              <i class="fab fa-twitter"></i>
+            <a href="#" class="social-link" aria-label="Follow us on Twitter">
+              <i class="fab fa-twitter" aria-hidden="true"></i>
+              <span class="sr-only">Twitter</span>
             </a>
-            <a href="#" class="social-link">
-              <i class="fab fa-instagram"></i>
+            <a href="#" class="social-link" aria-label="Follow us on Instagram">
+              <i class="fab fa-instagram" aria-hidden="true"></i>
+              <span class="sr-only">Instagram</span>
             </a>
-            <a href="#" class="social-link">
-              <i class="fab fa-linkedin-in"></i>
+            <a href="#" class="social-link" aria-label="Follow us on LinkedIn">
+              <i class="fab fa-linkedin-in" aria-hidden="true"></i>
+              <span class="sr-only">LinkedIn</span>
             </a>
-            <a href="#" class="social-link">
-              <i class="fab fa-youtube"></i>
+            <a href="#" class="social-link" aria-label="Follow us on YouTube">
+              <i class="fab fa-youtube" aria-hidden="true"></i>
+              <span class="sr-only">YouTube</span>
             </a>
           </div>
         </div>
@@ -455,7 +460,8 @@ onMounted(() => {
 
 /* 版权文本 */
 .copyright-text {
-  color: $gray-500;
+  color: $gray-700;
+  /* 提高对比度 */
   font-size: $font-size-sm;
 
   @include mobile {
@@ -507,5 +513,18 @@ img {
     height: $spacing-4xl + $spacing-md;
     margin-top: $spacing-lg;
   }
+}
+
+/* 屏幕阅读器专用文本 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 </style>

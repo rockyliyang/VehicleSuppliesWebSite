@@ -23,7 +23,7 @@
       </button>
       <button v-if="!isCheckoutMode" class="checkout-btn" @click="handleCheckout"
         :disabled="itemsCount === 0 || status === 'Checkouted'" :class="{ 'checkouted': status === 'Checkouted' }">
-        <i class="material-icons">{{ status === 'Checkouted' ? 'check_circle' : 'payment' }}</i>
+        <i class="fas" :class="status === 'Checkouted' ? 'fa-check-circle' : 'fa-credit-card'"></i>
         {{ status === 'Checkouted' ? ($t('cart.checkouted') || 'Checkouted') : ($t('cart.checkout') ||
         'Checkout') }}
       </button>
@@ -380,6 +380,7 @@ export default {
 <style lang="scss" scoped>
 @use '~/assets/styles/_variables.scss' as *;
 @use 'sass:color';
+
 /* 销售沟通区域 */
 .communication-section {
   flex: 1;
@@ -553,7 +554,7 @@ export default {
   opacity: 0.8;
 }
 
-.checkout-btn .material-icons {
+.checkout-btn .fas {
   font-size: $font-size-xl;
 }
 

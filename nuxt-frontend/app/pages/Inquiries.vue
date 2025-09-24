@@ -21,21 +21,21 @@
             <!-- 新建询价单卡片 -->
             <div class="inquiry-card create-inquiry-card" @click="createNewInquiry">
               <div class="card-icon">
-                <i class="material-icons">add_circle_outline</i>
+                <i class="fas fa-plus-circle"></i>
               </div>
               <div class="card-content">
                 <h3 class="card-title">{{ $t('inquiry.mobile.createNew') || '新建询价单' }}</h3>
                 <p class="card-description">{{ $t('inquiry.mobile.createDescription') || '添加商品，设置期望价格和购买数量' }}</p>
               </div>
               <div class="card-arrow">
-                <i class="material-icons">arrow_forward_ios</i>
+                <i class="fas fa-chevron-right"></i>
               </div>
             </div>
 
             <!-- 已支付询价单列表卡片 -->
             <div class="inquiry-card paid-inquiry-card" @click="showPaidInquiries">
               <div class="card-icon">
-                <i class="material-icons">payment</i>
+                <i class="fas fa-credit-card"></i>
               </div>
               <div class="card-content">
                 <h3 class="card-title">{{ $t('inquiry.mobile.paidInquiries') || '已支付询价单' }}</h3>
@@ -50,7 +50,7 @@
             <!-- 未支付询价单详情卡片 -->
             <div class="inquiry-card unpaid-inquiry-card" @click="showUnpaidInquiries">
               <div class="card-icon">
-                <i class="material-icons">pending_actions</i>
+                <i class="fas fa-clock"></i>
               </div>
               <div class="card-content">
                 <h3 class="card-title">{{ $t('inquiry.mobile.unpaidInquiries') || '未支付询价单' }}</h3>
@@ -68,7 +68,7 @@
         <div v-else-if="currentView === 'list'" class="mobile-inquiry-list">
           <div class="list-header">
             <button class="back-button" @click="backToCards">
-              <i class="material-icons">arrow_back</i>
+              <i class="fas fa-arrow-left"></i>
             </button>
             <h3 class="list-title">{{ currentListTitle }}</h3>
           </div>
@@ -81,7 +81,8 @@
                 <div class="inquiry-header-right">
                   <span v-if="inquiry.unread_count > 0" class="mobile-unread-badge">{{ inquiry.unread_count }}</span>
                   <span class="inquiry-status" :class="inquiry.status">
-                    {{ inquiry.status === 'paid' ? ($t('inquiry.status.paid') || '已支付') : ($t('inquiry.status.unpaid') ||
+                    {{ inquiry.status === 'paid' ? ($t('inquiry.status.paid') || '已支付') : ($t('inquiry.status.unpaid')
+                    ||
                     '未支付') }}
                   </span>
                 </div>
@@ -104,7 +105,7 @@
             </div>
 
             <div v-if="currentInquiryList.length === 0" class="no-inquiries">
-              <i class="material-icons">assignment</i>
+              <i class="fas fa-clipboard"></i>
               <p>{{ currentListType === 'paid' ? ($t('inquiry.noPaidInquiries') || '暂无已支付询价单') :
                 ($t('inquiry.noUnpaidInquiries') || '暂无未支付询价单') }}</p>
             </div>
@@ -121,10 +122,10 @@
               ($t('inquiry.mobile.createNew') || '新建询价单') }}</h3>
           </div>
 
-          <InquiryDetailPanel :inquiry-id="selectedMobileInquiry?.id" :is-mobile="true" :is-checkout-mode="isCheckoutMode" @remove-item="handleRemoveItem"
-            @send-message="handleSendMessage" @update-message="handleUpdateMessage"
-            @checkout-inquiry="handleCheckoutInquiry" @item-added="handleMobileItemAdded"
-            @new-messages-received="handleNewMessagesReceived" />
+          <InquiryDetailPanel :inquiry-id="selectedMobileInquiry?.id" :is-mobile="true"
+            :is-checkout-mode="isCheckoutMode" @remove-item="handleRemoveItem" @send-message="handleSendMessage"
+            @update-message="handleUpdateMessage" @checkout-inquiry="handleCheckoutInquiry"
+            @item-added="handleMobileItemAdded" @new-messages-received="handleNewMessagesReceived" />
         </div>
       </div>
     </div>
@@ -185,8 +186,10 @@ export default {
   },
   created() {
     // 检查用户是否已登录
+    //console.log('InquiryManagement created, isLoggedIn:', this.$store.auth.isLoggedIn);
     if (!this.$store.auth.isLoggedIn) {
-      navigateTo('/login?redirect=/inquiry-management');
+      //console.log('InquiryManagement created 2, isLoggedIn:', this.$store.auth.isLoggedIn);
+      navigateTo('/login?redirect=/Inquiries');
       return;
     }
     

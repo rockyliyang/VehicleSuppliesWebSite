@@ -6,11 +6,11 @@
         <div class="inquiry-list-header">
           <div class="header-buttons">
             <button class="add-inquiry-btn" :disabled="!canAddNewInquiry" @click="addInquiry">
-              <i class="material-icons">add_circle_outline</i>
+              <i class="fas fa-plus-circle"></i>
               {{ $t('cart.newInquiry') || '新建询价单' }}
             </button>
             <button class="refresh-btn" @click="refreshInquiries" :title="$t('cart.refreshInquiries') || '刷新询价单'">
-              <i class="material-icons">refresh</i>
+              <i class="fas fa-sync-alt"></i>
             </button>
           </div>
         </div>
@@ -42,10 +42,10 @@
                         placeholder="请输入询价单名称">
                       <div class="inquiry-edit-actions">
                         <button class="save-btn" @click="saveInquiryTitle(inquiry.id)">
-                          <i class="material-icons">check</i>
+                          <i class="fas fa-check"></i>
                         </button>
                         <button class="cancel-btn" @click="cancelEditInquiry()">
-                          <i class="material-icons">close</i>
+                          <i class="fas fa-times"></i>
                         </button>
                       </div>
                     </div>
@@ -56,11 +56,11 @@
                           inquiry.unread_count }}</span>
                         <button class="edit-inquiry-btn" @click.stop="startEditInquiry(inquiry)"
                           :title="$t('cart.editInquiry') || 'Edit Inquiry'">
-                          <i class="material-icons">edit</i>
+                          <i class="fas fa-edit"></i>
                         </button>
                         <button class="delete-inquiry-btn" @click.stop="confirmDeleteInquiry(inquiry.id)"
                           :title="$t('cart.deleteInquiry') || 'Delete Inquiry'">
-                          <i class="material-icons">delete</i>
+                          <i class="fas fa-trash"></i>
                         </button>
                       </div>
                     </div>
@@ -109,6 +109,7 @@
 
 <script>
 import InquiryDetailPanel from './InquiryDetailPanel.vue';
+import { useMaterialIcons } from '~/utils/useMaterialIcons';
 
 export default {
   name: 'InquiryPanel',
@@ -173,6 +174,9 @@ export default {
     }
   },
   mounted() {
+    const { loadMaterialIcons } = useMaterialIcons();
+    loadMaterialIcons();
+    
     this.initializeInquiries();
     this.checkScrollNeed();
     
@@ -837,6 +841,7 @@ export default {
 
 .add-inquiry-btn {
   flex: 1;
+  height: 36px;
   padding: $spacing-sm;
   background: $info-color;
   color: $white;
@@ -881,7 +886,11 @@ export default {
   background: $success-dark;
 }
 
-.refresh-btn .material-icons {
+.refresh-btn .fas {
+  font-size: $font-size-lg !important;
+}
+
+.add-inquiry-btn .fas {
   font-size: $font-size-lg;
 }
 
@@ -1049,8 +1058,8 @@ export default {
   background: rgba($error-color, 0.1);
 }
 
-.delete-inquiry-btn .material-icons {
-  font-size: $font-size-lg;
+.delete-inquiry-btn .fas {
+  font-size: $font-size-lg !important;
 }
 
 .edit-inquiry-btn {
@@ -1070,8 +1079,8 @@ export default {
   background: rgba($info-color, 0.1);
 }
 
-.edit-inquiry-btn .material-icons {
-  font-size: $font-size-lg;
+.edit-inquiry-btn .fas {
+  font-size: $font-size-lg !important;
 }
 
 .inquiry-edit-form {
@@ -1130,9 +1139,9 @@ export default {
   background: rgba($error-color, 0.1);
 }
 
-.save-btn .material-icons,
-.cancel-btn .material-icons {
-  font-size: $font-size-lg;
+.save-btn .fas,
+.cancel-btn .fas {
+  font-size: $font-size-lg !important;
 }
 
 .inquiry-title-display {

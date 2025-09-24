@@ -129,8 +129,8 @@ api.interceptors.response.use(
           message = '未授权，请登录';
           // 清除用户信息
           if (process.client) {
-            
-            this.$store.auth.setUser(null);
+            const { $store } = useNuxtApp()
+            $store.auth.setUser(null);
           }
           showError = false;
           break;

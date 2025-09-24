@@ -119,7 +119,7 @@
 
             <div class="cart-actions">
               <button class="checkout-btn" @click="handleCheckout">
-                <i class="material-icons">payment</i>
+                <i class="fas fa-credit-card"></i>
                 {{ $t('cart.checkout') || '结算' }}
               </button>
               <button class="inquiry-btn" @click="addSelectedToInquiry">
@@ -959,8 +959,8 @@ export default {
     box-shadow: none;
   }
 
-  .material-icons {
-    font-size: 18px;
+  .fas {
+    font-size: $font-size-xl;
   }
 }
 

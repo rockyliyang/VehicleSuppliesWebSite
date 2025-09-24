@@ -4,11 +4,25 @@
     <div class="banner-container">
       <el-carousel :height="bannerHeight" indicator-position="outside">
         <el-carousel-item v-for="(item, index) in banners" :key="index">
-          <!--div class="banner-item" :style="{ backgroundImage: `url(${item.image_url})` }"></div-->
           <div class="banner-item">
+            <!-- 公司名称占位符 -->
+            <div class="banner-placeholder" :class="{ 'fade-out': imageLoaded[index] }">
+              <div class="company-name-overlay">
+                <h1 class="company-name">{{ companyName }}</h1>
+                <p class="company-tagline">{{ $t('company.tagline') || 'Professional Vehicle Supplies' }}</p>
+              </div>
+            </div>
+            <!-- Banner图片 -->
             <NuxtImg :src="item.image_url" :alt="`Banner ${index + 1}`" preset="banner"
-              :sizes="`xs:100vw sm:100vw md:100vw lg:100vw xl:100vw`" loading="eager" class="banner-image"
-              @error="handleImageError" />
+              :sizes="`xs:100vw sm:100vw md:100vw lg:100vw xl:100vw`" 
+              :loading="index === 0 ? 'eager' : 'lazy'" 
+              class="banner-image" :class="{ 'image-loaded': imageLoaded[index] }"
+              @error="handleImageError" @load="handleImageLoad(index)" 
+              :priority="index === 0" 
+              :fetchpriority="index === 0 ? 'high' : 'auto'"
+              :preload="index === 0"
+              :format="index === 0 ? ['webp', 'avif', 'jpeg'] : ['webp', 'jpeg']"
+              :quality="index === 0 ? 90 : 80" />
           </div>
         </el-carousel-item>
       </el-carousel>
@@ -33,8 +47,8 @@
               @click="activeCategory = category.id.toString()">
               {{ category.name }}
             </button>
-            <NuxtLink to="/Products">
-              <button class="more-button">
+            <NuxtLink to="/Products" :aria-label="$t('products.viewAllProducts') || '查看所有产品'">
+              <button class="more-button" :aria-label="$t('products.viewAllProducts') || '查看所有产品'">
                 {{ $t('products.more') || 'More' }}
               </button>
             </NuxtLink>
@@ -50,54 +64,68 @@
       </div>
     </section>
 
-    <!-- About Us Section -->
-    <section class="about-section">
-      <div class="container">
-        <div class="about-content">
-          <div class="about-text">
-            <h2 class="section-title">
-              {{ $t('about.title.about') }} <span class="highlight">{{ $t('about.title.us') }}</span>
-            </h2>
-            <div class="section-divider"></div>
-            <div v-if="aboutContent" class="about-description" v-html="aboutContent.content"></div>
-            <div v-else>
-              <p class="about-description">
-                {{ $t('about.description1') ||
-                '我们是一家专业的汽车电子产品制造商，致力于为客户提供高品质的汽车吸尘器、充气泵、启动电源等产品。我们拥有先进的生产设备和专业的技术团队，确保每一款产品都能满足客户的需求。' }}
-              </p>
-              <p class="about-description">
-                {{ $t('about.description2') ||
-                '我们的产品以卓越的性能、可靠的品质和创新的设计而闻名，已经获得了众多客户的信赖和好评。我们不断追求技术创新和产品改进，为客户提供更好的产品和服务。'
-                }}
-              </p>
+    <!-- About Us Section - 懒加载优化 -->
+    <ClientOnly>
+      <template #default>
+        <section class="about-section">
+          <div class="container">
+            <div class="about-content">
+              <div class="about-text">
+                <h2 class="section-title">
+                  {{ $t('about.title.about') }} <span class="highlight">{{ $t('about.title.us') }}</span>
+                </h2>
+                <div class="section-divider"></div>
+                <div v-if="aboutContent" class="about-description" v-html="aboutContent.content"></div>
+                <div v-else>
+                  <p class="about-description">
+                    {{ $t('about.description1') ||
+                    '我们是一家专业的汽车电子产品制造商，致力于为客户提供高品质的汽车吸尘器、充气泵、启动电源等产品。我们拥有先进的生产设备和专业的技术团队，确保每一款产品都能满足客户的需求。' }}
+                  </p>
+                  <p class="about-description">
+                    {{ $t('about.description2') ||
+                    '我们的产品以卓越的性能、可靠的品质和创新的设计而闻名，已经获得了众多客户的信赖和好评。我们不断追求技术创新和产品改进，为客户提供更好的产品和服务。'
+                    }}
+                  </p>
+                </div>
+                <!-- 电脑端More按钮 - 在文本区域内 -->
+                <div class="desktop-button">
+                  <NuxtLink to="/About" class="learn-more-link" :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
+                    <button class="learn-more-button" :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
+                      {{ $t('about.learnMore') || '了解更多' }}
+                      <i class="fas fa-arrow-right"></i>
+                    </button>
+                  </NuxtLink>
+                </div>
+              </div>
+              <div class="about-image">
+                <!--img :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" @error="handleImageError" /-->
+                <NuxtImg :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" preset="thumbnail"
+                  :sizes="`xs:100vw sm:100vw md:50vw lg:50vw xl:50vw`" loading="lazy" @error="handleImageError" fetchpriority="high" />
+              </div>
             </div>
-            <!-- 电脑端More按钮 - 在文本区域内 -->
-            <div class="desktop-button">
-              <NuxtLink to="/About" class="learn-more-link">
-                <button class="learn-more-button">
+            <!-- 移动端More按钮 - 独立行 -->
+            <div class="mobile-button">
+              <NuxtLink to="/About" class="learn-more-link" :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
+                <button class="learn-more-button" :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
                   {{ $t('about.learnMore') || '了解更多' }}
                   <i class="fas fa-arrow-right"></i>
                 </button>
               </NuxtLink>
             </div>
           </div>
-          <div class="about-image">
-            <!--img :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" @error="handleImageError" /-->
-            <NuxtImg :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" preset="thumbnail"
-              :sizes="`xs:100vw sm:100vw md:50vw lg:50vw xl:50vw`" loading="lazy" @error="handleImageError" />
+        </section>
+      </template>
+      <template #fallback>
+        <div class="about-section-skeleton">
+          <div class="container">
+            <div class="skeleton-content">
+              <div class="skeleton-text"></div>
+              <div class="skeleton-image"></div>
+            </div>
           </div>
         </div>
-        <!-- 移动端More按钮 - 独立行 -->
-        <div class="mobile-button">
-          <NuxtLink to="/About" class="learn-more-link">
-            <button class="learn-more-button">
-              {{ $t('about.learnMore') || '了解更多' }}
-              <i class="fas fa-arrow-right"></i>
-            </button>
-          </NuxtLink>
-        </div>
-      </div>
-    </section>
+      </template>
+    </ClientOnly>
   </div>
 </template>
 
@@ -105,8 +133,6 @@
 import ProductCard from '~/components/common/ProductCard.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { handleImageError } from '~/utils/imageUtils'
-import { useMainStore } from '~/stores/index'
-import { useLanguageStore } from '~/stores/language'
 
 // 定义页面元数据
 definePageMeta({
@@ -117,19 +143,34 @@ definePageMeta({
 // 响应式数据
 const activeCategory = ref('')
 const bannerHeight = ref('500px')
+const imageLoaded = ref({})
 
-// Store
-const companyStore = useCompanyStore()
-await companyStore.init();
-const languageStore = useLanguageStore()
+// 使用统一的store接口
+const { $store } = useNuxtApp()
+
+// 注意: company store 数据已通过插件初始化，无需重复调用
 
 // 计算属性
 const banners = computed(() => {
-  return companyStore.banners.length > 0 ? companyStore.banners : [
+  const bannerList = $store.company.banners.length > 0 ? $store.company.banners : [
     { image_url: '/images/banner1.jpg' },
     { image_url: '/images/banner2.jpg' },
     { image_url: '/images/banner3.jpg' }
   ]
+  
+  // 初始化imageLoaded状态
+  bannerList.forEach((_, index) => {
+    if (!(index in imageLoaded.value)) {
+      imageLoaded.value[index] = false
+    }
+  })
+  
+  return bannerList
+})
+
+// 公司名称
+const companyName = computed(() => {
+  return $store.company.info?.name || 'AUTO EASE TECH X'
 })
 
 // 递归获取分类及其所有子分类的ID
@@ -137,7 +178,7 @@ const getCategoryWithChildren = (categoryId) => {
   const categoryIds = [categoryId]
   
   const getChildren = (parentId) => {
-    const children = companyStore.categories.filter(cat => cat.parent_id === parentId)
+    const children = $store.company.categories.filter(cat => cat.parent_id === parentId)
     children.forEach(child => {
       categoryIds.push(child.id)
       getChildren(child.id) // 递归获取子分类的子分类
@@ -160,41 +201,38 @@ const displayProducts = computed(() => {
 })
 
 const lang = computed(() => {
-  return languageStore.getCurrentLanguage
+  return $store.language.currentLanguage
 })
 
 const categories = computed(() => {
-  console.log('[DEBUG] Categories computed - companyStore.categories:', companyStore.categories)
-  console.log('[DEBUG] Categories computed - categories length:', companyStore.categories.length)
-  
   // 只显示顶层分类（parent_id为null的分类）
-  const topLevelCategories = companyStore.categories.filter(category => category.parent_id === null)
+  const topLevelCategories = $store.company.categories.filter(category => category.parent_id === null)
   
   if (topLevelCategories.length > 0) {
     // 只在activeCategory为空时设置默认值
     if (!activeCategory.value) {
       activeCategory.value = topLevelCategories[0].id.toString()
-      console.log('[DEBUG] Set default activeCategory:', activeCategory.value)
     }
   }
   
-  console.log('[DEBUG] Returning top level categories:', topLevelCategories)
   return topLevelCategories
 })
 
 
-const { data: products } = await useFetch('/api/products', {
-  default: () => [],
-  transform: (data) => (data.data && data.data.items) ? data.data.items : []
-})
-
-const { data: aboutContent } = await useFetch(`/api/common-content/content/home.about_us/${lang.value}`, {
-  default: () => null,
-  transform: (data) => {
-    const contentList = data.data?.contentList
-    return contentList && contentList.length > 0 ? contentList[0] : null
-  }
-})
+// 并发获取数据以优化SSR性能
+const [{ data: products }, { data: aboutContent }] = await Promise.all([
+  useFetch('/api/products', {
+    default: () => [],
+    transform: (data) => (data.data && data.data.items) ? data.data.items : []
+  }),
+  useFetch(`/api/common-content/content/home.about_us/${lang.value}`, {
+    default: () => null,
+    transform: (data) => {
+      const contentList = data.data?.contentList
+      return contentList && contentList.length > 0 ? contentList[0] : null
+    }
+  })
+])
 
 // 从aboutContent中获取图片URL
 const aboutImageUrl = computed(() => {
@@ -207,6 +245,10 @@ const aboutImageUrl = computed(() => {
 // 方法
 const handleProductClick = (product) => {
   console.log('Product clicked:', product)
+}
+
+const handleImageLoad = (index) => {
+  imageLoaded.value[index] = true
 }
 
 const updateBannerHeight = () => {
@@ -240,30 +282,13 @@ onMounted(async () => {
     $bus?.on('language-changed', onLanguageChange)
   }
   
-  console.log('[DEBUG] onMounted - Initial companyStore.categories:', companyStore.categories)
-  console.log('[DEBUG] onMounted - Initial activeCategory:', activeCategory.value)
-  
-  if (!companyStore.banners || companyStore.banners.length === 0) {
-     console.log('[DEBUG] Fetching banners...')
-     await companyStore.fetchBanners()
-  }
-  
-  if (!companyStore.categories || companyStore.categories.length === 0) {
-     console.log('[DEBUG] Fetching categories...')
-     await companyStore.fetchCategories()
-     console.log('[DEBUG] After fetchCategories - companyStore.categories:', companyStore.categories)
-  }
+  // 注意: 数据已通过插件初始化，插件会自动处理SSR和客户端的数据同步
   
   // 确保activeCategory有值，使用顶层分类
-  const topLevelCategories = companyStore.categories.filter(category => category.parent_id === null)
+  const topLevelCategories = $store.company.categories.filter(category => category.parent_id === null)
   if (!activeCategory.value && topLevelCategories.length > 0) {
     activeCategory.value = topLevelCategories[0].id.toString()
-    console.log('[DEBUG] onMounted - Set activeCategory from top level categories:', activeCategory.value)
   }
-  
-  console.log('[DEBUG] onMounted completed - Final state:')
-  console.log('[DEBUG] - companyStore.categories:', companyStore.categories)
-  console.log('[DEBUG] - activeCategory:', activeCategory.value)
 })
 
 onUnmounted(() => {
@@ -281,6 +306,7 @@ onUnmounted(() => {
 </style>
 
 <style lang="scss" scoped>
+@use 'sass:color';
 @use '~/assets/styles/_variables.scss' as *;
 @use '~/assets/styles/_mixins.scss' as *;
 
@@ -332,7 +358,7 @@ onUnmounted(() => {
 .banner-container {
   width: 100%;
   height: $banner-height-desktop;
-  background: $gradient-primary;
+  background: $gray-100; // 使用中性灰色背景替代红色渐变
 
   @media (max-width: $mobile-breakpoint-md) {
     height: $mobile-banner-height-md;
@@ -347,6 +373,38 @@ onUnmounted(() => {
   }
 }
 
+.banner-older-item {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: $transition-base;
+  position: relative;
+
+  // 添加加载时的渐变效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, $gray-100 25%, transparent 25%, transparent 75%, $gray-100 75%),
+      linear-gradient(45deg, $gray-100 25%, transparent 25%, transparent 75%, $gray-100 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+    opacity: 0.3;
+    z-index: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  // 当背景图片加载完成后隐藏占位符
+  &[style*="background-image"]::before {
+    opacity: 0;
+  }
+}
+
 .banner-item {
   width: 100%;
   height: 100%;
@@ -355,12 +413,68 @@ onUnmounted(() => {
   transition: $transition-base;
 }
 
+.banner-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, $primary-color 0%, color.adjust($primary-color, $lightness: -20%) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+
+  &.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .company-name-overlay {
+    text-align: center;
+    color: $white;
+    padding: $spacing-xl;
+
+    .company-name {
+      font-size: $font-size-4xl;
+      font-weight: $font-weight-bold;
+      margin-bottom: $spacing-sm;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      letter-spacing: 2px;
+
+      @include mobile {
+        font-size: $font-size-2xl;
+        letter-spacing: 1px;
+      }
+    }
+
+    .company-tagline {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-medium;
+      opacity: 0.9;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+      @include mobile {
+        font-size: $font-size-base;
+      }
+    }
+  }
+}
+
 .banner-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: $transition-base;
+  transition: opacity 0.5s ease;
+  opacity: 0;
+  z-index: 3;
+
+  &.image-loaded {
+    opacity: 1;
+  }
 }
 
 /* 基础样式 */
@@ -434,6 +548,7 @@ onUnmounted(() => {
   @include button-lg;
   white-space: nowrap;
   font-weight: $font-weight-medium;
+  color: $text-primary; /* 确保足够的对比度 */
 
   @include mobile {
     padding: $spacing-xs $spacing-sm;

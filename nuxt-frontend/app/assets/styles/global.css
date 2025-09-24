@@ -8,11 +8,24 @@
 }
 
 body {
-  font-family: 'Microsoft YaHei', Arial, sans-serif;
+  /* 优化字体回退栈，确保在任何情况下都有合适的字体显示 */
+  font-family:
+    'Microsoft YaHei',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Helvetica Neue',
+    Helvetica,
+    Arial,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: #333;
   background-color: #fff;
+  /* 确保字体加载期间文本可见 */
+  font-display: swap;
 }
 
 a {
@@ -112,6 +125,28 @@ button:focus {
   height: 3px;
   background-color: var(--primary-color);
   margin: 15px auto;
+}
+
+/* 图标字体性能优化 */
+.fa,
+.fas,
+.far,
+.fab,
+.fal,
+.fad {
+  /* 在字体加载期间显示回退文本而不是空白 */
+  font-display: swap;
+  /* 防止图标字体加载失败时的布局偏移 */
+  min-width: 1em;
+  text-align: center;
+}
+
+
+/* 字体加载优化 - 减少重绘和回流 */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* 响应式布局 */

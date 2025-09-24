@@ -24,23 +24,27 @@
         <!-- Language Switcher -->
         <LanguageSwitcher class="mobile-only" />
         <!-- Cart Button -->
-        <a href="#" @click.prevent="handleCartClick" class="action-btn cart-button">
-          <span class="material-icons icon-md">shopping_cart</span>
+        <a href="#" @click.prevent="handleCartClick" class="action-btn cart-button"
+          :aria-label="cartCount > 0 ? $t('cart.withItems', {count: cartCount}) || `购物车 (${cartCount}件商品)` : $t('cart.empty') || '购物车'">
+          <i class="fas fa-shopping-cart"></i>
           <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
         </a>
         <!-- Desktop User Dropdown -->
         <ClientOnly>
           <el-dropdown trigger="hover" @command="handleUserMenu">
-            <span class="action-btn user-btn">
-              <span class="material-icons icon-md">person</span>
-              <span class="material-icons icon-sm ml-1">expand_more</span>
+            <span class="action-btn user-btn"
+              :aria-label="isLoggedIn ? $t('userMenu.loggedIn') || '用户菜单' : $t('userMenu.notLoggedIn') || '登录'"
+              role="button" tabindex="0">
+              <i class="fas fa-user"></i>
+              <i class="fas fa-chevron-down ml-1"></i>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <template v-if="isLoggedIn">
                   <el-dropdown-item command="settings">{{ $t('userSettings.myaccount') || '我的' }}</el-dropdown-item>
                   <el-dropdown-item command="orders">{{ $t('orders') }}</el-dropdown-item>
-                  <el-dropdown-item command="inquiries">{{ $t('inquiry.management.title') || '询价单管理' }}</el-dropdown-item>
+                  <el-dropdown-item command="inquiries">{{ $t('inquiry.management.title') || '询价单管理'
+                    }}</el-dropdown-item>
                   <el-dropdown-item command="logout">{{ $t('logout') }}</el-dropdown-item>
                 </template>
                 <template v-else>
@@ -50,9 +54,11 @@
             </template>
           </el-dropdown>
           <template #fallback>
-            <span class="action-btn user-btn">
-              <span class="material-icons icon-md">person</span>
-              <span class="material-icons icon-sm ml-1">expand_more</span>
+            <span class="action-btn user-btn"
+              :aria-label="isLoggedIn ? $t('userMenu.loggedIn') || '用户菜单' : $t('userMenu.notLoggedIn') || '登录'"
+              role="button" tabindex="0">
+              <i class="fas fa-user icon-md"></i>
+              <i class="fas fa-chevron-down icon-sm ml-1"></i>
             </span>
           </template>
         </ClientOnly>
@@ -66,6 +72,9 @@
         <!-- Center: Logo -->
         <div class="logo mobile-logo-center">
           <NuxtLink to="/">
+            <!--NuxtImg :src="companyInfo.logo_url || logoImage"
+              :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'" @error="handleImageError"
+              fetchpriority="high" loading="eager" /-->
             <img :src="companyInfo.logo_url || logoImage" :alt="companyInfo.company_name || 'AUTO EASE EXPERT CO., LTD'"
               @error="handleImageError" />
           </NuxtLink>
@@ -74,17 +83,20 @@
         <!-- Right: Cart & User Actions -->
         <div class="mobile-actions">
           <!-- Cart Button -->
-          <a href="#" @click.prevent="handleCartClick" class="action-btn cart-button">
-            <span class="material-icons icon-md">shopping_cart</span>
+          <a href="#" @click.prevent="handleCartClick" class="action-btn cart-button"
+            :aria-label="cartCount > 0 ? $t('cart.withItems', {count: cartCount}) || `购物车 (${cartCount}件商品)` : $t('cart.empty') || '购物车'">
+            <i class="fas fa-shopping-cart"></i>
             <span v-if="cartCount > 0" class="cart-count">{{ cartCount }}</span>
           </a>
           <!-- Mobile User Button - Direct to settings -->
           <ClientOnly>
-            <button @click="handleMobileUserClick" class="mobile-user-btn" :class="{ 'user-logged-in': isLoggedIn }">
+            <button @click="handleMobileUserClick" class="mobile-user-btn" :class="{ 'user-logged-in': isLoggedIn }"
+              :aria-label="isLoggedIn ? $t('userMenu.loggedIn') || '用户菜单' : $t('userMenu.notLoggedIn') || '登录'">
               <i class="fas fa-user"></i>
             </button>
             <template #fallback>
-              <button @click="handleMobileUserClick" class="mobile-user-btn">
+              <button @click="handleMobileUserClick" class="mobile-user-btn"
+                :aria-label="isLoggedIn ? $t('userMenu.loggedIn') || '用户菜单' : $t('userMenu.notLoggedIn') || '登录'">
                 <i class="fas fa-user"></i>
               </button>
             </template>
@@ -146,6 +158,7 @@ import { handleImageError } from '~/utils/imageUtils'
 import LanguageSwitcher from './LanguageSwitcher.vue'
 import { getRouteAuthConfig } from '~/utils/routeConfig'
 
+
 export default {
   name: 'SiteHeader',
   components: {
@@ -155,9 +168,12 @@ export default {
   },
   
   async setup() {
-
-    try {
-      console.log('setup Header SSR data fetching');
+    const { $store } = useNuxtApp();
+    const companyInfo = $store.company.info;
+    
+    return {ssrCompanyInfo: companyInfo};
+    /*try {
+      //console.log('setup Header SSR data fetching');
       const { $store } = useNuxtApp();
       const { data: ssrData } = await useAsyncData(`Header-Data`, async () => {
         await $store.company.init();
@@ -172,7 +188,7 @@ export default {
       };
     } catch (err) {
       console.error('Header SSR fail', err);
-    }
+    }*/
   
   },
   data() {
@@ -197,7 +213,7 @@ export default {
           { required: true, message: '请输入密码', trigger: 'blur' }
         ]
       },
-      //companyInfo: {},
+      companyInfo: this.ssrCompanyInfo,
       logoImage,
       tokenCheckTimer: null,
       cartCount: 0
@@ -240,7 +256,7 @@ export default {
   },
   watch: {
     isLoggedIn(newVal) {
-      console.log('isLoggedIn changed to:', newVal);
+      //console.log('isLoggedIn changed to:', newVal);
       if (newVal) {
         console.log('User logged in, fetching cart count');
         this.fetchCartCount();
@@ -262,8 +278,8 @@ export default {
   mounted() {
     //const companyInfoStore = useCompanyStore();
     //this.companyInfo = this.$store.company.info;
-    console.log('companyInfo is',this.companyInfo );
-    console.log('Header mounted - isLoggedIn:', this.isLoggedIn);
+    //console.log('companyInfo is',this.companyInfo );
+    //console.log('Header mounted - isLoggedIn:', this.isLoggedIn);
     
     if (!this.companyInfo || Object.keys(this.companyInfo).length === 0) {
         this.fetchCompanyInfo();
@@ -465,13 +481,18 @@ export default {
 @use '~/assets/styles/variables' as *;
 @use '~/assets/styles/mixins' as *;
 
-/* Material Icons */
+/* FontAwesome Icons */
+.fas {
+  font-size: 1.125rem;
+  /* 调整为更小的默认大小，匹配原Material Icons */
+}
+
 .icon-sm {
-  font-size: 1.25rem;
+  font-size: 1rem;
 }
 
 .icon-md {
-  font-size: 1.5rem;
+  font-size: 1.125rem;
 }
 
 .ml-1 {
@@ -607,7 +628,7 @@ export default {
   justify-content: center;
   padding: $spacing-sm $spacing-xs;
   background: transparent;
-  color: $text-secondary;
+  color: $text-primary;
   text-decoration: none;
   border-radius: 0;
   font-size: $font-size-lg;

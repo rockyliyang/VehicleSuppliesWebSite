@@ -136,21 +136,30 @@ const ERROR_MAPPINGS = {
  * @returns {string}
  */
 function getTranslation(key, defaultValue = key) {
-  // 使用系统自定义的翻译函数
   try {
-    if (typeof window !== 'undefined' && window.$nuxt) {
-      const { $t } = window.$nuxt
-      if ($t && typeof $t === 'function') {
-        return $t(key, defaultValue)
+    // 在客户端环境下尝试获取翻译
+    if (process.client) {
+      // 尝试通过 useNuxtApp 获取翻译功能
+      try {
+        const { $t } = useNuxtApp()
+        if ($t && typeof $t === 'function') {
+          return $t(key, defaultValue)
+        }
+      } catch (nuxtError) {
+        console.warn('useNuxtApp not available:', nuxtError)
+      }
+      
+      // 备用方案：尝试从 window 获取
+      if (typeof window !== 'undefined' && window.$nuxt && window.$nuxt.$t) {
+        return window.$nuxt.$t(key, defaultValue)
       }
     }
-    
-    // 如果在服务端或者没有翻译函数，返回默认值
-    return defaultValue || key
   } catch (error) {
-    console.warn('Translation not available:', error)
-    return defaultValue || key
+    console.warn('Translation failed for key:', key, error)
   }
+  
+  // 如果翻译失败，返回默认值
+  return defaultValue || key
 }
 
 /**
@@ -209,7 +218,6 @@ class MessageHandler {
    * 显示错误消息
    * @param {*} error 
    * @param {string} fallbackKey 
-   * @param {string} type 
    */
   static showError(error, fallbackKey) {
     const rawMessage = extractErrorMessage(error)
@@ -217,10 +225,21 @@ class MessageHandler {
       fallbackKey = error.fallbackKey
     
     const translatedMessage = translateErrorMessage(rawMessage, fallbackKey);
-    const errorTitle = getTranslation('common.error.title', '错误提示');
     
-    // 创建带有标题的消息内容
-    const messageContent = `<div class="error-title">${errorTitle}</div><div>${translatedMessage}</div>`;
+    // 使用内部翻译函数获取错误标题
+    const errorTitle = getTranslation('common.error.title', 'Error');
+    
+    // 创建带有更好布局的消息内容
+    const messageContent = `
+      <div style="padding: 8px 0;">
+        <div style="font-weight: 600; font-size: 16px; color: #f56c6c; margin-bottom: 8px; line-height: 1.4;">
+          ${errorTitle}
+        </div>
+        <div style="font-size: 14px; color: #606266; line-height: 1.5; word-wrap: break-word;">
+          ${translatedMessage}
+        </div>
+      </div>
+    `;
     
     ElMessage({
       message: messageContent,

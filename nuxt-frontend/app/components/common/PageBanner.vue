@@ -31,11 +31,22 @@ const { $t } = useNuxtApp()
 
 // 计算属性 - banner图片
 const bannerImage = computed(() => {
-  // TODO: 如果需要从store获取banners数据，可以在这里添加逻辑
-  // const bannerStore = useBannerStore()
-  // if (bannerStore.banners && bannerStore.banners.length > 0 && bannerStore.banners[0].image_url) {
-  //   return bannerStore.banners[0].image_url
-  // }
+  try {
+    // 获取 company store 实例
+    const companyStore = useCompanyStore()
+    const banners = companyStore.banners
+    
+    console.log('banners', banners)
+    
+    // 如果有banner数据且第一个banner有图片URL，则使用它
+    if (banners && banners.length > 0 && banners[0].image_url) {
+       return banners[0].image_url
+    }
+  } catch (error) {
+    console.error('获取banner数据失败:', error)
+  }
+  
+  // 回退到默认背景图片
   return props.backgroundImage
 })
 </script>

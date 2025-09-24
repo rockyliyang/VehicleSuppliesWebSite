@@ -3,7 +3,7 @@
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-state">
       <div class="loading-content">
-        <i class="material-icons spinning">refresh</i>
+        <i class="fas fa-sync-alt spinning"></i>
         <p>{{ $t('common.loading') || '加载中...' }}</p>
       </div>
     </div>
@@ -11,7 +11,7 @@
     <!-- 错误状态 -->
     <div v-else-if="error" class="error-state">
       <div class="error-content">
-        <i class="material-icons">error</i>
+        <i class="fas fa-exclamation-triangle"></i>
         <p>{{ error }}</p>
         <button @click="fetchInquiryDetails()" class="retry-btn">
           {{ $t('common.retry') || '重试' }}
@@ -36,7 +36,7 @@
             <button
               v-if="!isCheckoutMode && inquiry.status === 'inquiried' && !showAddProduct && inquiry.inquiry_type !== 'single'"
               @click="showAddProduct = true" class="add-product-btn-header">
-              <i class="material-icons">add</i>
+              <i class="fas fa-plus"></i>
               {{ $t('inquiry.addProduct') || '添加产品' }}
             </button>
           </div>
@@ -73,7 +73,7 @@
                     class="remove-item-btn remove-inquiry-item-btn" @click="removeItem(item)"
                     :data-product-id="item.product_id || item.productId"
                     :title="$t('cart.removeFromInquiry') || '从询价单中移除'">
-                    <i class="material-icons">remove_circle_outline</i>
+                    <i class="fas fa-minus-circle"></i>
                   </button>
                 </div>
               </div>
@@ -83,7 +83,7 @@
             <div v-if="showAddProduct" class="inquiry-item new-item">
               <div class="item-row-1">
                 <div class="item-image-placeholder">
-                  <i class="material-icons">image</i>
+                  <i class="fas fa-image"></i>
                 </div>
                 <div class="item-details">
                   <div class="product-search-input-container">
@@ -106,7 +106,7 @@
                     </div>
                     <!-- 搜索状态 -->
                     <div v-if="searching" class="search-loading">
-                      <i class="material-icons spinning">refresh</i>
+                      <i class="fas fa-sync-alt spinning"></i>
                       {{ $t('inquiry.searching') || '搜索中...' }}
                     </div>
                     <!-- 无搜索结果 -->
@@ -131,7 +131,7 @@
                 <div class="item-actions">
                   <button class="remove-item-btn cancel-add-btn" @click="cancelAddProduct"
                     :title="$t('common.cancel') || '取消'">
-                    <i class="material-icons">close</i>
+                    <i class="fas fa-times"></i>
                   </button>
                 </div>
               </div>
@@ -271,7 +271,7 @@
 
     <div v-else class="no-inquiry-selected">
       <div class="no-inquiry-content">
-        <i class="material-icons">assignment</i>
+        <i class="fas fa-clipboard"></i>
         <p>{{ $t('cart.selectInquiry') || '请选择一个询价单查看详情' }}</p>
       </div>
     </div>
@@ -726,7 +726,7 @@ export default {
   transform: translateY($hover-transform-sm);
 }
 
-.add-product-btn-header .material-icons {
+.add-product-btn-header .fas {
   font-size: $font-size-md;
 }
 
@@ -853,7 +853,7 @@ export default {
   background: rgba($error-color, 0.1);
 }
 
-.remove-item-btn .material-icons {
+.remove-item-btn .fas {
   font-size: $font-size-xl;
 }
 
@@ -882,7 +882,7 @@ export default {
   color: $gray-500;
 }
 
-.item-image-placeholder .material-icons {
+.item-image-placeholder .fas {
   font-size: 24px;
 }
 
@@ -999,7 +999,7 @@ export default {
   font-size: $font-size-sm;
 }
 
-.search-loading .material-icons {
+.search-loading .fas {
   font-size: $font-size-md;
 }
 
@@ -1042,7 +1042,7 @@ export default {
   background: $gray-600;
 }
 
-.cancel-add-btn .material-icons {
+.cancel-add-btn .fas {
   font-size: $font-size-lg;
 }
 
@@ -1076,7 +1076,7 @@ export default {
   transform: translateY($hover-transform-sm);
 }
 
-.add-product-btn .material-icons {
+.add-product-btn .fas {
   font-size: $font-size-lg;
 }
 
@@ -1130,7 +1130,7 @@ export default {
   background: $gray-600;
 }
 
-.cancel-search-btn .material-icons {
+.cancel-search-btn .fas {
   font-size: $font-size-lg;
 }
 
@@ -1274,7 +1274,7 @@ export default {
   opacity: 0.8;
 }
 
-.checkout-btn .material-icons {
+.checkout-btn .fas {
   font-size: $font-size-xl;
 }
 
@@ -1293,7 +1293,7 @@ export default {
   text-align: center;
 }
 
-.no-inquiry-content .material-icons {
+.no-inquiry-content .fas {
   font-size: $spacing-5xl;
   color: $gray-300;
   margin-bottom: $spacing-sm;

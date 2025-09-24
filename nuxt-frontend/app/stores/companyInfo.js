@@ -46,14 +46,16 @@ export const useCompanyStore = defineStore('companyInfo', {
       }
     },
     async init() {
-      if (process.server) {
+      // 检查是否已经有数据，避免重复请求
+      const hasData = this.banners.length > 0 && this.categories.length > 0 && this.companyInfo.name
+      
+      if (!hasData) {
         await Promise.all([
-        this.fetchCategories(),
-        this.fetchBanners(),
-        this.fetchCompanyInfo(),
-        ])        
+          this.fetchCategories(),
+          this.fetchBanners(),
+          this.fetchCompanyInfo(),
+        ])
       }
-
     },
   },
 })

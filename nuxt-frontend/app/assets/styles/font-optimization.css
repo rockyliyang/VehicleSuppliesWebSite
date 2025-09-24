@@ -1,0 +1,52 @@
+/* 字体性能优化 - Font Display Swap */
+
+/* Font Awesome 字体优化 - 使用swap确保文本始终可见 */
+/* 使用assets目录让Vite正确处理资源哈希 */
+@font-face {
+  font-family: "Font Awesome 6 Free";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  /* 确保文本始终可见 */
+  src: url('~/assets/fonts/fa-regular-400.woff2') format("woff2");
+}
+
+@font-face {
+  font-family: "Font Awesome 6 Free";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  /* 确保文本始终可见 */
+  src: url('~/assets/fonts/fa-solid-900.woff2') format("woff2");
+}
+
+@font-face {
+  font-family: "Font Awesome 6 Brands";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  /* 确保文本始终可见 */
+  src: url('~/assets/fonts/fa-brands-400.woff2') format("woff2");
+}
+
+/* 系统字体回退优化 */
+body {
+  font-family:
+    'Microsoft YaHei',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-display: swap;
+}
+
+/* 图标字体类的回退处理 */
+.fa,
+.fas,
+.far,
+.fab {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", sans-serif;
+  font-display: swap;
+}

@@ -1,0 +1,264 @@
+/* 关键CSS - 首屏渲染优化 (FCP Optimized) */
+/* 根据Google FCP优化建议优化的关键样式 */
+
+/* 基础重置和字体 - 优化字体加载 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  /* 防止iOS字体缩放 */
+}
+
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  color: #1a202c;
+  background-color: #ffffff;
+  /* 优化字体渲染 */
+  font-display: swap;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* 防止布局偏移 */
+  overflow-x: hidden;
+}
+
+/* 容器基础样式 */
+.container {
+  width: 95%;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Header基础样式 */
+.header {
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Banner容器基础样式 - FCP优化 */
+.banner-container {
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+  position: relative;
+  /* 防止布局偏移 */
+  contain: layout style paint;
+}
+
+.banner-item {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Banner占位符 - 优化FCP */
+.banner-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+.banner-placeholder.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.company-name-overlay {
+  text-align: center;
+  color: white;
+  padding: 1rem;
+}
+
+.company-name {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  /* 防止字体加载时的布局偏移 */
+  font-display: swap;
+}
+
+.company-tagline {
+  font-size: 1.2rem;
+  font-weight: 300;
+  opacity: 0.9;
+  font-display: swap;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+  /* 优化图片加载 */
+  will-change: opacity;
+}
+
+.banner-image.image-loaded {
+  opacity: 1;
+}
+
+/* 图片加载状态指示器 */
+.image-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  color: white;
+  font-size: 1rem;
+}
+
+/* 产品区域基础样式 */
+.products-section {
+  padding: 3rem 0;
+  background: #ffffff;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #1a202c;
+}
+
+.highlight {
+  color: #e53e3e;
+}
+
+/* 产品网格基础样式 */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* 产品卡片基础样式 */
+.product-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.product-image {
+  width: 100%;
+  height: 16rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.product-info {
+  padding: 1.5rem;
+}
+
+.product-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1a202c;
+}
+
+.product-price {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #e53e3e;
+}
+
+/* 骨架屏样式 */
+.about-section-skeleton {
+  padding: 3rem 0;
+  background: #ffffff;
+}
+
+.skeleton-content {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.skeleton-text {
+  flex: 1;
+  height: 200px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+.skeleton-image {
+  width: 300px;
+  height: 200px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .banner-container {
+    height: 300px;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .product-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+  
+  .product-image {
+    height: 12rem;
+  }
+  
+  .product-info {
+    padding: 1rem;
+  }
+  
+  .skeleton-content {
+    flex-direction: column;
+  }
+  
+  .skeleton-image {
+    width: 100%;
+    height: 150px;
+  }
+}

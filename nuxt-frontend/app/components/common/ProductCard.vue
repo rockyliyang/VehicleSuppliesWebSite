@@ -1,8 +1,9 @@
 <template>
   <div class="product-card" :class="cardStyleClass" @click="handleCardClick">
     <div class="product-image">
-      <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
-        class="w-full h-full object-cover object-center">
+      <NuxtImg :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
+        class="w-full h-full object-cover object-center" preset="thumbnail" loading="lazy"
+        :sizes="'xs:150px sm:200px md:250px lg:300px xl:300px'" fetchpriority="high" />
     </div>
     <div class="product-info">
       <h3 class="product-title" @click.stop="handleTitleClick">{{ product.name }}</h3>

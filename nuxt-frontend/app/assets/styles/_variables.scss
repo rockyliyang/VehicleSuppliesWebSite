@@ -46,11 +46,11 @@ $border-light: $gray-200;
 $border-color: $gray-300;
 $border-dark: $gray-400;
 
-// 文本颜色
-$text-primary: $gray-900;
-$text-secondary: $gray-600;
-$text-muted: $gray-500;
-$text-disabled: $gray-400;
+// 文本颜色 - 优化对比度以符合WCAG标准
+$text-primary: $gray-900; // 保持最深色用于主要文本
+$text-secondary: $gray-700; // 从gray-600改为gray-700，提高对比度
+$text-muted: $gray-600; // 从gray-500改为gray-600，提高对比度
+$text-disabled: $gray-500; // 从gray-400改为gray-500，提高对比度但保持禁用状态的视觉效果
 
 // 尺寸变量 (紧凑模式 - 80%缩放)
 // 间距
@@ -207,10 +207,10 @@ $header-shadow: $shadow-md;
 // Footer特定变量
 $footer-bg: $gray-800;
 $footer-text-color: $gray-300;
-$footer-text-secondary: $gray-400;
+$footer-text-secondary: $gray-600; // 从gray-400改为gray-600，提高对比度
 $footer-heading-color: $white;
 $footer-border-color: $gray-700;
-$footer-link-color: $gray-400;
+$footer-link-color: $gray-600; // 从gray-400改为gray-600，提高对比度
 $footer-link-hover-color: $white;
 $footer-icon-color: $primary-color;
 $footer-bottom-bg: $gray-900;
@@ -234,7 +234,7 @@ $mobile-cart-badge-size: 14px; // 18px * 0.8
 $mobile-submit-button-height: 32px; // 40px * 0.8
 
 // 导航链接颜色
-$nav-link-color: #6b7280;
+$nav-link-color: #374151; // 从#6b7280改为#374151，提高对比度
 
 // Banner高度变量 (紧凑模式 - 80%缩放)
 $banner-height-mobile: 176px; // 220px * 0.8
