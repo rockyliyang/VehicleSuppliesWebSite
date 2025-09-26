@@ -341,7 +341,7 @@ export default {
         if (product.category_id) {
           try {
             const relatedResponse = await $api.get(`products?category=${product.category_id}&limit=8&exclude=${productId}`);
-            relatedProducts = relatedResponse.data?.products || [];
+            relatedProducts = relatedResponse.data?.items.filter(p => p.id !== productId).slice(0, 4) || [];
           } catch (err) {
             console.warn('Failed to fetch related products:', err);
           }
@@ -386,7 +386,7 @@ export default {
       
       // 返回响应式数据给模板使用
       return {
-        ...ssrData.value
+        ...ssrData.value,
       };
     } catch (err) {
       console.error('Error fetching product data:', err);
@@ -738,6 +738,7 @@ export default {
         const response = await this.$api.get('products', { params: { category_id: this.product.category_id, status: 'on_shelf' } })
         const items = (response.data && response.data.items) ? response.data.items : []
         this.relatedProducts = items.filter(p => p.id !== this.product.id).slice(0, 4)
+        console.log('Related products:', this.relatedProducts)
       } catch (error) {
         console.error('获取相关产品失败:', error)
         this.$messageHandler.showError(error, 'product.error.fetchRelatedFailed')
