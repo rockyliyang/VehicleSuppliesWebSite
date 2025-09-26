@@ -33,6 +33,12 @@
             <el-option :label="$t('admin.products.type.self_operated') || '自营'" value="self_operated" />
           </el-select>
         </el-form-item>
+        <el-form-item :label="$t('admin.products.filter.supplier') || '供应商'">
+          <el-select v-model="filters.supplier_id"
+            :placeholder="$t('admin.products.filter.supplier_placeholder') || '选择供应商'" clearable style="width: 200px">
+            <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleFilter">
             <el-icon>
@@ -63,7 +69,7 @@
       </el-table-column>
       <el-table-column prop="name" label="产品名称" min-width="200" show-overflow-tooltip />
       <el-table-column prop="product_code" label="产品编号" width="120" />
-      <el-table-column prop="category_name" label="分类" width="120" />
+      <el-table-column prop="category_name" label="分类" width="120" sortable="custom" />
       <el-table-column prop="product_type" label="产品类型" width="100">
         <template #default="{row}">
           <el-tag :type="row.product_type === 'self_operated' ? 'success' : 'warning'">
@@ -71,7 +77,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="price" label="价格" width="180" sortable="custom">
+      <el-table-column prop="price" label="价格" width="180">
         <template #default="{row}">
           <div v-if="row.price_ranges && row.price_ranges.length > 0" class="price-ranges">
             <div v-for="(range, index) in row.price_ranges" :key="index" class="price-range-item">
@@ -90,6 +96,15 @@
         </template>
       </el-table-column>
       <el-table-column prop="stock" label="库存" width="100" sortable="custom" />
+      <el-table-column label="供应商" width="150" sortable="custom" prop="supplier_name">
+        <template #default="{row}">
+          <div v-if="row.supplier_name">
+            <div>{{ row.supplier_name }}</div>
+            <div class="supplier-contact" v-if="row.supplier_contact">{{ row.supplier_contact }}</div>
+          </div>
+          <span v-else class="no-supplier">无供应商</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{row}">
           <el-tag :type="row.status === 'on_shelf' ? 'success' : 'info'">
@@ -102,7 +117,7 @@
           {{ formatDate(row.created_at) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="280" fixed="right">
+      <el-table-column label="操作" width="220" fixed="right">
         <template #default="{row}">
           <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
           <el-button type="success" size="small" @click="handleManageLinks(row)">关联产品</el-button>
@@ -178,28 +193,75 @@
           </el-col>
         </el-row>
 
+        <!-- 供应商信息 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="供应商" prop="supplier_id">
+              <el-select v-model="productForm.supplier_id" placeholder="请选择供应商" clearable style="width: 100%"
+                @change="handleSupplierChange">
+                <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="源链接" prop="source_url">
+              <el-input v-model="productForm.source_url" placeholder="请输入产品源链接" clearable>
+                <template #append v-if="productForm.source_url">
+                  <el-button @click="openSourceUrl" type="primary">打开链接</el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 供应商详细信息显示 -->
+        <el-row v-if="selectedSupplierInfo" :gutter="20">
+          <el-col :span="24">
+            <el-card class="supplier-info-card">
+              <template #header>
+                <span>供应商信息</span>
+              </template>
+              <el-descriptions :column="2" border>
+                <el-descriptions-item label="供应商名称">{{ selectedSupplierInfo.name }}</el-descriptions-item>
+                <el-descriptions-item label="联系人">{{ selectedSupplierInfo.contact_person }}</el-descriptions-item>
+                <el-descriptions-item label="联系电话1">{{ selectedSupplierInfo.contact_phone1 }}</el-descriptions-item>
+                <el-descriptions-item label="联系电话2" v-if="selectedSupplierInfo.contact_phone2">{{ selectedSupplierInfo.contact_phone2 }}</el-descriptions-item>
+                <el-descriptions-item label="邮箱" :span="selectedSupplierInfo.contact_phone2 ? 1 : 2">{{ selectedSupplierInfo.email }}</el-descriptions-item>
+                <el-descriptions-item label="地址" :span="2">{{ selectedSupplierInfo.address }}</el-descriptions-item>
+                <el-descriptions-item label="备注" :span="2" v-if="selectedSupplierInfo.notes">{{
+                  selectedSupplierInfo.notes
+                  }}</el-descriptions-item>
+              </el-descriptions>
+            </el-card>
+          </el-col>
+        </el-row>
+
         <!-- 物流信息 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="长度(cm)" prop="product_length">
-              <el-input-number v-model="productForm.product_length" :min="0" :precision="2" placeholder="长度" style="width: 100%" />
+              <el-input-number v-model="productForm.product_length" :min="0" :precision="2" placeholder="长度"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="宽度(cm)" prop="product_width">
-              <el-input-number v-model="productForm.product_width" :precision="2" :min="0" placeholder="宽度" style="width: 100%" />
+              <el-input-number v-model="productForm.product_width" :precision="2" :min="0" placeholder="宽度"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="高度(cm)" prop="product_height">
-              <el-input-number v-model="productForm.product_height" :precision="2" :min="0" placeholder="高度" style="width: 100%" />
+              <el-input-number v-model="productForm.product_height" :precision="2" :min="0" placeholder="高度"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="重量(kg)" prop="product_weight">
-              <el-input-number v-model="productForm.product_weight" :min="0" :precision="3" placeholder="请输入产品重量" style="width: 100%" />
+              <el-input-number v-model="productForm.product_weight" :min="0" :precision="3" placeholder="请输入产品重量"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
 
@@ -284,23 +346,21 @@
             </template>
           </el-upload>
         </el-form-item>
-        
+
         <el-form-item label="网络视频链接" prop="outside_video">
-          <el-input 
-            v-model="productForm.outside_video" 
-            placeholder="请输入外部视频链接（YouTube、Vimeo等平台或直接视频文件）"
-            clearable
-            style="width: 100%"
-          >
+          <el-input v-model="productForm.outside_video" placeholder="请输入外部视频链接（YouTube、Vimeo等平台或直接视频文件）" clearable
+            style="width: 100%">
             <template #prepend>
-              <el-icon><VideoPlay /></el-icon>
+              <el-icon>
+                <VideoPlay />
+              </el-icon>
             </template>
           </el-input>
           <div class="form-item-tip">
             <span>支持YouTube、Vimeo等视频平台链接或直接视频文件链接</span>
           </div>
         </el-form-item>
-        
+
         <el-form-item label="产品描述" prop="short_description">
           <el-input type="textarea" v-model="productForm.short_description" :rows="4" placeholder="请输入产品简介" />
         </el-form-item>
@@ -478,7 +538,8 @@ export default {
         keyword: '',
         category: '',
         status: '',
-        product_type: ''
+        product_type: '',
+        supplier_id: ''
       },
       pagination: {
         current: 1,
@@ -504,7 +565,8 @@ export default {
         product_width: null,
         product_height: null,
         product_weight: null,
-
+        supplier_id: '',
+        source_url: '',
         sort_order: 0,
         short_description: '',
         full_description: '',
@@ -574,7 +636,10 @@ export default {
       },
       searchResults: [], // 搜索结果
       selectedProducts: [], // 选中的商品ID列表
-      searchingProducts: false // 搜索加载状态
+      searchingProducts: false, // 搜索加载状态
+      // 供应商相关数据
+      supplierOptions: [], // 供应商选项列表
+      selectedSupplierInfo: null // 选中的供应商详细信息
     }
   },
   computed: {
@@ -596,6 +661,7 @@ export default {
   created() {
     this.fetchCategories()
     this.fetchProducts()
+    this.fetchSuppliers()
     if (!localStorage.getItem('session_id')) {
       localStorage.setItem('session_id', this.sessionId)
     }
@@ -632,6 +698,35 @@ export default {
       }
     },
     
+    // 获取供应商列表
+    async fetchSuppliers() {
+      try {
+        const response = await this.$api.getWithErrorHandler('suppliers', {
+          fallbackKey: 'admin.products.error.fetchSuppliersFailed'
+        })
+        this.supplierOptions = response.data.suppliers || []
+      } catch (error) {
+        console.error('获取供应商失败:', error)
+        // 错误已由getWithErrorHandler处理，这里不需要再次显示
+      }
+    },
+    
+    // 处理供应商选择变化
+    handleSupplierChange(supplierId) {
+      if (supplierId) {
+        this.selectedSupplierInfo = this.supplierOptions.find(supplier => supplier.id === supplierId)
+      } else {
+        this.selectedSupplierInfo = null
+      }
+    },
+    
+    // 打开源链接
+    openSourceUrl() {
+      if (this.productForm.source_url) {
+        window.open(this.productForm.source_url, '_blank')
+      }
+    },
+    
     // 获取产品列表
     async fetchProducts() {
       this.loading = true
@@ -649,7 +744,7 @@ export default {
         if (this.filters.status !== '') params.status = this.filters.status
         if (this.filters.product_type !== '') params.product_type = this.filters.product_type
         
-        const response = await this.$api.getWithErrorHandler('products', { 
+        const response = await this.$api.getWithErrorHandler('products/admin', { 
           params,
           fallbackKey: 'admin.products.error.fetchProductsFailed'
         })
@@ -968,6 +1063,13 @@ export default {
       } catch (error) {
         console.error('获取产品媒体文件失败:', error)
         // 错误已由getWithErrorHandler处理，这里不需要再次显示
+      }
+      
+      // 自动设置供应商信息
+      if (row.supplier_id) {
+        this.selectedSupplierInfo = this.supplierOptions.find(supplier => supplier.id === row.supplier_id)
+      } else {
+        this.selectedSupplierInfo = null
       }
       
       this.dialogVisible = true
@@ -2209,6 +2311,31 @@ export default {
   font-size: 12px;
   color: #909399;
   line-height: 1.4;
+}
+
+/* 供应商相关样式 */
+.supplier-contact {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 2px;
+}
+
+.no-supplier {
+  color: #c0c4cc;
+  font-style: italic;
+}
+
+.supplier-info-card {
+  margin-bottom: 20px;
+}
+
+.supplier-info-card .el-card__header {
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.supplier-info-card .el-descriptions {
+  margin-top: 0;
 }
 
 .form-item-tip span {

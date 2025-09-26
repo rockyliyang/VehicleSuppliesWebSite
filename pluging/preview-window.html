@@ -471,6 +471,64 @@
           </div>
         </div>
         
+        <!-- 供应商选择区域 -->
+        <div class="preview-section">
+          <h3>🏢 供应商信息</h3>
+          <div class="preview-field">
+            <label>选择供应商:</label>
+            <div class="value">
+              <select id="supplier-select" style="width: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: white;">
+                <option value="">请选择供应商...</option>
+              </select>
+              <button id="refresh-suppliers" style="margin-left: 10px; padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">刷新供应商</button>
+            </div>
+          </div>
+          <!-- 供应商详细信息显示 -->
+          <div id="supplier-details" class="preview-field" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+            <label style="font-weight: bold; color: #495057;">供应商详细信息:</label>
+            <div class="supplier-info-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+              <div>
+                <strong>供应商名称:</strong>
+                <div id="supplier-name-display" style="color: #6c757d;">-</div>
+              </div>
+              <div>
+                <strong>联系人:</strong>
+                <div id="supplier-contact-display" style="color: #6c757d;">-</div>
+              </div>
+              <div>
+                <strong>联系电话1:</strong>
+                <div id="supplier-phone1-display" style="color: #6c757d;">-</div>
+              </div>
+              <div>
+                <strong>联系电话2:</strong>
+                <div id="supplier-phone2-display" style="color: #6c757d;">-</div>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <strong>邮箱:</strong>
+                <div id="supplier-email-display" style="color: #6c757d;">-</div>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <strong>地址:</strong>
+                <div id="supplier-address-display" style="color: #6c757d;">-</div>
+              </div>
+              <div id="supplier-notes-container" style="grid-column: 1 / -1; display: none;">
+                <strong>备注:</strong>
+                <div id="supplier-notes-display" style="color: #6c757d;">-</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="preview-field">
+            <label>源链接:</label>
+            <div class="value">
+              <input type="url" id="source-url" placeholder="输入产品源链接（可选）" style="width: 400px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                如果不填写，将自动使用当前1688页面链接
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- 价格导入选项 -->
         <div class="preview-section">
           <h3>💰 价格导入设置</h3>

@@ -169,6 +169,47 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'PRODUCT_IMAGE.ASSIGN_FAILED', 'en', 'Image assignment failed'),
 (gen_random_uuid(), 'PRODUCT_IMAGE.ASSIGN_FAILED', 'zh-CN', '图片分配失败');
 
+-- SUPPLIER相关
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+(gen_random_uuid(), 'SUPPLIER.GET_ALL_SUCCESS', 'en', 'Suppliers retrieved successfully'),
+(gen_random_uuid(), 'SUPPLIER.GET_ALL_SUCCESS', 'zh-CN', '供应商列表获取成功'),
+(gen_random_uuid(), 'SUPPLIER.GET_ALL_FAILED', 'en', 'Failed to retrieve suppliers'),
+(gen_random_uuid(), 'SUPPLIER.GET_ALL_FAILED', 'zh-CN', '供应商列表获取失败'),
+(gen_random_uuid(), 'SUPPLIER.NOT_FOUND', 'en', 'Supplier not found'),
+(gen_random_uuid(), 'SUPPLIER.NOT_FOUND', 'zh-CN', '供应商不存在'),
+(gen_random_uuid(), 'SUPPLIER.GET_SUCCESS', 'en', 'Supplier retrieved successfully'),
+(gen_random_uuid(), 'SUPPLIER.GET_SUCCESS', 'zh-CN', '供应商获取成功'),
+(gen_random_uuid(), 'SUPPLIER.GET_FAILED', 'en', 'Failed to retrieve supplier'),
+(gen_random_uuid(), 'SUPPLIER.GET_FAILED', 'zh-CN', '供应商获取失败'),
+(gen_random_uuid(), 'SUPPLIER.NAME_REQUIRED', 'en', 'Supplier name is required'),
+(gen_random_uuid(), 'SUPPLIER.NAME_REQUIRED', 'zh-CN', '供应商名称为必填项'),
+(gen_random_uuid(), 'SUPPLIER.NAME_EXISTS', 'en', 'Supplier name already exists'),
+(gen_random_uuid(), 'SUPPLIER.NAME_EXISTS', 'zh-CN', '供应商名称已存在'),
+(gen_random_uuid(), 'SUPPLIER.INVALID_EMAIL', 'en', 'Invalid email format'),
+(gen_random_uuid(), 'SUPPLIER.INVALID_EMAIL', 'zh-CN', '无效的邮箱格式'),
+(gen_random_uuid(), 'SUPPLIER.CREATE_SUCCESS', 'en', 'Supplier created successfully'),
+(gen_random_uuid(), 'SUPPLIER.CREATE_SUCCESS', 'zh-CN', '供应商创建成功'),
+(gen_random_uuid(), 'SUPPLIER.CREATE_FAILED', 'en', 'Failed to create supplier'),
+(gen_random_uuid(), 'SUPPLIER.CREATE_FAILED', 'zh-CN', '供应商创建失败'),
+(gen_random_uuid(), 'SUPPLIER.UPDATE_SUCCESS', 'en', 'Supplier updated successfully'),
+(gen_random_uuid(), 'SUPPLIER.UPDATE_SUCCESS', 'zh-CN', '供应商更新成功'),
+(gen_random_uuid(), 'SUPPLIER.UPDATE_FAILED', 'en', 'Failed to update supplier'),
+(gen_random_uuid(), 'SUPPLIER.UPDATE_FAILED', 'zh-CN', '供应商更新失败'),
+(gen_random_uuid(), 'SUPPLIER.DELETE_SUCCESS', 'en', 'Supplier deleted successfully'),
+(gen_random_uuid(), 'SUPPLIER.DELETE_SUCCESS', 'zh-CN', '供应商删除成功'),
+(gen_random_uuid(), 'SUPPLIER.DELETE_FAILED', 'en', 'Failed to delete supplier'),
+(gen_random_uuid(), 'SUPPLIER.DELETE_FAILED', 'zh-CN', '供应商删除失败'),
+(gen_random_uuid(), 'SUPPLIER.CANNOT_DELETE_HAS_PRODUCTS', 'en', 'Cannot delete supplier with {count} associated products'),
+(gen_random_uuid(), 'SUPPLIER.CANNOT_DELETE_HAS_PRODUCTS', 'zh-CN', '无法删除有{count}个关联产品的供应商'),
+(gen_random_uuid(), 'SUPPLIER.GET_PRODUCTS_SUCCESS', 'en', 'Supplier products retrieved successfully'),
+(gen_random_uuid(), 'SUPPLIER.GET_PRODUCTS_SUCCESS', 'zh-CN', '供应商产品获取成功'),
+(gen_random_uuid(), 'SUPPLIER.GET_PRODUCTS_FAILED', 'en', 'Failed to retrieve supplier products'),
+(gen_random_uuid(), 'SUPPLIER.GET_PRODUCTS_FAILED', 'zh-CN', '供应商产品获取失败'),
+(gen_random_uuid(), 'SUPPLIER.GET_OPTIONS_SUCCESS', 'en', 'Supplier options retrieved successfully'),
+(gen_random_uuid(), 'SUPPLIER.GET_OPTIONS_SUCCESS', 'zh-CN', '供应商选项获取成功'),
+(gen_random_uuid(), 'SUPPLIER.GET_OPTIONS_FAILED', 'en', 'Failed to retrieve supplier options'),
+(gen_random_uuid(), 'SUPPLIER.GET_OPTIONS_FAILED', 'zh-CN', '供应商选项获取失败');
+
 INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- CART相关
 
@@ -3860,4 +3901,31 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- order.paymentTime
 (gen_random_uuid(), 'order.paymentTime', 'en', 'Payment Time'),
 (gen_random_uuid(), 'order.paymentTime', 'zh-CN', '支付时间');
+
+-- 供应商相关翻译
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- admin.products.error.fetchSuppliersFailed
+(gen_random_uuid(), 'admin.products.error.fetchSuppliersFailed', 'en', 'Failed to fetch suppliers'),
+(gen_random_uuid(), 'admin.products.error.fetchSuppliersFailed', 'zh-CN', '获取供应商列表失败');
+
+-- 1688导入相关翻译
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- admin.products.error.import1688Failed
+(gen_random_uuid(), 'admin.products.error.import1688Failed', 'en', 'Failed to import from 1688'),
+(gen_random_uuid(), 'admin.products.error.import1688Failed', 'zh-CN', '从1688导入失败'),
+-- admin.products.success.import1688Success
+(gen_random_uuid(), 'admin.products.success.import1688Success', 'en', 'Successfully imported from 1688'),
+(gen_random_uuid(), 'admin.products.success.import1688Success', 'zh-CN', '从1688导入成功');
+
+-- 插件相关翻译
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- plugin.supplier.selectSupplier
+(gen_random_uuid(), 'plugin.supplier.selectSupplier', 'en', 'Select Supplier'),
+(gen_random_uuid(), 'plugin.supplier.selectSupplier', 'zh-CN', '选择供应商'),
+-- plugin.supplier.noSupplier
+(gen_random_uuid(), 'plugin.supplier.noSupplier', 'en', 'No Supplier'),
+(gen_random_uuid(), 'plugin.supplier.noSupplier', 'zh-CN', '无供应商'),
+-- plugin.supplier.fetchFailed
+(gen_random_uuid(), 'plugin.supplier.fetchFailed', 'en', 'Failed to fetch suppliers'),
+(gen_random_uuid(), 'plugin.supplier.fetchFailed', 'zh-CN', '获取供应商失败');
 

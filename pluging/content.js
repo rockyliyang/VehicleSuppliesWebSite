@@ -651,7 +651,8 @@ class ProductExtractor {
         '.product-gallery img',
         '.offer-gallery img',
         '.carousel-images img',
-        '.swiper-slide img'
+        '.swiper-slide img',
+        '.detail-gallery-img',
       ];
     }
     
@@ -821,6 +822,7 @@ class ProductExtractor {
         '.detail-desc img',
         '[data-role="detail-content"] img',
         '.module_product_specification [module-title="detailManyImage"] img,.module_product_specification [module-title="detailSingleImage"] img',
+        '.desc-img-loaded'
       ];
       
       // 1688网站优先从Shadow DOM提取

@@ -281,6 +281,8 @@ exports.createProduct = async (req, res) => {
       stock = 0,
       status = 'on_shelf',
       product_type = 'consignment', // 默认为代销
+      supplier_id = null,
+      source_url = null,
       thumbnail_url = null,
       outside_video = null,
       short_description = '',
@@ -327,10 +329,10 @@ exports.createProduct = async (req, res) => {
     const result = await connection.query(
       `INSERT INTO products (
         name, product_code, category_id, price, stock, status, product_type,
-        thumbnail_url, outside_video, short_description, full_description, sort_order, 
+        supplier_id, source_url, thumbnail_url, outside_video, short_description, full_description, sort_order, 
         product_length, product_width, product_height, product_weight,
         deleted, created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, false, $17, $18) RETURNING id, guid`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, false, $19, $20) RETURNING id, guid`,
       [
         name,
         product_code,
@@ -339,6 +341,8 @@ exports.createProduct = async (req, res) => {
         stock,
         status,
         product_type,
+        supplier_id,
+        source_url,
         thumbnail_url,
         outside_video,
         short_description,
@@ -410,12 +414,11 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// Get all products (non-deleted)
+// Get all products (non-deleted, only on_shelf status)
 exports.getAllProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 10, sort_by = 'id', sort_order = 'desc', keyword, category_id, status, product_type } = req.query;
+    const { page = 1, limit = 10, sort_by = 'id', sort_order = 'desc', keyword, category_id, product_type } = req.query;
     const offset = (page - 1) * limit;
-
     // 获取当前用户的is_super状态
     let isSuper = false;
     if (req.userId) {
@@ -438,8 +441,6 @@ exports.getAllProducts = async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // 如果不是超级用户，只能访问上架状态的产品
-
 
     if (keyword) {
       querystr += ` AND (p.name ILIKE $${paramIndex} OR p.product_code ILIKE $${paramIndex + 1})`;
@@ -457,20 +458,11 @@ exports.getAllProducts = async (req, res) => {
         paramIndex += 1;
       }
     }
-
-    // 如果是管理员或业务员，可以通过status参数过滤
-    if (req.userRole === 'admin' || req.userRole === 'business') {
-      if (status !== undefined) {
-        querystr += ` AND p.status = $${paramIndex}`;
-        params.push(status);
-        paramIndex += 1;
-      }
-    } else {
-      // 如果不是超级用户，只能访问上架状态的产品
-      if (!isSuper) {
+    // 如果不是超级用户，只能访问上架状态的产品  
+    if (!isSuper) {
         querystr += ` AND p.status = 'on_shelf'`;
       }
-    }
+    // getAllProducts接口只返回上架状态的产品
 
     if (product_type) {
       querystr += ` AND p.product_type = $${paramIndex}`;
@@ -529,6 +521,106 @@ exports.getAllProducts = async (req, res) => {
     });
   } catch (error) {
     console.error('获取产品列表失败:', error);
+    res.status(500).json({
+      success: false,
+      message: getMessage('PRODUCT.LIST_FAILED')
+    });
+  }
+};
+
+// Get all products for admin (with supplier information)
+exports.getAdminProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, sort_by = 'id', sort_order = 'desc', keyword, category_id, status, product_type } = req.query;
+    const offset = (page - 1) * limit;
+
+    let querystr = `
+      SELECT p.*, c.name as category_name, s.name as supplier_name, s.contact_person as supplier_contact,
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND image_type = 0 AND deleted = false ORDER BY sort_order ASC, id ASC LIMIT 1) as thumbnail_url
+      FROM products p
+      LEFT JOIN product_categories c ON p.category_id = c.id
+      LEFT JOIN suppliers s ON p.supplier_id = s.id AND s.deleted = false
+      WHERE p.deleted = false
+    `;
+    const params = [];
+    let paramIndex = 1;
+
+    if (keyword) {
+      querystr += ` AND (p.name ILIKE $${paramIndex} OR p.product_code ILIKE $${paramIndex + 1})`;
+      params.push(`%${keyword}%`, `%${keyword}%`);
+      paramIndex += 2;
+    }
+
+    if (category_id) {
+      // 递归查询该分类及其所有子分类的ID
+      const categoryIds = await getCategoryWithChildren(category_id);
+      if (categoryIds.length > 0) {
+        querystr += ` AND p.category_id = ANY($${paramIndex})`;
+        params.push(categoryIds);
+        paramIndex += 1;
+      }
+    }
+
+    if (status) {
+      querystr += ` AND p.status = $${paramIndex}`;
+      params.push(status);
+      paramIndex += 1;
+    }
+
+    if (product_type) {
+      querystr += ` AND p.product_type = $${paramIndex}`;
+      params.push(product_type);
+      paramIndex += 1;
+    }
+
+    // 白名单验证排序字段，防止SQL注入
+    const allowedSortFields = ['id', 'name', 'product_code', 'price', 'stock', 'status', 'created_at', 'updated_at', 'sort_order'];
+    const validSortBy = allowedSortFields.includes(sort_by) ? sort_by : 'id';
+    const validSortOrder = sort_order === 'asc' ? 'ASC' : 'DESC';
+
+    // 构建排序条件
+    if (validSortBy === 'sort_order') {
+      querystr += ` ORDER BY p.sort_order ${validSortOrder}, p.id DESC`;
+    } else {
+      querystr += ` ORDER BY p.sort_order DESC, p.${validSortBy} ${validSortOrder}`;
+    }
+
+    // 添加分页
+    querystr += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(parseInt(limit), offset);
+
+    const rows = await query(querystr, params);
+    const total = await query(
+      'SELECT COUNT(*) as total FROM products WHERE deleted = false',
+      []
+    );
+
+    const products = rows.getRows();
+
+    // 一次性查询所有产品的阶梯价格
+    let productsWithPriceRanges = products;
+    if (products.length > 0) {
+      const productIds = products.map(p => p.id);
+      const priceRangesMap = await getProductPriceRanges(productIds);
+      
+      productsWithPriceRanges = products.map(product => ({
+        ...product,
+        price_ranges: priceRangesMap[product.id] || []
+      }));
+    }
+
+    res.json({
+      success: true,
+      message: getMessage('PRODUCT.LIST_SUCCESS'),
+      data: {
+        items: productsWithPriceRanges,
+        total: parseInt(total.getFirstRow().total),
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('获取管理员产品列表失败:', error);
     res.status(500).json({
       success: false,
       message: getMessage('PRODUCT.LIST_FAILED')
@@ -637,6 +729,8 @@ exports.updateProduct = async (req, res) => {
       stock,
       status,
       product_type,
+      supplier_id = null,
+      source_url = null,
       thumbnail_url,
       outside_video,
       short_description,
@@ -703,18 +797,20 @@ exports.updateProduct = async (req, res) => {
         stock = $5, 
         status = $6, 
         product_type = $7,
-        thumbnail_url = $8, 
-        outside_video = $9,
-        short_description = $10, 
-        full_description = $11,
-        sort_order = $12,
-        product_length = $13,
-        product_width = $14,
-        product_height = $15,
-        product_weight = $16,
-        updated_by = $17,
+        supplier_id = $8,
+        source_url = $9,
+        thumbnail_url = $10, 
+        outside_video = $11,
+        short_description = $12, 
+        full_description = $13,
+        sort_order = $14,
+        product_length = $15,
+        product_width = $16,
+        product_height = $17,
+        product_weight = $18,
+        updated_by = $19,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $18`,
+      WHERE id = $20`,
       [
         name,
         product_code,
@@ -723,6 +819,8 @@ exports.updateProduct = async (req, res) => {
         stock,
         status,
         product_type,
+        supplier_id,
+        source_url,
         thumbnail_url,
         outside_video,
         short_description,
@@ -986,7 +1084,9 @@ exports.importFrom1688 = async (req, res) => {
       minOrderQuantity,
       unit,
       category,
-      category_id
+      category_id,
+      supplier_id,
+      source_url
     } = req.body;
 
     // 解析阶梯价格
@@ -1028,8 +1128,8 @@ exports.importFrom1688 = async (req, res) => {
     const result = await connection.query(
       `INSERT INTO products (
         name, product_code, category_id, price, stock, status, product_type,
-        short_description, full_description, deleted, created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, $10, $11) RETURNING id, guid`,
+        short_description, full_description, supplier_id, source_url, deleted, created_by, updated_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, false, $12, $13) RETURNING id, guid`,
       [
         title,
         productCode,
@@ -1040,6 +1140,8 @@ exports.importFrom1688 = async (req, res) => {
         'consignment', // 1688导入的产品默认为代销
         `供应商: ${supplierName || '未知'} | 位置: ${supplierLocation || '未知'} | 最小起订量: ${minOrderQuantity || '1'} ${unit || '件'}`,
         description || '',
+        supplier_id || null,
+        source_url || url || null,
         currentUserId,
         currentUserId
       ]
@@ -1082,7 +1184,8 @@ exports.importFrom1688 = async (req, res) => {
         price: parsedPrice,
         stock: parseInt(minOrderQuantity) || 0,
         guid: result.getFirstRow().guid,
-        source_url: url,
+        supplier_id: supplier_id || null,
+        source_url: source_url || url || null,
         price_ranges: priceRanges,
         price_ranges_count: priceRanges ? priceRanges.length : 0
       }

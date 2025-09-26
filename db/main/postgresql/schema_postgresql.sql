@@ -126,6 +126,57 @@ CREATE TRIGGER update_product_categories_modtime
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 
+-- 供应商表
+CREATE TABLE IF NOT EXISTS suppliers (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  contact_person VARCHAR(100),
+  address TEXT,
+  contact_phone1 VARCHAR(32),
+  contact_phone2 VARCHAR(32),
+  email VARCHAR(128),
+  website VARCHAR(256),
+  notes TEXT,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON TABLE suppliers IS '供应商信息表';
+COMMENT ON COLUMN suppliers.name IS '供应商名称';
+COMMENT ON COLUMN suppliers.contact_person IS '联系人姓名';
+COMMENT ON COLUMN suppliers.address IS '供应商地址';
+COMMENT ON COLUMN suppliers.contact_phone1 IS '联系电话1';
+COMMENT ON COLUMN suppliers.contact_phone2 IS '联系电话2';
+COMMENT ON COLUMN suppliers.email IS '邮箱地址';
+COMMENT ON COLUMN suppliers.website IS '网站地址';
+COMMENT ON COLUMN suppliers.notes IS '备注信息';
+COMMENT ON COLUMN suppliers.created_by IS '创建者用户ID';
+COMMENT ON COLUMN suppliers.updated_by IS '最后更新者用户ID';
+
+-- 创建唯一索引
+CREATE UNIQUE INDEX unique_active_supplier_name ON suppliers (name) WHERE deleted = FALSE;
+
+-- 创建普通索引
+CREATE INDEX idx_suppliers_name ON suppliers (name);
+CREATE INDEX idx_suppliers_email ON suppliers (email);
+CREATE INDEX idx_suppliers_created_by ON suppliers (created_by);
+CREATE INDEX idx_suppliers_updated_by ON suppliers (updated_by);
+
+-- 添加外键约束
+ALTER TABLE suppliers ADD CONSTRAINT fk_suppliers_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE suppliers ADD CONSTRAINT fk_suppliers_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_suppliers_modtime
+    BEFORE UPDATE ON suppliers
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
 -- 产品表
 CREATE TABLE IF NOT EXISTS products (
   id BIGSERIAL PRIMARY KEY,
@@ -139,6 +190,8 @@ CREATE TABLE IF NOT EXISTS products (
   outside_video VARCHAR(512) DEFAULT NULL,
   stock INT NOT NULL,
   category_id BIGINT NOT NULL,
+  supplier_id BIGINT DEFAULT NULL,
+  source_url VARCHAR(2048) DEFAULT NULL,
   product_type VARCHAR(16) NOT NULL DEFAULT 'self_operated' CHECK (product_type IN ('self_operated', 'consignment')),
   status VARCHAR(16) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
   sort_order INT NOT NULL DEFAULT 0,
@@ -164,6 +217,8 @@ COMMENT ON COLUMN products.product_length IS '产品单件长度(cm)';
 COMMENT ON COLUMN products.product_width IS '产品单件宽度(cm)';
 COMMENT ON COLUMN products.product_height IS '产品单件高度(cm)';
 COMMENT ON COLUMN products.product_weight IS '产品单件重量(kg)';
+COMMENT ON COLUMN products.supplier_id IS '供应商ID';
+COMMENT ON COLUMN products.source_url IS '产品来源链接';
 COMMENT ON COLUMN products.created_by IS '创建者用户ID';
 COMMENT ON COLUMN products.updated_by IS '最后更新者用户ID';
 
@@ -173,10 +228,12 @@ CREATE UNIQUE INDEX unique_active_product_code ON products (product_code) WHERE 
 -- 创建普通索引
 CREATE INDEX idx_products_created_by ON products (created_by);
 CREATE INDEX idx_products_updated_by ON products (updated_by);
+CREATE INDEX idx_products_supplier_id ON products (supplier_id);
 CREATE INDEX idx_products_sort_order ON products (sort_order DESC);
 
 -- 添加外键约束
 ALTER TABLE products ADD CONSTRAINT fk_products_category_id FOREIGN KEY (category_id) REFERENCES product_categories(id);
+ALTER TABLE products ADD CONSTRAINT fk_products_supplier_id FOREIGN KEY (supplier_id) REFERENCES suppliers(id);
 ALTER TABLE products ADD CONSTRAINT fk_products_created_by FOREIGN KEY (created_by) REFERENCES users(id);
 ALTER TABLE products ADD CONSTRAINT fk_products_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
 

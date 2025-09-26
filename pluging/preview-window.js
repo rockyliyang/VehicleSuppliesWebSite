@@ -452,22 +452,6 @@ function generatePreviewContent(product) {
     </div>
   `;
 
-  // 供应商信息
-  html += `
-    <div class="preview-section">
-      <h3>🏢 供应商信息</h3>
-      <div class="preview-field">
-        <label>供应商名称:</label>
-        <div class="value">${product.supplierName || '-'}</div>
-      </div>
-      <div class="preview-field">
-        <label>供应商链接:</label>
-        <div class="value">
-          ${product.supplierUrl ? `<a href="${product.supplierUrl}" target="_blank">${product.supplierUrl}</a>` : '-'}
-        </div>
-      </div>
-    </div>
-  `;
 
   // 图片信息 - 按类型分类显示
   let totalImages = 0;
@@ -902,6 +886,36 @@ async function loadCategories() {
   }
 }
 
+// 加载供应商列表
+async function loadSuppliers() {
+  try {
+    const config = await chrome.storage.sync.get(['apiUrl', 'apiToken']);
+    if (!config.apiUrl || !config.apiToken) {
+      console.error('API配置不完整，无法获取供应商');
+      return [];
+    }
+    
+    const response = await fetch(buildApiUrl(config.apiUrl, '/api/suppliers'), {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${config.apiToken}`
+      }
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success && result.data && result.data.suppliers) {
+      return result.data.suppliers || [];
+    } else {
+      console.error('获取供应商失败:', result.message);
+      return [];
+    }
+  } catch (error) {
+    console.error('获取供应商异常:', error);
+    return [];
+  }
+}
+
 // 构建分类树结构
 function buildCategoryTree(categories) {
   const categoryMap = new Map();
@@ -1037,6 +1051,104 @@ async function populateCategoryTree() {
   }
 }
 
+// 填充供应商下拉列表
+async function populateSupplierSelect() {
+  const supplierSelect = document.getElementById('supplier-select');
+  if (!supplierSelect) return;
+  
+  // 显示加载状态
+  supplierSelect.innerHTML = '<option value="">正在加载供应商...</option>';
+  
+  try {
+    const suppliers = await loadSuppliers();
+    
+    // 清空并重新填充选项
+    supplierSelect.innerHTML = '<option value="">请选择供应商...</option>';
+    
+    if (suppliers.length === 0) {
+      supplierSelect.innerHTML = '<option value="">暂无供应商数据</option>';
+      return;
+    }
+    
+    // 添加供应商选项
+    suppliers.forEach(supplier => {
+      const option = document.createElement('option');
+      option.value = supplier.id;
+      option.textContent = `${supplier.name} (${supplier.contact_person || '无联系人'})`;
+      option.dataset.supplierData = JSON.stringify(supplier); // 存储完整的供应商数据
+      supplierSelect.appendChild(option);
+    });
+    
+    // 添加供应商选择变化事件监听器
+    supplierSelect.addEventListener('change', handleSupplierChange);
+    
+    showMessage('供应商列表已更新', 'success');
+  } catch (error) {
+    console.error('填充供应商列表失败:', error);
+    supplierSelect.innerHTML = '<option value="">加载供应商失败</option>';
+    showMessage('获取供应商列表失败', 'error');
+  }
+}
+
+// 获取选中的供应商ID
+function getSelectedSupplierId() {
+  const supplierSelect = document.getElementById('supplier-select');
+  return supplierSelect ? supplierSelect.value : null;
+}
+
+// 处理供应商选择变化
+function handleSupplierChange(event) {
+  const selectedOption = event.target.selectedOptions[0];
+  const supplierDetailsDiv = document.getElementById('supplier-details');
+  
+  if (selectedOption && selectedOption.value && selectedOption.dataset.supplierData) {
+    try {
+      const supplierData = JSON.parse(selectedOption.dataset.supplierData);
+      displaySupplierDetails(supplierData);
+      supplierDetailsDiv.style.display = 'block';
+    } catch (error) {
+      console.error('解析供应商数据失败:', error);
+      hideSupplierDetails();
+    }
+  } else {
+    hideSupplierDetails();
+  }
+}
+
+// 显示供应商详细信息
+function displaySupplierDetails(supplier) {
+  document.getElementById('supplier-name-display').textContent = supplier.name || '-';
+  document.getElementById('supplier-contact-display').textContent = supplier.contact_person || '-';
+  document.getElementById('supplier-phone1-display').textContent = supplier.contact_phone1 || '-';
+  document.getElementById('supplier-phone2-display').textContent = supplier.contact_phone2 || '-';
+  document.getElementById('supplier-email-display').textContent = supplier.email || '-';
+  document.getElementById('supplier-address-display').textContent = supplier.address || '-';
+  
+  // 处理备注信息
+  const notesContainer = document.getElementById('supplier-notes-container');
+  const notesDisplay = document.getElementById('supplier-notes-display');
+  if (supplier.notes && supplier.notes.trim()) {
+    notesDisplay.textContent = supplier.notes;
+    notesContainer.style.display = 'block';
+  } else {
+    notesContainer.style.display = 'none';
+  }
+}
+
+// 隐藏供应商详细信息
+function hideSupplierDetails() {
+  const supplierDetailsDiv = document.getElementById('supplier-details');
+  if (supplierDetailsDiv) {
+    supplierDetailsDiv.style.display = 'none';
+  }
+}
+
+// 获取源链接
+function getSourceUrl() {
+  const sourceUrlInput = document.getElementById('source-url');
+  return sourceUrlInput ? sourceUrlInput.value.trim() : '';
+}
+
 // 上传产品到系统
 async function uploadProduct(productData, selectedImages) {
   try {
@@ -1114,6 +1226,10 @@ async function uploadProduct(productData, selectedImages) {
     const importPriceCheckbox = document.getElementById('import-price-checkbox');
     const shouldImportPrice = importPriceCheckbox && importPriceCheckbox.checked;
     
+    // 获取选中的供应商ID和源链接
+    const selectedSupplierId = getSelectedSupplierId();
+    const sourceUrl = getSourceUrl();
+    
     // 准备上传数据（不包含图片URL，因为图片已经单独上传）
     const uploadData = {
       title: productData.title,
@@ -1126,6 +1242,8 @@ async function uploadProduct(productData, selectedImages) {
       unit: productData.unit,
       category: productData.category,
       category_id: selectedCategoryId, // 添加选中的分类ID
+      supplier_id: selectedSupplierId, // 添加选中的供应商ID
+      source_url: sourceUrl, // 添加源链接
       // 不包含图片URL，因为图片已经通过/api/product-images/upload上传
     };
     
@@ -1322,6 +1440,12 @@ document.addEventListener('DOMContentLoaded', function() {
   if (refreshCategoriesBtn) {
     refreshCategoriesBtn.addEventListener('click', populateCategoryTree);
   }
+  
+  // 绑定刷新供应商按钮事件
+  const refreshSuppliersBtn = document.getElementById('refresh-suppliers');
+  if (refreshSuppliersBtn) {
+    refreshSuppliersBtn.addEventListener('click', populateSupplierSelect);
+  }
 
   // 绑定模态框关闭事件
   closeBtn.addEventListener('click', hideImageModal);
@@ -1350,8 +1474,19 @@ document.addEventListener('DOMContentLoaded', function() {
       dynamicContent.innerHTML = generatePreviewContent(productData);
     }
     
+    // 自动填充source URL（如果产品数据中包含sourceUrl）
+    if (productData && productData.sourceUrl) {
+      const sourceUrlInput = document.getElementById('source-url');
+      if (sourceUrlInput) {
+        sourceUrlInput.value = productData.sourceUrl;
+      }
+    }
+    
     // 初始化分类树
     populateCategoryTree();
+    
+    // 初始化供应商列表
+    populateSupplierSelect();
     
     // 绑定图片/视频项点击事件（切换选中状态）
     if (dynamicContent) {

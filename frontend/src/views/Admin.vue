@@ -23,6 +23,7 @@
             </template>
             <el-menu-item index="/admin/products">产品列表</el-menu-item>
             <el-menu-item index="/admin/categories">分类管理</el-menu-item>
+            <el-menu-item index="/admin/suppliers">供应商管理</el-menu-item>
           </el-sub-menu>
           <el-menu-item index="/admin/banners">
             <el-icon>
@@ -205,6 +206,9 @@ export default {
       } else if (route.path.includes('/admin/categories')) {
         this.activeMenu = '/admin/categories'
         this.currentPage = '分类管理'
+      } else if (route.path.includes('/admin/suppliers')) {
+        this.activeMenu = '/admin/suppliers'
+        this.currentPage = '供应商管理'
       } else if (route.path.includes('/admin/banners')) {
         this.activeMenu = '/admin/banners'
         this.currentPage = 'Banner管理'

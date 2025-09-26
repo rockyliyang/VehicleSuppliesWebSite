@@ -189,6 +189,8 @@ class PopupManager {
       
       if (response && response.success) {
         this.currentProductData = response.data;
+        // 添加当前页面URL到产品数据中
+        this.currentProductData.sourceUrl = tab.url;
         // 直接打开预览窗口
         this.openIndependentWindow();
         this.showStatus('正在打开预览窗口...', 'success');

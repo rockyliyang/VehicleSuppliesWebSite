@@ -80,6 +80,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'suppliers',
+        name: 'AdminSuppliers',
+        component: createRetryableImport(() => import('../views/admin/SuppliersManagement.vue')),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'banners',
         name: 'AdminBanners',
         component: createRetryableImport(() => import('../views/admin/Banners.vue')),
