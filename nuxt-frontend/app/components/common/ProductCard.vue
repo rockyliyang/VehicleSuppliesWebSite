@@ -2,10 +2,20 @@
   <div class="product-card" :class="cardStyleClass" @click="handleCardClick">
     <div class="product-image">
       <!--img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
-        class="w-full h-full object-cover object-center"-->
-      <NuxtImg :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
-        class="w-full h-full object-cover object-center" preset="thumbnail" loading="lazy"
-        :sizes="'xs:150px sm:200px md:250px lg:300px xl:300px'" fetchpriority="high" />
+        class="w-full h-full object-cover object-center" /-->
+      <EnhancedImage 
+        :src="product.thumbnail_url" 
+        :alt="product.name" 
+        image-class="w-full h-full object-cover object-center" 
+        loading="lazy"
+        :sizes="'xs:150px sm:200px md:250px lg:300px xl:300px'" 
+        fetchpriority="high"
+        :placeholder="true"
+        :quality="80"
+        format="webp"
+        preset="thumbnail"
+        fallback-image="/images/default-image.svg"
+        @load="handleImageLoad" />
     </div>
     <div class="product-info">
       <h3 class="product-title" @click.stop="handleTitleClick">{{ product.name }}</h3>
@@ -39,6 +49,7 @@
 import { handleImageError } from '../../utils/imageUtils';
 import { useMainStore } from '~/stores/index'
 import { navigateTo } from '#app'
+import EnhancedImage from './EnhancedImage.vue'
 
 export default {
   name: 'ProductCard',
@@ -49,6 +60,7 @@ export default {
     }
   },
   components: {
+    EnhancedImage
   },
   props: {
     product: {
@@ -111,6 +123,13 @@ export default {
   },
   methods: {
     handleImageError,
+    
+    // 处理图片加载完成事件
+    handleImageLoad() {
+      // 可以在这里添加图片加载完成后的逻辑
+      // 例如：移除加载状态、触发动画等
+    },
+    
     async handleCardClick() {
       this.$emit('card-click', this.product);
       await navigateTo(`/product/${this.product.id}`);

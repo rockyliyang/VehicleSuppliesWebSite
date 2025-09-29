@@ -148,13 +148,23 @@ export default defineNuxtConfig({
     // 静态文件目录
     dir: 'public',
 
-    // 域名配置
+    // 域名配置 - 允许后端静态文件
     domains: ['localhost:3000', 'localhost:5000'],
+    
+    // 允许的外部图片源
+    providers: {
+      backend: {
+        provider: 'ipx',
+        options: {
+          baseURL: 'http://localhost:3000'
+        }
+      }
+    },
 
     // 图片质量设置 - 针对LCP优化
     quality: 85,
     // 图片格式优化 - 优先使用现代格式
-    format: ['avif', 'webp', 'jpeg'],
+    format: 'webp',
     // 响应式图片尺寸
     screens: {
       xs: 320,
@@ -168,7 +178,7 @@ export default defineNuxtConfig({
     presets: {
       banner: {
         modifiers: {
-          format: 'avif,webp,jpeg',
+          format: 'webp',
           quality: 90, // LCP图片使用更高质量
           fit: 'cover',
           width: 1920,
@@ -178,12 +188,31 @@ export default defineNuxtConfig({
       thumbnail: {
         modifiers: {
           format: 'webp',
-          quality: 75,
+          quality: 80,
           width: 300,
-          fit: 'inside'
+          height: 300,
+          fit: 'cover'
+        }
+      },
+      product: {
+        modifiers: {
+          format: 'webp',
+          quality: 85,
+          width: 400,
+          height: 400,
+          fit: 'cover'
         }
       }
-    }
+    },
+    
+    // 图片加载失败时的处理
+    densities: [1, 2],
+    
+    // 开发模式下的特殊配置
+    ...(process.env.NODE_ENV === 'development' && {
+      // 开发环境下禁用某些优化以提高调试能力
+      prerender: false
+    })
   },
   
   

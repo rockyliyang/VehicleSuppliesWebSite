@@ -221,14 +221,14 @@
               <template #header>
                 <span>供应商信息</span>
               </template>
-              <el-descriptions :column="2" border>
-                <el-descriptions-item label="供应商名称">{{ selectedSupplierInfo.name }}</el-descriptions-item>
+              <el-descriptions :column="4" border size="small">
+                <el-descriptions-item label="供应商名称" :span="2">{{ selectedSupplierInfo.name }}</el-descriptions-item>
                 <el-descriptions-item label="联系人">{{ selectedSupplierInfo.contact_person }}</el-descriptions-item>
                 <el-descriptions-item label="联系电话1">{{ selectedSupplierInfo.contact_phone1 }}</el-descriptions-item>
                 <el-descriptions-item label="联系电话2" v-if="selectedSupplierInfo.contact_phone2">{{ selectedSupplierInfo.contact_phone2 }}</el-descriptions-item>
                 <el-descriptions-item label="邮箱" :span="selectedSupplierInfo.contact_phone2 ? 1 : 2">{{ selectedSupplierInfo.email }}</el-descriptions-item>
-                <el-descriptions-item label="地址" :span="2">{{ selectedSupplierInfo.address }}</el-descriptions-item>
-                <el-descriptions-item label="备注" :span="2" v-if="selectedSupplierInfo.notes">{{
+                <el-descriptions-item label="地址" :span="4">{{ selectedSupplierInfo.address }}</el-descriptions-item>
+                <el-descriptions-item label="备注" :span="4" v-if="selectedSupplierInfo.notes">{{
                   selectedSupplierInfo.notes
                   }}</el-descriptions-item>
               </el-descriptions>
@@ -1341,44 +1341,49 @@ export default {
       const input = document.createElement('input');
       input.setAttribute('type', 'file');
       input.setAttribute('accept', 'image/*');
+      input.setAttribute('multiple', 'multiple'); // 支持多选
       input.click();
       input.onchange = async () => {
-        const file = input.files[0];
-        if (!file) return;
-        // 构造FormData
-        const formData = new FormData();
-        formData.append('images', file);
-        formData.append('product_id', this.productForm.id || '');
-        formData.append('image_type', 2);
-        formData.append('session_id', this.sessionId);
-        try {
-          const res = await this.$api.postWithErrorHandler(`/product-images/upload?image_type=2`, formData, {
-
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              ...this.uploadHeaders
-            },
-            fallbackKey: 'admin.products.error.imageUploadFailed'
-          });
-          if (res.success && res.data && res.data.images && res.data.images[0]) {
-            const url = res.data.images[0].path;
-            const range = quill.getSelection();
-            const index = range ? range.index : 0;
-            
-            // 插入图片
-            quill.insertEmbed(index, 'image', url);
-            
-            // 设置图片居中样式
-            quill.setSelection(index + 1);
-            quill.format('align', 'center');
-            
-            // 移动光标到图片后面
-            quill.setSelection(index + 1);
-          } else {
-            this.$messageHandler.showError(res.message, 'admin.products.error.imageUploadFailed');
+        const files = input.files;
+        if (!files || files.length === 0) return;
+        
+        // 处理多个文件上传
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          // 构造FormData
+          const formData = new FormData();
+          formData.append('images', file);
+          formData.append('product_id', this.productForm.id || '');
+          formData.append('image_type', 2);
+          formData.append('session_id', this.sessionId);
+          try {
+            const res = await this.$api.postWithErrorHandler(`/product-images/upload?image_type=2`, formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                ...this.uploadHeaders
+              },
+              fallbackKey: 'admin.products.error.imageUploadFailed'
+            });
+            if (res.success && res.data && res.data.images && res.data.images[0]) {
+              const url = res.data.images[0].path;
+              const range = quill.getSelection();
+              const index = range ? range.index : 0;
+              
+              // 插入图片
+              quill.insertEmbed(index + i, 'image', url);
+              
+              // 设置图片居中样式
+              quill.setSelection(index + i + 1);
+              quill.format('align', 'center');
+              
+              // 移动光标到图片后面
+              quill.setSelection(index + i + 1);
+            } else {
+              this.$messageHandler.showError(res.message, 'admin.products.error.imageUploadFailed');
+            }
+          } catch (err) {
+            // 错误已由postWithErrorHandler处理，这里不需要再次显示
           }
-        } catch (err) {
-          // 错误已由postWithErrorHandler处理，这里不需要再次显示
         }
       };
     },
@@ -2336,6 +2341,29 @@ export default {
 
 .supplier-info-card .el-descriptions {
   margin-top: 0;
+}
+
+/* 修复标签列过窄的问题 */
+.supplier-info-card :deep(.el-descriptions .el-descriptions__label),
+.supplier-info-card :deep(.el-descriptions-item__label) {
+  width: 150px ;
+  min-width: 150px ;
+  max-width: 150px ;
+  white-space: nowrap ;
+  text-overflow: ellipsis ;
+  overflow: hidden ;
+}
+
+.supplier-info-card :deep(.el-descriptions .el-descriptions__content),
+.supplier-info-card :deep(.el-descriptions-item__content) {
+  word-break: break-all;
+}
+
+/* 更强的样式覆盖 */
+.supplier-info-card :deep(.el-descriptions .el-descriptions-item .el-descriptions-item__label) {
+  width: 150px ;
+  min-width: 150px ;
+  flex: 0 0 150px ;
 }
 
 .form-item-tip span {

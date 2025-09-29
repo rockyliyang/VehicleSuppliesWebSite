@@ -14,14 +14,10 @@
             </div>
             <!-- Banner图片 -->
             <NuxtImg :src="item.image_url" :alt="`Banner ${index + 1}`" preset="banner"
-              :sizes="`xs:100vw sm:100vw md:100vw lg:100vw xl:100vw`" 
-              :loading="index === 0 ? 'eager' : 'lazy'" 
-              class="banner-image" :class="{ 'image-loaded': imageLoaded[index] }"
-              @error="handleImageError" @load="handleImageLoad(index)" 
-              :priority="index === 0" 
-              :fetchpriority="index === 0 ? 'high' : 'auto'"
-              :preload="index === 0"
-              :format="index === 0 ? ['webp', 'avif', 'jpeg'] : ['webp', 'jpeg']"
+              :sizes="`xs:100vw sm:100vw md:100vw lg:100vw xl:100vw`" :loading="index === 0 ? 'eager' : 'lazy'"
+              class="banner-image" :class="{ 'image-loaded': imageLoaded[index] }" @error="handleImageError"
+              @load="handleImageLoad(index)" :priority="index === 0" :fetchpriority="index === 0 ? 'high' : 'auto'"
+              :preload="index === 0" :format="index === 0 ? 'webp, avif, jpeg' : 'webp, jpeg'"
               :quality="index === 0 ? 90 : 80" />
           </div>
         </el-carousel-item>
@@ -57,7 +53,7 @@
 
         <!-- Product Grid -->
         <div class="product-grid">
-          <ProductCard v-for="product in displayProducts" :key="product.id" :product="product" :show-description="true"
+          <ProductCard v-for="product in displayProducts" :key="product.id" :product="product" :show-description="false"
             :show-arrow="true" :default-description="product.short_description || ''" card-style="home"
             @card-click="handleProductClick" @title-click="handleProductClick" />
         </div>
@@ -89,8 +85,10 @@
                 </div>
                 <!-- 电脑端More按钮 - 在文本区域内 -->
                 <div class="desktop-button">
-                  <NuxtLink to="/About" class="learn-more-link" :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
-                    <button class="learn-more-button" :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
+                  <NuxtLink to="/About" class="learn-more-link"
+                    :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
+                    <button class="learn-more-button"
+                      :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
                       {{ $t('about.learnMore') || '了解更多' }}
                       <i class="fas fa-arrow-right"></i>
                     </button>
@@ -100,12 +98,14 @@
               <div class="about-image">
                 <!--img :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" @error="handleImageError" /-->
                 <NuxtImg :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" preset="thumbnail"
-                  :sizes="`xs:100vw sm:100vw md:50vw lg:50vw xl:50vw`" loading="lazy" @error="handleImageError" fetchpriority="high" />
+                  :sizes="`xs:100vw sm:100vw md:50vw lg:50vw xl:50vw`" loading="lazy" @error="handleImageError"
+                  fetchpriority="high" />
               </div>
             </div>
             <!-- 移动端More按钮 - 独立行 -->
             <div class="mobile-button">
-              <NuxtLink to="/About" class="learn-more-link" :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
+              <NuxtLink to="/About" class="learn-more-link"
+                :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
                 <button class="learn-more-button" :aria-label="$t('about.learnMoreAboutCompany') || '了解更多关于我们公司的信息'">
                   {{ $t('about.learnMore') || '了解更多' }}
                   <i class="fas fa-arrow-right"></i>
@@ -548,7 +548,8 @@ onUnmounted(() => {
   @include button-lg;
   white-space: nowrap;
   font-weight: $font-weight-medium;
-  color: $text-primary; /* 确保足够的对比度 */
+  color: $text-primary;
+  /* 确保足够的对比度 */
 
   @include mobile {
     padding: $spacing-xs $spacing-sm;
