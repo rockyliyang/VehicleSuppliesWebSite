@@ -146,7 +146,7 @@ export default {
         this.historyHasMore = this.historyPage < result.data.totalPages
       } catch (error) {
         console.error('Failed to load browsing history:', error)
-        this.$message.error(this.$t('userSettings.loadHistoryFailed'))
+        this.$messageHandler.showError(this.$t('userSettings.loadHistoryFailed'))
       } finally {
         this.loadingHistory = false
       }
@@ -161,15 +161,14 @@ export default {
 
     async clearHistory() {
       try {
-        await this.$confirm(
-          this.$t('userSettings.confirmClearHistory'),
-          this.$t('common.confirm'),
-          {
-            confirmButtonText: this.$t('common.confirm'),
-            cancelButtonText: this.$t('common.cancel'),
+        await this.$messageHandler.confirm({
+          message: this.$t('userSettings.confirmClearHistory') || '确定要清空浏览历史吗？',
+          options: {
+            confirmButtonText: this.$t('common.confirm') || '确定',
+            cancelButtonText: this.$t('common.cancel') || '取消',
             type: 'warning'
           }
-        )
+        })
 
         const historyIds = this.browsingHistory.map(item => item.id)
         await this.$api.deleteWithErrorHandler('/user-products', {
@@ -183,26 +182,25 @@ export default {
         this.browsingHistory = []
         this.historyPage = 1
         this.historyHasMore = false
-        this.$message.success(this.$t('userSettings.clearHistorySuccess'))
+       // this.$message.success(this.$t('userSettings.clearHistorySuccess'))
       } catch (error) {
         if (error !== 'cancel') {
           console.error('Failed to clear history:', error)
-          this.$message.error(this.$t('userSettings.deleteFailed'))
+          this.$messageHandler.showError(this.$t('userSettings.deleteFailed'))
         }
       }
     },
 
     async removeFromHistory(item) {
       try {
-        await this.$confirm(
-          this.$t('userSettings.confirmRemoveFromHistory'),
-          this.$t('common.confirm'),
-          {
-            confirmButtonText: this.$t('common.confirm'),
-            cancelButtonText: this.$t('common.cancel'),
+        await this.$messageHandler.confirm({
+          message: this.$t('userSettings.confirmRemoveFromHistory') || '确定要从浏览历史中移除这个商品吗？',
+          options: {
+            confirmButtonText: this.$t('common.confirm') || '确定',
+            cancelButtonText: this.$t('common.cancel') || '取消',
             type: 'warning'
           }
-        )
+        })
 
         await this.$api.deleteWithErrorHandler('/user-products', {
           data: {
@@ -218,11 +216,11 @@ export default {
           this.browsingHistory.splice(index, 1)
         }
         
-        this.$message.success(this.$t('userSettings.removeFromHistorySuccess'))
+        //this.$messageHandler.showSuccess(this.$t('userSettings.removeFromHistorySuccess'))
       } catch (error) {
         if (error !== 'cancel') {
           console.error('Failed to remove from history:', error)
-          this.$message.error(this.$t('userSettings.deleteFailed'))
+          this.$messageHandler.showError(this.$t('userSettings.deleteFailed'))
         }
       }
     },

@@ -148,7 +148,7 @@ export default {
         this.favoritesHasMore = this.favoritesPage < result.data.totalPages
       } catch (error) {
         console.error('Failed to load favorites:', error)
-        this.$message.error(this.$t('userSettings.loadFavoritesFailed'))
+        this.$messageHandler.showError(this.$t('userSettings.loadFavoritesFailed'))
       } finally {
         this.loadingFavorites = false
       }
@@ -163,26 +163,25 @@ export default {
 
     async removeFavorite(item) {
       try {
-        await this.$confirm(
-          this.$t('userSettings.confirmRemoveFavorite'),
-          this.$t('common.confirm'),
-          {
-            confirmButtonText: this.$t('common.confirm'),
-            cancelButtonText: this.$t('common.cancel'),
+        await this.$messageHandler.confirm({
+          message: this.$t('userSettings.confirmRemoveFavorite') || '确定要取消收藏这个商品吗？',
+          options: {
+            confirmButtonText: this.$t('common.confirm') || '确定',
+            cancelButtonText: this.$t('common.cancel') || '取消',
             type: 'warning'
           }
-        )
+        })
 
         await this.$api.deleteWithErrorHandler(`/user-products/${item.id}`, {
           fallbackKey: 'userSettings.deleteFailed'
         })
 
         this.favorites = this.favorites.filter(fav => fav.id !== item.id)
-        this.$message.success(this.$t('userSettings.removeFromFavoritesSuccess'))
+        //this.$messageHandler.showSuccess(this.$t('userSettings.removeFromFavoritesSuccess'))
       } catch (error) {
         if (error !== 'cancel') {
           console.error('Failed to remove favorite:', error)
-          this.$message.error(this.$t('userSettings.deleteFailed'))
+          this.$messageHandler.showError(this.$t('userSettings.deleteFailed'))
         }
       }
     },

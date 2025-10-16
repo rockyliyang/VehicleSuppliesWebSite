@@ -9,7 +9,7 @@
     "generate": "nuxt generate",
     "generate:prod": "npx cross-env NODE_ENV=production nuxt generate",
     "preview": "nuxt preview --port 5000",
-    "start": "nuxt preview --port 5000",
+    "start": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {

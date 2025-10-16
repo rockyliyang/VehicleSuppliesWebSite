@@ -3,10 +3,11 @@
     <div class="page-header">
       <div class="header-content">
         <div class="header-left">
-          <h1>{{ $t('order.management.title', 'Order Management') }}</h1>
-          <p v-if="!isAdmin" class="page-description">{{ $t("order.management.description.user", "View and manage your orders") }}</p>
-          <p v-else class="page-description">{{ $t("order.management.description.admin", "Manage all orders and  logistics")
-            }}</p>
+          <h1 v-text="$t('order.management.title') || 'Order Management'"></h1>
+          <p v-if="!isAdmin" class="page-description"
+            v-text="$t('order.management.description.user') || 'View and manage your orders'"></p>
+          <p v-else class="page-description"
+            v-text="$t('order.management.description.admin') || 'Manage all orders and logistics'"></p>
         </div>
         <div class="header-right" v-if="isBusiness">
           <el-button type="primary" @click="goBackToDashboard" class="back-button">
@@ -18,7 +19,6 @@
         </div>
       </div>
     </div>
-
     <!-- 筛选条件 -->
     <el-card class="filter-card">
       <el-form :model="filters" inline>
@@ -31,6 +31,18 @@
             <el-option value="delivered" :label="$t('order.status.delivered', 'Delivered') || '已送达'" />
             <el-option value="cancelled" :label="$t('order.status.cancelled', 'Cancelled') || '已取消'" />
             <el-option value="pay_timeout" :label="$t('order.status.payTimeout', 'Pay Timeout') || '支付超时'" />
+            <el-option value="refund_requested"
+              :label="$t('order.status.refundRequested', 'Refund Requested') || '申请退款'" />
+            <el-option value="refund_approved"
+              :label="$t('order.status.refundApproved', 'Refund Approved') || '退款已批准'" />
+            <el-option value="refund_rejected"
+              :label="$t('order.status.refundRejected', 'Refund Rejected') || '退款被拒绝'" />
+            <el-option value="refund_cancelled"
+              :label="$t('order.status.refundCancelled', 'Refund Cancelled') || '退款取消'" />
+            <el-option value="return_shipped" :label="$t('order.status.returnShipped', 'Return Shipped') || '退货已发出'" />
+            <el-option value="return_delivered"
+              :label="$t('order.status.returnDelivered', 'Return Delivered') || '退货已送达'" />
+            <el-option value="refunded" :label="$t('order.status.refunded', 'Refunded') || '已退款'" />
           </el-select>
         </el-form-item>
         <el-form-item v-if="isAdmin" :label="$t('order.filter.user', 'User') || '用户'">
@@ -65,7 +77,7 @@
     <el-card class="order-list-card">
       <el-table v-loading="loading" :data="orders" stripe :table-layout="'auto'" class="order-table"
         @row-click="viewOrderDetail">
-        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="60" >
+        <el-table-column :label="$t('order.table.actions', 'Actions') || '操作'" width="60">
           <template #default="{ row }">
             <el-button v-if="canManageLogistics" type="success" size="small" @click.stop="manageLogistics(row)"
               :disabled="row.status === 'pending' || row.status === 'pay_timeout'">{{
@@ -82,8 +94,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.table.totalAmount', 'Total Amount') || '总金额'" width="isMobile ? 0 :140" align="right"
-          class-name="desktop-only">
+        <el-table-column :label="$t('order.table.totalAmount', 'Total Amount') || '总金额'" width="isMobile ? 0 :140"
+          align="right" class-name="desktop-only">
           <template #default="{ row }">
             <span class="amount-text">${{ row.total_amount }}</span>
           </template>
@@ -93,19 +105,22 @@
             <el-tag :type="getStatusType(row.status)" size="small">{{ formatStatus(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'" width="isMobile ? 0 :250" class-name="desktop-only">
+        <el-table-column prop="created_at" :label="$t('order.table.orderDate', 'Order Date') || '订单日期'"
+          width="isMobile ? 0 :250" class-name="desktop-only">
           <template #default="{ row }">
             <span class="date-text">{{ formatDateWithTimezone(row.created_at_local || row.created_at,
               row.create_time_zone) }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.paidDate', 'Paid Date') || '支付日期'" width="isMobile ? 0 :250" class-name="desktop-only">
+        <el-table-column :label="$t('order.paidDate', 'Paid Date') || '支付日期'" width="isMobile ? 0 :250"
+          class-name="desktop-only">
           <template #default="{ row }">
             <span class="date-text">{{ row.paid_at ? formatDateWithTimezone(row.paid_at, row.paid_time_zone) : '-'
               }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'" width="isMobile ? 0 :140"  align="center" class-name="desktop-only">
+        <el-table-column :label="$t('order.table.logisticsStatus', 'Logistics Status') || '物流状态'"
+          width="isMobile ? 0 :140" align="center" class-name="desktop-only">
           <template #default="{ row }">
             <el-tag v-if="row.shipping_status" :type="getLogisticsStatusType(row.shipping_status)" size="small">{{
               formatLogisticsStatus(row.shipping_status) }}</el-tag>
@@ -139,13 +154,28 @@
             <div class="detail-card order-info-card">
               <div class="card-header">
                 <h4>{{ $t('order.detail.orderInfo', 'Order Information') }}</h4>
+                <div class="header-actions">
+                  <el-button v-if="selectedOrder.status === 'refund_requested'" type="danger" size="small"
+                    class="approve-refund-btn" @click="approveRefundRequest">
+                    {{ $t('order.refund.approve', 'Approve Refund') || '同意退款' }}
+                  </el-button>
+                  <el-button v-if="selectedOrder.status === 'return_shipped'" type="success" size="small"
+                    class="confirm-return-btn" @click="confirmReturnReceived">
+                    {{ $t('order.return.confirmReceived', 'Confirm Return Received') || '确认收到退货' }}
+                  </el-button>
+                  <el-button
+                    v-if="['return_shipped', 'return_delivered', 'paid', 'refund_requested'].includes(selectedOrder.status)"
+                    type="primary" size="small" class="process-refund-btn" @click="processRefund">
+                    {{ $t('order.refund.process', 'Process Refund') || '退款' }}
+                  </el-button>
+                </div>
               </div>
               <div class="card-content">
                 <div class="info-grid-five-column">
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.orderStatus', 'Order Status') }}</span>
-                    <span :class="'status-badge status-' + selectedOrder.status">
-                      {{ formatStatus(selectedOrder.status) }}
+                    <span :class="['status-badge', getStatusClass(selectedOrder.status)]">
+                      {{ getStatusLabel(selectedOrder.status) }}
                     </span>
                   </div>
                   <div class="info-row">
@@ -222,6 +252,8 @@
             </div>
           </div>
 
+
+
           <!-- 订单商品 -->
           <div class="detail-card items-card">
             <div class="card-header">
@@ -257,7 +289,9 @@
                   </div>
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.shippingFee', 'Shipping Fee') || '运费' }}</span>
-                    <span v-if="!canManageLogistics || !editingPrice" class="info-value">${{ selectedOrder.shipping_fee || '0.00'
+                    <span v-if="!canManageLogistics || !editingPrice" class="info-value">${{ selectedOrder.shipping_fee
+                      ||
+                      '0.00'
                       }}</span>
                     <div v-else class="price-edit-container">
                       <input type="number" v-model.number="editableShippingFee" step="0.01" min="0" class="price-input"
@@ -266,7 +300,8 @@
                   </div>
                   <div class="info-row">
                     <span class="info-label">{{ $t('order.detail.orderTotal', 'Order Total') }}</span>
-                    <span v-if="!canManageLogistics || !editingPrice" class="info-value total-final">${{ selectedOrder.total_amount
+                    <span v-if="!canManageLogistics || !editingPrice" class="info-value total-final">${{
+                      selectedOrder.total_amount
                       }}</span>
                     <div v-else class="price-edit-container">
                       <input type="number" v-model.number="editableTotalAmount" step="0.01" min="0" class="price-input"
@@ -295,6 +330,46 @@
                     <el-button size="small" @click="cancelPriceEdit">
                       {{ $t('common.cancel', 'Cancel') || '取消' }}
                     </el-button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 订单状态记录（置于订单详情模态内，紧随订单商品之后） -->
+              <div class="detail-card status-history-card" v-if="orderStatusData && orderStatusData.length">
+                <div class="card-header">
+                  <h4>{{ $t('order.detail.statusHistory', 'Status History') }}</h4>
+                </div>
+                <div class="card-content">
+                  <div class="items-table-container">
+                    <table class="items-table status-history-table">
+                      <thead>
+                        <tr>
+                          <th class="status-col">{{ $t('order.detail.status', 'Status') }}</th>
+                          <th class="comment-col">{{ $t('order.detail.comment', 'Comment') }}</th>
+                          <th class="images-col">{{ $t('order.detail.images', 'Images') }}</th>
+                          <th class="datetime-col">{{ $t('order.detail.updatedAt', 'Updated At') }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="entry in orderStatusData" :key="entry.id">
+                          <td class="status-cell">
+                            <span :class="['status-badge', getStatusClass(entry.status)]">
+                              {{ getStatusLabel(entry.status) }}
+                            </span>
+                          </td>
+                          <td class="comment-cell">{{ entry.comment || '-' }}</td>
+                          <td class="images-cell">
+                            <div class="image-list">
+                              <el-image v-for="(img, idx) in (entry.images || [])" :key="idx" :src="img" fit="cover"
+                                :preview-src-list="entry.images || []"
+                                style="width: 48px; height: 48px; margin-right: 6px; border-radius: 4px;">
+                              </el-image>
+                            </div>
+                          </td>
+                          <td class="datetime-cell">{{ formatDateTimeLocal(entry.updated_at || entry.created_at) }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -475,6 +550,7 @@
 <script>
 import { mapState } from 'vuex'
 import { Refresh, ArrowLeft } from '@element-plus/icons-vue'
+import { getOrderStatusKey, getOrderStatusClass } from '@/utils/orderUtils'
 
 export default {
   name: 'OrderManagement',
@@ -492,6 +568,7 @@ export default {
       showOrderDetail: false,
       showLogisticsModal: false,
       selectedOrder: null,
+      orderStatusData: [],
       currentPage: 1,
       totalPages: 1,
       totalOrders: 0,
@@ -578,6 +655,133 @@ export default {
     this.loadCountryStateData()
   },
   methods: {
+    getStatusLabel(status) {
+      const key = getOrderStatusKey(status)
+      return this.$t(key)
+    },
+    getStatusClass(status) {
+      return getOrderStatusClass(status)
+    },
+    async loadOrderStatusData(orderId) {
+      try {
+        const response = await this.$api.getWithErrorHandler(`/order-management/orders/${orderId}/status-data`, {
+          fallbackKey: 'order.error.loadStatusDataFailed'
+        })
+        if (response && response.success) {
+          // 支持多种数据结构：data 或 data.items
+          const data = response.data
+          const rawItems = Array.isArray(data) ? data : (data && data.items) ? data.items : []
+          // 将后端的 imageX_url 字段映射为 images 数组，便于前端展示
+          this.orderStatusData = rawItems.map(entry => {
+            const images = []
+            for (let i = 1; i <= 10; i++) {
+              const url = entry[`image${i}_url`]
+              if (url) images.push(url)
+            }
+            return { ...entry, images }
+          })
+        } else {
+          this.orderStatusData = []
+        }
+      } catch (e) {
+        console.error('加载订单状态数据失败:', e)
+        this.orderStatusData = []
+      }
+    },
+    async approveRefundRequest() {
+      if (!this.selectedOrder) return
+      try {
+        await this.$messageHandler.confirm({
+          translationKey: 'order.refund.approve.confirm',
+          options: { type: 'warning' }
+        })
+        const response = await this.$api.putWithErrorHandler(`/order-management/orders/${this.selectedOrder.id}/update`, {
+          status: 'refund_approved'
+        }, {
+          fallbackKey: 'order.error.updateOrderFailed'
+        })
+        if (response && response.success) {
+          this.$message.success(this.$t(response.message || 'order.refund.approve.success'))
+          // 重新加载订单详情与状态数据
+          await this.viewOrderDetail(this.selectedOrder)
+          await this.loadOrderStatusData(this.selectedOrder.id)
+        }
+      } catch (e) {
+        // 用户取消或请求失败
+        if (e) {
+          console.error('审批退款失败或已取消:', e)
+        }
+      }
+    },
+    async confirmReturnReceived() {
+      if (!this.selectedOrder) return
+      try {
+        await this.$messageHandler.confirm({
+          translationKey: 'order.return.confirmReceived.confirm',
+          fallbackMessage: '确认已收到退货商品？',
+          options: { type: 'warning' }
+        })
+        const response = await this.$api.putWithErrorHandler(`/order-management/orders/${this.selectedOrder.id}/update`, {
+          status: 'return_delivered'
+        }, {
+          fallbackKey: 'order.error.updateOrderFailed'
+        })
+        if (response && response.success) {
+          this.$message.success(this.$t(response.message || 'order.return.confirmReceived.success', '已确认收到退货'))
+          // 重新加载订单详情与状态数据
+          await this.viewOrderDetail(this.selectedOrder)
+          await this.loadOrderStatusData(this.selectedOrder.id)
+        }
+      } catch (e) {
+        // 用户取消或请求失败
+        if (e) {
+          console.error('确认收到退货失败或已取消:', e)
+        }
+      }
+    },
+    async processRefund() {
+      if (!this.selectedOrder) return
+      try {
+        await this.$messageHandler.confirm({
+          translationKey: 'order.refund.process.confirm',
+          fallbackMessage: '确认处理退款？',
+          options: { type: 'warning' }
+        })
+        
+        // 根据原支付方式选择退款接口
+        const paymentMethod = this.selectedOrder.payment_method
+        let refundEndpoint = ''
+        
+        if (paymentMethod === 'paypal') {
+          refundEndpoint = '/payment/paypal/refund'
+        } else if (paymentMethod === 'alipay') {
+          refundEndpoint = '/payment/alipay/refund'
+        } else {
+          this.$message.error(this.$t('order.refund.unsupportedPaymentMethod', '不支持的支付方式'))
+          return
+        }
+        
+        const response = await this.$api.postWithErrorHandler(refundEndpoint, {
+          orderId: this.selectedOrder.id,
+          refundAmount: this.selectedOrder.total_amount,
+          reason: 'Admin processed refund'
+        }, {
+          fallbackKey: 'order.error.refundFailed'
+        })
+        
+        if (response && response.success) {
+          this.$message.success(this.$t(response.message || 'order.refund.process.success', '退款处理成功'))
+          // 重新加载订单详情与状态数据
+          await this.viewOrderDetail(this.selectedOrder)
+          await this.loadOrderStatusData(this.selectedOrder.id)
+        }
+      } catch (e) {
+        // 用户取消或请求失败
+        if (e) {
+          console.error('处理退款失败或已取消:', e)
+        }
+      }
+    },
     async loadOrders() {
       this.loading = true
       try {
@@ -617,20 +821,21 @@ export default {
       }
     },
 
-    async viewOrderDetail(order) {
-      try {
-        const response = await this.$api.getWithErrorHandler(`/order-management/orders/${order.id}`, {
-          fallbackKey: 'order.error.fetchDetailFailed'
-        })
+  async viewOrderDetail(order) {
+    try {
+      const response = await this.$api.getWithErrorHandler(`/order-management/orders/${order.id}`, {
+        fallbackKey: 'order.error.fetchDetailFailed'
+      })
 
-        if (response.success) {
-          this.selectedOrder = response.data
-          this.showOrderDetail = true
-        }
-      } catch (error) {
-        console.error('Error loading order detail:', error)
+      if (response.success) {
+        this.selectedOrder = response.data
+        await this.loadOrderStatusData(order.id)
+        this.showOrderDetail = true
       }
-    },
+    } catch (error) {
+      console.error('Error loading order detail:', error)
+    }
+  },
 
     async manageLogistics(order) {
       try {
@@ -937,15 +1142,25 @@ export default {
     },
 
     formatStatus(status) {
-      const statusMap = {
+      if (!status) return '-'
+      const fallbackMap = {
         pending: 'Pending',
         paid: 'Paid',
         shipped: 'Shipped',
         delivered: 'Delivered',
         cancelled: 'Cancelled',
-        pay_timeout: 'Pay Timeout'
+        pay_timeout: 'Pay Timeout',
+        refund_requested: 'Refund Requested',
+        refund_approved: 'Refund Approved',
+        refund_rejected: 'Refund Rejected',
+        refund_cancelled: 'Refund Cancelled',
+        return_shipped: 'Return Shipped',
+        return_delivered: 'Return Delivered',
+        refunded: 'Refunded'
       }
-      return statusMap[status] || status
+      const key = getOrderStatusKey(status)
+      const fallback = fallbackMap[status] || status
+      return this.$t(key, fallback)
     },
 
     formatLogisticsStatus(status) {
@@ -989,7 +1204,13 @@ export default {
         return ''
       }
       const date = new Date(dateString)
-      return date.toISOString().slice(0, 16) // 格式化为 YYYY-MM-DDTHH:mm
+      // 格式化为友好的日期时间格式：YYYY-MM-DD HH:mm
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day} ${hours}:${minutes}`
     },
 
     // 获取状态对应的Element Plus tag类型
@@ -1141,8 +1362,8 @@ export default {
     goBackToDashboard() {
       this.$router.push('/business');
     }
+    }
   }
-}
 </script>
 
 <style scoped>
@@ -1594,6 +1815,9 @@ export default {
   background: white;
   padding: 16px 20px;
   border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .card-header h4 {
@@ -1605,6 +1829,16 @@ export default {
 
 .card-content {
   padding: 20px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.approve-refund-btn {
+  font-weight: 600;
 }
 
 .status-display {
@@ -2262,6 +2496,107 @@ export default {
   .price-edit-actions .el-button {
     font-size: 14px;
     padding: 10px 20px;
+  }
+}
+
+/* 订单状态记录表格专用样式 */
+.status-history-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* 使用更高特异性的选择器覆盖通用.items-table样式 */
+.status-history-table.items-table th:nth-child(1),
+.status-history-table.items-table td:nth-child(1) {
+  width: 10% !important;
+  text-align: center;
+}
+
+.status-history-table.items-table th:nth-child(2),
+.status-history-table.items-table td:nth-child(2) {
+  width: 35% !important;
+  text-align: left;
+}
+
+.status-history-table.items-table th:nth-child(3),
+.status-history-table.items-table td:nth-child(3) {
+  width: 25% !important;
+  text-align: left;
+}
+
+.status-history-table.items-table th:nth-child(4),
+.status-history-table.items-table td:nth-child(4) {
+  width: 180px !important;
+  text-align: center;
+}
+
+.status-history-table .status-col {
+  width: 10%;
+}
+
+.status-history-table .comment-col {
+  width: 35%;
+}
+
+.status-history-table .images-col {
+  width: 25%;
+}
+
+.status-history-table .datetime-col {
+  width: 180px;
+}
+
+.status-history-table .status-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.status-history-table .comment-cell {
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  vertical-align: top;
+  padding: 12px 8px;
+  line-height: 1.4;
+}
+
+.status-history-table .images-cell {
+  vertical-align: top;
+  padding: 8px;
+}
+
+.status-history-table .images-cell .image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.status-history-table .datetime-cell {
+  text-align: center;
+  vertical-align: middle;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+@include mobile {
+  .status-history-table .status-col {
+    width: 80px;
+  }
+
+  .status-history-table .comment-col {
+    width: 40%;
+  }
+
+  .status-history-table .images-col {
+    width: 30%;
+  }
+
+  .status-history-table .datetime-col {
+    width: 120px;
+  }
+
+  .status-history-table .datetime-cell {
+    font-size: 12px;
   }
 }
 </style>

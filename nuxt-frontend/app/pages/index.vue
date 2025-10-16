@@ -96,10 +96,10 @@
                 </div>
               </div>
               <div class="about-image">
-                <!--img :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" @error="handleImageError" /-->
-                <NuxtImg :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" preset="thumbnail"
+                <img :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" @error="handleImageError" />
+                <!--NuxtImg :src="aboutImageUrl || '/images/about-company.jpg'" alt="About Us" preset="thumbnail"
                   :sizes="`xs:100vw sm:100vw md:50vw lg:50vw xl:50vw`" loading="lazy" @error="handleImageError"
-                  fetchpriority="high" />
+                  fetchpriority="high" /-->
               </div>
             </div>
             <!-- 移动端More按钮 - 独立行 -->

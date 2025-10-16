@@ -176,7 +176,7 @@ export default {
             // 计算目标滚动位置
             let targetScrollTop;
             
-            if (window.innerWidth <= 767) {
+            if (typeof window !== 'undefined' && window.innerWidth <= 767) {
               // 移动端：滚动到表单顶部，留出一些空间
               targetScrollTop = window.pageYOffset + cardRect.top - 50;
             } else {
@@ -217,7 +217,7 @@ export default {
           let targetScrollTop;
           
           // 移动端和桌面端使用不同的滚动策略
-          if (window.innerWidth <= 767) {
+          if (typeof window !== 'undefined' && window.innerWidth <= 767) {
             // 移动端：滚动到表单顶部，留出一些空间
             targetScrollTop = window.pageYOffset + cardRect.top - 50;
           } else {

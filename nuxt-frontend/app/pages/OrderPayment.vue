@@ -16,9 +16,28 @@
             </el-icon>
             {{ $t('payment.orderInfo') }}
           </div>
-          <el-button @click="handleInquiryClick" type="primary" class="inquiry-btn">
-            {{ $t('checkout.inquiry') || 'Inquiry' }}
-          </el-button>
+          <div class="action-buttons">
+            <el-button v-if="orderData.order.status === 'shipped'" @click="handleConfirmReceipt" type="primary"
+              class="confirm-receipt-btn">
+              {{ $t('payment.confirmReceipt') || 'Confirm Receipt' }}
+            </el-button>
+            <el-button
+              v-if="['paid', 'shipped', 'delivered', 'refund_requested', 'refund_cancelled'].includes(orderData.order.status)"
+              @click="handleRefundRequest" type="danger" class="refund-btn">
+              {{ $t('payment.requestRefund') || 'Request Refund' }}
+            </el-button>
+            <el-button v-if="orderData.order.status === 'refund_requested'" @click="handleCancelRefundRequest"
+              type="warning" class="cancel-refund-btn">
+              {{ $t('payment.cancelRefundRequest') || 'Cancel Refund Request' }}
+            </el-button>
+            <el-button v-if="orderData.order.status === 'refund_approved'" @click="handleReturnLogistics" type="success"
+              class="return-logistics-btn">
+              {{ $t('payment.returnLogistics') || 'Return Logistics' }}
+            </el-button>
+            <el-button @click="handleInquiryClick" type="primary" class="inquiry-btn">
+              {{ $t('checkout.inquiry') || 'Inquiry' }}
+            </el-button>
+          </div>
         </h2>
         <div class="order-summary">
           <div class="order-id">
@@ -27,7 +46,7 @@
           </div>
           <div class="order-amount">
             <span class="label">{{ $t('payment.totalAmount') }}:</span>
-            <span class="value">${{ orderData.order.total_amount }}</span>
+            <span class="value">${{ calculateOrderTotal() }}</span>
           </div>
           <div class="order-status">
             <span class="label">{{ $t('payment.orderStatus') || '订单状态' }}:</span>
@@ -44,6 +63,9 @@
               orderData.order.paid_time_zone) }}</span>
           </div>
         </div>
+
+        <!-- 订单状态条 -->
+        <OrderStatusBar :order-data="orderData.order" />
       </div>
 
       <!-- 商品信息 -->
@@ -99,7 +121,7 @@
             </div>
             <div class="total-row grand-total">
               <span>{{ $t('payment.total') || '总计' }}:</span>
-              <span class="total-price">${{ orderData.order.total_amount }}</span>
+              <span class="total-price">${{ calculateOrderTotal() }}</span>
             </div>
           </div>
         </div>
@@ -320,6 +342,105 @@
           @update-message="handleUpdateInquiryMessage" @close="closeInquiryDialog" />
       </div>
     </div>
+
+    <!-- 退款申请对话框 -->
+    <el-dialog v-model="showRefundDialog" :title="$t('refund.title')" width="650px"
+      :before-close="handleRefundDialogClose" :close-on-click-modal="false" :close-on-press-escape="false"
+      class="refund-dialog" center>
+      <div class="refund-dialog-content">
+        <!-- 订单信息 -->
+        <div class="order-summary">
+          <h4>{{ $t('refund.orderInfo') }}</h4>
+          <div class="order-details">
+            <p><strong>{{ $t('order.orderId') }}:</strong> {{ orderData.order?.id }}</p>
+            <p><strong>{{ $t('order.totalAmount') }}:</strong> ¥{{ calculateOrderTotal() }}</p>
+            <p><strong>{{ $t('order.status') }}:</strong> {{ getOrderStatusText(orderData.order?.status) }}</p>
+            <p><strong>{{ $t('order.orderTime') }}:</strong> {{ formatDate(orderData.order?.created_at) }}</p>
+          </div>
+        </div>
+
+        <!-- 退款原因 -->
+        <div class="refund-reason">
+          <h4>{{ $t('refund.reason') }}</h4>
+          <el-input v-model="refundForm.reason" type="textarea" :rows="4" :placeholder="$t('refund.reasonPlaceholder')"
+            maxlength="500" show-word-limit />
+        </div>
+
+        <!-- 图片上传 -->
+        <div class="refund-images">
+          <h4>{{ $t('refund.uploadImages') }}</h4>
+          <el-upload ref="refundUpload" :action="uploadUrl" :headers="uploadHeaders" :data="uploadData"
+            :file-list="refundForm.images" :on-success="handleUploadSuccess" :on-error="handleUploadError"
+            :before-upload="beforeUpload" list-type="picture-card" :limit="5" accept="image/*">
+            <el-icon>
+              <Plus />
+            </el-icon>
+          </el-upload>
+          <div class="upload-tip">
+            {{ $t('refund.uploadTip') }}
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleRefundDialogCancel">{{ $t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="submitRefundRequest" :loading="refundSubmitting">
+            {{ $t('refund.submit') }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 退货物流对话框 -->
+    <el-dialog v-model="showReturnLogisticsDialog" :title="$t('returnLogistics.title')" width="650px"
+      :before-close="handleReturnLogisticsDialogClose" :close-on-click-modal="false" :close-on-press-escape="false"
+      class="refund-dialog" center>
+      <div class="refund-dialog-content">
+        <!-- 订单信息 -->
+        <div class="order-summary">
+          <h4>{{ $t('returnLogistics.orderInfo') }}</h4>
+          <div class="order-details">
+            <p><strong>{{ $t('order.orderId') }}:</strong> {{ orderData.order?.id }}</p>
+            <p><strong>{{ $t('order.totalAmount') }}:</strong> ¥{{ calculateOrderTotal() }}</p>
+            <p><strong>{{ $t('order.status') }}:</strong> {{ getOrderStatusText(orderData.order?.status) }}</p>
+            <p><strong>{{ $t('order.orderTime') }}:</strong> {{ formatDate(orderData.order?.created_at) }}</p>
+          </div>
+        </div>
+
+        <!-- 退货物流信息 -->
+        <div class="refund-reason">
+          <h4>{{ $t('returnLogistics.logisticsInfo') }}</h4>
+          <el-input v-model="returnLogisticsForm.logisticsInfo" type="textarea" :rows="4"
+            :placeholder="$t('returnLogistics.logisticsInfoPlaceholder')" maxlength="500" show-word-limit />
+        </div>
+
+        <!-- 图片上传 -->
+        <div class="refund-images">
+          <h4>{{ $t('returnLogistics.uploadImages') }}</h4>
+          <el-upload ref="returnLogisticsUpload" :action="uploadUrl" :headers="uploadHeaders"
+            :data="returnLogisticsUploadData" :file-list="returnLogisticsForm.images"
+            :on-success="handleReturnLogisticsUploadSuccess" :on-error="handleReturnLogisticsUploadError"
+            :before-upload="beforeUpload" list-type="picture-card" :limit="5" accept="image/*">
+            <el-icon>
+              <Plus />
+            </el-icon>
+          </el-upload>
+          <div class="upload-tip">
+            {{ $t('returnLogistics.uploadTip') }}
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleReturnLogisticsDialogCancel">{{ $t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="submitReturnLogistics" :loading="returnLogisticsSubmitting">
+            {{ $t('returnLogistics.submit') }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -328,7 +449,10 @@ import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
 import InquiryDetailPanel from '@/components/common/InquiryDetailPanel.vue';
 import HProductCard from '@/components/common/H-ProductCard.vue';
-import { Document, ShoppingBag, Location, CreditCard, ArrowLeft, FullScreen, Close, Van } from '@element-plus/icons-vue';
+import OrderStatusBar from '@/components/common/OrderStatusBar.vue';
+import { getAuthToken } from '@/utils/api.js';
+import { getOrderStatusKey, getOrderStatusClass } from '@/utils/orderUtils.js';
+import { Document, ShoppingBag, Location, CreditCard, ArrowLeft, FullScreen, Close, Van, Money, Check, Clock, RefreshLeft, Select, Plus } from '@element-plus/icons-vue';
 
 export default {
   name: 'OrderPayment',
@@ -337,6 +461,7 @@ export default {
     NavigationMenu,
     InquiryDetailPanel,
     HProductCard,
+    OrderStatusBar,
     Document,
     ShoppingBag,
     Location,
@@ -344,7 +469,8 @@ export default {
     ArrowLeft,
     FullScreen,
     Close,
-    Van
+    Van,
+    Plus
   },
   data() {
     return {
@@ -373,11 +499,32 @@ export default {
       inquiryId: null,
       exchangeRate: null,
       exchangeRateLoading: false,
-      alipayDisabled: false
+      alipayDisabled: false,
+      // 退款相关数据
+      showRefundDialog: false,
+      refundSubmitting: false,
+      refundForm: {
+        reason: '',
+        images: []
+      },
+      // 退货物流相关数据
+      showReturnLogisticsDialog: false,
+      returnLogisticsSubmitting: false,
+      returnLogisticsForm: {
+        logisticsInfo: '',
+        images: []
+      },
+      returnLogisticsUploadData: {},
+      uploadUrl: '/api/orders/status-data/upload-image',
+      uploadHeaders: {},
+      uploadData: {}
     };
   },
   computed: {
     isMobile() {
+      if (typeof window === 'undefined') {
+        return false // 在SSR环境中默认返回false
+      }
       return window.innerWidth <= 768;
     },
     cnyAmount() {
@@ -385,7 +532,7 @@ export default {
       if (!this.exchangeRate || !this.orderData || !this.orderData.order) {
         return null;
       }
-      const usdAmount = parseFloat(this.orderData.order.total_amount);
+      const usdAmount = this.calculateOrderTotal();
       if (isNaN(usdAmount)) {
         return null;
       }
@@ -481,6 +628,12 @@ export default {
         return sum + (parseFloat(item.price) * parseInt(item.quantity));
       }, 0);
       return subtotal.toFixed(2);
+    },
+    calculateOrderTotal() {
+      if (!this.orderData || !this.orderData.order) return 0;
+      const totalAmount = parseFloat(this.orderData.order.total_amount) || 0;
+      const shippingFee = parseFloat(this.orderData.order.shipping_fee) || 0;
+      return totalAmount + shippingFee;
     },
     async fetchPayPalConfig() {
       try {
@@ -640,7 +793,7 @@ export default {
             this.hideAlipayText();
           });
         } else {
-          this.$messageHandler.showError('生成支付表单失败: ' + formRes.message, 'payment.error.formGenerateFailed');
+          this.$messageHandler.showError(this.$t('payment.error.formGenerateFailedWithMessage', { message: formRes.message }), 'payment.error.formGenerateFailed');
         }
       } catch (error) {
         console.error('Error generating Alipay form:', error);
@@ -665,7 +818,7 @@ export default {
           this.startQrcodeTimer();
           this.startAutoRefresh(paymentMethod);
         } else {
-          this.$messageHandler.showError('刷新二维码失败: ' + qrRes.message, 'payment.error.qrcodeRefreshFailed');
+          this.$messageHandler.showError(this.$t('payment.error.qrcodeRefreshFailedWithMessage', { message: qrRes.message }), 'payment.error.qrcodeRefreshFailed');
         }
       } catch (error) {
         console.error('Error refreshing QR code:', error);
@@ -694,7 +847,7 @@ export default {
             this.hideAlipayText();
           });
         } else {
-          this.$messageHandler.showError('刷新支付表单失败: ' + formRes.message, 'payment.error.formRefreshFailed');
+          this.$messageHandler.showError(this.$t('payment.error.formRefreshFailedWithMessage', { message: formRes.message }), 'payment.error.formRefreshFailed');
         }
       } catch (error) {
         console.error('Error refreshing Alipay form:', error);
@@ -1032,6 +1185,354 @@ export default {
       // 可以在这里处理消息更新逻辑
       console.log('handleUpdateInquiryMessage:', inquiryId, message);
     },
+    // 处理确认收货
+    async handleConfirmReceipt() {
+      try {
+        // 显示确认对话框
+        await this.$messageHandler.confirm({
+          message: this.$t('payment.confirmReceiptMessage') || 'Are you sure you want to confirm receipt of this order?',
+          translationKey: 'payment.confirmReceiptMessage'
+        });
+
+        // 调用后端API更新订单状态为delivered
+        const response = await this.$api.putWithErrorHandler(`/orders/${this.orderId}`, {
+          status: 'delivered'
+        }, {
+          fallbackKey: 'payment.error.confirmReceiptFailed'
+        });
+
+        if (response.success) {
+          // 更新本地订单状态
+          this.orderData.order.status = 'delivered';
+          this.orderData.order.delivered_at = new Date().toISOString();
+          
+          // 显示成功消息
+          this.$messageHandler.showSuccess(
+            this.$t('payment.confirmReceiptSuccess') || 'Order receipt confirmed successfully!',
+            'payment.success.confirmReceipt'
+          );
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('确认收货失败:', error);
+          this.$messageHandler.showError(
+            this.$t('payment.confirmReceiptError') || 'Failed to confirm receipt',
+            'payment.error.confirmReceiptFailed'
+          );
+        }
+      }
+    },
+    // 退款相关方法
+    async handleRefundRequest() {
+      // 设置上传参数
+      this.uploadData = {
+        orderId: this.orderData.order.id,
+        status: 'refund'
+      };
+      
+      // 设置完整的上传URL
+      const apiBaseURL = this.$config.public.apiBase || 'http://localhost:3000/api';
+      this.uploadUrl = `${apiBaseURL}/orders/status-data/upload-image`;
+      
+      // 设置认证头
+      const token = getAuthToken();
+      if (token) {
+        this.uploadHeaders = {
+          'Authorization': `Bearer ${token}`
+        };
+      }
+      
+      // 获取现有的退款状态数据
+      await this.fetchRefundStatusData();
+      
+      this.showRefundDialog = true;
+    },
+
+    // 取消退款申请方法
+    async handleCancelRefundRequest() {
+      try {
+        // 显示确认对话框
+        await this.$messageHandler.confirm({
+          message: this.$t('payment.cancelRefundConfirmMessage') || 'Are you sure you want to cancel the refund request?',
+          translationKey: 'payment.cancelRefundConfirmMessage'
+        });
+        // 调用后端API更新订单状态为 refund_cancelled
+        const response = await this.$api.putWithErrorHandler(`/orders/${this.orderData.order.id}`, {
+          status: 'refund_cancelled'
+        }, {
+          fallbackKey: 'payment.error.cancelRefundFailed'
+        });
+
+        if (response.success) {
+          // 更新本地订单状态
+          this.orderData.order.status = 'refund_cancelled';
+          
+          // 显示成功消息
+          this.$messageHandler.showSuccess(
+            this.$t('payment.cancelRefundSuccess') || 'Refund request cancelled successfully!',
+            'payment.success.cancelRefund'
+          );
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('取消退款申请失败:', error);
+          this.$messageHandler.showError(
+            this.$t('payment.cancelRefundError') || 'Failed to cancel refund request',
+            'payment.error.cancelRefundFailed'
+          );
+        }
+      }
+    },
+    
+    async fetchRefundStatusData() {
+      try {
+        const response = await this.$api.getWithErrorHandler(
+          `/orders/${this.orderData.order.id}/status-data/refund`,
+          {
+            fallbackKey: 'refund.error.fetchDataFailed'
+          }
+        );
+        
+        if (response.success && response.data) {
+          // 预填充退款原因
+          if (response.data.comment) {
+            this.refundForm.reason = response.data.comment;
+          }
+          
+          // 预填充已上传的图片
+          if (response.data.images && response.data.images.length > 0) {
+            this.refundForm.images = response.data.images.map(imagePath => ({
+              name: imagePath.split('/').pop() || 'image',
+              url: imagePath,
+              uid: Date.now() + Math.random()
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('获取退款状态数据失败:', error);
+        // 不显示错误消息，因为可能是第一次申请退款，没有现有数据
+      }
+    },
+    
+    handleRefundDialogClose() {
+      this.showRefundDialog = false;
+      // 不清除表单数据，保持用户输入的内容
+    },
+    
+    handleRefundDialogCancel() {
+      this.resetRefundForm();
+      this.handleRefundDialogClose();
+    },
+    
+    resetRefundForm() {
+      this.refundForm.reason = '';
+      this.refundForm.images = [];
+    },
+    
+    beforeUpload(file) {
+      const isImage = file.type.startsWith('image/');
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      
+      if (!isImage) {
+        this.$messageHandler.showError(this.$t('refund.onlyImageAllowed'), 'refund.error.onlyImageAllowed');
+        return false;
+      }
+      if (!isLt5M) {
+        this.$messageHandler.showError(this.$t('refund.imageSizeLimit'), 'refund.error.imageSizeLimit');
+        return false;
+      }
+      return true;
+    },
+    
+    handleUploadSuccess(response, file, fileList) {
+      if (response.success) {
+        this.refundForm.images = fileList;
+        this.$messageHandler.showSuccess(this.$t('refund.uploadSuccess'), 'refund.success.upload');
+      } else {
+        this.$messageHandler.showError(response.message || this.$t('refund.uploadFailed'), 'refund.error.upload');
+      }
+    },
+    
+    handleUploadError(error, file, fileList) {
+      console.error('图片上传失败:', error);
+      this.$messageHandler.showError(this.$t('refund.uploadFailed'), 'refund.error.upload');
+    },
+    
+    async submitRefundRequest() {
+      if (!this.refundForm.reason.trim()) {
+        this.$messageHandler.showError(this.$t('refund.reasonRequired'), 'refund.error.reasonRequired');
+        return;
+      }
+      
+      try {
+        this.refundSubmitting = true;
+        
+        // 1. 首先保存退款状态数据
+        const statusDataResponse = await this.$api.postWithErrorHandler('/orders/status-data', {
+          orderId: this.orderData.order.id,
+          status: 'refund_requested',
+          comment: this.refundForm.reason,
+          images: this.refundForm.images.map(img => img.response?.data?.url || img.url).filter(Boolean)
+        });
+        
+        if (!statusDataResponse.success) {
+          throw new Error('保存退款状态数据失败');
+        }
+        
+        // 2. 然后更新订单状态为 refund_requested
+        const updateOrderResponse = await this.$api.putWithErrorHandler(`/orders/${this.orderData.order.id}`, {
+          status: 'refund_requested'
+        });
+        
+        if (!updateOrderResponse.success) {
+          throw new Error('更新订单状态失败');
+        }
+        
+        this.$messageHandler.showSuccess(this.$t('refund.submitSuccess'), 'refund.success.submit');
+        this.resetRefundForm();
+        this.handleRefundDialogClose();
+        
+        // 刷新订单数据
+        await this.fetchOrderDetail();
+        
+      } catch (error) {
+        console.error('提交退款申请失败:', error);
+        this.$messageHandler.showError(this.$t('refund.submitFailed'), 'refund.error.submit');
+      } finally {
+        this.refundSubmitting = false;
+      }
+    },
+    
+    // 退货物流相关方法
+    async handleReturnLogistics() {
+      // 设置上传参数
+      this.returnLogisticsUploadData = {
+        orderId: this.orderData.order.id,
+        status: 'return_shipped'
+      };
+      
+      // 设置完整的上传URL
+      const apiBaseURL = this.$config.public.apiBase || 'http://localhost:3000/api';
+      this.uploadUrl = `${apiBaseURL}/orders/status-data/upload-image`;
+      
+      // 设置认证头
+      const token = getAuthToken();
+      if (token) {
+        this.uploadHeaders = {
+          'Authorization': `Bearer ${token}`
+        };
+      }
+      
+      // 获取现有的退货物流状态数据
+      await this.fetchReturnLogisticsStatusData();
+      
+      this.showReturnLogisticsDialog = true;
+    },
+    
+    async fetchReturnLogisticsStatusData() {
+      try {
+        const response = await this.$api.getWithErrorHandler(
+          `/orders/${this.orderData.order.id}/status-data/return_shipped`,
+          {
+            fallbackKey: 'returnLogistics.error.fetchDataFailed'
+          }
+        );
+        
+        if (response.success && response.data) {
+          // 预填充退货物流信息
+          if (response.data.comment) {
+            this.returnLogisticsForm.logisticsInfo = response.data.comment;
+          }
+          
+          // 预填充已上传的图片
+          if (response.data.images && response.data.images.length > 0) {
+            this.returnLogisticsForm.images = response.data.images.map(imagePath => ({
+              name: imagePath.split('/').pop() || 'image',
+              url: imagePath,
+              uid: Date.now() + Math.random()
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('获取退货物流状态数据失败:', error);
+        // 不显示错误消息，因为可能是第一次提交退货物流，没有现有数据
+      }
+    },
+    
+    handleReturnLogisticsDialogClose() {
+      this.showReturnLogisticsDialog = false;
+      // 不清除表单数据，保持用户输入的内容
+    },
+    
+    handleReturnLogisticsDialogCancel() {
+      this.resetReturnLogisticsForm();
+      this.handleReturnLogisticsDialogClose();
+    },
+    
+    resetReturnLogisticsForm() {
+      this.returnLogisticsForm.logisticsInfo = '';
+      this.returnLogisticsForm.images = [];
+    },
+    
+    handleReturnLogisticsUploadSuccess(response, file, fileList) {
+      if (response.success) {
+        this.returnLogisticsForm.images = fileList;
+        this.$messageHandler.showSuccess(this.$t('returnLogistics.uploadSuccess'), 'returnLogistics.success.upload');
+      } else {
+        this.$messageHandler.showError(response.message || this.$t('returnLogistics.uploadFailed'), 'returnLogistics.error.upload');
+      }
+    },
+    
+    handleReturnLogisticsUploadError(error, file, fileList) {
+      console.error('退货物流图片上传失败:', error);
+      this.$messageHandler.showError(this.$t('returnLogistics.uploadFailed'), 'returnLogistics.error.upload');
+    },
+    
+    async submitReturnLogistics() {
+      if (!this.returnLogisticsForm.logisticsInfo.trim()) {
+        this.$messageHandler.showError(this.$t('returnLogistics.logisticsInfoRequired'), 'returnLogistics.error.logisticsInfoRequired');
+        return;
+      }
+      
+      try {
+        this.returnLogisticsSubmitting = true;
+        
+        // 1. 首先保存退货物流状态数据
+        const statusDataResponse = await this.$api.postWithErrorHandler('/orders/status-data', {
+          orderId: this.orderData.order.id,
+          status: 'return_shipped',
+          comment: this.returnLogisticsForm.logisticsInfo,
+          images: this.returnLogisticsForm.images.map(img => img.response?.data?.url || img.url).filter(Boolean)
+        });
+        
+        if (!statusDataResponse.success) {
+          throw new Error('保存退货物流状态数据失败');
+        }
+        
+        // 2. 然后更新订单状态为 return_shipped
+        const updateOrderResponse = await this.$api.putWithErrorHandler(`/orders/${this.orderData.order.id}`, {
+          status: 'return_shipped'
+        });
+        
+        if (!updateOrderResponse.success) {
+          throw new Error('更新订单状态失败');
+        }
+        
+        this.$messageHandler.showSuccess(this.$t('returnLogistics.submitSuccess'), 'returnLogistics.success.submit');
+        this.resetReturnLogisticsForm();
+        this.handleReturnLogisticsDialogClose();
+        
+        // 刷新订单数据
+        await this.fetchOrderDetail();
+        
+      } catch (error) {
+        console.error('提交退货物流失败:', error);
+        this.$messageHandler.showError(this.$t('returnLogistics.submitFailed'), 'returnLogistics.error.submit');
+      } finally {
+        this.returnLogisticsSubmitting = false;
+      }
+    },
+    
     // 处理新消息接收事件
     handleNewMessages(newMessages) {
       // 可以在这里处理新消息接收逻辑
@@ -1056,7 +1557,7 @@ export default {
           // 开始轮询支付状态
           this.startPaymentStatusPolling(this.orderId, 'alipay');
         } else {
-          this.$messageHandler.showError('获取支付表单失败: ' + response.message, 'payment.error.formGenerateFailed');
+          this.$messageHandler.showError(this.$t('payment.error.formGenerateFailedWithMessage', { message: response.message }), 'payment.error.formGenerateFailed');
         }
       } catch (error) {
         console.error('Error generating mobile Alipay payment:', error);
@@ -1086,11 +1587,11 @@ export default {
           form.submit();
         } else {
           console.error('OrderPayment - 未找到支付宝表单');
-          this.$messageHandler.showError('支付表单格式错误', 'payment.error.formFormatError');
+          this.$messageHandler.showError(this.$t('payment.error.formFormatError'), 'payment.error.formFormatError');
         }
       } catch (error) {
         console.error('OrderPayment - 提交表单失败:', error);
-        this.$messageHandler.showError('支付表单提交失败', 'payment.error.formSubmitFailed');
+        this.$messageHandler.showError(this.$t('payment.error.formSubmitFailed'), 'payment.error.formSubmitFailed');
       }
     },
     handleBackClick() {
@@ -1153,27 +1654,16 @@ export default {
       }
     },
     getOrderStatusText(status) {
-      const statusMap = {
-        'pending': this.$t('order.status.pending') || '待支付',
-        'paid': this.$t('order.status.paid') || '已支付',
-        'shipped': this.$t('order.status.shipped') || '已发货',
-        'delivered': this.$t('order.status.delivered') || '已送达',
-        'cancelled': this.$t('order.status.cancelled') || '已取消',
-        'pay_timeout': this.$t('order.status.payTimeout') || '支付超时'
-      };
-      return statusMap[status] || status;
+      const statusKey = getOrderStatusKey(status);
+
+      return this.$t(statusKey) || status;
     },
 
     getOrderStatusClass(status) {
-      return {
-        'status-pending': status === 'pending',
-        'status-paid': status === 'paid',
-        'status-shipped': status === 'shipped',
-        'status-delivered': status === 'delivered',
-        'status-cancelled': status === 'cancelled',
-        'status-pay-timeout': status === 'pay_timeout'
-      };
-    }
+      return getOrderStatusClass(status);
+    },
+
+
   }
 };
 </script>
@@ -1225,6 +1715,7 @@ export default {
   }
 
   /* 当有多个子元素时，使用space-between布局 */
+  &:has(.action-buttons),
   &:has(.inquiry-btn),
   &:has(.back-btn) {
     justify-content: space-between;
@@ -1237,28 +1728,134 @@ export default {
   gap: $spacing-sm;
 }
 
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
 
 .section-title .inquiry-btn :deep(span) {
   color: $white !important;
 }
 
+.section-title .confirm-receipt-btn :deep(span) {
+  color: $white !important;
+}
+
+// 通用按钮样式 - 确保五个按钮有一致的字体、风格和大小
+.confirm-receipt-btn,
+.refund-btn,
+.cancel-refund-btn,
+.return-logistics-btn,
 .inquiry-btn {
   min-width: 120px;
   height: 40px;
   font-size: $font-size-md;
   font-weight: $font-weight-semibold;
   border-radius: $border-radius-md;
-  background: $primary-color;
-  border: 2px solid $primary-color;
   color: $white;
-  box-shadow: 0 2px 8px rgba($primary-color, 0.3);
   transition: all 0.3s ease;
 
   &:hover {
-    background: $primary-dark;
-    border-color: $primary-dark;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba($primary-color, 0.4);
+  }
+}
+
+// 确认收货按钮 - 绿色背景
+.confirm-receipt-btn {
+  background: #67c23a;
+  border: 2px solid #67c23a;
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
+
+  &:hover {
+    background: #5daf34;
+    border-color: #5daf34;
+    box-shadow: 0 4px 12px rgba(103, 194, 58, 0.4);
+  }
+}
+
+// 申请退货按钮 - 淡蓝色背景
+.refund-btn {
+  background: #60a5fa !important;
+  border: 2px solid #60a5fa !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
+
+  &:hover {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
+  }
+
+  // 确保内部文字为白色
+  :deep(span),
+  :deep(.el-button__text) {
+    color: #ffffff !important;
+  }
+}
+
+// 取消退款申请按钮 - 橙色背景
+.cancel-refund-btn {
+  background: #f59e0b !important;
+  border: 2px solid #f59e0b !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+
+  &:hover {
+    background: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  }
+
+  // 确保内部文字为白色
+  :deep(span),
+  :deep(.el-button__text) {
+    color: #ffffff !important;
+  }
+}
+
+// 退货物流按钮 - 绿色背景
+.return-logistics-btn {
+  background: #67c23a !important;
+  border: 2px solid #67c23a !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
+
+  &:hover {
+    background: #5daf34 !important;
+    border-color: #5daf34 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(103, 194, 58, 0.4);
+  }
+
+  // 确保内部文字为白色
+  :deep(span),
+  :deep(.el-button__text) {
+    color: #ffffff !important;
+  }
+}
+
+// 询问按钮 - 使用主色调
+.inquiry-btn {
+  background: $primary-color !important;
+  border: 2px solid $primary-color !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+
+  &:hover {
+    background: $primary-color !important;
+    border-color: $primary-color !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+  }
+
+  // 确保内部文字为白色
+  :deep(span),
+  :deep(.el-button__text) {
+    color: #ffffff !important;
   }
 
   @include mobile {
@@ -1266,9 +1863,6 @@ export default {
     width: 40px;
     height: 40px;
     padding: 0 !important;
-    background: transparent !important;
-    border: 1px solid $primary-color !important;
-    color: $primary-color !important;
 
     :deep(span),
     :deep(.el-button__text) {
@@ -1280,7 +1874,6 @@ export default {
     }
 
     &::before {
-      content: "?";
       font-size: 18px;
       font-weight: bold;
       display: flex;
@@ -1291,10 +1884,82 @@ export default {
     }
 
     &:hover {
-      background: rgba($primary-color, 0.1) !important;
-      border-color: $primary-color !important;
       transform: none;
       box-shadow: none;
+    }
+  }
+}
+
+
+// 移动端特定样式
+.confirm-receipt-btn {
+  @include mobile {
+    background: transparent !important;
+    border: 1px solid #67c23a !important;
+    color: #67c23a !important;
+
+    &::before {
+      content: "✓";
+      color: #67c23a;
+    }
+
+    &:hover {
+      background: rgba(103, 194, 58, 0.1) !important;
+      border-color: #67c23a !important;
+    }
+  }
+}
+
+.refund-btn {
+  @include mobile {
+    background: transparent !important;
+    border: 1px solid #60a5fa !important;
+    color: #60a5fa !important;
+
+    &::before {
+      content: "↩";
+      color: #60a5fa;
+    }
+
+    &:hover {
+      background: rgba(96, 165, 250, 0.1) !important;
+      border-color: #60a5fa !important;
+    }
+  }
+}
+
+.cancel-refund-btn {
+  @include mobile {
+    background: transparent !important;
+    border: 1px solid #f59e0b !important;
+    color: #f59e0b !important;
+
+    &::before {
+      content: "✕";
+      color: #f59e0b;
+    }
+
+    &:hover {
+      background: rgba(245, 158, 11, 0.1) !important;
+      border-color: #f59e0b !important;
+    }
+  }
+}
+
+.inquiry-btn {
+  @include mobile {
+    background: transparent !important;
+    border: 1px solid var(--el-color-primary) !important;
+    color: var(--el-color-primary) !important;
+
+    &::before {
+      content: "?";
+      color: var(--el-color-primary);
+    }
+
+    &:hover {
+      background: rgba(64, 158, 255, 0.1) !important;
+      border-color: var(--el-color-primary) !important;
     }
   }
 }
@@ -2131,53 +2796,6 @@ export default {
   }
 }
 
-/* 订单状态样式 */
-.order-status {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  &.status-pending {
-    background-color: #fef3c7;
-    color: #d97706;
-    border: 1px solid #fbbf24;
-  }
-
-  &.status-paid {
-    background-color: #d1fae5;
-    color: #059669;
-    border: 1px solid #34d399;
-  }
-
-  &.status-shipped {
-    background-color: #dbeafe;
-    color: #2563eb;
-    border: 1px solid #60a5fa;
-  }
-
-  &.status-delivered {
-    background-color: #dcfce7;
-    color: #16a34a;
-    border: 1px solid #4ade80;
-  }
-
-  &.status-cancelled {
-    background-color: #fee2e2;
-    color: #dc2626;
-    border: 1px solid #f87171;
-  }
-
-  &.status-pay-timeout {
-    background-color: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #ef4444;
-  }
-}
-
 /* 物流信息部分样式 */
 .logistics-section {
   @include card;
@@ -2187,6 +2805,241 @@ export default {
     .el-icon {
       font-size: 20px;
       color: $primary-color;
+    }
+  }
+}
+
+/* 退款对话框样式 */
+.refund-dialog {
+  :deep(.el-dialog) {
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+
+  :deep(.el-dialog__header) {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    color: white;
+    padding: 24px 32px;
+    margin: 0;
+    border-bottom: none;
+
+    .el-dialog__title {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .el-dialog__headerbtn {
+      top: 24px;
+      right: 32px;
+
+      .el-dialog__close {
+        color: white;
+        font-size: 20px;
+
+        &:hover {
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+    }
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 20px 32px;
+    background: #ffffff;
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 24px 32px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+
+    .el-button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+
+      &.el-button--primary {
+        background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        border: none;
+
+        &:hover {
+          background: linear-gradient(135deg, #fc8181 0%, #9c1c1c 100%);
+        }
+      }
+    }
+  }
+}
+
+.refund-dialog-content {
+  .order-summary {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+    display: block !important;
+    flex-direction: unset !important;
+    gap: unset !important;
+    flex-wrap: unset !important;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    }
+
+    h4 {
+      margin: 0 0 12px 0 !important;
+      color: #2d3748;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &::before {
+        content: '📋';
+        font-size: 14px;
+      }
+    }
+
+    .order-details {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      grid-template-rows: auto auto !important;
+      gap: 8px !important;
+      align-items: start;
+      flex-direction: unset !important;
+
+      p {
+        margin: 0 !important;
+        padding: 8px 12px !important;
+        background: white;
+        border-radius: 6px;
+        color: #4a5568;
+        font-size: 13px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+        display: flex !important;
+        align-items: center;
+        min-height: 36px;
+        grid-template-columns: unset !important;
+
+        &:hover {
+          border-color: #e53e3e;
+          box-shadow: 0 2px 8px rgba(229, 62, 62, 0.1);
+        }
+
+        strong {
+          color: #2d3748;
+          margin-right: 6px;
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+
+  .refund-reason {
+    margin-bottom: 20px;
+
+    h4 {
+      margin: 0 0 16px 0;
+      color: #2c3e50;
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &::before {
+        content: '💭';
+        font-size: 16px;
+      }
+    }
+
+    :deep(.el-textarea) {
+      .el-textarea__inner {
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        padding: 16px;
+        font-size: 14px;
+        line-height: 1.6;
+        transition: all 0.3s ease;
+
+        &:focus {
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+      }
+    }
+  }
+
+  .refund-images {
+    h4 {
+      margin: 0 0 16px 0;
+      color: #2c3e50;
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &::before {
+        content: '📷';
+        font-size: 16px;
+      }
+    }
+
+    :deep(.el-upload) {
+      .el-upload-dragger {
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        background: #f9fafb;
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-color: #667eea;
+          background: #f0f4ff;
+        }
+
+        .el-icon {
+          font-size: 32px;
+          color: #9ca3af;
+          margin-bottom: 8px;
+        }
+      }
+
+      .el-upload-list {
+        .el-upload-list__item {
+          border-radius: 8px;
+          border: 1px solid #e9ecef;
+          transition: all 0.2s ease;
+
+          &:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+        }
+      }
+    }
+
+    .upload-tip {
+      margin-top: 12px;
+      color: #6b7280;
+      font-size: 13px;
+      text-align: center;
+      padding: 8px 16px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
     }
   }
 }

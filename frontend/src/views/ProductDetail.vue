@@ -817,7 +817,7 @@ export default {
       );
       
       if (!success) {
-        // 如果失败，可能是需要登录
+      // 如果失败，可能是需要登录
         this.pendingAction = 'addToCart';
       } else {
         // 添加成功后的视觉反馈

@@ -252,3 +252,34 @@ Chrome 插件的功能是在负责在1688 网站上导出商品数据，当用�
 基本公式: 运费=(首重费用+ (计算重量-首重) * 续重单价 + 附加费 + 附加费2)*折扣+总费用 
 续重单价在第2步在运费范围里获得，首重，首重费用，附加费1，附加费2，折扣，总费用 从第3步获得
 计算出运费后，放在order Information 里，并更新总价
+
+### 订单状态管理
+1.订单状态包括，
+   a.'pending' 新建一个订单，状态为pending, 等待用户支付, 
+   b.'paid' 订单支付成功, 
+   c.'shipped' 订单发货, 
+   d.'delivered' 订单已送达, 
+   e.'delivered_timeout' 订单送达超时, 卖家没有在规定时间内送达, 订单状态自动变成delivered_timeout, 卖家必须重新发货。
+   e.'cancelled' 订单已取消, 
+   f.'pay_timeout' 订单支付超时, 买家没有在规定时间内支付, 订单状态自动变成pay_timeout, 买家必须重新下单。
+   g.'refund_requested' 订单退款请求, 买家申请退款, 等待卖家处理。
+   h. 'refund_approved' 卖家已同意退款, 退款申请已通过, 卖家已同意退款.
+   i. 'refund_rejected' 卖家已拒绝退款, 退款申请已拒绝, 订单状态变成refund_rejected.
+   j. 'refund_cancelled' 买家已取消退款, 退款申请已取消, 订单状态变成refund_cancelled.
+   k. 'return_shipped' 订单已退货, 买家已退货
+   l. 'return_delivered' 退货订单已送达, 卖家户已收到退货
+   m. 'refunded' 卖家已退款, 退款成功, 订单状态变成refunded.
+2.订单状态条展示
+ 订单状态条，根据订单状态不同，展示订单的多个状态，每个状态之间用带箭头的线条连接，状态高亮显示当前状态。
+ 如果用户新建一个订单，状态条显示pending，paid，shipped, delivered 四个状态，pending 状态高亮。 在pending 到paid 之间的线上显示'等待支付'。
+ 如果买家取消订单，状态条显示pending和cancelled, 状态高亮。
+ 如果买家超时未支付，状态条显示pending和pay timeout. 
+ 如果买家正常支付，状态条显示pending, paid, shipped, delivered 四个状态，paid 状态高亮。在paid 到 shipped 之间的线上显示'等待发货'。
+ 如果卖家发货，状态条显示pending, paid, shipped, delivered 四个状态，shipped 状态高亮。在shipped 到 delivered 之间的线上显示'等待收货'。
+ 如果买家收到货，状态条显示pending, paid, shipped, delivered 四个状态，delivered 状态高亮。
+ 如果买家申请退款，新增加一个状态条，展现refund_requested,refund_approved, return_shipped, return_delivered, refunded 五个状态，refund_requested 状态高亮。在refund_requested 到 refund_approved 之间的线上显示'等待卖家处理'。
+ 如果买家取消退款，状态条显示refund_requested,refund_cancelled, 两个状态，refund_cancelled 状态高亮。
+ 如果卖家同意退款，状态条显示refund_requested,refund_approved, return_shipped, return_delivered, refunded 五个状态，refund_approved 状态高亮。在refund_approved 到 return_shipped 之间的线上显示'等待买家退货'。
+ 如果卖家拒绝退款，状态条显示refund_requested,refund_rejected, 两个状态，refund_rejected 状态高亮。
+ 如果买家退货，状态条显示refund_requested,refund_approved, return_shipped, return_delivered, refunded 五个状态，return_shipped 状态高亮。在return_shipped 到 return_delivered 之间的线上显示'等待卖家确认'。
+ 如果卖家收到退货，状态条显示refund_requested,refund_approved, return_shipped, return_delivered, refunded 五个状态，return_delivered 状态高亮。在return_delivered 到 refunded 之间的线上显示'等待卖家退款'。

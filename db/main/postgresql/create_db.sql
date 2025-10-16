@@ -11,3 +11,11 @@ ALTER DATABASE vehicle_supplies_db OWNER TO "vehicle_web_user";
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "vehicle_web_user";
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "vehicle_web_user";
 GRANT ALL PRIVILEGES ON SCHEMA public TO "vehicle_web_user";
+
+--SELECT usename, usecreatedb, usesuper FROM pg_user WHERE usename = 'vehicle_web_user';
+
+--CREATE TABLE session (sid VARCHAR(255) PRIMARY KEY, sess JSON NOT NULL, expire TIMESTAMP NOT NULL);
+
+--GRANT CREATE ON SCHEMA public TO 'vehicle_web_user';
+--GRANT CREATE ON SCHEMA public TO "vehicle_web_user";
+

@@ -1,6 +1,8 @@
 const { query } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
 const { getMessage } = require('../config/messages');
+const path = require('path');
+const fs = require('fs');
 
 // 从环境变量获取时间配置
 const PRICE_DISPLAY_HOURS = parseInt(process.env.PRICE_DISPLAY_HOURS) || 48;
@@ -55,7 +57,7 @@ exports.getOrders = async (req, res) => {
               created_at, created_at AT TIME ZONE create_time_zone as created_at_local,updated_at, updated_at AT TIME ZONE create_time_zone as updated_at_local,
               paid_at, create_time_zone, paid_time_zone,paid_at AT TIME ZONE paid_time_zone as paid_at_local,
               shipping_name, shipping_phone, shipping_address, shipping_zip_code, 
-              shipping_country, shipping_state, shipping_city, shipping_phone_country_code
+              shipping_country, shipping_state, shipping_city, shipping_phone_country_code,shipping_fee
        FROM orders 
        WHERE user_id = $1 AND deleted = false 
        ORDER BY created_at DESC 
@@ -116,6 +118,315 @@ exports.getOrders = async (req, res) => {
 };
 
 /**
+ * 添加或修改订单状态数据
+ * @param {Object} req - 请求对象
+ * @param {Object} res - 响应对象
+ */
+exports.addOrUpdateOrderStatusData = async (req, res) => {
+  const userId = req.userId; // 从JWT获取用户ID
+  const { orderId, status, comment, images } = req.body;
+
+  try {
+    // 验证必需字段
+    if (!orderId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('ORDER_STATUS_DATA.MISSING_REQUIRED_FIELDS')
+      });
+    }
+
+    // 验证用户是否有权限操作该订单
+    const orderCheck = await query(
+      'SELECT id FROM orders WHERE id = $1 AND user_id = $2 AND deleted = false',
+      [orderId, userId]
+    );
+
+    if (orderCheck.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('ORDER.NOT_FOUND')
+      });
+    }
+
+    // 检查是否已存在相同订单和状态的记录
+    const existingRecord = await query(
+      'SELECT id FROM order_status_data WHERE order_id = $1 AND status = $2 AND deleted = false',
+      [orderId, status]
+    );
+
+    // 准备图片URL字段
+    const imageFields = {};
+    if (images && Array.isArray(images)) {
+      for (let i = 0; i < Math.min(images.length, 10); i++) {
+        imageFields[`image${i + 1}_url`] = images[i];
+      }
+    }
+
+    let result;
+    if (existingRecord.getRowCount() > 0) {
+      // 更新现有记录
+      const recordId = existingRecord.getFirstRow().id;
+      const updateFields = ['comment = $3', 'updated_at = CURRENT_TIMESTAMP', 'updated_by = $4'];
+      const updateValues = [recordId, orderId, comment, userId];
+      let paramIndex = 5;
+
+      // 添加图片字段
+      for (let i = 1; i <= 10; i++) {
+        const imageKey = `image${i}_url`;
+        updateFields.push(`${imageKey} = $${paramIndex}`);
+        updateValues.push(imageFields[imageKey] || null);
+        paramIndex++;
+      }
+
+      const updateQuery = `
+        UPDATE order_status_data 
+        SET ${updateFields.join(', ')}
+        WHERE id = $1 AND order_id = $2 AND deleted = false
+      `;
+
+      result = await query(updateQuery, updateValues);
+    } else {
+      // 插入新记录
+      const insertFields = ['order_id', 'status', 'comment', 'created_by', 'updated_by'];
+      const insertValues = [orderId, status, comment, userId, userId];
+      const placeholders = ['$1', '$2', '$3', '$4', '$5'];
+      let paramIndex = 6;
+
+      // 添加图片字段
+      for (let i = 1; i <= 10; i++) {
+        const imageKey = `image${i}_url`;
+        insertFields.push(imageKey);
+        placeholders.push(`$${paramIndex}`);
+        insertValues.push(imageFields[imageKey] || null);
+        paramIndex++;
+      }
+
+      const insertQuery = `
+        INSERT INTO order_status_data (${insertFields.join(', ')})
+        VALUES (${placeholders.join(', ')})
+        RETURNING id
+      `;
+
+      result = await query(insertQuery, insertValues);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: getMessage('ORDER_STATUS_DATA.SAVE_SUCCESS'),
+      data: {
+        id: existingRecord.getRowCount() > 0 ? existingRecord.getFirstRow().id : result.getFirstRow().id
+      }
+    });
+  } catch (error) {
+    console.error('保存订单状态数据失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('ORDER_STATUS_DATA.SAVE_FAILED'),
+      error: error.message
+    });
+  }
+};
+
+/**
+ * 获取订单状态数据
+ * @param {Object} req - 请求对象
+ * @param {Object} res - 响应对象
+ */
+exports.getOrderStatusData = async (req, res) => {
+  const userId = req.userId; // 从JWT获取用户ID
+  const { orderId, status } = req.params;
+
+  try {
+    // 验证用户是否有权限操作该订单
+    const orderCheck = await query(
+      'SELECT id FROM orders WHERE id = $1 AND user_id = $2 AND deleted = false',
+      [orderId, userId]
+    );
+
+    if (orderCheck.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('ORDER.NOT_FOUND')
+      });
+    }
+
+    // 获取订单状态数据
+    const result = await query(
+      `SELECT id, order_id, status, comment, 
+              image1_url, image2_url, image3_url, image4_url, image5_url,
+              image6_url, image7_url, image8_url, image9_url, image10_url,
+              created_at, updated_at
+       FROM order_status_data 
+       WHERE order_id = $1 AND status = $2 AND deleted = false`,
+      [orderId, status]
+    );
+
+    if (result.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('ORDER_STATUS_DATA.NOT_FOUND')
+      });
+    }
+
+    const data = result.getFirstRow();
+    
+    // 整理图片数组
+    const images = [];
+    for (let i = 1; i <= 10; i++) {
+      const imageUrl = data[`image${i}_url`];
+      if (imageUrl) {
+        images.push(imageUrl);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: getMessage('ORDER_STATUS_DATA.GET_SUCCESS'),
+      data: {
+        id: data.id,
+        orderId: data.order_id,
+        status: data.status,
+        comment: data.comment,
+        images: images,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      }
+    });
+  } catch (error) {
+    console.error('获取订单状态数据失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('ORDER_STATUS_DATA.GET_FAILED'),
+      error: error.message
+    });
+  }
+};
+
+/**
+ * 删除订单状态数据
+ * @param {Object} req - 请求对象
+ * @param {Object} res - 响应对象
+ */
+exports.deleteOrderStatusData = async (req, res) => {
+  const userId = req.userId; // 从JWT获取用户ID
+  const { orderId, status } = req.params;
+
+  try {
+    // 验证用户是否有权限操作该订单
+    const orderCheck = await query(
+      'SELECT id FROM orders WHERE id = $1 AND user_id = $2 AND deleted = false',
+      [orderId, userId]
+    );
+
+    if (orderCheck.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('ORDER.NOT_FOUND')
+      });
+    }
+
+    // 软删除订单状态数据
+    const result = await query(
+      `UPDATE order_status_data 
+       SET deleted = true, updated_at = CURRENT_TIMESTAMP, updated_by = $3
+       WHERE order_id = $1 AND status = $2 AND deleted = false`,
+      [orderId, status, userId]
+    );
+
+    if (result.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('ORDER_STATUS_DATA.NOT_FOUND')
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: getMessage('ORDER_STATUS_DATA.DELETE_SUCCESS')
+    });
+  } catch (error) {
+    console.error('删除订单状态数据失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('ORDER_STATUS_DATA.DELETE_FAILED'),
+      error: error.message
+    });
+  }
+};
+
+/**
+ * 获取订单的所有状态数据
+ * @param {Object} req - 请求对象
+ * @param {Object} res - 响应对象
+ */
+exports.getOrderAllStatusData = async (req, res) => {
+  const userId = req.userId; // 从JWT获取用户ID
+  const { orderId } = req.params;
+
+  try {
+    // 验证用户是否有权限操作该订单
+    const orderCheck = await query(
+      'SELECT id FROM orders WHERE id = $1 AND user_id = $2 AND deleted = false',
+      [orderId, userId]
+    );
+
+    if (orderCheck.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('ORDER.NOT_FOUND')
+      });
+    }
+
+    // 获取订单的所有状态数据
+    const result = await query(
+      `SELECT id, order_id, status, comment, 
+              image1_url, image2_url, image3_url, image4_url, image5_url,
+              image6_url, image7_url, image8_url, image9_url, image10_url,
+              created_at, updated_at
+       FROM order_status_data 
+       WHERE order_id = $1 AND deleted = false
+       ORDER BY created_at DESC`,
+      [orderId]
+    );
+
+    const statusDataList = result.getRows().map(data => {
+      // 整理图片数组
+      const images = [];
+      for (let i = 1; i <= 10; i++) {
+        const imageUrl = data[`image${i}_url`];
+        if (imageUrl) {
+          images.push(imageUrl);
+        }
+      }
+
+      return {
+        id: data.id,
+        orderId: data.order_id,
+        status: data.status,
+        comment: data.comment,
+        images: images,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: getMessage('ORDER_STATUS_DATA.LIST_SUCCESS'),
+      data: statusDataList
+    });
+  } catch (error) {
+    console.error('获取订单状态数据列表失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('ORDER_STATUS_DATA.LIST_FAILED'),
+      error: error.message
+    });
+  }
+};
+ 
+
+/**
  * 获取订单详情
  * @param {Object} req - 请求对象
  * @param {Object} res - 响应对象
@@ -142,7 +453,7 @@ exports.getOrderDetail = async (req, res) => {
               paid_at, paid_at AT TIME ZONE paid_time_zone as paid_at_local,create_time_zone, paid_time_zone,
               shipping_name, shipping_phone, shipping_email, shipping_address, 
               shipping_zip_code, shipping_country, shipping_state, shipping_city, 
-              shipping_phone_country_code
+              shipping_phone_country_code,shipping_fee
        FROM orders 
        WHERE id = $1 AND user_id = $2 AND deleted = false`,
       [orderId, userId]
@@ -256,7 +567,8 @@ exports.updateOrder = async (req, res) => {
     shipping_country,
     shipping_state,
     shipping_city,
-    shipping_phone_country_code
+    shipping_phone_country_code,
+    status
   } = req.body;
 
   try {
@@ -275,12 +587,31 @@ exports.updateOrder = async (req, res) => {
 
     const order = orderCheck.getFirstRow();
     
-    // 检查订单状态，只有pending状态的订单可以修改
-    if (order.status !== 'pending') {
-      return res.status(400).json({
-        success: false,
-        message: getMessage('ORDER.UPDATE_STATUS_INVALID')
-      });
+    // 检查订单状态更新权限
+    if (status !== undefined) {
+      // 如果要更新status字段，检查是否为有效的状态转换
+      /*const validStatusTransitions = {
+        'shipped': ['delivered'], // shipped状态可以转换为delivered
+        'pending': ['cancelled'], // pending状态可以转换为cancelled
+        'paid': ['refund_requested'], // paid状态可以转换为refund_requested
+        'delivered': ['refund_requested'], // delivered状态可以转换为refund_requested
+        'refund_cancelled': ['refund_requested'], // refund_cancelled状态可以转换为refund_requested
+      };
+      
+      if (!validStatusTransitions[order.status] || !validStatusTransitions[order.status].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('ORDER.INVALID_STATUS_TRANSITION')
+        });
+      }*/
+    } else {
+      // 如果不更新status字段，只有pending状态的订单可以修改其他字段
+      if (order.status !== 'pending') {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('ORDER.UPDATE_STATUS_INVALID')
+        });
+      }
     }
 
     // 构建更新字段
@@ -324,6 +655,10 @@ exports.updateOrder = async (req, res) => {
       updateFields.push(`shipping_phone_country_code = $${paramIndex++}`);
       updateValues.push(shipping_phone_country_code);
     }
+    if (status !== undefined) {
+      updateFields.push(`status = $${paramIndex++}`);
+      updateValues.push(status);
+    }
 
     if (updateFields.length === 0) {
       return res.status(400).json({
@@ -359,3 +694,51 @@ exports.updateOrder = async (req, res) => {
      });
    }
  };
+
+// 创建退款申请
+// 订单状态图片上传
+exports.uploadOrderStatusImage = async (req, res) => {
+  if (!req.file) {
+    return res.json({ success: false, message: getMessage('ORDER.NO_FILE_UPLOADED'), data: null });
+  }
+  
+  const { orderId, status } = req.body;
+  if (!orderId || !status) {
+    return res.json({ success: false, message: getMessage('ORDER.ORDER_ID_STATUS_REQUIRED'), data: null });
+  }
+  
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  if (ext !== '.jpg' && ext !== '.jpeg' && ext !== '.png' && ext !== '.webp') {
+    fs.unlinkSync(req.file.path);
+    return res.json({ success: false, message: getMessage('ORDER.INVALID_FILE_FORMAT'), data: null });
+  }
+  
+  const destName = `order${orderId}${status}image1${ext}`;
+  const destPath = path.join(process.cwd(), 'public', 'static', 'images', 'orders', destName);
+  
+  try {
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    
+    // 如果目标文件已存在，先删除
+    if (fs.existsSync(destPath)) {
+      fs.unlinkSync(destPath);
+    }
+    
+    fs.renameSync(req.file.path, destPath);
+    const url = '/static/images/orders/' + destName;
+    
+    res.json({ 
+      success: true, 
+      message: getMessage('ORDER.IMAGE_UPLOAD_SUCCESS'), 
+      data: { url } 
+    });
+  } catch (err) {
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    console.error('订单状态图片保存失败:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: getMessage('ORDER.FILE_SAVE_FAILED'), 
+      data: null 
+    });
+  }
+};

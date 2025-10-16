@@ -12,10 +12,12 @@ module.exports = {
     merge_logs: true,
     env: {
       PORT_START: 3000, // 起始端口
+      PORT: 3000,
       NODE_ENV: 'development'  // 默认环境
     },
     env_production: {
       PORT_START: 3000, // 起始端口
+      PORT: 3000,
       NODE_ENV: 'production'   // 生产环境
     }
   }, {

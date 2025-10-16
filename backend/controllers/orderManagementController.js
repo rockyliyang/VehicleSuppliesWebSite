@@ -1,6 +1,6 @@
 const { query, getConnection } = require('../db/db');
 const { getMessage } = require('../config/messages');
-const { getManagedUserIds, generateUserIdsPlaceholders } = require('../utils/adminUserUtils');
+const { getManagedUserIds } = require('../utils/adminUserUtils');
 const { sendMail } = require('../utils/email');
 
 /**
@@ -46,10 +46,9 @@ class OrderManagementController {
           });
         }
         
-        const { placeholders, params: userIdParams } = generateUserIdsPlaceholders(managedUserIds);
-        whereClause += ` AND o.user_id IN (${placeholders})`;
-        params.push(...userIdParams);
-        paramIndex += userIdParams.length;
+        whereClause += ` AND o.user_id = ANY($${paramIndex})`;
+        params.push(managedUserIds);
+        paramIndex++;
       }
       
       // 状态过滤
@@ -418,6 +417,7 @@ class OrderManagementController {
       // 业务员只能查看自己用户的订单
       if (userRole !== 'admin') {
         const managedUserIds = await getManagedUserIds(userId);
+        //console.log(managedUserIds);
         if (managedUserIds.length === 0) {
           return res.status(404).json({
             success: false,
@@ -484,7 +484,7 @@ class OrderManagementController {
         LEFT JOIN logistics_companies lc ON l.logistics_company_id = lc.id AND lc.deleted = FALSE
         ${whereClause}
       `;
-      
+      //console.log(orderQuery, params);
       const orderResult = await query(orderQuery, params);
       
       if (orderResult.getRowCount() === 0) {
@@ -522,6 +522,76 @@ class OrderManagementController {
     } catch (error) {
       console.error('获取订单详情失败:', error);
       res.status(500).json({
+        success: false,
+        message: getMessage('ORDER.DETAIL_FETCH_FAILED')
+      });
+    }
+  }
+
+  /**
+   * 获取订单的全部状态历史（管理员/业务员）
+   * 权限：管理员可获取任意订单，业务员仅能获取其管理用户的订单
+   */
+  async getOrderAllStatusData(req, res) {
+    try {
+      const { orderId } = req.params;
+      const userId = req.userId;
+      const userRole = req.userRole;
+
+      // 先验证订单是否存在，并获取其所属用户
+      const orderCheckQuery = `
+        SELECT id, user_id
+        FROM orders
+        WHERE id = $1 AND deleted = FALSE
+      `;
+      const orderResult = await query(orderCheckQuery, [orderId]);
+
+      if (orderResult.getRowCount() === 0) {
+        return res.status(404).json({
+          success: false,
+          message: getMessage('ORDER.NOT_FOUND_OR_NO_PERMISSION')
+        });
+      }
+
+      const order = orderResult.getFirstRow();
+
+      // 业务员权限校验：仅能访问其管理的用户的订单
+      if (userRole !== 'admin') {
+        const managedUserIds = await getManagedUserIds(userId);
+        if (!managedUserIds || !managedUserIds.includes(order.user_id)) {
+          return res.status(403).json({
+            success: false,
+            message: getMessage('ORDER.NOT_FOUND_OR_NO_PERMISSION')
+          });
+        }
+      }
+
+      // 查询订单状态历史记录
+      const statusQuery = `
+        SELECT 
+          id,
+          order_id,
+          status,
+          comment,
+          image1_url, image2_url, image3_url, image4_url, image5_url,
+          image6_url, image7_url, image8_url, image9_url, image10_url,
+          created_at,
+          updated_at
+        FROM order_status_data
+        WHERE order_id = $1 AND deleted = FALSE
+        ORDER BY created_at DESC
+      `;
+
+      const statusResult = await query(statusQuery, [orderId]);
+
+      return res.json({
+        success: true,
+        message: getMessage('ORDER.DETAIL_FETCH_SUCCESS'),
+        data: statusResult.getRows()
+      });
+    } catch (error) {
+      console.error('获取订单状态数据失败:', error);
+      return res.status(500).json({
         success: false,
         message: getMessage('ORDER.DETAIL_FETCH_FAILED')
       });

@@ -12,6 +12,8 @@ const { verifyToken, isAdmin, requireRole } = require('../middleware/jwt');
 // 订单管理相关路由 - 需要登录验证，管理员和业务员都可以访问
 router.get('/orders', verifyToken, (req, res) => orderManagementController.getOrders(req, res));
 router.get('/orders/:orderId', verifyToken, (req, res) => orderManagementController.getOrderDetail(req, res));
+// 订单状态数据（管理员/业务员使用）
+router.get('/orders/:orderId/status-data', verifyToken, (req, res) => orderManagementController.getOrderAllStatusData(req, res));
 router.put('/orders/:orderId/logistics', verifyToken, (req, res) => orderManagementController.updateOrderLogistics(req, res));
 router.put('/orders/:orderId/update', verifyToken, (req, res) => orderManagementController.updateOrderFields(req, res));
 

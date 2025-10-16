@@ -198,7 +198,7 @@ export default {
         
       } catch (error) {
         console.error('结算失败:', error)
-        this.$message.error(this.$t('productDetail.buyNow.checkoutError') || '结算失败，请重试')
+        this.$messageHandler.showError(this.$t('productDetail.buyNow.checkoutError') || '结算失败，请重试')
       } finally {
         this.processingCheckout = false
       }

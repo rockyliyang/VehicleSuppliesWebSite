@@ -65,7 +65,9 @@ export default defineNuxtConfig({
     // Material Icons 已改为按需加载，不再全局加载
     // 'material-icons/iconfont/material-icons.css',
     // 全局样式文件
-    '~/assets/styles/global.css'
+    '~/assets/styles/global.css',
+    // 优雅消息样式 - MessageHandler确认对话框样式
+    '~/assets/styles/elegant-messages.scss'
   ],
   
   // PostCSS配置 - CSS优化
@@ -164,7 +166,7 @@ export default defineNuxtConfig({
     // 图片质量设置 - 针对LCP优化
     quality: 85,
     // 图片格式优化 - 优先使用现代格式
-    format: 'webp',
+    format: ['webp'],
     // 响应式图片尺寸
     screens: {
       xs: 320,
@@ -284,20 +286,21 @@ export default defineNuxtConfig({
       // 客户端渲染页面配置 - 这些页面不需要SSR
       '/Login': { ssr: false } as any,
       '/Activate': { ssr: false } as any,
-      '/Addresslist': { ssr: false } as any,
-      '/Browsinghistory': { ssr: false } as any,
+      '/AddressList': { ssr: false } as any,
+      '/BrowsingHistory': { ssr: false } as any,
       '/Cart': { ssr: false } as any,
-      '/Forgotpassword': { ssr: false } as any,
+      '/ForgotPassword': { ssr: false } as any,
       '/Inquiries': { ssr: false } as any,
-      '/Orderpayment': { ssr: false } as any,
+      '/OrderPayment': { ssr: false } as any,
       '/Register': { ssr: false } as any,
       '/Header': { ssr: false } as any,
       '/Footer': { ssr: false } as any,
-      '/Resetpassword': { ssr: false } as any,
-      '/Unifiedcheckout': { ssr: false } as any,
-      '/Useragreement': { ssr: false } as any,
-      '/Userorders': { ssr: false } as any,
-      '/Usersettings': { ssr: false } as any
+      '/ResetPassword': { ssr: false } as any,
+      '/UnifiedCheckout': { ssr: false } as any,
+      '/UserAgreement': { ssr: false } as any,
+      '/UserOrders': { ssr: false } as any,
+      '/UserSettings': { ssr: false } as any,
+      '/FavoritesManagement': { ssr: false } as any
     } as any,
     // 优化Nitro性能
     minify: true,

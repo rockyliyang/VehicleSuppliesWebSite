@@ -189,7 +189,7 @@ export default {
           fallbackKey: 'address.messages.setDefaultFailed'
         })
         
-        this.$message.success(this.$t('address.messages.setDefaultSuccess'))
+        this.$messageHandler.showSuccess(this.$t('address.messages.setDefaultSuccess'))
         await this.fetchAddresses()
       } catch (error) {
         console.error('Failed to set default address:', error)
@@ -199,21 +199,20 @@ export default {
     // 删除地址
     async deleteAddress(addressId) {
       try {
-        await this.$confirm(
-          this.$t('address.messages.confirmDelete'),
-          this.$t('common.confirm'),
-          {
-            confirmButtonText: this.$t('common.confirm'),
-            cancelButtonText: this.$t('common.cancel'),
+        await this.$messageHandler.confirm({
+          message: this.$t('address.messages.confirmDelete') || '确定要删除这个地址吗？',
+          options: {
+            confirmButtonText: this.$t('common.confirm') || '确定',
+            cancelButtonText: this.$t('common.cancel') || '取消',
             type: 'warning'
           }
-        )
+        })
         
         await this.$api.deleteWithErrorHandler(`/addresses/${addressId}`, {
           fallbackKey: 'address.messages.deleteFailed'
         })
         
-        this.$message.success(this.$t('address.messages.deleteSuccess'))
+        this.$messageHandler.showSuccess(this.$t('address.messages.deleteSuccess'))
         await this.fetchAddresses()
       } catch (error) {
         if (error !== 'cancel') {

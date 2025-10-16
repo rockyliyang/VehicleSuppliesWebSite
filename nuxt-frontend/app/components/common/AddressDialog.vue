@@ -207,6 +207,9 @@ export default {
       return this.addressData && this.addressData.id
     },
     isMobile() {
+      if (typeof window === 'undefined') {
+        return false // 在SSR环境中默认返回false
+      }
       return window.innerWidth <= 768
     },
     rules() {
@@ -329,15 +332,16 @@ export default {
           await this.$api.putWithErrorHandler(`/addresses/${this.addressData.id}`, requestData, {
             fallbackKey: 'address.dialog.messages.updateFailed'
           })
-          this.$message.success(this.$t('address.dialog.messages.updateSuccess'))
+          //this.$message.success(this.$t('address.dialog.messages.updateSuccess'))
         } else {
           await this.$api.postWithErrorHandler('/addresses', requestData, {
             fallbackKey: 'address.dialog.messages.addFailed'
           })
-          this.$message.success(this.$t('address.dialog.messages.addSuccess'))
+          //this.$message.success(this.$t('address.dialog.messages.addSuccess'))
         }
         
         this.$emit('success')
+        console.log('Form submitted successfully:', requestData)
         this.handleClose()
       } catch (error) {
         console.error('Failed to submit form:', error)

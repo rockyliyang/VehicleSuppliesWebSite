@@ -1,21 +1,73 @@
 #!/bin/bash
 # Script to deploy the application from a release.tar.gz archive.
-# Usage: sudo ./update_release.sh [--frontend|--nuxt-frontend|--backend|--all]
+# Usage: sudo ./update_release.sh [--deploy-user USER] [--db-user USER] [--db-name NAME] [--service-prefix PREFIX] [--frontend|--nuxt-frontend|--backend|--all]
 #
 # Features:
 # - Backs up and restores all environment configuration files (.env, .env.development, .env.production, etc.)
 # - Preserves public directory during backend deployment
 # - Provides warnings for missing critical environment files
 # - Supports separate deployment of management frontend and business nuxt frontend
+# - Supports dynamic deploy user, database user and database name configuration
+# - Supports custom PM2 service prefix configuration
+
+# --- Default Configuration ---
+DEFAULT_DEPLOY_USER="web_deployer"
+DEFAULT_DB_USER="vehicle_web_user"
+DEFAULT_DB_NAME="vehicle_supplies_db"
+DEFAULT_SERVICE_PREFIX="vehicle-supplies"
+
+# --- Parse Command Line Arguments ---
+DEPLOY_USER="${DEFAULT_DEPLOY_USER}"
+DB_USER="${DEFAULT_DB_USER}"
+DB_NAME="${DEFAULT_DB_NAME}"
+SERVICE_PREFIX="${DEFAULT_SERVICE_PREFIX}"
+DEPLOYMENT_TYPE=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --deploy-user)
+            DEPLOY_USER="$2"
+            shift 2
+            ;;
+        --db-user)
+            DB_USER="$2"
+            shift 2
+            ;;
+        --db-name)
+            DB_NAME="$2"
+            shift 2
+            ;;
+        --service-prefix)
+            SERVICE_PREFIX="$2"
+            shift 2
+            ;;
+        --frontend|--nuxt-frontend|--backend|--all)
+            DEPLOYMENT_TYPE="$1"
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: sudo ./update_release.sh [--deploy-user USER] [--db-user USER] [--db-name NAME] [--service-prefix PREFIX] [--frontend|--nuxt-frontend|--backend|--all]"
+            exit 1
+            ;;
+    esac
+done
 
 # --- Configuration ---
-DEPLOY_USER="web_deployer"
 USER_HOME="/home/${DEPLOY_USER}"
 FRONTEND_DIR="${USER_HOME}/frontend"
 NUXT_FRONTEND_DIR="${USER_HOME}/nuxt-frontend"
 BACKEND_DIR="${USER_HOME}/backend"
 PM2_RUNNING_DIR="${USER_HOME}/pm2-running"
 RELEASE_ARCHIVE="release.tar.gz"
+
+echo "=== Deployment Configuration ==="
+echo "Deploy User: ${DEPLOY_USER}"
+echo "Database User: ${DB_USER}"
+echo "Database Name: ${DB_NAME}"
+echo "Service Prefix: ${SERVICE_PREFIX}"
+echo "Deployment Type: ${DEPLOYMENT_TYPE:-all}"
+echo "================================="
 
 # --- Helper Functions ---
 echo_color() {
@@ -56,9 +108,9 @@ deploy_backend() {
     
     # Stop all services
     echo_color "green" "[BACKEND] Stopping all services (pm2)..."
-    sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-backend || echo "Backend not running, proceeding..."
-    sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-scheduler || echo "Scheduler not running, proceeding..."
-    sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-nuxt-frontend || echo "Nuxt frontend not running, proceeding..."
+    sudo -u ${DEPLOY_USER} bash -c "pm2 stop ${SERVICE_PREFIX}-backend || echo \"Backend not running, proceeding...\""
+    sudo -u ${DEPLOY_USER} bash -c "pm2 stop ${SERVICE_PREFIX}-scheduler || echo \"Scheduler not running, proceeding...\""
+    sudo -u ${DEPLOY_USER} bash -c "pm2 stop ${SERVICE_PREFIX}-nuxt-frontend || echo \"Nuxt frontend not running, proceeding...\""
 
     # Backup environment configuration files if they exist
     echo_color "green" "[BACKEND] Backing up environment configuration files..."
@@ -152,8 +204,9 @@ deploy_backend() {
         echo_color "yellow" "[BACKEND] No PM2 configuration found, using existing configuration"
     fi
 
-    # PM2 services start vehicle-supplies-backend
-    sudo -u ${DEPLOY_USER} pm2 start vehicle-supplies-backend || echo "Nuxt backend startinng..."
+    # PM2 services start backend
+    echo_color "green" "[BACKEND] Starting backend service..."
+    sudo -u ${DEPLOY_USER} bash -c "pm2 start ${SERVICE_PREFIX}-backend" || echo "Backend starting..."
 
 }
 
@@ -192,7 +245,7 @@ deploy_nuxt_frontend() {
 
     # Stop nuxt frontend service if running
     echo_color "green" "[NUXT-FRONTEND] Stopping nuxt frontend service..."
-    sudo -u ${DEPLOY_USER} pm2 stop vehicle-supplies-nuxt-frontend || echo "Nuxt frontend not running, proceeding..."
+    sudo -u ${DEPLOY_USER} bash -c "pm2 stop ${SERVICE_PREFIX}-nuxt-frontend || echo \"Nuxt frontend not running, proceeding...\""
 
     # Backup environment configuration files if they exist
     echo_color "green" "[NUXT-FRONTEND] Backing up environment configuration files..."
@@ -353,28 +406,29 @@ RESTART_FRONTEND=false
 RESTART_NUXT_FRONTEND=false
 RESTART_BACKEND=false
 
-if [ "$1" == "--frontend" ]; then
+if [ "${DEPLOYMENT_TYPE}" == "--frontend" ]; then
     RESTART_FRONTEND=true
-elif [ "$1" == "--nuxt-frontend" ]; then
+elif [ "${DEPLOYMENT_TYPE}" == "--nuxt-frontend" ]; then
     RESTART_NUXT_FRONTEND=true
-elif [ "$1" == "--backend" ]; then
+elif [ "${DEPLOYMENT_TYPE}" == "--backend" ]; then
     RESTART_BACKEND=true
-elif [ "$1" == "--all" ] || [ -z "$1" ]; then
+elif [ "${DEPLOYMENT_TYPE}" == "--all" ] || [ -z "${DEPLOYMENT_TYPE}" ]; then
     RESTART_FRONTEND=true
     RESTART_NUXT_FRONTEND=true
     RESTART_BACKEND=true
 else
-    echo_color "red" "Invalid argument. Use --frontend, --nuxt-frontend, --backend, or --all."
-    rm -rf ${TEMP_DIR}
+    echo_color "red" "Invalid deployment type. Use --frontend, --nuxt-frontend, --backend, or --all."
     exit 1
 fi
 # Execute database update script if it exists
 echo_color "yellow" "--- Updating Database ---"
 if [ -f "release/update_database.sh" ]; then
     echo_color "green" "[DATABASE] Found database update script, executing..."
+    echo_color "green" "[DATABASE] Using database user: ${DB_USER}"
+    echo_color "green" "[DATABASE] Using database name: ${DB_NAME}"
     chmod +x release/update_database.sh
     cd release
-    ./update_database.sh
+    ./update_database.sh "${DB_USER}" "${DB_NAME}"
     cd ..
     if [ $? -eq 0 ]; then
         echo_color "green" "[DATABASE] Database update completed successfully"
@@ -401,7 +455,7 @@ fi
 if [ "${RESTART_BACKEND}" = true ] || [ "${RESTART_NUXT_FRONTEND}" = true ]; then
     echo_color "yellow" "--- Restarting PM2 Services ---"
     echo_color "green" "[PM2] Restarting all services..."
-    sudo -u ${DEPLOY_USER} bash -c "cd ${PM2_RUNNING_DIR} && pm2 restart ecosystem.config.js --env production"
+    sudo -u ${DEPLOY_USER} bash -c "cd ${PM2_RUNNING_DIR} && pm2 restart ${SERVICE_PREFIX}.ecosystem.config.js --env production"
     sudo -u ${DEPLOY_USER} pm2 save
     echo_color "green" "[PM2] All services restarted successfully"
     

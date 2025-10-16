@@ -501,7 +501,7 @@ export default {
     
     // Add product to inquiry
     /*addToInquiry(item) {
-      const isMobile = window.innerWidth <= 767;
+      const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 767 : false;
       
       if (isMobile) {
         // 移动端：直接跳转到询价管理页面
@@ -533,7 +533,7 @@ export default {
       }
       
       // 检查是否为移动端
-      const isMobile = window.innerWidth <= 767;
+      const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 767 : false;
       
       if (isMobile) {
         // 移动端：直接创建询价单并跳转

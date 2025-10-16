@@ -38,7 +38,6 @@ const filteredBreadcrumbItems = computed(() => {
 .navigation-menu {
   background-color: $white;
   padding: $spacing-md 0;
-  margin-bottom: $spacing-md;
 }
 
 .nav-content {

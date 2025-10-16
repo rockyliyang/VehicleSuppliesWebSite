@@ -5,7 +5,7 @@
 
 const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
-const { getManagedUserIds, generateUserIdsPlaceholders } = require('../utils/adminUserUtils');
+const { getManagedUserIds } = require('../utils/adminUserUtils');
 
 /**
  * 获取管理员控制面板统计数据

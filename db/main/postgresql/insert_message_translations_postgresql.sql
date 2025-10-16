@@ -2138,6 +2138,14 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'address.dialog.saving', 'zh-CN', '保存中...'),
 (gen_random_uuid(), 'address.dialog.cancel', 'en', 'Cancel'),
 (gen_random_uuid(), 'address.dialog.cancel', 'zh-CN', '取消'),
+(gen_random_uuid(), 'address.dialog.home', 'en', 'Home'),
+(gen_random_uuid(), 'address.dialog.home', 'zh-CN', '家'),
+(gen_random_uuid(), 'address.dialog.company', 'en', 'Company'),
+(gen_random_uuid(), 'address.dialog.company', 'zh-CN', '公司'),
+(gen_random_uuid(), 'address.dialog.school', 'en', 'School'),
+(gen_random_uuid(), 'address.dialog.school', 'zh-CN', '学校'),
+(gen_random_uuid(), 'address.dialog.other', 'en', 'Other'),
+(gen_random_uuid(), 'address.dialog.other', 'zh-CN', '其他'),
 
 -- 地址对话框验证翻译键
 (gen_random_uuid(), 'address.dialog.validation.recipientNameRequired', 'en', 'Recipient name is required'),
@@ -2641,6 +2649,22 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 (gen_random_uuid(), 'order.status.delivered', 'zh-CN', '已送达'),
 (gen_random_uuid(), 'order.status.cancelled', 'en', 'Cancelled'),
 (gen_random_uuid(), 'order.status.cancelled', 'zh-CN', '已取消'),
+(gen_random_uuid(), 'order.status.payTimeout', 'en', 'Payment Timeout'),
+(gen_random_uuid(), 'order.status.payTimeout', 'zh-CN', '支付超时'),
+(gen_random_uuid(), 'order.status.refundRequested', 'en', 'Refund Requested'),
+(gen_random_uuid(), 'order.status.refundRequested', 'zh-CN', '申请退款'),
+(gen_random_uuid(), 'order.status.refundApproved', 'en', 'Refund Approved'),
+(gen_random_uuid(), 'order.status.refundApproved', 'zh-CN', '退款已批准'),
+(gen_random_uuid(), 'order.status.refundRejected', 'en', 'Refund Rejected'),
+(gen_random_uuid(), 'order.status.refundRejected', 'zh-CN', '退款被拒绝'),
+(gen_random_uuid(), 'order.status.returnShipped', 'en', 'Return Shipped'),
+(gen_random_uuid(), 'order.status.returnShipped', 'zh-CN', '退货已发出'),
+(gen_random_uuid(), 'order.status.returnDelivered', 'en', 'Return Delivered'),
+(gen_random_uuid(), 'order.status.returnDelivered', 'zh-CN', '退货已送达'),
+(gen_random_uuid(), 'order.status.refundCancelled', 'en', 'Refund Cancelled'),
+(gen_random_uuid(), 'order.status.refundCancelled', 'zh-CN', '退款已取消'),
+(gen_random_uuid(), 'order.status.refunded', 'en', 'Refunded'),
+(gen_random_uuid(), 'order.status.refunded', 'zh-CN', '已退款'),
 
 -- Common UI Elements
 
@@ -3928,4 +3952,266 @@ INSERT INTO language_translations (guid, code, lang, value) VALUES
 -- plugin.supplier.fetchFailed
 (gen_random_uuid(), 'plugin.supplier.fetchFailed', 'en', 'Failed to fetch suppliers'),
 (gen_random_uuid(), 'plugin.supplier.fetchFailed', 'zh-CN', '获取供应商失败');
+
+-- OrderPayment.vue 新增的错误消息翻译键
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- payment.error.formGenerateFailedWithMessage
+(gen_random_uuid(), 'payment.error.formGenerateFailedWithMessage', 'en', 'Failed to generate payment form: {message}'),
+(gen_random_uuid(), 'payment.error.formGenerateFailedWithMessage', 'zh-CN', '生成支付表单失败: {message}'),
+-- payment.error.qrcodeRefreshFailedWithMessage
+(gen_random_uuid(), 'payment.error.qrcodeRefreshFailedWithMessage', 'en', 'Failed to refresh QR code: {message}'),
+(gen_random_uuid(), 'payment.error.qrcodeRefreshFailedWithMessage', 'zh-CN', '刷新二维码失败: {message}'),
+-- payment.error.formRefreshFailedWithMessage
+(gen_random_uuid(), 'payment.error.formRefreshFailedWithMessage', 'en', 'Failed to refresh payment form: {message}'),
+(gen_random_uuid(), 'payment.error.formRefreshFailedWithMessage', 'zh-CN', '刷新支付表单失败: {message}');
+
+-- OrderPayment.vue 订单状态连接文本翻译键
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- payment.status.waitingPayment
+(gen_random_uuid(), 'payment.status.waitingPayment', 'en', 'Waiting for payment'),
+(gen_random_uuid(), 'payment.status.waitingPayment', 'zh-CN', '等待支付'),
+-- payment.status.waitingShipment
+(gen_random_uuid(), 'payment.status.waitingShipment', 'en', 'Waiting for shipment'),
+(gen_random_uuid(), 'payment.status.waitingShipment', 'zh-CN', '等待发货'),
+-- payment.status.waitingDelivery
+(gen_random_uuid(), 'payment.status.waitingDelivery', 'en', 'Waiting for delivery'),
+(gen_random_uuid(), 'payment.status.waitingDelivery', 'zh-CN', '等待收货'),
+-- payment.status.waitingSellerProcess
+(gen_random_uuid(), 'payment.status.waitingSellerProcess', 'en', 'Waiting for seller to process'),
+(gen_random_uuid(), 'payment.status.waitingSellerProcess', 'zh-CN', '等待卖家处理'),
+-- payment.status.waitingBuyerReturn
+(gen_random_uuid(), 'payment.status.waitingBuyerReturn', 'en', 'Waiting for buyer to return'),
+(gen_random_uuid(), 'payment.status.waitingBuyerReturn', 'zh-CN', '等待买家退货'),
+-- payment.status.waitingSellerConfirm
+(gen_random_uuid(), 'payment.status.waitingSellerConfirm', 'en', 'Waiting for seller to confirm'),
+(gen_random_uuid(), 'payment.status.waitingSellerConfirm', 'zh-CN', '等待卖家确认'),
+-- payment.status.waitingSellerRefund
+(gen_random_uuid(), 'payment.status.waitingSellerRefund', 'en', 'Waiting for seller to refund'),
+(gen_random_uuid(), 'payment.status.waitingSellerRefund', 'zh-CN', '等待卖家退款');
+
+-- OrderPayment.vue getOrderStatusSteps 方法的步骤标签翻译键
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- payment.steps.orderSubmitted
+(gen_random_uuid(), 'payment.steps.orderSubmitted', 'en', 'Order Submitted'),
+(gen_random_uuid(), 'payment.steps.orderSubmitted', 'zh-CN', '提交订单'),
+-- payment.steps.paymentSuccess
+(gen_random_uuid(), 'payment.steps.paymentSuccess', 'en', 'Payment Success'),
+(gen_random_uuid(), 'payment.steps.paymentSuccess', 'zh-CN', '付款成功'),
+-- payment.steps.shipped
+(gen_random_uuid(), 'payment.steps.shipped', 'en', 'Shipped'),
+(gen_random_uuid(), 'payment.steps.shipped', 'zh-CN', '商品出库'),
+-- payment.steps.completed
+(gen_random_uuid(), 'payment.steps.completed', 'en', 'Completed'),
+(gen_random_uuid(), 'payment.steps.completed', 'zh-CN', '完成'),
+-- payment.steps.refundRequested
+(gen_random_uuid(), 'payment.steps.refundRequested', 'en', 'Refund Requested'),
+(gen_random_uuid(), 'payment.steps.refundRequested', 'zh-CN', '退款请求'),
+-- payment.steps.refundApproved
+(gen_random_uuid(), 'payment.steps.refundApproved', 'en', 'Refund Approved'),
+(gen_random_uuid(), 'payment.steps.refundApproved', 'zh-CN', '退款批准'),
+-- payment.steps.returned
+(gen_random_uuid(), 'payment.steps.returned', 'en', 'Returned'),
+(gen_random_uuid(), 'payment.steps.returned', 'zh-CN', '已退货'),
+-- payment.steps.returnDelivered
+(gen_random_uuid(), 'payment.steps.returnDelivered', 'en', 'Return Delivered'),
+(gen_random_uuid(), 'payment.steps.returnDelivered', 'zh-CN', '退货送达'),
+-- payment.steps.refunded
+(gen_random_uuid(), 'payment.steps.refunded', 'en', 'Refunded'),
+(gen_random_uuid(), 'payment.steps.refunded', 'zh-CN', '已退款'),
+-- payment.steps.cancelled
+(gen_random_uuid(), 'payment.steps.cancelled', 'en', 'Cancelled'),
+(gen_random_uuid(), 'payment.steps.cancelled', 'zh-CN', '已取消'),
+-- payment.steps.paymentTimeout
+(gen_random_uuid(), 'payment.steps.paymentTimeout', 'en', 'Payment Timeout'),
+(gen_random_uuid(), 'payment.steps.paymentTimeout', 'zh-CN', '支付超时'),
+-- payment.steps.refundRejected
+(gen_random_uuid(), 'payment.steps.refundRejected', 'en', 'Refund Rejected'),
+(gen_random_uuid(), 'payment.steps.refundRejected', 'zh-CN', '退款拒绝'),
+-- payment.confirmReceipt
+(gen_random_uuid(), 'payment.confirmReceipt', 'en', 'Confirm Receipt'),
+(gen_random_uuid(), 'payment.confirmReceipt', 'zh-CN', '确认收货'),
+-- payment.confirmReceiptTitle
+(gen_random_uuid(), 'payment.confirmReceiptTitle', 'en', 'Confirm Receipt'),
+(gen_random_uuid(), 'payment.confirmReceiptTitle', 'zh-CN', '确认收货'),
+-- payment.confirmReceiptMessage
+(gen_random_uuid(), 'payment.confirmReceiptMessage', 'en', 'Are you sure you want to confirm receipt of this order?'),
+(gen_random_uuid(), 'payment.confirmReceiptMessage', 'zh-CN', '您确定要确认收货吗？'),
+-- payment.confirmReceiptSuccess
+(gen_random_uuid(), 'payment.confirmReceiptSuccess', 'en', 'Order receipt confirmed successfully!'),
+(gen_random_uuid(), 'payment.confirmReceiptSuccess', 'zh-CN', '订单收货确认成功！'),
+-- payment.success.confirmReceipt
+(gen_random_uuid(), 'payment.success.confirmReceipt', 'en', 'Order receipt confirmed successfully!'),
+(gen_random_uuid(), 'payment.success.confirmReceipt', 'zh-CN', '订单收货确认成功！'),
+-- payment.confirmReceiptError
+(gen_random_uuid(), 'payment.confirmReceiptError', 'en', 'Failed to confirm receipt'),
+(gen_random_uuid(), 'payment.confirmReceiptError', 'zh-CN', '确认收货失败'),
+-- payment.error.confirmReceiptFailed
+(gen_random_uuid(), 'payment.error.confirmReceiptFailed', 'en', 'Failed to confirm receipt'),
+(gen_random_uuid(), 'payment.error.confirmReceiptFailed', 'zh-CN', '确认收货失败'),
+-- order.status.paid
+(gen_random_uuid(), 'order.status.paid', 'en', 'Paid'),
+(gen_random_uuid(), 'order.status.paid', 'zh-CN', '已支付'),
+-- ORDER.INVALID_STATUS_TRANSITION
+(gen_random_uuid(), 'ORDER.INVALID_STATUS_TRANSITION', 'en', 'Invalid order status transition'),
+(gen_random_uuid(), 'ORDER.INVALID_STATUS_TRANSITION', 'zh-CN', '无效的订单状态转换'),
+(gen_random_uuid(), 'payment.requestRefund', 'en', 'Request Refund'),
+(gen_random_uuid(), 'payment.requestRefund', 'zh-CN', '退款申请'),
+
+-- 退款申请对话框相关翻译键
+-- refund.title
+(gen_random_uuid(), 'refund.title', 'en', 'Refund Application'),
+(gen_random_uuid(), 'refund.title', 'zh-CN', '退款申请'),
+-- refund.orderInfo
+(gen_random_uuid(), 'refund.orderInfo', 'en', 'Order Information'),
+(gen_random_uuid(), 'refund.orderInfo', 'zh-CN', '订单信息'),
+-- refund.reason
+(gen_random_uuid(), 'refund.reason', 'en', 'Refund Reason'),
+(gen_random_uuid(), 'refund.reason', 'zh-CN', '退款原因'),
+-- refund.reasonPlaceholder
+(gen_random_uuid(), 'refund.reasonPlaceholder', 'en', 'Please describe the reason for refund...'),
+(gen_random_uuid(), 'refund.reasonPlaceholder', 'zh-CN', '请描述退款原因...'),
+-- refund.uploadImages
+(gen_random_uuid(), 'refund.uploadImages', 'en', 'Upload Evidence Images'),
+(gen_random_uuid(), 'refund.uploadImages', 'zh-CN', '上传凭证图片'),
+-- refund.uploadTip
+(gen_random_uuid(), 'refund.uploadTip', 'en', 'Upload up to 5 images as evidence (JPG, PNG format)'),
+(gen_random_uuid(), 'refund.uploadTip', 'zh-CN', '最多上传3张图片作为凭证（JPG、PNG格式）'),
+-- refund.submit
+(gen_random_uuid(), 'refund.submit', 'en', 'Submit Refund Request'),
+(gen_random_uuid(), 'refund.submit', 'zh-CN', '提交退款申请');
+
+-- 取消退款相关翻译键
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- payment.cancelRefundConfirmMessage
+(gen_random_uuid(), 'payment.cancelRefundConfirmMessage', 'en', 'Are you sure you want to cancel the refund request?'),
+(gen_random_uuid(), 'payment.cancelRefundConfirmMessage', 'zh-CN', '确定要取消退款申请吗？'),
+-- payment.cancelRefundSuccess
+(gen_random_uuid(), 'payment.cancelRefundSuccess', 'en', 'Refund request cancelled successfully'),
+(gen_random_uuid(), 'payment.cancelRefundSuccess', 'zh-CN', '退款申请取消成功'),
+-- payment.success.cancelRefund
+(gen_random_uuid(), 'payment.success.cancelRefund', 'en', 'Refund request cancelled successfully'),
+(gen_random_uuid(), 'payment.success.cancelRefund', 'zh-CN', '退款申请取消成功'),
+-- payment.cancelRefundError
+(gen_random_uuid(), 'payment.cancelRefundError', 'en', 'Failed to cancel refund request'),
+(gen_random_uuid(), 'payment.cancelRefundError', 'zh-CN', '取消退款申请失败'),
+-- payment.error.cancelRefundFailed
+(gen_random_uuid(), 'payment.error.cancelRefundFailed', 'en', 'Failed to cancel refund request'),
+(gen_random_uuid(), 'payment.error.cancelRefundFailed', 'zh-CN', '取消退款申请失败'),
+-- payment.steps.refundCancelled
+(gen_random_uuid(), 'payment.steps.refundCancelled', 'en', 'Refund Cancelled'),
+(gen_random_uuid(), 'payment.steps.refundCancelled', 'zh-CN', '退款取消');
+
+-- 为 frontend/src/views/admin/OrderManagement.vue 新增的翻译键
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- order.detail.images
+(gen_random_uuid(), 'order.detail.images', 'en', 'Images'),
+(gen_random_uuid(), 'order.detail.images', 'zh-CN', '图片'),
+-- order.refund.approve
+(gen_random_uuid(), 'order.refund.approve', 'en', 'Approve Refund'),
+(gen_random_uuid(), 'order.refund.approve', 'zh-CN', '同意退款'),
+-- order.refund.approve.confirm
+(gen_random_uuid(), 'order.refund.approve.confirm', 'en', 'Are you sure to approve the refund?'),
+(gen_random_uuid(), 'order.refund.approve.confirm', 'zh-CN', '确定同意该订单退款吗？'),
+-- order.refund.approve.success
+(gen_random_uuid(), 'order.refund.approve.success', 'en', 'Refund approved successfully'),
+(gen_random_uuid(), 'order.refund.approve.success', 'zh-CN', '退款审批成功');
+
+-- 订单详情状态记录表头与字段
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+(gen_random_uuid(), 'order.detail.statusHistory', 'en', 'Status History'),
+(gen_random_uuid(), 'order.detail.statusHistory', 'zh-CN', '订单状态记录'),
+(gen_random_uuid(), 'order.detail.status', 'en', 'Status'),
+(gen_random_uuid(), 'order.detail.status', 'zh-CN', '状态'),
+(gen_random_uuid(), 'order.detail.comment', 'en', 'Comment'),
+(gen_random_uuid(), 'order.detail.comment', 'zh-CN', '备注'),
+(gen_random_uuid(), 'order.detail.updatedAt', 'en', 'Updated At'),
+(gen_random_uuid(), 'order.detail.updatedAt', 'zh-CN', '更新时间');
+
+-- 前端操作按钮 - 取消退款申请
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+(gen_random_uuid(), 'payment.cancelRefundRequest', 'en', 'Cancel Refund Request'),
+(gen_random_uuid(), 'payment.cancelRefundRequest', 'zh-CN', '取消退款申请');
+
+-- OrderManagement.vue 错误提示 fallbackKey
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+(gen_random_uuid(), 'order.error.updateOrderFailed', 'en', 'Failed to update order'),
+(gen_random_uuid(), 'order.error.updateOrderFailed', 'zh-CN', '更新订单失败'),
+(gen_random_uuid(), 'order.error.loadStatusDataFailed', 'en', 'Failed to load order status data'),
+(gen_random_uuid(), 'order.error.loadStatusDataFailed', 'zh-CN', '加载订单状态数据失败');
+
+-- 退货物流相关翻译键
+INSERT INTO language_translations (guid, code, lang, value) VALUES
+-- returnLogistics.title
+(gen_random_uuid(), 'returnLogistics.title', 'en', 'Return Logistics'),
+(gen_random_uuid(), 'returnLogistics.title', 'zh-CN', '退货物流'),
+-- returnLogistics.orderInfo
+(gen_random_uuid(), 'returnLogistics.orderInfo', 'en', 'Order Information'),
+(gen_random_uuid(), 'returnLogistics.orderInfo', 'zh-CN', '订单信息'),
+-- returnLogistics.logisticsInfo
+(gen_random_uuid(), 'returnLogistics.logisticsInfo', 'en', 'Logistics Information'),
+(gen_random_uuid(), 'returnLogistics.logisticsInfo', 'zh-CN', '物流信息'),
+-- returnLogistics.logisticsInfoPlaceholder
+(gen_random_uuid(), 'returnLogistics.logisticsInfoPlaceholder', 'en', 'Please enter logistics tracking number and carrier information...'),
+(gen_random_uuid(), 'returnLogistics.logisticsInfoPlaceholder', 'zh-CN', '请输入物流单号和承运商信息...'),
+-- returnLogistics.uploadImages
+(gen_random_uuid(), 'returnLogistics.uploadImages', 'en', 'Upload Logistics Images'),
+(gen_random_uuid(), 'returnLogistics.uploadImages', 'zh-CN', '上传物流图片'),
+-- returnLogistics.uploadTip
+(gen_random_uuid(), 'returnLogistics.uploadTip', 'en', 'Upload up to 3 images as evidence (JPG, PNG format)'),
+(gen_random_uuid(), 'returnLogistics.uploadTip', 'zh-CN', '最多上传3张图片作为凭证（JPG、PNG格式）'),
+-- returnLogistics.submit
+(gen_random_uuid(), 'returnLogistics.submit', 'en', 'Submit Return Logistics'),
+(gen_random_uuid(), 'returnLogistics.submit', 'zh-CN', '提交退货物流'),
+-- returnLogistics.logisticsInfoRequired
+(gen_random_uuid(), 'returnLogistics.logisticsInfoRequired', 'en', 'Logistics information is required'),
+(gen_random_uuid(), 'returnLogistics.logisticsInfoRequired', 'zh-CN', '物流信息为必填项'),
+-- returnLogistics.submitSuccess
+(gen_random_uuid(), 'returnLogistics.submitSuccess', 'en', 'Return logistics submitted successfully'),
+(gen_random_uuid(), 'returnLogistics.submitSuccess', 'zh-CN', '退货物流提交成功'),
+-- returnLogistics.submitFailed
+(gen_random_uuid(), 'returnLogistics.submitFailed', 'en', 'Failed to submit return logistics'),
+(gen_random_uuid(), 'returnLogistics.submitFailed', 'zh-CN', '提交退货物流失败'),
+-- returnLogistics.uploadSuccess
+(gen_random_uuid(), 'returnLogistics.uploadSuccess', 'en', 'Image uploaded successfully'),
+(gen_random_uuid(), 'returnLogistics.uploadSuccess', 'zh-CN', '图片上传成功'),
+-- returnLogistics.uploadFailed
+(gen_random_uuid(), 'returnLogistics.uploadFailed', 'en', 'Failed to upload image'),
+(gen_random_uuid(), 'returnLogistics.uploadFailed', 'zh-CN', '图片上传失败'),
+-- returnLogistics.error.fetchDataFailed
+(gen_random_uuid(), 'returnLogistics.error.fetchDataFailed', 'en', 'Failed to fetch return logistics data'),
+(gen_random_uuid(), 'returnLogistics.error.fetchDataFailed', 'zh-CN', '获取退货物流数据失败'),
+-- payment.returnLogistics
+(gen_random_uuid(), 'payment.returnLogistics', 'en', 'Return Logistics'),
+(gen_random_uuid(), 'payment.returnLogistics', 'zh-CN', '退货物流'),
+
+-- 新增的OrderManagement.vue翻译键
+-- order.return.confirmReceived
+(gen_random_uuid(), 'order.return.confirmReceived', 'en', 'Confirm Return Received'),
+(gen_random_uuid(), 'order.return.confirmReceived', 'zh-CN', '确认收到退货'),
+-- order.refund.process
+(gen_random_uuid(), 'order.refund.process', 'en', 'Process Refund'),
+(gen_random_uuid(), 'order.refund.process', 'zh-CN', '退款'),
+-- order.refund.unsupportedPaymentMethod
+(gen_random_uuid(), 'order.refund.unsupportedPaymentMethod', 'en', 'Unsupported payment method'),
+(gen_random_uuid(), 'order.refund.unsupportedPaymentMethod', 'zh-CN', '不支持的支付方式'),
+-- order.error.onlyPendingCanEditPrice
+(gen_random_uuid(), 'order.error.onlyPendingCanEditPrice', 'en', 'Only pending orders can edit price'),
+(gen_random_uuid(), 'order.error.onlyPendingCanEditPrice', 'zh-CN', '只有待处理状态的订单才能修改价格'),
+
+-- 新增的确认和成功消息翻译键
+-- order.return.confirmReceived.confirm
+(gen_random_uuid(), 'order.return.confirmReceived.confirm', 'en', 'Are you sure you want to confirm receipt of this return?'),
+(gen_random_uuid(), 'order.return.confirmReceived.confirm', 'zh-CN', '确定要确认收到此退货吗？'),
+-- order.return.confirmReceived.success
+(gen_random_uuid(), 'order.return.confirmReceived.success', 'en', 'Return receipt confirmed successfully'),
+(gen_random_uuid(), 'order.return.confirmReceived.success', 'zh-CN', '退货收货确认成功'),
+-- order.refund.process.confirm
+(gen_random_uuid(), 'order.refund.process.confirm', 'en', 'Are you sure you want to process this refund?'),
+(gen_random_uuid(), 'order.refund.process.confirm', 'zh-CN', '确定要处理此退款吗？'),
+-- order.error.refundFailed
+(gen_random_uuid(), 'order.error.refundFailed', 'en', 'Refund processing failed'),
+(gen_random_uuid(), 'order.error.refundFailed', 'zh-CN', '退款处理失败'),
+-- order.refund.process.success
+(gen_random_uuid(), 'order.refund.process.success', 'en', 'Refund processed successfully'),
+(gen_random_uuid(), 'order.refund.process.success', 'zh-CN', '退款处理成功');
 

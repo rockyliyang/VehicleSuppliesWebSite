@@ -83,6 +83,11 @@ export default {
   methods: {
     checkScreenSize() {
       // 检测是否为移动端（768px以下）
+      if (typeof window === 'undefined') {
+        this.isMobile = false; // 在SSR环境中默认返回false
+        this.isExpanded = true; // 默认展开
+        return;
+      }
       this.isMobile = window.innerWidth <= 768
       // 电脑端默认展开，手机端默认收起
       this.isExpanded = !this.isMobile

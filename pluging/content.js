@@ -822,7 +822,7 @@ class ProductExtractor {
         '.detail-desc img',
         '[data-role="detail-content"] img',
         '.module_product_specification [module-title="detailManyImage"] img,.module_product_specification [module-title="detailSingleImage"] img',
-        '.desc-img-loaded'
+        '.desc-img-loaded',
       ];
       
       // 1688网站优先从Shadow DOM提取

@@ -206,7 +206,7 @@ export default {
         // Validate phone number format (support international format)
         const phoneRegex = /^[+]?[\d\s\-()]+$/;
         if (this.editPhoneValue && !phoneRegex.test(this.editPhoneValue)) {
-          this.$message.error(this.$t('userSettings.messages.invalidPhoneFormat'));
+          this.$messageHandler.showError(this.$t('userSettings.messages.invalidPhoneFormat'));
           return;
         }
         
@@ -220,11 +220,11 @@ export default {
         // Update local data
         this.userInfo.phone = this.editPhoneValue;
         
-        this.$message.success(this.$t('userSettings.messages.phoneUpdateSuccess'));
+        //this.$message.success(this.$t('userSettings.messages.phoneUpdateSuccess'));
         this.editingPhone = false;
       } catch (error) {
         console.error('Failed to update phone:', error);
-        this.$message.error(this.$t('userSettings.messages.phoneUpdateFailed'));
+        this.$messageHandler.showError(this.$t('userSettings.messages.phoneUpdateFailed'));
       } finally {
         this.savingPhone = false;
       }
@@ -236,7 +236,7 @@ export default {
         
         // Validate username format
         if (!this.editUsernameValue || this.editUsernameValue.trim().length < 2) {
-          this.$message.error(this.$t('userSettings.messages.invalidUsernameFormat'));
+          this.$messageHandler.showError(this.$t('userSettings.messages.invalidUsernameFormat'));
           return;
         }
         
@@ -252,7 +252,7 @@ export default {
         this.editingUsername = false;
       } catch (error) {
         console.error('Failed to update username:', error);
-        this.$message.error(this.$t('userSettings.messages.usernameUpdateFailed'));
+        this.$messageHandler.showError(this.$t('userSettings.messages.usernameUpdateFailed'));
       } finally {
         this.savingUsername = false;
       }

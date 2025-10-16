@@ -2,6 +2,9 @@ const { query, getConnection } = require('../db/db');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const { getMessage } = require('../config/messages');
+const { getManagedUserIds } = require('../utils/adminUserUtils');
+const axios = require('axios');
+const refundFailureLogger = require('../utils/refundFailureLogger');
 const {
   ApiError,
   CheckoutPaymentIntent,
@@ -9,6 +12,7 @@ const {
   Environment,
   LogLevel,
   OrdersController,
+  PaymentsController,
 } = require('@paypal/paypal-server-sdk');
 const {AlipaySdk} = require('alipay-sdk');
 const fs = require('fs');
@@ -64,6 +68,35 @@ function getAlipayClient() {
     charset: 'utf-8',
     version: '1.0'
   });
+}
+
+// 获取PayPal访问令牌
+async function getPayPalAccessToken() {
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const clientSecret = process.env.PAYPAL_SECRET;
+  const baseURL = process.env.PAYPAL_API_URL;
+  
+  if (!clientId || !clientSecret) throw new Error('PayPal配置不完整');
+  if (!baseURL) throw new Error('PAYPAL_API_URL配置缺失');
+  
+  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  
+  try {
+    const response = await axios.post(`${baseURL}/v1/oauth2/token`, 
+      'grant_type=client_credentials',
+      {
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+    
+    return response.data.access_token;
+  } catch (error) {
+    console.error('获取PayPal访问令牌失败:', error);
+    throw new Error('Failed to get PayPal access token');
+  }
 }
 
 // 统一订单初始化
@@ -246,7 +279,7 @@ exports.repayPayPalOrder = async (req, res) => {
     
     // 验证订单是否存在且属于当前用户
     const orders = await query(
-      `SELECT id, total_amount, status, user_id FROM orders WHERE id = $1 AND user_id = $2 AND deleted = false`,
+      `SELECT id, total_amount, shipping_fee, status, user_id FROM orders WHERE id = $1 AND user_id = $2 AND deleted = false`,
       [orderId, userId]
     );
     
@@ -278,7 +311,7 @@ exports.repayPayPalOrder = async (req, res) => {
           {
             amount: {
               currencyCode: 'USD',
-              value: Number(order.total_amount).toFixed(2)
+              value: (Number(order.total_amount) + Number(order.shipping_fee)).toFixed(2)
             }
           }
         ]
@@ -369,7 +402,7 @@ exports.generateQrcode = async (req, res) => {
   try {
     const { orderId, paymentMethod, deviceType, paidTimeZone, exchangeRate } = req.body;
     const orders = await query(
-      `SELECT id, total_amount, status FROM orders WHERE id = $1`,
+      `SELECT id, total_amount, shipping_fee, status FROM orders WHERE id = $1`,
       [orderId]
     );
     if (orders.getRowCount() === 0) {
@@ -388,13 +421,13 @@ exports.generateQrcode = async (req, res) => {
         const outTradeNo = `ORDER_${orderId}_${Date.now()}`; // 商户订单号
         
         // 计算人民币金额：使用汇率 * 美元金额
-        const cnyAmount = exchangeRate ? (parseFloat(order.total_amount) * parseFloat(exchangeRate)).toFixed(2) : order.total_amount.toString();
+        const cnyAmount = exchangeRate ? ((parseFloat(order.total_amount) + parseFloat(order.shipping_fee)) * parseFloat(exchangeRate)).toFixed(2) : (parseFloat(order.total_amount) + parseFloat(order.shipping_fee)).toFixed(2);
 
         let requestData = {
             out_trade_no: outTradeNo,
             total_amount: cnyAmount,
-            subject: `AutoEaseXpert - ${orderId}`,
-            body: `AutoEaseXpert Order：${orderId}`,
+            subject: `AutoEaseTechX - ${orderId}`,
+            body: `AutoEaseTechX Order：${orderId}`,
             timeout_express: '30m',
             language: 'en_US',
 
@@ -428,13 +461,21 @@ exports.generateQrcode = async (req, res) => {
        //console.log('Alipay form data:', formData);
 
         if (formData && typeof formData === 'string') {
-          // 保存商户订单号和支付时区到数据库
-          const updateQuery = paidTimeZone 
-            ? `UPDATE orders SET payment_id = $1, paid_time_zone = $2 WHERE id = $3`
-            : `UPDATE orders SET payment_id = $1 WHERE id = $2`;
-          const updateParams = paidTimeZone 
-            ? [outTradeNo, paidTimeZone, orderId]
-            : [outTradeNo, orderId];
+          // 保存商户订单号、支付时区和汇率到数据库
+          let updateQuery, updateParams;
+          if (paidTimeZone && exchangeRate) {
+            updateQuery = `UPDATE orders SET payment_id = $1, paid_time_zone = $2, exchange_rate = $3 WHERE id = $4`;
+            updateParams = [outTradeNo, paidTimeZone, parseFloat(exchangeRate), orderId];
+          } else if (paidTimeZone) {
+            updateQuery = `UPDATE orders SET payment_id = $1, paid_time_zone = $2 WHERE id = $3`;
+            updateParams = [outTradeNo, paidTimeZone, orderId];
+          } else if (exchangeRate) {
+            updateQuery = `UPDATE orders SET payment_id = $1, exchange_rate = $2 WHERE id = $3`;
+            updateParams = [outTradeNo, parseFloat(exchangeRate), orderId];
+          } else {
+            updateQuery = `UPDATE orders SET payment_id = $1 WHERE id = $2`;
+            updateParams = [outTradeNo, orderId];
+          }
           await query(updateQuery, updateParams);
           // 对于alipay.trade.page.pay，返回HTML表单而不是二维码
           // 前端需要处理这个HTML表单来显示支付页面
@@ -603,7 +644,7 @@ exports.alipayNotify = async (req, res) => {
     
     // 查询订单
     const orders = await query(
-      `SELECT id, status, total_amount FROM orders WHERE id = $1`,
+      `SELECT id, status, total_amount, shipping_fee, exchange_rate FROM orders WHERE id = $1`,
       [orderId]
     );
     
@@ -614,11 +655,17 @@ exports.alipayNotify = async (req, res) => {
     
     const order = orders.getFirstRow();
     
-    // 验证金额
-    if (parseFloat(total_amount) !== parseFloat(order.total_amount)) {
+    // 验证金额 - 如果有汇率，则使用汇率计算CNY金额；否则直接使用USD金额
+    const expectedAmount = order.exchange_rate 
+      ? ((parseFloat(order.total_amount) + parseFloat(order.shipping_fee)) * parseFloat(order.exchange_rate))
+      : (parseFloat(order.total_amount) + parseFloat(order.shipping_fee));
+    
+    if (Math.abs(parseFloat(total_amount) - expectedAmount) > 0.01) { // 允许0.01的误差
       console.error('Payment amount mismatch:', {
-        expected: order.total_amount,
-        received: total_amount
+        expected: expectedAmount,
+        received: total_amount,
+        exchangeRate: order.exchange_rate,
+        usdAmount: parseFloat(order.total_amount) + parseFloat(order.shipping_fee)
       });
       return res.status(400).send('fail');
     }
@@ -736,6 +783,426 @@ exports.getExchangeRate = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: getMessage('PAYMENT.EXCHANGE_RATE.FETCH_ERROR'),
+      error: error.message
+    });
+  }
+};
+
+// PayPal退款
+exports.refundPayPalPayment = async (req, res) => {
+  try {
+    const { orderId, refundAmount, reason } = req.body;
+    const userId = req.userId;
+    
+    // 验证必要参数
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.ORDER_ID_REQUIRED')
+      });
+    }
+    
+    // 查询订单信息 - 管理员和业务员可以退款管理的用户的订单，普通用户只能退款自己的订单
+    let orders;
+    if (req.userRole === 'admin' || req.userRole === 'business') {
+      // 业务员和管理员只能退款自己管理的用户的订单
+      const managedUserIds = await getManagedUserIds(userId);
+      if (managedUserIds.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: getMessage('PAYMENT.NO_MANAGED_USERS')
+        });
+      }
+      
+      orders = await query(
+        `SELECT id, payment_id, total_amount, shipping_fee, status, payment_method, user_id 
+         FROM orders 
+         WHERE id = $1 AND user_id = ANY($2) AND deleted = false`,
+        [orderId, managedUserIds]
+      );
+    } else {
+      orders = await query(
+        `SELECT id, payment_id, total_amount, shipping_fee, status, payment_method, user_id 
+         FROM orders 
+         WHERE id = $1 AND user_id = $2 AND deleted = false`,
+        [orderId, userId]
+      );
+    }
+    
+    if (orders.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('PAYMENT.ORDER_NOT_FOUND_OR_NO_PERMISSION')
+      });
+    }
+    
+    const order = orders.getFirstRow();
+    
+    // 验证订单状态和支付方式
+    if (order.status !== 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.ORDER_NOT_PAID')
+      });
+    }
+    
+    if (order.payment_method !== 'paypal') {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.INVALID_PAYMENT_METHOD_FOR_REFUND')
+      });
+    }
+    
+    if (!order.payment_id) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.PAYMENT_ID_NOT_FOUND')
+      });
+    }
+    
+    // 验证退款金额 - PayPal支付使用USD，直接使用订单金额
+    const totalAmount = parseFloat(order.total_amount) + parseFloat(order.shipping_fee);
+    const refundAmountFloat = refundAmount ? parseFloat(refundAmount) : totalAmount;
+    
+    if (refundAmountFloat <= 0 || refundAmountFloat > totalAmount) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.INVALID_REFUND_AMOUNT')
+      });
+    }
+    
+    try {
+      // 创建PayPal客户端
+      const client = getPayPalClient();
+      const ordersController = new OrdersController(client);
+      
+      // 获取PayPal订单详情以获取capture ID
+      const getOrderRequest = { id: order.payment_id };
+      const { body: orderBody } = await ordersController.getOrder(getOrderRequest);
+      const orderData = JSON.parse(orderBody);
+      
+      // 查找capture ID
+      let captureId = null;
+      if (orderData.purchase_units && orderData.purchase_units[0] && 
+          orderData.purchase_units[0].payments && orderData.purchase_units[0].payments.captures) {
+        captureId = orderData.purchase_units[0].payments.captures[0].id;
+      }
+      
+      if (!captureId) {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('PAYMENT.PAYPAL.CAPTURE_ID_NOT_FOUND')
+        });
+      }
+      
+      // 执行退款 - 使用PayPal REST API
+      const accessToken = await getPayPalAccessToken();
+      const baseURL = process.env.PAYPAL_API_URL;
+      
+      const refundData = {
+        amount: {
+          currency_code: 'USD',
+          value: refundAmountFloat.toFixed(2)
+        },
+        note_to_payer: reason || 'Refund processed'
+      };
+      
+      const refundResponse = await axios.post(
+        `${baseURL}/v2/payments/captures/${captureId}/refund`,
+        refundData,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      const refundResult = refundResponse.data;
+      
+      // 更新订单状态
+      const connection = await getConnection();
+      await connection.beginTransaction();
+      
+      try {
+        // 更新订单状态为已退款
+        await connection.query(
+          `UPDATE orders SET 
+           status = $1, 
+           updated_by = $2 
+           WHERE id = $3`,
+          ['refunded', userId, orderId]
+        );
+        
+        // 恢复库存（只对自营商品）
+        const orderItems = await connection.query(
+          `SELECT oi.product_id, oi.quantity 
+           FROM order_items oi 
+           JOIN products p ON oi.product_id = p.id 
+           WHERE oi.order_id = $1 AND p.product_type = 'self_operated' AND p.deleted = false`,
+          [orderId]
+        );
+        
+        for (const item of orderItems.getRows()) {
+          await connection.query(
+            `UPDATE products SET stock = stock + $1, updated_by = $2 WHERE id = $3`,
+            [item.quantity, userId, item.product_id]
+          );
+        }
+        
+        await connection.commit();
+        connection.release();
+        
+        return res.status(200).json({
+          success: true,
+          message: getMessage('PAYMENT.PAYPAL.REFUND_SUCCESS'),
+          data: {
+            orderId: orderId,
+            refundId: refundResult.id,
+            refundAmount: refundAmountFloat,
+            status: refundResult.status
+          }
+        });
+        
+      } catch (dbError) {
+        await connection.rollback();
+        connection.release();
+        
+        // 记录失败信息 - PayPal退款成功但数据库更新失败
+        refundFailureLogger.logPayPalRefundFailure({
+          orderId: orderId,
+          refundId: refundResult.id,
+          refundAmount: refundAmountFloat,
+          captureId: captureId,
+          userId: userId,
+          reason: reason,
+          dbError: dbError
+        });
+        
+        // 返回特殊错误，表明退款成功但数据库更新失败
+        return res.status(500).json({
+          success: false,
+          message: 'PayPal退款成功，但系统更新失败。请联系管理员处理。',
+          error: 'DATABASE_UPDATE_FAILED_AFTER_REFUND',
+          refundId: refundResult.id
+        });
+      }
+      
+    } catch (paypalError) {
+      console.error('PayPal退款失败:', paypalError);
+      return res.status(500).json({
+        success: false,
+        message: getMessage('PAYMENT.PAYPAL.REFUND_FAILED'),
+        error: paypalError.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('PayPal退款处理失败:', error);
+    return res.status(500).json({
+       success: false,
+       message: getMessage('PAYMENT.REFUND_PROCESS_FAILED'),
+       error: error.message
+     });
+   }
+ };
+
+// 支付宝退款
+exports.refundAlipayPayment = async (req, res) => {
+  try {
+    const { orderId, refundAmount, reason } = req.body;
+    const userId = req.userId;
+    
+    // 验证必要参数
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.ORDER_ID_REQUIRED')
+      });
+    }
+    
+    // 查询订单信息 - 管理员和业务员可以退款管理的用户的订单，普通用户只能退款自己的订单
+    let orders;
+    if (req.userRole === 'admin' || req.userRole === 'business') {
+      // 业务员和管理员只能退款自己管理的用户的订单
+      const managedUserIds = await getManagedUserIds(userId);
+      if (managedUserIds.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: getMessage('PAYMENT.NO_MANAGED_USERS')
+        });
+      }
+      
+      orders = await query(
+        `SELECT id, payment_id, total_amount, shipping_fee, exchange_rate, status, payment_method, user_id 
+         FROM orders 
+         WHERE id = $1 AND user_id = ANY($2) AND deleted = false`,
+        [orderId, managedUserIds]
+      );
+    } else {
+      orders = await query(
+        `SELECT id, payment_id, total_amount, shipping_fee, exchange_rate, status, payment_method, user_id 
+         FROM orders 
+         WHERE id = $1 AND user_id = $2 AND deleted = false`,
+        [orderId, userId]
+      );
+    }
+    
+    if (orders.getRowCount() === 0) {
+      return res.status(404).json({
+        success: false,
+        message: getMessage('PAYMENT.ORDER_NOT_FOUND_OR_NO_PERMISSION')
+      });
+    }
+    
+    const order = orders.getFirstRow();
+    
+    // 验证订单状态和支付方式
+    if (order.status !== 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.ORDER_NOT_PAID')
+      });
+    }
+    
+    if (order.payment_method !== 'alipay') {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.INVALID_PAYMENT_METHOD_FOR_REFUND')
+      });
+    }
+    
+    if (!order.payment_id) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.PAYMENT_ID_NOT_FOUND')
+      });
+    }
+    
+    // 验证退款金额 - 支付宝支付需要使用汇率将USD转换为CNY
+    const usdTotalAmount = parseFloat(order.total_amount) + parseFloat(order.shipping_fee);
+    const totalAmount = order.exchange_rate 
+      ? (usdTotalAmount * parseFloat(order.exchange_rate))
+      : usdTotalAmount;
+    const refundAmountFloat = refundAmount ? parseFloat(refundAmount) : totalAmount;
+    
+    if (refundAmountFloat <= 0 || refundAmountFloat > totalAmount) {
+      return res.status(400).json({
+        success: false,
+        message: getMessage('PAYMENT.INVALID_REFUND_AMOUNT')
+      });
+    }
+    
+    try {
+      // 创建支付宝客户端
+      const alipaySdk = getAlipayClient();
+      
+      // 生成退款请求号
+      const refundRequestNo = `REFUND_${orderId}_${Date.now()}`;
+      
+      // 执行退款
+      const refundResult = await alipaySdk.exec('alipay.trade.refund', {
+        bizContent: {
+          out_trade_no: order.payment_id, // 商户订单号
+          refund_amount: refundAmountFloat.toFixed(2), // 退款金额
+          refund_reason: reason || 'Customer refund request', // 退款原因
+          out_request_no: refundRequestNo // 退款请求号
+        }
+      });
+      
+      // 检查退款结果
+      if (refundResult.code !== '10000') {
+        return res.status(400).json({
+          success: false,
+          message: getMessage('PAYMENT.ALIPAY.REFUND_FAILED'),
+          error: refundResult.msg || refundResult.sub_msg
+        });
+      }
+      
+      // 更新订单状态
+      const connection = await getConnection();
+      await connection.beginTransaction();
+      
+      try {
+        // 更新订单状态为已退款
+        await connection.query(
+          `UPDATE orders SET 
+           status = $1, 
+           updated_by = $2 
+           WHERE id = $3`,
+          ['refunded', userId, orderId]
+        );
+        
+        // 恢复库存（只对自营商品）
+        const orderItems = await connection.query(
+          `SELECT oi.product_id, oi.quantity 
+           FROM order_items oi 
+           JOIN products p ON oi.product_id = p.id 
+           WHERE oi.order_id = $1 AND p.product_type = 'self_operated' AND p.deleted = false`,
+          [orderId]
+        );
+        
+        for (const item of orderItems.getRows()) {
+          await connection.query(
+            `UPDATE products SET stock = stock + $1, updated_by = $2 WHERE id = $3`,
+            [item.quantity, userId, item.product_id]
+          );
+        }
+        
+        await connection.commit();
+        connection.release();
+        
+        return res.status(200).json({
+          success: true,
+          message: getMessage('PAYMENT.ALIPAY.REFUND_SUCCESS'),
+          data: {
+            orderId: orderId,
+            refundRequestNo: refundRequestNo,
+            refundAmount: refundAmountFloat,
+            alipayRefundId: refundResult.trade_no,
+            refundTime: refundResult.gmt_refund_pay
+          }
+        });
+        
+      } catch (dbError) {
+        await connection.rollback();
+        connection.release();
+        
+        // 记录失败信息 - Alipay退款成功但数据库更新失败
+        refundFailureLogger.logAlipayRefundFailure({
+          orderId: orderId,
+          refundRequestNo: refundRequestNo,
+          refundAmount: refundAmountFloat,
+          alipayRefundId: refundResult.trade_no,
+          userId: userId,
+          reason: reason,
+          dbError: dbError
+        });
+        
+        // 返回特殊错误，表明退款成功但数据库更新失败
+        return res.status(500).json({
+          success: false,
+          message: 'Alipay退款成功，但系统更新失败。请联系管理员处理。',
+          error: 'DATABASE_UPDATE_FAILED_AFTER_REFUND',
+          alipayRefundId: refundResult.trade_no
+        });
+      }
+      
+    } catch (alipayError) {
+      console.error('支付宝退款失败:', alipayError);
+      return res.status(500).json({
+        success: false,
+        message: getMessage('PAYMENT.ALIPAY.REFUND_FAILED'),
+        error: alipayError.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('支付宝退款处理失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: getMessage('PAYMENT.REFUND_PROCESS_FAILED'),
       error: error.message
     });
   }

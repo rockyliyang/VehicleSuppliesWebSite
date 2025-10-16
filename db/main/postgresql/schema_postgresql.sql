@@ -445,7 +445,7 @@ CREATE TABLE IF NOT EXISTS orders (
   inquiry_id BIGINT DEFAULT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
   original_amount DECIMAL(10, 2) DEFAULT NULL,
-  status VARCHAR(16) NOT NULL CHECK (status IN ('pending', 'paid', 'shipped', 'delivered', 'cancelled', 'pay_timeout')),
+  status VARCHAR(16) NOT NULL CHECK (status IN ('pending', 'paid', 'shipped', 'delivered', 'cancelled', 'pay_timeout', 'refund_requested', 'refund_approved','refund_rejected','refund_cancelled', 'return_shipped', 'return_delivered', 'refunded')),
   payment_method VARCHAR(16), -- card, alipay, wechat
   payment_id VARCHAR(64),
   shipping_name VARCHAR(32) NOT NULL,
@@ -458,6 +458,7 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_city VARCHAR(64) DEFAULT NULL,
   shipping_phone_country_code VARCHAR(8) DEFAULT NULL,
   shipping_fee DECIMAL(10, 2) DEFAULT 0.00,
+  exchange_rate DECIMAL(10, 6) DEFAULT NULL,
   update_amount_time TIMESTAMPTZ DEFAULT NULL,
   create_time_zone VARCHAR(64) DEFAULT NULL,
   paid_at TIMESTAMPTZ DEFAULT NULL,
@@ -475,6 +476,7 @@ COMMENT ON COLUMN orders.shipping_country IS '收货国家';
 COMMENT ON COLUMN orders.shipping_state IS '收货省份/州';
 COMMENT ON COLUMN orders.shipping_city IS '收货城市';
 COMMENT ON COLUMN orders.shipping_phone_country_code IS '收货电话国家区号';
+COMMENT ON COLUMN orders.exchange_rate IS '支付时的汇率，用于将USD转换为其他货币（如CNY），NULL表示使用USD支付';
 COMMENT ON COLUMN orders.original_amount IS '原始订单金额（首次修改价格时保存）';
 COMMENT ON COLUMN orders.update_amount_time IS '金额更新时间（修改total_amount或shipping_fee时更新）';
 COMMENT ON COLUMN orders.create_time_zone IS '订单创建时的时区信息';
@@ -720,6 +722,51 @@ CREATE TRIGGER update_banners_modtime
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 
+
+-- 标签表
+CREATE TABLE IF NOT EXISTS tags (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  value VARCHAR(64) NOT NULL,
+  type VARCHAR(32) NOT NULL DEFAULT 'country',
+  description VARCHAR(256) DEFAULT '',
+  status VARCHAR(16) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON TABLE tags IS '标签表，用于为各种实体添加标签功能';
+COMMENT ON COLUMN tags.value IS '标签值';
+COMMENT ON COLUMN tags.type IS '标签类型，目前支持：country';
+COMMENT ON COLUMN tags.description IS '标签描述';
+COMMENT ON COLUMN tags.status IS '状态：active-启用，inactive-禁用';
+COMMENT ON COLUMN tags.created_by IS '创建者用户ID';
+COMMENT ON COLUMN tags.updated_by IS '最后更新者用户ID';
+
+-- 创建唯一索引（value + type 组合不能重复）
+CREATE UNIQUE INDEX unique_active_tag_value_type ON tags (value, type) WHERE deleted = FALSE;
+
+-- 创建普通索引
+CREATE INDEX idx_tags_value ON tags (value);
+CREATE INDEX idx_tags_type ON tags (type);
+CREATE INDEX idx_tags_status ON tags (status);
+CREATE INDEX idx_tags_created_by ON tags (created_by);
+CREATE INDEX idx_tags_updated_by ON tags (updated_by);
+
+-- 添加外键约束
+ALTER TABLE tags ADD CONSTRAINT fk_tags_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE tags ADD CONSTRAINT fk_tags_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_tags_modtime
+    BEFORE UPDATE ON tags
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
 -- 运费系数表
 CREATE TABLE IF NOT EXISTS shippingfee_factor (
   id BIGSERIAL PRIMARY KEY,
@@ -795,49 +842,6 @@ CREATE TRIGGER update_shippingfee_factor_modtime
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 
--- 标签表
-CREATE TABLE IF NOT EXISTS tags (
-  id BIGSERIAL PRIMARY KEY,
-  guid UUID DEFAULT gen_random_uuid() NOT NULL,
-  value VARCHAR(64) NOT NULL,
-  type VARCHAR(32) NOT NULL DEFAULT 'country',
-  description VARCHAR(256) DEFAULT '',
-  status VARCHAR(16) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  deleted BOOLEAN NOT NULL DEFAULT FALSE,
-  created_by BIGINT DEFAULT NULL,
-  updated_by BIGINT DEFAULT NULL
-);
-
--- 添加注释
-COMMENT ON TABLE tags IS '标签表，用于为各种实体添加标签功能';
-COMMENT ON COLUMN tags.value IS '标签值';
-COMMENT ON COLUMN tags.type IS '标签类型，目前支持：country';
-COMMENT ON COLUMN tags.description IS '标签描述';
-COMMENT ON COLUMN tags.status IS '状态：active-启用，inactive-禁用';
-COMMENT ON COLUMN tags.created_by IS '创建者用户ID';
-COMMENT ON COLUMN tags.updated_by IS '最后更新者用户ID';
-
--- 创建唯一索引（value + type 组合不能重复）
-CREATE UNIQUE INDEX unique_active_tag_value_type ON tags (value, type) WHERE deleted = FALSE;
-
--- 创建普通索引
-CREATE INDEX idx_tags_value ON tags (value);
-CREATE INDEX idx_tags_type ON tags (type);
-CREATE INDEX idx_tags_status ON tags (status);
-CREATE INDEX idx_tags_created_by ON tags (created_by);
-CREATE INDEX idx_tags_updated_by ON tags (updated_by);
-
--- 添加外键约束
-ALTER TABLE tags ADD CONSTRAINT fk_tags_created_by FOREIGN KEY (created_by) REFERENCES users(id);
-ALTER TABLE tags ADD CONSTRAINT fk_tags_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
-
--- 创建更新时间戳触发器
-CREATE TRIGGER update_tags_modtime
-    BEFORE UPDATE ON tags
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
 
 -- 国家标签关联表
 CREATE TABLE IF NOT EXISTS country_tags (
@@ -1195,5 +1199,65 @@ ALTER TABLE product_review_images ADD CONSTRAINT fk_product_review_images_update
 -- 创建更新时间戳触发器
 CREATE TRIGGER update_product_review_images_modtime
     BEFORE UPDATE ON product_review_images
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+-- 订单状态数据表
+CREATE TABLE IF NOT EXISTS order_status_data (
+  id BIGSERIAL PRIMARY KEY,
+  guid UUID DEFAULT gen_random_uuid() NOT NULL,
+  order_id BIGINT NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  comment TEXT,
+  image1_url VARCHAR(255),
+  image2_url VARCHAR(255),
+  image3_url VARCHAR(255),
+  image4_url VARCHAR(255),
+  image5_url VARCHAR(255),
+  image6_url VARCHAR(255),
+  image7_url VARCHAR(255),
+  image8_url VARCHAR(255),
+  image9_url VARCHAR(255),
+  image10_url VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT DEFAULT NULL,
+  updated_by BIGINT DEFAULT NULL
+);
+
+-- 添加注释
+COMMENT ON TABLE order_status_data IS '订单状态数据表，存储订单在某个状态的附加数据';
+COMMENT ON COLUMN order_status_data.order_id IS '关联的订单ID';
+COMMENT ON COLUMN order_status_data.status IS '订单状态';
+COMMENT ON COLUMN order_status_data.comment IS '状态相关的备注或说明';
+COMMENT ON COLUMN order_status_data.image1_url IS '图片1的URL路径';
+COMMENT ON COLUMN order_status_data.image2_url IS '图片2的URL路径';
+COMMENT ON COLUMN order_status_data.image3_url IS '图片3的URL路径';
+COMMENT ON COLUMN order_status_data.image4_url IS '图片4的URL路径';
+COMMENT ON COLUMN order_status_data.image5_url IS '图片5的URL路径';
+COMMENT ON COLUMN order_status_data.image6_url IS '图片6的URL路径';
+COMMENT ON COLUMN order_status_data.image7_url IS '图片7的URL路径';
+COMMENT ON COLUMN order_status_data.image8_url IS '图片8的URL路径';
+COMMENT ON COLUMN order_status_data.image9_url IS '图片9的URL路径';
+COMMENT ON COLUMN order_status_data.image10_url IS '图片10的URL路径';
+COMMENT ON COLUMN order_status_data.created_by IS '创建者用户ID';
+COMMENT ON COLUMN order_status_data.updated_by IS '最后更新者用户ID';
+
+-- 创建普通索引
+CREATE INDEX idx_order_status_data_order_id ON order_status_data (order_id);
+CREATE INDEX idx_order_status_data_status ON order_status_data (status);
+CREATE INDEX idx_order_status_data_order_status ON order_status_data (order_id, status);
+CREATE INDEX idx_order_status_data_created_by ON order_status_data (created_by);
+CREATE INDEX idx_order_status_data_updated_by ON order_status_data (updated_by);
+
+-- 添加外键约束
+ALTER TABLE order_status_data ADD CONSTRAINT fk_order_status_data_order_id FOREIGN KEY (order_id) REFERENCES orders(id);
+ALTER TABLE order_status_data ADD CONSTRAINT fk_order_status_data_created_by FOREIGN KEY (created_by) REFERENCES users(id);
+ALTER TABLE order_status_data ADD CONSTRAINT fk_order_status_data_updated_by FOREIGN KEY (updated_by) REFERENCES users(id);
+
+-- 创建更新时间戳触发器
+CREATE TRIGGER update_order_status_data_modtime
+    BEFORE UPDATE ON order_status_data
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();

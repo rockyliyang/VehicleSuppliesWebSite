@@ -221,7 +221,7 @@ export default {
 ```javascript
 // store/modules/language.js
 const state = {
-  currentLang: 'zh-CN', // 当前语言
+  currentLang: 'en', // 当前语言
   supportedLanguages: ['zh-CN', 'en'], // 支持的语言
   translations: {} // 翻译数据：{ zh-CN: { key: value }, en: { key: value } }
 };

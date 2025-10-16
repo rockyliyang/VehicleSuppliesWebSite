@@ -485,6 +485,9 @@ export default {
       return this.$store.getters['countryState/getStatesByCountry'](country.iso3) || [];
     },
     isMobile() {
+      if (typeof window === 'undefined') {
+        return false // 在SSR环境中默认返回false
+      }
       return window.innerWidth <= 768;
     }
   },
@@ -863,6 +866,7 @@ export default {
           // 跳转到支付页面
           navigateTo({
             name: 'OrderPayment',
+            params: { from: 'checkout', orderId: orderId },
             query: { from: 'checkout', orderId: orderId }
           });
         } else {
@@ -893,7 +897,7 @@ export default {
           navigateTo({
             name: 'OrderPayment',
             params: { orderId: this.orderId },
-            query: { from: 'checkout' }
+            query: { from: 'checkout', orderId: this.orderId }
           });
         }
       } catch (error) {
@@ -1038,7 +1042,7 @@ export default {
      },
      goToAddressManagement() {
        this.showAddressDialog = false;
-       navigateTo('/address');
+       navigateTo('/Address');
      },
      async handleInquiryClick() {
        // 获取当前订单的inquiry_id

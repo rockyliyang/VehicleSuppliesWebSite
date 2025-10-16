@@ -1,7 +1,7 @@
 const { query } = require('../db/db');
 const { getMessage } = require('../config/messages');
 const pgNotificationManager = require('../utils/pgNotification');
-const { getManagedUserIds, generateUserIdsPlaceholders } = require('../utils/adminUserUtils');
+const { getManagedUserIds } = require('../utils/adminUserUtils');
 
 const sseHandler = require('../utils/sseHandler');
 // 获取所有询价列表（管理员）
@@ -30,13 +30,10 @@ exports.getAllInquiries = async (req, res) => {
       });
     }
     
-    // 生成用户ID占位符
-    const { placeholders, params } = generateUserIdsPlaceholders(managedUserIds);
-    
     // 构建查询条件
-    let paramIndex = params.length + 1;
-    let whereClause = `WHERE i.deleted = false AND i.user_id IN (${placeholders})`;
-    let queryParams = [...params];
+    let paramIndex = 2;
+    let whereClause = `WHERE i.deleted = false AND i.user_id = ANY($1)`;
+    let queryParams = [managedUserIds];
     
     if (status) {
       whereClause += ` AND i.status = $${paramIndex}`;

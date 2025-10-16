@@ -24,8 +24,7 @@ export default {
   computed: {
     bannerImage() {
       // 如果 store 中有 banners 数据且不为空，使用第一个 banner 的图片，否则使用 props 中的 backgroundImage
-      const storeBanners = this.$store.company.banners
-      console.log('storeBanners', storeBanners)
+      const storeBanners = this.$store.state.banners
       if (storeBanners && storeBanners.length > 0 && storeBanners[0].image_url) {
         return storeBanners[0].image_url
       }

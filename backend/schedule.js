@@ -30,7 +30,6 @@ async function fetchExchangeRates() {
     }
     
     // 调用ExchangeRate-API获取USD到CNY的汇率
-    const fetch = require('node-fetch');
     const response = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`);
     
     if (!response.ok) {

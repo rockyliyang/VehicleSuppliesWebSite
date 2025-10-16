@@ -65,7 +65,7 @@ export default {
             // 计算目标滚动位置
             let targetScrollTop;
             
-            if (window.innerWidth <= 767) {
+            if (typeof window !== 'undefined' && window.innerWidth <= 767) {
               // 移动端：滚动到表单顶部，留出一些空间
               targetScrollTop = window.pageYOffset + formRect.top - 50;
             } else {

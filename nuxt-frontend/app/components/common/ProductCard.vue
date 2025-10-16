@@ -1,9 +1,9 @@
 <template>
   <div class="product-card" :class="cardStyleClass" @click="handleCardClick">
     <div class="product-image">
-      <!--img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
-        class="w-full h-full object-cover object-center" /-->
-      <EnhancedImage 
+      <img :src="product.thumbnail_url" :alt="product.name" @error="handleImageError"
+        class="w-full h-full object-cover object-center" />
+      <!--EnhancedImage 
         :src="product.thumbnail_url" 
         :alt="product.name" 
         image-class="w-full h-full object-cover object-center" 
@@ -15,7 +15,7 @@
         format="webp"
         preset="thumbnail"
         fallback-image="/images/default-image.svg"
-        @load="handleImageLoad" />
+        @load="handleImageLoad" /-->
     </div>
     <div class="product-info">
       <h3 class="product-title" @click.stop="handleTitleClick">{{ product.name }}</h3>

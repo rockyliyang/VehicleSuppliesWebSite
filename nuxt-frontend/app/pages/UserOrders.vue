@@ -25,7 +25,8 @@
               </el-table-column>
               <el-table-column :label="$t('orders.totalAmount') || '订单金额'" width="150">
                 <template #default="{row}">
-                  <span class="order-amount">{{ $store.formatPrice(row.total_amount) }}</span>
+                  <span class="order-amount">{{ $store.formatPrice(parseFloat(row.total_amount) +
+                    parseFloat(row.shipping_fee)) }}</span>
                 </template>
               </el-table-column>
               <el-table-column :label="$t('orders.status') || '订单状态'" width="150">
@@ -69,7 +70,8 @@
                   </div>
                   <div class="order-info-row">
                     <span class="label">{{ $t('orders.totalAmount') || '订单金额' }}:</span>
-                    <span class="value amount">{{ $store.formatPrice(order.total_amount) }}</span>
+                    <span class="value amount">{{ $store.formatPrice(parseFloat(order.total_amount) +
+                      parseFloat(order.shipping_fee)) }}</span>
                   </div>
                   <div class="order-info-row">
                     <span class="label">{{ $t('orders.paymentMethod') || '支付方式' }}:</span>
@@ -113,6 +115,7 @@
 <script>
 import PageBanner from '@/components/common/PageBanner.vue';
 import NavigationMenu from '@/components/common/NavigationMenu.vue';
+import { getOrderStatusKey } from '@/utils/orderUtils.js';
 
 export default {
   name: 'UserOrdersPage',
@@ -168,15 +171,9 @@ export default {
       return timezone ? `${formattedDate} (${timezone})` : formattedDate;
     },
     getStatusText(status) {
-      const statusMap = {
-        'pending': this.$t('orders.status.pending') || '待支付',
-        'paid': this.$t('orders.status.paid') || '已支付',
-        'shipped': this.$t('orders.status.shipped') || '已发货',
-        'delivered': this.$t('orders.status.delivered') || '已送达',
-        'cancelled': this.$t('orders.status.cancelled') || '已取消',
-        'pay_timeout': this.$t('orders.status.payTimeout') || '支付超时'
-      };
-      return statusMap[status] || status;
+      const statusKey = getOrderStatusKey(status);
+ 
+      return this.$t(statusKey) || status;
     },
     getStatusType(status) {
       const typeMap = {
@@ -185,7 +182,14 @@ export default {
         'shipped': 'primary',
         'delivered': 'success',
         'cancelled': 'danger',
-        'pay_timeout': 'danger'
+        'pay_timeout': 'danger',
+        'refund_requested': 'warning',
+        'refund_approved': 'success',
+        'refund_rejected': 'danger',
+        'refund_cancelled': 'info',
+        'return_shipped': 'primary',
+        'return_delivered': 'success',
+        'refunded': 'success'
       };
       return typeMap[status] || 'info';
     },

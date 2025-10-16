@@ -49,6 +49,7 @@ $border-dark: $gray-400;
 // 文本颜色 - 优化对比度以符合WCAG标准
 $text-primary: $gray-900; // 保持最深色用于主要文本
 $text-secondary: $gray-700; // 从gray-600改为gray-700，提高对比度
+$text-tertiary: $gray-500; // 第三级文本颜色，用于次要信息
 $text-muted: $gray-600; // 从gray-500改为gray-600，提高对比度
 $text-disabled: $gray-500; // 从gray-400改为gray-500，提高对比度但保持禁用状态的视觉效果
 

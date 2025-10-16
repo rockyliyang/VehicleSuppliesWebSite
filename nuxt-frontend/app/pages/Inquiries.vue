@@ -488,7 +488,7 @@ export default {
         const targetInquiry = this.inquiries.find(inquiry => inquiry.id == inquiryId);
         if (targetInquiry) {
           // 在移动端，直接跳转到详情页
-          if (window.innerWidth <= 768) {
+          if (typeof window !== 'undefined' && window.innerWidth <= 768) {
             await this.selectInquiry(targetInquiry);
           } else {
             // 在桌面端，显示桌面布局并通知InquiryPanel组件

@@ -431,16 +431,20 @@ export default {
         // 清除前端状态
         this.$store.auth.setUser(null);
         this.cartCount = 0;
-        await navigateTo('/login');
+        await navigateTo('/Login');
       } catch (error) {
         console.error('登出失败:', error);
         this.$store.auth.setUser(null);
-        await navigateTo('/login');
+        await navigateTo('/Login');
       }
     },
     
     // 移动端检测
     checkMobile() {
+      if (typeof window === 'undefined') {
+        this.isMobile = false; // 在SSR环境中默认返回false
+        return;
+      }
       this.isMobile = window.innerWidth <= 900;
     },
     

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/paymentController');
-const { verifyToken } = require('../middleware/jwt');
+const { verifyToken, isAdmin, requireRole } = require('../middleware/jwt');
 
 // 所有支付路由都需要用户认证（除了回调接口和汇率接口）
 router.use('/callback', (req, res, next) => next()); // 跳过回调接口的认证
@@ -18,6 +18,7 @@ router.use((req, res, next) => {
 router.post('/paypal/create', paymentController.createPayPalOrder);
 router.post('/paypal/capture', paymentController.capturePayPalPayment);
 router.post('/paypal/repay', paymentController.repayPayPalOrder);
+router.post('/paypal/refund', verifyToken, requireRole(['admin', 'business']), paymentController.refundPayPalPayment);
 
 // 普通支付相关接口
 router.post('/common/create', paymentController.createCommonOrder);
@@ -30,6 +31,9 @@ router.post('/callback/alipay', paymentController.paymentCallback);
 
 // 支付宝异步通知接口
 router.post('/alipay/notify', paymentController.alipayNotify);
+
+// 退款相关接口
+router.post('/alipay/refund', verifyToken, requireRole(['admin', 'business']), paymentController.refundAlipayPayment);
 
 // 汇率相关接口
 router.get('/exchange-rate', paymentController.getExchangeRate);

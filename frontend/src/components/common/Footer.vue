@@ -69,7 +69,7 @@
             </li>
             <li class="flex items-center">
               <i class="fas fa-envelope text-red-600 mr-3"></i>
-              <span class="contact-text">{{ companyInfo.email || 'info@autoeasexpert.com' }}</span>
+              <span class="contact-text">{{ companyInfo.email || 'info@autoeasetechx.com' }}</span>
             </li>
             <li class="flex items-center">
               <i class="fas fa-clock text-red-600 mr-3"></i>
@@ -148,7 +148,7 @@
               </li>
               <li class="flex items-center">
                 <i class="fas fa-envelope text-red-600 mr-3"></i>
-                <span class="contact-text">{{ companyInfo.email || 'info@autoeasexpert.com' }}</span>
+                <span class="contact-text">{{ companyInfo.email || 'info@autoeasetechx.com' }}</span>
               </li>
               <li class="flex items-center">
                 <i class="fas fa-clock text-red-600 mr-3"></i>

@@ -47,24 +47,3 @@ exports.getManagedUserIds = async (adminUserId) => {
     throw error;
   }
 };
-
-/**
- * 生成用户ID的SQL IN子句参数
- * @param {Array} userIds - 用户ID数组
- * @returns {Object} 返回包含占位符字符串和参数数组的对象
- */
-exports.generateUserIdsPlaceholders = (userIds) => {
-  if (!userIds || userIds.length === 0) {
-    // 当没有用户ID时，返回一个永远不匹配的条件
-    return {
-      placeholders: '-1',
-      params: []
-    };
-  }
-  
-  const placeholders = userIds.map((_, index) => `$${index + 1}`).join(',');
-  return {
-    placeholders,
-    params: userIds
-  };
-};
